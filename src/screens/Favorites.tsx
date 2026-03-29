@@ -23,8 +23,7 @@ export function Favorites() {
   const dynamicFavorites = favorites
     .map((id) => SWIPE_CARDS.find((card) => card.id === id) || FAVORITES_DATA.find((item) => item.id === id))
     .filter(Boolean);
-
-  const source = dynamicFavorites.length > 0 ? dynamicFavorites : FAVORITES_DATA;
+  const source = dynamicFavorites;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

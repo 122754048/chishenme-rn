@@ -10,7 +10,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../theme';
-import { HISTORY_DATA } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
 
@@ -27,7 +26,7 @@ export function History() {
   const { history } = useApp();
 
   const groups = useMemo(() => {
-    if (!history.length) return HISTORY_DATA;
+    if (!history.length) return [];
     const today: typeof history = [];
     const earlier: typeof history = [];
     const now = new Date();
@@ -58,6 +57,14 @@ export function History() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {groups.length === 0 && (
+          <View style={styles.endState}>
+            <View style={styles.endIcon}>
+              <Text style={styles.endIconText}>📝</Text>
+            </View>
+            <Text style={styles.endText}>你还没有历史记录</Text>
+          </View>
+        )}
         {groups.map((group) => (
           <View key={group.group} style={styles.group}>
             <View style={styles.groupHeader}>
@@ -91,12 +98,14 @@ export function History() {
           </View>
         ))}
 
-        <View style={styles.endState}>
-          <View style={styles.endIcon}>
-            <Text style={styles.endIconText}>🔄</Text>
+        {groups.length > 0 && (
+          <View style={styles.endState}>
+            <View style={styles.endIcon}>
+              <Text style={styles.endIconText}>🔄</Text>
+            </View>
+            <Text style={styles.endText}>以上是全部历史记录</Text>
           </View>
-          <Text style={styles.endText}>以上是全部历史记录</Text>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

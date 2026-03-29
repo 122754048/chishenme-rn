@@ -46,19 +46,28 @@ function SwipeCard({
   card,
   onSwipe,
   externalSwipe,
+  disabled,
 }: {
   card: CardData;
   onSwipe: (dir: SwipeDirection) => void;
   externalSwipe: SwipeDirection | null;
+  disabled: boolean;
 }) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
   const performSwipe = useCallback(
     (dir: SwipeDirection) => {
-      translateX.value = withTiming(dir === 'right' ? SCREEN_WIDTH * 1.5 : -SCREEN_WIDTH * 1.5, { duration: 260 });
+      translateX.value = withTiming(
+        dir === 'right' ? SCREEN_WIDTH * 1.5 : -SCREEN_WIDTH * 1.5,
+        { duration: 260 },
+        (finished) => {
+          if (finished) {
+            runOnJS(onSwipe)(dir);
+          }
+        }
+      );
       translateY.value = withTiming(10, { duration: 260 });
-      setTimeout(() => onSwipe(dir), 220);
     },
     [onSwipe, translateX, translateY]
   );
@@ -69,8 +78,8 @@ function SwipeCard({
   }, [externalSwipe, performSwipe]);
 
   const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
+    onStartShouldSetPanResponder: () => !disabled,
+    onMoveShouldSetPanResponder: () => !disabled,
     onPanResponderMove: (_, gestureState) => {
       translateX.value = gestureState.dx;
       translateY.value = gestureState.dy;
@@ -156,6 +165,7 @@ export function Home() {
   const { recommendationsLeft, consumeRecommendation, addToHistory, isFavorite, toggleFavorite } = useApp();
   const [cardIndex, setCardIndex] = useState(0);
   const [buttonSwipe, setButtonSwipe] = useState<SwipeDirection | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const handleSwipe = useCallback((dir: SwipeDirection) => {
     const current = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
@@ -173,6 +183,7 @@ export function Home() {
     consumeRecommendation();
     setCardIndex((prev) => prev + 1);
     setButtonSwipe(null);
+    setIsAnimating(false);
   }, [addToHistory, cardIndex, consumeRecommendation, isFavorite, toggleFavorite]);
 
   const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
@@ -233,6 +244,7 @@ export function Home() {
               card={currentCard}
               onSwipe={handleSwipe}
               externalSwipe={buttonSwipe}
+              disabled={isAnimating}
             />
           )}
         </View>
@@ -240,7 +252,11 @@ export function Home() {
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionBtn, styles.skipBtn]}
-            onPress={() => setButtonSwipe('left')}
+            disabled={isAnimating}
+            onPress={() => {
+              setIsAnimating(true);
+              setButtonSwipe('left');
+            }}
           >
             <Text style={styles.skipBtnIcon}>✕</Text>
           </TouchableOpacity>
@@ -252,7 +268,11 @@ export function Home() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, styles.likeBtn]}
-            onPress={() => setButtonSwipe('right')}
+            disabled={isAnimating}
+            onPress={() => {
+              setIsAnimating(true);
+              setButtonSwipe('right');
+            }}
           >
             <Text style={styles.likeBtnIcon}>❤️</Text>
           </TouchableOpacity>

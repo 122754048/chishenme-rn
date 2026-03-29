@@ -78,11 +78,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleFavorite = async (id: number) => {
-    const updated = favorites.includes(id)
-      ? favorites.filter((f) => f !== id)
-      : [...favorites, id];
-    await storage.setFavorites(updated);
-    setFavorites(updated);
+    setFavorites((prev) => {
+      const updated = prev.includes(id)
+        ? prev.filter((f) => f !== id)
+        : [...prev, id];
+      void storage.setFavorites(updated);
+      return updated;
+    });
   };
 
   const isFavorite = (id: number) => favorites.includes(id);
