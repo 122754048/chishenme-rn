@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -10,106 +10,77 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../theme';
-import { FAVORITES_DATA } from '../data/mockData';
+import { FAVORITES_DATA, SWIPE_CARDS } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
+import { useApp } from '../context/AppContext';
 
 type NavProp = NativeStackNavigationProp<any>;
 
-const CATEGORIES = ['All', 'Sichuan', 'Japanese', 'Dessert', 'Western'];
-
 export function Favorites() {
   const navigation = useNavigation<NavProp>();
-  const [activeCategory, setActiveCategory] = useState('All');
+  const { favorites } = useApp();
 
-  const filtered =
-    activeCategory === 'All'
-      ? FAVORITES_DATA
-      : FAVORITES_DATA.filter((f) => f.category === activeCategory);
+  const dynamicFavorites = favorites
+    .map((id) => SWIPE_CARDS.find((card) => card.id === id) || FAVORITES_DATA.find((item) => item.id === id))
+    .filter(Boolean);
+
+  const source = dynamicFavorites.length > 0 ? dynamicFavorites : FAVORITES_DATA;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav */}
       <View style={styles.topNav}>
-        <View style={{ width: 40 }} />
-        <Text style={styles.navTitle}>My Favorites</Text>
-        <TouchableOpacity style={styles.moreBtn}>
-          <Text style={styles.moreIcon}>⋯</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.moreBtn}>
+          <Text style={styles.moreIcon}>←</Text>
         </TouchableOpacity>
+        <Text style={styles.navTitle}>我的收藏</Text>
+        <View style={styles.moreBtn} />
       </View>
 
-      {/* Category Tabs */}
-      <View style={styles.tabBar}>
-        <FlatList
-          horizontal
-          data={CATEGORIES}
-          keyExtractor={(item) => item}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabList}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.tabPill,
-                activeCategory === item && styles.tabPillActive,
-              ]}
-              onPress={() => setActiveCategory(item)}
-            >
-              <Text
-                style={[
-                  styles.tabPillText,
-                  activeCategory === item && styles.tabPillTextActive,
-                ]}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
-
-      {filtered.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <Text style={styles.emptyIconText}>🍽️</Text>
-          </View>
-          <Text style={styles.emptyTitle}>No favorites here yet</Text>
-          <Text style={styles.emptyBody}>
-            Start exploring and save your favorite dishes to see them here.
-          </Text>
-          <TouchableOpacity
-            style={styles.exploreBtn}
-            onPress={() => navigation.navigate('Explore')}
-          >
-            <Text style={styles.exploreBtnText}>Explore Dishes</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => String(item.id)}
-          numColumns={2}
-          contentContainerStyle={styles.gridContent}
-          columnWrapperStyle={styles.gridRow}
-          renderItem={({ item }) => (
+      <FlatList
+        data={source}
+        keyExtractor={(item) => String(item?.id)}
+        numColumns={2}
+        contentContainerStyle={styles.gridContent}
+        columnWrapperStyle={styles.gridRow}
+        renderItem={({ item }) => {
+          if (!item) return null;
+          const subtitle = 'reviews' in item ? `${item.reviews} reviews` : item.restaurant;
+          return (
             <TouchableOpacity
               style={styles.gridItem}
               onPress={() => navigation.navigate('Detail')}
             >
               <View style={styles.gridImageWrap}>
                 <SkeletonImage src={item.image} alt={item.title} className="" />
-                <TouchableOpacity style={styles.heartBtn}>
+                <View style={styles.heartBtn}>
                   <Text style={styles.heartIcon}>❤️</Text>
-                </TouchableOpacity>
+                </View>
               </View>
               <Text style={styles.gridItemTitle} numberOfLines={2}>
                 {item.title}
               </Text>
               <View style={styles.gridItemMeta}>
-                <Text style={styles.gridItemRating}>★ {item.rating} ({item.reviews})</Text>
+                <Text style={styles.gridItemRating}>★ {item.rating} · {subtitle}</Text>
               </View>
             </TouchableOpacity>
-          )}
-        />
-      )}
+          );
+        }}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}>
+              <Text style={styles.emptyIconText}>🍽️</Text>
+            </View>
+            <Text style={styles.emptyTitle}>还没有收藏</Text>
+            <Text style={styles.emptyBody}>去首页右滑爱心把喜欢的菜加入收藏吧。</Text>
+            <TouchableOpacity
+              style={styles.exploreBtn}
+              onPress={() => navigation.navigate('Home')}
+            >
+              <Text style={styles.exploreBtnText}>去首页看看</Text>
+            </TouchableOpacity>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -127,25 +98,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f3f4f6',
   },
   navTitle: { fontSize: 16, fontWeight: '600', color: theme.colors.foreground },
-  moreBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
+  moreBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   moreIcon: { fontSize: 18, color: '#6b7280' },
-  tabBar: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  tabList: { paddingHorizontal: 16, gap: 8 },
-  tabPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    marginRight: 8,
-  },
-  tabPillActive: { backgroundColor: theme.colors.brand },
-  tabPillText: { fontSize: 13, fontWeight: '500', color: '#6b7280' },
-  tabPillTextActive: { color: '#ffffff' },
   gridContent: { padding: 16, gap: 12 },
   gridRow: { justifyContent: 'space-between' },
   gridItem: { width: '48%', marginBottom: 16 },
@@ -182,6 +136,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+    paddingTop: 80,
   },
   emptyIcon: {
     width: 80,

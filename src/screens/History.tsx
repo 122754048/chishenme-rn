@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,26 +7,58 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../theme';
 import { HISTORY_DATA } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
+import { useApp } from '../context/AppContext';
+
+type NavProp = NativeStackNavigationProp<any>;
+
+function formatTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
 
 export function History() {
+  const navigation = useNavigation<NavProp>();
+  const { history } = useApp();
+
+  const groups = useMemo(() => {
+    if (!history.length) return HISTORY_DATA;
+    const today: typeof history = [];
+    const earlier: typeof history = [];
+    const now = new Date();
+
+    history.forEach((item) => {
+      const d = new Date(item.time);
+      if (!Number.isNaN(d.getTime()) && d.toDateString() === now.toDateString()) {
+        today.push(item);
+      } else {
+        earlier.push(item);
+      }
+    });
+
+    return [
+      { group: 'TODAY', items: today.map((item) => ({ ...item, time: formatTime(item.time) })) },
+      { group: 'EARLIER', items: earlier.map((item) => ({ ...item, time: formatTime(item.time) })) },
+    ].filter((section) => section.items.length > 0);
+  }, [history]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav */}
       <View style={styles.topNav}>
-        <TouchableOpacity onPress={() => {}} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.navTitle}>History</Text>
-        <TouchableOpacity style={styles.moreBtn}>
-          <Text style={styles.moreIcon}>⋯</Text>
-        </TouchableOpacity>
+        <Text style={styles.navTitle}>历史记录</Text>
+        <View style={styles.moreBtn} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {HISTORY_DATA.map((group) => (
+        {groups.map((group) => (
           <View key={group.group} style={styles.group}>
             <View style={styles.groupHeader}>
               <Text style={styles.groupLabel}>{group.group}</Text>
@@ -34,7 +66,7 @@ export function History() {
             </View>
             <View style={styles.groupItems}>
               {group.items.map((item) => (
-                <View key={item.id} style={styles.historyItem}>
+                <View key={`${group.group}-${item.id}-${item.time}`} style={styles.historyItem}>
                   <SkeletonImage src={item.img} alt={item.title} className="" />
                   <View style={styles.historyItemContent}>
                     <Text style={styles.historyItemTitle}>{item.title}</Text>
@@ -59,12 +91,11 @@ export function History() {
           </View>
         ))}
 
-        {/* Empty end state */}
         <View style={styles.endState}>
           <View style={styles.endIcon}>
             <Text style={styles.endIconText}>🔄</Text>
           </View>
-          <Text style={styles.endText}>No more history to show</Text>
+          <Text style={styles.endText}>以上是全部历史记录</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -86,8 +117,7 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
   backIcon: { fontSize: 22, color: '#374151' },
   navTitle: { fontSize: 16, fontWeight: '600', color: theme.colors.foreground },
-  moreBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
-  moreIcon: { fontSize: 18, color: '#6b7280' },
+  moreBtn: { width: 40, height: 40 },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 40 },
   group: { marginBottom: 28 },
@@ -108,11 +138,6 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 12,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   historyItemContent: { flex: 1 },
   historyItemTitle: { fontSize: 14, fontWeight: '600', color: theme.colors.foreground },
@@ -155,5 +180,5 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   endIconText: { fontSize: 20 },
-  endText: { fontSize: 12, color: '#d1d5db' },
+  endText: { fontSize: 12, color: '#9ca3af' },
 });

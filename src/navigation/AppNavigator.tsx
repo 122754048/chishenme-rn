@@ -14,6 +14,10 @@ import { History } from '../screens/History';
 import { Upgrade } from '../screens/Upgrade';
 import { OnboardingCuisines } from '../screens/OnboardingCuisines';
 import { OnboardingRestrictions } from '../screens/OnboardingRestrictions';
+import { AccountInfo } from '../screens/AccountInfo';
+import { MembershipInfo } from '../screens/MembershipInfo';
+import { PrivacyPolicy } from '../screens/PrivacyPolicy';
+import { About } from '../screens/About';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -179,6 +183,26 @@ export function AppNavigator() {
         <Stack.Screen
           name="History"
           component={History}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="AccountInfo"
+          component={AccountInfo}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="MembershipInfo"
+          component={MembershipInfo}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="PrivacyPolicy"
+          component={PrivacyPolicy}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="About"
+          component={About}
           options={{ animation: 'slide_from_right' }}
         />
       </Stack.Navigator>
