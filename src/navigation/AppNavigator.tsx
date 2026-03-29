@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -17,35 +17,6 @@ import { OnboardingRestrictions } from '../screens/OnboardingRestrictions';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-
-function TabIcon({ focused, icon }: { focused: boolean; icon: string }) {
-  return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <View
-        style={{
-          transform: [{ scale: focused ? 1.15 : 1 }],
-        }}
-      >
-        <View style={{ alignItems: 'center' }}>
-          <View
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: focused ? 'transparent' : 'transparent',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <View style={{ transform: [{ scale: 1 }] }}>
-              {/* Using emoji as icons for simplicity */}
-            </View>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
 
 function MainTabs() {
   return (
@@ -168,11 +139,9 @@ function MainTabs() {
 
 function TabIconEmoji({ emoji }: { emoji: string }) {
   return (
-    <View>
-      <View>
-        {/* Text emoji as icon */}
-      </View>
-    </View>
+    <Text style={styles.tabEmoji} accessibilityLabel="tab icon">
+      {emoji}
+    </Text>
   );
 }
 
@@ -180,7 +149,11 @@ export function AppNavigator() {
   const { onboardingComplete, isLoading } = useApp();
 
   if (isLoading) {
-    return <View style={styles.loading} />;
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="small" color="#4CAF50" />
+      </View>
+    );
   }
 
   return (
@@ -217,5 +190,11 @@ const styles = StyleSheet.create({
   loading: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabEmoji: {
+    fontSize: 14,
+    lineHeight: 16,
   },
 });

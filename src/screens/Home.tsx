@@ -131,12 +131,22 @@ function SwipeCard({ card, onSwipe }: { card: CardData; onSwipe: (dir: 'left' | 
 
 export function Home() {
   const navigation = useNavigation<NavProp>();
-  const { recommendationsLeft } = useApp();
+  const { recommendationsLeft, consumeRecommendation, addToHistory } = useApp();
   const [cardIndex, setCardIndex] = useState(0);
 
-  const handleSwipe = useCallback(() => {
+  const handleSwipe = useCallback((dir: 'left' | 'right') => {
+    const current = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
+    void addToHistory({
+      id: current.id,
+      title: current.title,
+      img: current.image,
+      time: new Date().toISOString(),
+      category: current.badge,
+      status: dir === 'right' ? 'Liked' : 'Skipped',
+    });
+    consumeRecommendation();
     setCardIndex((prev) => prev + 1);
-  }, []);
+  }, [addToHistory, cardIndex, consumeRecommendation]);
 
   const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
 
@@ -204,7 +214,7 @@ export function Home() {
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionBtn, styles.skipBtn]}
-            onPress={() => handleSwipe()}
+            onPress={() => handleSwipe('left')}
           >
             <Text style={styles.skipBtnIcon}>✕</Text>
           </TouchableOpacity>
@@ -216,7 +226,7 @@ export function Home() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, styles.likeBtn]}
-            onPress={() => handleSwipe()}
+            onPress={() => handleSwipe('right')}
           >
             <Text style={styles.likeBtnIcon}>❤️</Text>
           </TouchableOpacity>

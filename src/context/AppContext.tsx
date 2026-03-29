@@ -26,6 +26,7 @@ interface AppContextType extends AppState {
   isFavorite: (id: number) => boolean;
   addToHistory: (item: AppState['history'][0]) => Promise<void>;
   refreshRecommendations: () => void;
+  consumeRecommendation: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -41,19 +42,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function load() {
-      const [oc, cuisines, restrictions, favs, hist] = await Promise.all([
-        storage.getOnboardingComplete(),
-        storage.getSelectedCuisines(),
-        storage.getSelectedRestrictions(),
-        storage.getFavorites(),
-        storage.getHistory(),
-      ]);
-      setOnboardingComplete(oc);
-      setSelectedCuisines(cuisines);
-      setSelectedRestrictions(restrictions);
-      setFavorites(favs);
-      setHistory(hist);
-      setIsLoading(false);
+      try {
+        const [oc, cuisines, restrictions, favs, hist] = await Promise.all([
+          storage.getOnboardingComplete(),
+          storage.getSelectedCuisines(),
+          storage.getSelectedRestrictions(),
+          storage.getFavorites(),
+          storage.getHistory(),
+        ]);
+        setOnboardingComplete(oc);
+        setSelectedCuisines(cuisines);
+        setSelectedRestrictions(restrictions);
+        setFavorites(favs);
+        setHistory(hist);
+      } finally {
+        setIsLoading(false);
+      }
     }
     load();
   }, []);
@@ -74,12 +78,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleFavorite = async (id: number) => {
-    let updated: number[];
-    if (favorites.includes(id)) {
-      updated = favorites.filter((f) => f !== id);
-    } else {
-      updated = [...favorites, id];
-    }
+    const updated = favorites.includes(id)
+      ? favorites.filter((f) => f !== id)
+      : [...favorites, id];
     await storage.setFavorites(updated);
     setFavorites(updated);
   };
@@ -93,6 +94,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refreshRecommendations = () => {
     setRecommendationsLeft(7);
+  };
+
+  const consumeRecommendation = () => {
+    setRecommendationsLeft((prev) => Math.max(0, prev - 1));
   };
 
   return (
@@ -112,6 +117,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isFavorite,
         addToHistory,
         refreshRecommendations,
+        consumeRecommendation,
       }}
     >
       {children}
