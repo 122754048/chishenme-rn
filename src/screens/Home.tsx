@@ -47,11 +47,13 @@ function SwipeCard({
   onSwipe,
   externalSwipe,
   disabled,
+  onSwipeStart,
 }: {
   card: CardData;
   onSwipe: (dir: SwipeDirection) => void;
   externalSwipe: SwipeDirection | null;
   disabled: boolean;
+  onSwipeStart: () => void;
 }) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -86,11 +88,19 @@ function SwipeCard({
     },
     onPanResponderRelease: (_, gestureState) => {
       if (gestureState.dx > SWIPE_THRESHOLD || gestureState.vx > 0.5) {
-        translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 240 });
-        runOnJS(onSwipe)('right');
+        runOnJS(onSwipeStart)();
+        translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 240 }, (finished) => {
+          if (finished) {
+            runOnJS(onSwipe)('right');
+          }
+        });
       } else if (gestureState.dx < -SWIPE_THRESHOLD || gestureState.vx < -0.5) {
-        translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 240 });
-        runOnJS(onSwipe)('left');
+        runOnJS(onSwipeStart)();
+        translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 240 }, (finished) => {
+          if (finished) {
+            runOnJS(onSwipe)('left');
+          }
+        });
       } else {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
@@ -169,6 +179,10 @@ export function Home() {
 
   const handleSwipe = useCallback((dir: SwipeDirection) => {
     const current = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
+    if (!current) {
+      setIsAnimating(false);
+      return;
+    }
     void addToHistory({
       id: current.id,
       title: current.title,
@@ -245,6 +259,7 @@ export function Home() {
               onSwipe={handleSwipe}
               externalSwipe={buttonSwipe}
               disabled={isAnimating}
+              onSwipeStart={() => setIsAnimating(true)}
             />
           )}
         </View>
@@ -252,8 +267,9 @@ export function Home() {
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionBtn, styles.skipBtn]}
-            disabled={isAnimating}
+            disabled={isAnimating || recommendationsLeft <= 0}
             onPress={() => {
+              if (isAnimating || recommendationsLeft <= 0) return;
               setIsAnimating(true);
               setButtonSwipe('left');
             }}
@@ -268,8 +284,9 @@ export function Home() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, styles.likeBtn]}
-            disabled={isAnimating}
+            disabled={isAnimating || recommendationsLeft <= 0}
             onPress={() => {
+              if (isAnimating || recommendationsLeft <= 0) return;
               setIsAnimating(true);
               setButtonSwipe('right');
             }}
