@@ -14,13 +14,28 @@ import { theme } from '../theme';
 interface SearchOverlayProps {
   visible: boolean;
   onClose: () => void;
+  onSearch?: (query: string) => void;
 }
 
-const RECENT_SEARCHES = ['Salmon Bowl', 'Ramen', 'Pizza near me'];
+const DEFAULT_RECENT_SEARCHES = ['Salmon Bowl', 'Ramen', 'Pizza near me'];
 const TRENDING_TAGS = ['Healthy Salad', 'Sichuan Hot Pot', 'Matcha Latte', 'Poke Bowl', 'Dim Sum', 'Korean BBQ'];
 
-export function SearchOverlay({ visible, onClose }: SearchOverlayProps) {
+export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps) {
   const [query, setQuery] = useState('');
+  const [recentSearches, setRecentSearches] = useState<string[]>(DEFAULT_RECENT_SEARCHES);
+
+  const handleSubmit = () => {
+    const trimmed = query.trim();
+    if (trimmed.length > 0) {
+      onSearch?.(trimmed);
+      // Add to recent searches (avoid duplicates, keep at top)
+      setRecentSearches((prev) => [trimmed, ...prev.filter((s) => s !== trimmed)].slice(0, 10));
+    }
+  };
+
+  const handleClearRecent = () => {
+    setRecentSearches([]);
+  };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -35,6 +50,8 @@ export function SearchOverlay({ visible, onClose }: SearchOverlayProps) {
               value={query}
               onChangeText={setQuery}
               autoFocus
+              returnKeyType="search"
+              onSubmitEditing={handleSubmit}
             />
             {query.length > 0 && (
               <TouchableOpacity onPress={() => setQuery('')}>
@@ -52,11 +69,11 @@ export function SearchOverlay({ visible, onClose }: SearchOverlayProps) {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Recent Searches</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleClearRecent}>
                 <Text style={styles.clearAll}>Clear</Text>
               </TouchableOpacity>
             </View>
-            {RECENT_SEARCHES.map((term) => (
+            {recentSearches.map((term) => (
               <TouchableOpacity
                 key={term}
                 style={styles.recentItem}

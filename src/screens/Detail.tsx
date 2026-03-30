@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -14,8 +14,6 @@ import Animated, { useAnimatedStyle, useSharedValue, useAnimatedScrollHandler } 
 import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { SkeletonImage } from '../components/SkeletonImage';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type DetailRouteProp = RouteProp<RootStackParamList, 'Detail'>;
@@ -39,6 +37,7 @@ const PAIRINGS = [
 
 export function Detail() {
   const navigation = useNavigation<NavProp>();
+  const { width: screenWidth } = useWindowDimensions();
   // Issue #7: Receive navigation params for the item.
   const route = useRoute<DetailRouteProp>();
   const { title: itemTitle, image: itemImage } = route.params ?? { title: 'Salmon Energy Bowl', image: 'https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=1080' };
@@ -111,7 +110,7 @@ export function Detail() {
       >
         {/* Hero Image with parallax */}
         <View style={styles.heroWrap}>
-          <Animated.View style={[styles.heroImage, heroImageStyle]}>
+          <Animated.View style={[styles.heroImage, { width: screenWidth, height: 360 }, heroImageStyle]}>
             <SkeletonImage
               src={itemImage}
               alt={itemTitle}
@@ -259,7 +258,7 @@ const styles = StyleSheet.create({
   },
   scrollView: { flex: 1 },
   heroWrap: { height: 360, overflow: 'hidden', position: 'relative' },
-  heroImage: { width: SCREEN_WIDTH, height: 360 },
+  heroImage: {},
   heroGradient: {
     position: 'absolute',
     bottom: 0,

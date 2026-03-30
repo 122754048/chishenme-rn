@@ -41,19 +41,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function load() {
-      const [oc, cuisines, restrictions, favs, hist] = await Promise.all([
-        storage.getOnboardingComplete(),
-        storage.getSelectedCuisines(),
-        storage.getSelectedRestrictions(),
-        storage.getFavorites(),
-        storage.getHistory(),
-      ]);
-      setOnboardingComplete(oc);
-      setSelectedCuisines(cuisines);
-      setSelectedRestrictions(restrictions);
-      setFavorites(favs);
-      setHistory(hist);
-      setIsLoading(false);
+      try {
+        const [oc, cuisines, restrictions, favs, hist] = await Promise.all([
+          storage.getOnboardingComplete(),
+          storage.getSelectedCuisines(),
+          storage.getSelectedRestrictions(),
+          storage.getFavorites(),
+          storage.getHistory(),
+        ]);
+        setOnboardingComplete(oc);
+        setSelectedCuisines(cuisines);
+        setSelectedRestrictions(restrictions);
+        setFavorites(favs);
+        setHistory(hist);
+      } catch (error) {
+        console.warn('Failed to load app data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
     load();
   }, []);

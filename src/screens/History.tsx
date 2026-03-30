@@ -68,8 +68,8 @@ export function History() {
                 <View style={styles.groupLine} />
               </View>
               <View style={styles.groupItems}>
-                {group.items.map((item) => (
-                  <View key={`${item.id}-${item.time}`} style={styles.historyItem}>
+                {group.items.map((item, index) => (
+                  <View key={`${group.group}-${index}`} style={styles.historyItem}>
                     <View style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden' }}>
                       <SkeletonImage src={item.img} alt={item.title} />
                     </View>

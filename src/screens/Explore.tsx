@@ -24,7 +24,7 @@ const SEASONAL_ITEMS = [
     id: 1,
     title: 'Cinnamon Apple Tart',
     subtitle: 'Warm, flaky, and sweet.',
-    price: '$9.00',
+    price: '¥9.00',
     image: 'https://images.unsplash.com/photo-1620991565081-82743a5a499c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxibHVlYmVycnklMjBwYW5jYWtlc3xlbnwxfHx8fDE3NzQ2ODQxOTh8MA&ixlib=rb-4.1.0&q=80&w=1080',
   },
 ];

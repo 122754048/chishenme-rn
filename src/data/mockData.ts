@@ -2,7 +2,7 @@ export const SWIPE_CARDS = [
   {
     id: 1,
     title: 'Green Garden Bowl',
-    price: '$14.50',
+    price: '¥14.50',
     restaurant: 'Healthy Bite Cafe',
     distance: '0.8km away',
     rating: 4.8,
@@ -14,7 +14,7 @@ export const SWIPE_CARDS = [
   {
     id: 2,
     title: 'Spicy Noodle Soup',
-    price: '$11.00',
+    price: '¥11.00',
     restaurant: 'Dragon Bowl',
     distance: '1.2km away',
     rating: 4.6,
@@ -26,7 +26,7 @@ export const SWIPE_CARDS = [
   {
     id: 3,
     title: 'Thai Green Curry',
-    price: '$13.00',
+    price: '¥13.00',
     restaurant: 'Bangkok Kitchen',
     distance: '0.5km away',
     rating: 4.9,
@@ -52,7 +52,7 @@ export const NEARBY_ITEMS = [
     title: 'Fresh Sushi Platter',
     subtitle: 'Sakura Sushi Bar',
     rating: 4.8,
-    price: '$18',
+    price: '¥18',
     image:
       'https://images.unsplash.com/photo-1763647756796-af9230245bf8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHN1c2hpJTIwcGxhdHRlcnxlbnwxfHx8fDE3NzQ2NjkyNTh8MA&ixlib=rb-4.1.0&q=80&w=1080',
   },
@@ -61,7 +61,7 @@ export const NEARBY_ITEMS = [
     title: 'Tiramisu Special',
     subtitle: 'Dolce Vita Cafe',
     rating: 4.7,
-    price: '$9',
+    price: '¥9',
     image:
       'https://images.unsplash.com/photo-1714385905983-6f8e06fffae1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0aXJhbWlzdSUyMGRlc3NlcnQlMjBjb2ZmZWV8ZW58MXx8fHwxNzc0NjA1MTU3fDA&ixlib=rb-4.1.0&q=80&w=1080',
   },

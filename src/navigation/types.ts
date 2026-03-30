@@ -2,13 +2,14 @@
  * Type-safe navigation param list for the entire app.
  * Issue #11: Replaces all `NativeStackNavigationProp<any>` with typed navigation.
  */
+import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type RootStackParamList = {
   OnboardingCuisines: undefined;
   OnboardingRestrictions: undefined;
   Upgrade: undefined;
-  MainTabs: undefined;
-  Detail: { itemId: number; title: string; image: string };
+  MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
+  Detail: { itemId?: number; title?: string; image?: string } | undefined;
   History: undefined;
 };
 

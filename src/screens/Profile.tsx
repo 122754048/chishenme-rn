@@ -12,6 +12,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { SkeletonImage } from '../components/SkeletonImage';
+import { useApp } from '../context/AppContext';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -41,6 +42,7 @@ function MenuRow({ icon, iconBg, iconColor, label, value, onPress }: MenuRowProp
 
 export function Profile() {
   const navigation = useNavigation<NavProp>();
+  const { favorites } = useApp();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -123,8 +125,8 @@ export function Profile() {
             iconBg="#FFF0F0"
             iconColor="#ef4444"
             label="Favorites"
-            value="24 items"
-            onPress={() => navigation.navigate('MainTabs')}
+            value={`${favorites.length} items`}
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Favorites' })}
           />
           <MenuRow
             icon="🕐"

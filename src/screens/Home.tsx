@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -24,7 +24,6 @@ import { SWIPE_CARDS, CATEGORIES, NEARBY_ITEMS } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 100;
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -42,7 +41,7 @@ interface CardData {
 }
 
 // Issue #3: Replaced PanResponder (JS thread) with Gesture.Pan() (UI thread) for smooth swiping.
-function SwipeCard({ card, onSwipe }: { card: CardData; onSwipe: (dir: 'left' | 'right') => void }) {
+function SwipeCard({ card, onSwipe, screenWidth }: { card: CardData; onSwipe: (dir: 'left' | 'right') => void; screenWidth: number }) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
@@ -53,10 +52,10 @@ function SwipeCard({ card, onSwipe }: { card: CardData; onSwipe: (dir: 'left' | 
     })
     .onEnd((event) => {
       if (event.translationX > SWIPE_THRESHOLD || event.velocityX > 500) {
-        translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 300 });
+        translateX.value = withTiming(screenWidth * 1.5, { duration: 300 });
         runOnJS(onSwipe)('right');
       } else if (event.translationX < -SWIPE_THRESHOLD || event.velocityX < -500) {
-        translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 300 });
+        translateX.value = withTiming(-screenWidth * 1.5, { duration: 300 });
         runOnJS(onSwipe)('left');
       } else {
         translateX.value = withSpring(0);
@@ -85,7 +84,7 @@ function SwipeCard({ card, onSwipe }: { card: CardData; onSwipe: (dir: 'left' | 
 
   return (
     <GestureDetector gesture={panGesture}>
-      <Animated.View style={[styles.card, cardStyle]}>
+      <Animated.View style={[styles.card, { width: screenWidth - 32 }, cardStyle]}>
         {/* LIKE badge */}
         <Animated.View style={[styles.badgeLike, likeOpacity]}>
           <Text style={styles.badgeLikeText}>LIKE</Text>
@@ -131,6 +130,7 @@ export function Home() {
   const navigation = useNavigation<NavProp>();
   const { recommendationsLeft, addToHistory } = useApp();
   const [cardIndex, setCardIndex] = useState(0);
+  const { width: screenWidth } = useWindowDimensions();
   // Issue #14: Track remaining recommendations locally so it decrements on swipe.
   const [localRecsLeft, setLocalRecsLeft] = useState(recommendationsLeft);
 
@@ -194,7 +194,7 @@ export function Home() {
             <TouchableOpacity
               key={cat.label}
               style={styles.categoryItem}
-              onPress={() => navigation.navigate('MainTabs')}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
             >
               <View style={styles.categoryIcon}>
                 <Text style={styles.categoryEmoji}>{cat.icon}</Text>
@@ -213,7 +213,7 @@ export function Home() {
         {/* Swipe Card */}
         <View style={styles.cardContainer}>
           {currentCard && (
-            <SwipeCard key={`${currentCard.id}-${cardIndex}`} card={currentCard} onSwipe={handleSwipe} />
+            <SwipeCard key={`${currentCard.id}-${cardIndex}`} card={currentCard} onSwipe={handleSwipe} screenWidth={screenWidth} />
           )}
         </View>
 
@@ -347,7 +347,6 @@ const styles = StyleSheet.create({
   cardContainer: { height: 390, alignItems: 'center', paddingHorizontal: 16 },
   card: {
     position: 'absolute',
-    width: SCREEN_WIDTH - 32,
     backgroundColor: '#ffffff',
     borderRadius: 18,
     shadowColor: '#000',
