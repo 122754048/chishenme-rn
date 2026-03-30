@@ -9,10 +9,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { SkeletonImage } from '../components/SkeletonImage';
 
-type NavProp = NativeStackNavigationProp<any>;
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface MenuRowProps {
   icon: string;
@@ -54,12 +55,14 @@ export function Profile() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
+          {/* Issue #16: Avatar now has explicit dimensions */}
           <View style={styles.avatarWrap}>
-            <SkeletonImage
-              src="https://images.unsplash.com/photo-1603086360919-8b8eacad64bc?w=200"
-              alt="Alex Chen"
-              className=""
-            />
+            <View style={{ width: 64, height: 64, borderRadius: 32, overflow: 'hidden' }}>
+              <SkeletonImage
+                src="https://images.unsplash.com/photo-1603086360919-8b8eacad64bc?w=200"
+                alt="Alex Chen"
+              />
+            </View>
             <View style={styles.avatarBadge}>
               <Text style={styles.avatarBadgeIcon}>⭐</Text>
             </View>
@@ -121,7 +124,7 @@ export function Profile() {
             iconColor="#ef4444"
             label="Favorites"
             value="24 items"
-            onPress={() => navigation.navigate('Favorites')}
+            onPress={() => navigation.navigate('MainTabs')}
           />
           <MenuRow
             icon="🕐"

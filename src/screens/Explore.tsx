@@ -9,12 +9,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { EXPLORE_CARDS } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { SearchOverlay } from '../components/SearchOverlay';
 
-type NavProp = NativeStackNavigationProp<any>;
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CATEGORIES = ['Recommended', 'Chinese', 'Japanese'];
 
@@ -32,6 +33,10 @@ export function Explore() {
   const navigation = useNavigation<NavProp>();
   const [activeCategory, setActiveCategory] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
+
+  const navigateToDetail = (item: { id: number; title: string; image: string }) => {
+    navigation.navigate('Detail', { itemId: item.id, title: item.title, image: item.image });
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -98,10 +103,10 @@ export function Explore() {
               <TouchableOpacity
                 key={item.id}
                 style={styles.pickCard}
-                onPress={() => navigation.navigate('Detail')}
+                onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
               >
                 <View style={styles.pickImageWrap}>
-                  <SkeletonImage src={item.image} alt={item.title} className="" />
+                  <SkeletonImage src={item.image} alt={item.title} />
                   {item.badge && (
                     <View style={styles.pickBadge}>
                       <Text style={styles.pickBadgeText}>{item.badge}</Text>
@@ -113,12 +118,14 @@ export function Explore() {
               </TouchableOpacity>
             ))}
             {/* Extra placeholder cards for horizontal scroll feel */}
-            <TouchableOpacity style={styles.pickCard} onPress={() => navigation.navigate('Detail')}>
+            <TouchableOpacity
+              style={styles.pickCard}
+              onPress={() => navigateToDetail({ id: 99, title: 'Butter Croissant', image: 'https://images.unsplash.com/photo-1555126634-323283e090fa?w=400' })}
+            >
               <View style={styles.pickImageWrap}>
                 <SkeletonImage
                   src="https://images.unsplash.com/photo-1555126634-323283e090fa?w=400"
                   alt="Croissant"
-                  className=""
                 />
               </View>
               <Text style={styles.pickTitle}>Butter Croissant</Text>
@@ -134,12 +141,11 @@ export function Explore() {
           {/* Hero seasonal card */}
           <TouchableOpacity
             style={styles.seasonalHero}
-            onPress={() => navigation.navigate('Detail')}
+            onPress={() => navigateToDetail({ id: 100, title: 'Maple Glazed Roasted Squash', image: 'https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYWxtb24lMjBib3dsfGVufDF8fHx8MTc3NDY4NDE4N3ww&ixlib=rb-4.1.0&q=80&w=1080' })}
           >
             <SkeletonImage
               src="https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYWxtb24lMjBib3dsfGVufDF8fHx8MTc3NDY4NDE4N3ww&ixlib=rb-4.1.0&q=80&w=1080"
               alt="Autumn Special"
-              className=""
             />
             <View style={styles.seasonalHeroOverlay}>
               <View style={styles.autumnBadge}>
@@ -150,14 +156,16 @@ export function Explore() {
             </View>
           </TouchableOpacity>
 
-          {/* Regular items */}
+          {/* Issue #15: Fixed — listItem SkeletonImage now has explicit dimensions via wrapper View */}
           {SEASONAL_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.id}
               style={styles.listItem}
-              onPress={() => navigation.navigate('Detail')}
+              onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
             >
-              <SkeletonImage src={item.image} alt={item.title} className="" />
+              <View style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden' }}>
+                <SkeletonImage src={item.image} alt={item.title} />
+              </View>
               <View style={styles.listItemContent}>
                 <Text style={styles.listItemTitle}>{item.title}</Text>
                 <Text style={styles.listItemSubtitle}>{item.subtitle}</Text>

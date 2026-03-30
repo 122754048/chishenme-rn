@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,15 +8,17 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
+import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { SkeletonImage } from '../components/SkeletonImage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type NavProp = NativeStackNavigationProp<any>;
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
+type DetailRouteProp = RouteProp<RootStackParamList, 'Detail'>;
 
 const PAIRINGS = [
   {
@@ -37,61 +39,84 @@ const PAIRINGS = [
 
 export function Detail() {
   const navigation = useNavigation<NavProp>();
-  const [scrollY, setScrollY] = useState(0);
-  const scrollRef = React.useRef<ScrollView>(null);
+  // Issue #7: Receive navigation params for the item.
+  const route = useRoute<DetailRouteProp>();
+  const { title: itemTitle, image: itemImage } = route.params ?? { title: 'Salmon Energy Bowl', image: 'https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=1080' };
 
-  const handleScroll = (event: any) => {
-    setScrollY(event.nativeEvent.contentOffset.y);
-  };
+  // Issue #8: Use Reanimated shared value for scroll position instead of useState
+  // to avoid re-rendering the entire component on every scroll event.
+  const scrollY = useSharedValue(0);
 
-  const navOpaque = scrollY > 150;
-  const headerBgOpacity = Math.min(1, Math.max(0, (scrollY - 100) / 80));
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  // Animated nav bar opacity (becomes opaque after scrolling past hero)
+  const navBarStyle = useAnimatedStyle(() => {
+    const opacity = Math.min(1, Math.max(0, (scrollY.value - 100) / 80));
+    return {
+      backgroundColor: `rgba(245,245,245,${opacity})`,
+    };
+  });
+
+  const navBtnStyle = useAnimatedStyle(() => {
+    const navOpaque = scrollY.value > 150;
+    return {
+      backgroundColor: navOpaque ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.25)',
+    };
+  });
+
+  // Issue #8: Parallax effect uses Animated.View + useAnimatedStyle (UI thread).
+  const heroImageStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateY: scrollY.value * 0.4 },
+        { scale: 1 + scrollY.value * 0.0008 },
+      ],
+    };
+  });
 
   return (
     <View style={styles.container}>
       {/* Custom Nav Bar */}
-      <SafeAreaView edges={['top']} style={[styles.navBar, { backgroundColor: navOpaque ? 'rgba(245,245,245,1)' : 'transparent' }]}>
-        <TouchableOpacity style={styles.navBackBtn} onPress={() => navigation.goBack()}>
-          <View style={[styles.backCircle, { backgroundColor: navOpaque ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.25)' }]}>
-            <Text style={{ fontSize: 18 }}>←</Text>
+      <SafeAreaView edges={['top']} style={styles.navBarOuter}>
+        <Animated.View style={[styles.navBar, navBarStyle]}>
+          <TouchableOpacity style={styles.navBackBtn} onPress={() => navigation.goBack()}>
+            <Animated.View style={[styles.backCircle, navBtnStyle]}>
+              <Text style={{ fontSize: 18 }}>←</Text>
+            </Animated.View>
+          </TouchableOpacity>
+          <View style={styles.navRight}>
+            <TouchableOpacity>
+              <Animated.View style={[styles.navIconBtn, navBtnStyle]}>
+                <Text style={{ fontSize: 14 }}>↗</Text>
+              </Animated.View>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Animated.View style={[styles.navIconBtn, navBtnStyle]}>
+                <Text style={{ fontSize: 14 }}>❤️</Text>
+              </Animated.View>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
-        <View style={styles.navRight}>
-          <TouchableOpacity style={[styles.navIconBtn, { backgroundColor: navOpaque ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.25)' }]}>
-            <Text style={{ fontSize: 14 }}>↗</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.navIconBtn, { backgroundColor: navOpaque ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.25)' }]}>
-            <Text style={{ fontSize: 14 }}>❤️</Text>
-          </TouchableOpacity>
-        </View>
+        </Animated.View>
       </SafeAreaView>
 
-      <ScrollView
-        ref={scrollRef}
+      <Animated.ScrollView
         style={styles.scrollView}
-        onScroll={handleScroll}
+        onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Image */}
+        {/* Hero Image with parallax */}
         <View style={styles.heroWrap}>
-          <View
-            style={[
-              styles.heroImage,
-              {
-                transform: [
-                  { translateY: scrollY * 0.4 },
-                  { scale: 1 + scrollY * 0.0008 },
-                ],
-              },
-            ]}
-          >
+          <Animated.View style={[styles.heroImage, heroImageStyle]}>
             <SkeletonImage
-              src="https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=1080"
-              alt="Salmon Energy Bowl"
-              className=""
+              src={itemImage}
+              alt={itemTitle}
             />
-          </View>
+          </Animated.View>
           <View style={styles.heroGradient} />
         </View>
 
@@ -100,7 +125,7 @@ export function Detail() {
           {/* Title Card */}
           <View style={styles.titleCard}>
             <View style={styles.titleRow}>
-              <Text style={styles.dishTitle}>Salmon Energy{'\n'}Bowl</Text>
+              <Text style={styles.dishTitle}>{itemTitle}</Text>
               <View style={styles.calorieBadge}>
                 <Text style={styles.calorieNum}>485</Text>
                 <Text style={styles.calorieUnit}>kcal</Text>
@@ -144,7 +169,7 @@ export function Detail() {
               {PAIRINGS.map((p) => (
                 <View key={p.id} style={styles.pairingCard}>
                   <View style={styles.pairingImageWrap}>
-                    <SkeletonImage src={p.image} alt={p.title} className="" />
+                    <SkeletonImage src={p.image} alt={p.title} />
                     <View style={styles.pairingBadge}>
                       <Text style={styles.pairingBadgeText}>{p.badge}</Text>
                     </View>
@@ -183,7 +208,7 @@ export function Detail() {
 
           <View style={styles.bottomPadding} />
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Floating Action Bar */}
       <SafeAreaView edges={['bottom']} style={styles.actionBar}>
@@ -202,12 +227,14 @@ export function Detail() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.surface },
-  navBar: {
+  navBarOuter: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 100,
+  },
+  navBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -254,7 +281,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  dishTitle: { fontSize: 22, fontWeight: '700', color: theme.colors.foreground, lineHeight: 30 },
+  dishTitle: { fontSize: 22, fontWeight: '700', color: theme.colors.foreground, lineHeight: 30, flex: 1 },
   calorieBadge: {
     backgroundColor: '#81C784',
     borderRadius: 12,

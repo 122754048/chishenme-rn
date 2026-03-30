@@ -7,16 +7,43 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
-import { HISTORY_DATA } from '../data/mockData';
+import { useApp } from '../context/AppContext';
 import { SkeletonImage } from '../components/SkeletonImage';
 
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
+
 export function History() {
+  const navigation = useNavigation<NavProp>();
+  // Issue #13: Use history from AppContext instead of hardcoded HISTORY_DATA.
+  const { history } = useApp();
+
+  // Group history items by date for display
+  const groupedHistory = React.useMemo(() => {
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    const groups: Record<string, typeof history> = {};
+
+    history.forEach((item) => {
+      // Simple grouping by "TODAY" / "YESTERDAY" / "EARLIER"
+      // Since our items don't have full date info, we'll just show them all under "RECENT"
+      const groupKey = 'RECENT';
+      if (!groups[groupKey]) groups[groupKey] = [];
+      groups[groupKey].push(item);
+    });
+
+    return Object.entries(groups).map(([group, items]) => ({ group, items }));
+  }, [history]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Top Nav */}
       <View style={styles.topNav}>
-        <TouchableOpacity onPress={() => {}} style={styles.backBtn}>
+        {/* Issue #4: Fixed back button — was empty `() => {}`, now calls `navigation.goBack()`. */}
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.navTitle}>History</Text>
@@ -26,46 +53,59 @@ export function History() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {HISTORY_DATA.map((group) => (
-          <View key={group.group} style={styles.group}>
-            <View style={styles.groupHeader}>
-              <Text style={styles.groupLabel}>{group.group}</Text>
-              <View style={styles.groupLine} />
+        {groupedHistory.length === 0 ? (
+          <View style={styles.endState}>
+            <View style={styles.endIcon}>
+              <Text style={styles.endIconText}>📋</Text>
             </View>
-            <View style={styles.groupItems}>
-              {group.items.map((item) => (
-                <View key={item.id} style={styles.historyItem}>
-                  <SkeletonImage src={item.img} alt={item.title} className="" />
-                  <View style={styles.historyItemContent}>
-                    <Text style={styles.historyItemTitle}>{item.title}</Text>
-                    <Text style={styles.historyItemMeta}>
-                      {item.time} • {item.category}
-                    </Text>
-                  </View>
-                  {item.status === 'Liked' ? (
-                    <View style={styles.likedBadge}>
-                      <Text style={styles.likedIcon}>❤️</Text>
-                      <Text style={styles.likedText}>Liked</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.skippedBadge}>
-                      <Text style={styles.skippedIcon}>🚫</Text>
-                      <Text style={styles.skippedText}>Skipped</Text>
-                    </View>
-                  )}
-                </View>
-              ))}
-            </View>
+            <Text style={styles.endText}>No history yet. Start swiping!</Text>
           </View>
-        ))}
+        ) : (
+          groupedHistory.map((group) => (
+            <View key={group.group} style={styles.group}>
+              <View style={styles.groupHeader}>
+                <Text style={styles.groupLabel}>{group.group}</Text>
+                <View style={styles.groupLine} />
+              </View>
+              <View style={styles.groupItems}>
+                {group.items.map((item) => (
+                  <View key={`${item.id}-${item.time}`} style={styles.historyItem}>
+                    <View style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden' }}>
+                      <SkeletonImage src={item.img} alt={item.title} />
+                    </View>
+                    <View style={styles.historyItemContent}>
+                      <Text style={styles.historyItemTitle}>{item.title}</Text>
+                      <Text style={styles.historyItemMeta}>
+                        {item.time} • {item.category}
+                      </Text>
+                    </View>
+                    {item.status === 'Liked' ? (
+                      <View style={styles.likedBadge}>
+                        <Text style={styles.likedIcon}>❤️</Text>
+                        <Text style={styles.likedText}>Liked</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.skippedBadge}>
+                        <Text style={styles.skippedIcon}>🚫</Text>
+                        <Text style={styles.skippedText}>Skipped</Text>
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))
+        )}
 
         {/* Empty end state */}
-        <View style={styles.endState}>
-          <View style={styles.endIcon}>
-            <Text style={styles.endIconText}>🔄</Text>
+        {groupedHistory.length > 0 && (
+          <View style={styles.endState}>
+            <View style={styles.endIcon}>
+              <Text style={styles.endIconText}>🔄</Text>
+            </View>
+            <Text style={styles.endText}>No more history to show</Text>
           </View>
-          <Text style={styles.endText}>No more history to show</Text>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

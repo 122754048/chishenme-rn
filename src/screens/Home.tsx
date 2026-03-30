@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
-  PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -16,8 +15,10 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { SWIPE_CARDS, CATEGORIES, NEARBY_ITEMS } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
@@ -26,7 +27,7 @@ import { useApp } from '../context/AppContext';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 100;
 
-type NavProp = NativeStackNavigationProp<any>;
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface CardData {
   id: number;
@@ -40,30 +41,28 @@ interface CardData {
   image: string;
 }
 
+// Issue #3: Replaced PanResponder (JS thread) with Gesture.Pan() (UI thread) for smooth swiping.
 function SwipeCard({ card, onSwipe }: { card: CardData; onSwipe: (dir: 'left' | 'right') => void }) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderMove: (_, gestureState) => {
-      translateX.value = gestureState.dx;
-      translateY.value = gestureState.dy;
-    },
-    onPanResponderRelease: (_, gestureState) => {
-      if (gestureState.dx > SWIPE_THRESHOLD || gestureState.vx > 0.5) {
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      translateX.value = event.translationX;
+      translateY.value = event.translationY;
+    })
+    .onEnd((event) => {
+      if (event.translationX > SWIPE_THRESHOLD || event.velocityX > 500) {
         translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 300 });
         runOnJS(onSwipe)('right');
-      } else if (gestureState.dx < -SWIPE_THRESHOLD || gestureState.vx < -0.5) {
+      } else if (event.translationX < -SWIPE_THRESHOLD || event.velocityX < -500) {
         translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 300 });
         runOnJS(onSwipe)('left');
       } else {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
       }
-    },
-  });
+    });
 
   const cardStyle = useAnimatedStyle(() => {
     const rotate = translateX.value / 15;
@@ -85,60 +84,78 @@ function SwipeCard({ card, onSwipe }: { card: CardData; onSwipe: (dir: 'left' | 
   }));
 
   return (
-    <Animated.View
-      style={[styles.card, cardStyle]}
-      {...panResponder.panHandlers}
-    >
-      {/* LIKE badge */}
-      <Animated.View style={[styles.badgeLike, likeOpacity]}>
-        <Text style={styles.badgeLikeText}>LIKE</Text>
-      </Animated.View>
-      {/* NOPE badge */}
-      <Animated.View style={[styles.badgeNope, nopeOpacity]}>
-        <Text style={styles.badgeNopeText}>NOPE</Text>
-      </Animated.View>
+    <GestureDetector gesture={panGesture}>
+      <Animated.View style={[styles.card, cardStyle]}>
+        {/* LIKE badge */}
+        <Animated.View style={[styles.badgeLike, likeOpacity]}>
+          <Text style={styles.badgeLikeText}>LIKE</Text>
+        </Animated.View>
+        {/* NOPE badge */}
+        <Animated.View style={[styles.badgeNope, nopeOpacity]}>
+          <Text style={styles.badgeNopeText}>NOPE</Text>
+        </Animated.View>
 
-      <View style={styles.cardImage}>
-        <SkeletonImage src={card.image} alt={card.title} />
-        <View style={styles.cardBadges}>
-          <View style={styles.badgePill}>
-            <Text style={styles.badgePillText}>{card.badge}</Text>
-          </View>
-          <View style={styles.ratingBadge}>
-            <Text style={styles.ratingText}>★ {card.rating}</Text>
-          </View>
-        </View>
-      </View>
-      <View style={styles.cardBody}>
-        <View style={styles.cardTitleRow}>
-          <Text style={styles.cardTitle}>{card.title}</Text>
-          <Text style={styles.cardPrice}>{card.price}</Text>
-        </View>
-        <View style={styles.cardMeta}>
-          <Text style={styles.cardMetaText}>📍 {card.restaurant} • {card.distance}</Text>
-        </View>
-        <View style={styles.tagRow}>
-          {card.tags.map((tag) => (
-            <View key={tag} style={styles.tag}>
-              <Text style={styles.tagText}>{tag}</Text>
+        <View style={styles.cardImage}>
+          <SkeletonImage src={card.image} alt={card.title} />
+          <View style={styles.cardBadges}>
+            <View style={styles.badgePill}>
+              <Text style={styles.badgePillText}>{card.badge}</Text>
             </View>
-          ))}
+            <View style={styles.ratingBadge}>
+              <Text style={styles.ratingText}>★ {card.rating}</Text>
+            </View>
+          </View>
         </View>
-      </View>
-    </Animated.View>
+        <View style={styles.cardBody}>
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitle}>{card.title}</Text>
+            <Text style={styles.cardPrice}>{card.price}</Text>
+          </View>
+          <View style={styles.cardMeta}>
+            <Text style={styles.cardMetaText}>📍 {card.restaurant} • {card.distance}</Text>
+          </View>
+          <View style={styles.tagRow}>
+            {card.tags.map((tag) => (
+              <View key={tag} style={styles.tag}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
 export function Home() {
   const navigation = useNavigation<NavProp>();
-  const { recommendationsLeft } = useApp();
+  const { recommendationsLeft, addToHistory } = useApp();
   const [cardIndex, setCardIndex] = useState(0);
+  // Issue #14: Track remaining recommendations locally so it decrements on swipe.
+  const [localRecsLeft, setLocalRecsLeft] = useState(recommendationsLeft);
 
-  const handleSwipe = useCallback(() => {
+  const handleSwipe = useCallback((direction: 'left' | 'right' = 'right') => {
+    const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
+    // Decrement recommendations count (Issue #14)
+    setLocalRecsLeft((prev) => Math.max(0, prev - 1));
+    // Add to history via context
+    addToHistory({
+      id: currentCard.id,
+      title: currentCard.title,
+      img: currentCard.image,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      category: currentCard.tags[0] || 'Other',
+      status: direction === 'right' ? 'Liked' : 'Skipped',
+    });
     setCardIndex((prev) => prev + 1);
-  }, []);
+  }, [cardIndex, addToHistory]);
 
   const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
+
+  // Issue #7: Pass item data when navigating to Detail.
+  const navigateToDetail = (item: { id: number; title: string; image: string }) => {
+    navigation.navigate('Detail', { itemId: item.id, title: item.title, image: item.image });
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -156,7 +173,7 @@ export function Home() {
           <View style={styles.statusLeft}>
             <Text style={styles.zapIcon}>⚡</Text>
             <Text style={styles.statusText}>
-              <Text style={styles.statusBold}>{recommendationsLeft}</Text> recommendations left today
+              <Text style={styles.statusBold}>{localRecsLeft}</Text> recommendations left today
             </Text>
           </View>
           <TouchableOpacity
@@ -177,7 +194,7 @@ export function Home() {
             <TouchableOpacity
               key={cat.label}
               style={styles.categoryItem}
-              onPress={() => navigation.navigate('Explore')}
+              onPress={() => navigation.navigate('MainTabs')}
             >
               <View style={styles.categoryIcon}>
                 <Text style={styles.categoryEmoji}>{cat.icon}</Text>
@@ -204,19 +221,23 @@ export function Home() {
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionBtn, styles.skipBtn]}
-            onPress={() => handleSwipe()}
+            onPress={() => handleSwipe('left')}
           >
             <Text style={styles.skipBtnIcon}>✕</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.infoBtn}
-            onPress={() => navigation.navigate('Detail')}
+            onPress={() => navigateToDetail({
+              id: currentCard.id,
+              title: currentCard.title,
+              image: currentCard.image,
+            })}
           >
             <Text style={styles.infoBtnIcon}>ℹ️</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, styles.likeBtn]}
-            onPress={() => handleSwipe()}
+            onPress={() => handleSwipe('right')}
           >
             <Text style={styles.likeBtnIcon}>❤️</Text>
           </TouchableOpacity>
@@ -226,7 +247,7 @@ export function Home() {
         <View style={styles.nearbySection}>
           <View style={styles.nearbyHeader}>
             <Text style={styles.nearbyTitle}>Nearby Hot</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
+            <TouchableOpacity onPress={() => navigation.navigate('MainTabs')}>
               <Text style={styles.seeAllText}>See all →</Text>
             </TouchableOpacity>
           </View>
@@ -235,7 +256,11 @@ export function Home() {
               <TouchableOpacity
                 key={item.id}
                 style={styles.nearbyItem}
-                onPress={() => navigation.navigate('Detail')}
+                onPress={() => navigateToDetail({
+                  id: item.id,
+                  title: item.title,
+                  image: item.image,
+                })}
               >
                 <View style={{ width: 60, height: 60, borderRadius: 10, overflow: 'hidden' }}>
                   <SkeletonImage src={item.image} alt={item.title} />

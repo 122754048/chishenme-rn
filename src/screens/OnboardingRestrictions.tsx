@@ -3,12 +3,15 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { MEATS, FLAVORS } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 
-type NavProp = NativeStackNavigationProp<any>;
+// Issue #17: Removed unused imports: useAnimatedStyle, withTiming.
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 function RestrictionButton({
   icon,
@@ -42,7 +45,7 @@ function RestrictionButton({
 
 export function OnboardingRestrictions() {
   const navigation = useNavigation<NavProp>();
-  const { setRestrictions } = useApp();
+  const { setRestrictions, completeOnboarding } = useApp();
   const [selected, setSelected] = useState<string[]>(['spicy']);
 
   const toggle = (id: string) => {
@@ -56,13 +59,19 @@ export function OnboardingRestrictions() {
     navigation.navigate('Upgrade');
   };
 
+  // Issue #10: Skip now marks onboarding complete so user doesn't see it again.
+  const handleSkip = async () => {
+    await completeOnboarding();
+    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.skipText} onPress={() => navigation.navigate('MainTabs')}>
+        <Text style={styles.skipText} onPress={handleSkip}>
           Skip
         </Text>
       </View>

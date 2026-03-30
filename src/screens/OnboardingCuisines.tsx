@@ -10,21 +10,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, {
-  useAnimatedStyle,
-  withTiming,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { CUISINES } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 
-type NavProp = NativeStackNavigationProp<any>;
+// Issue #17: Removed unused imports: useAnimatedStyle, withTiming, useSharedValue, withSpring.
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function OnboardingCuisines() {
   const navigation = useNavigation<NavProp>();
-  const { setCuisines } = useApp();
+  const { setCuisines, completeOnboarding } = useApp();
   const [selected, setSelected] = useState<string[]>(['Sichuan', 'Western']);
 
   const toggleSelect = (id: string) => {
@@ -38,20 +36,24 @@ export function OnboardingCuisines() {
     navigation.navigate('OnboardingRestrictions');
   };
 
-  const progressWidth = useSharedValue(33.3);
+  // Issue #9: Skip now marks onboarding complete so user doesn't see it again.
+  const handleSkip = async () => {
+    await completeOnboarding();
+    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View style={{ width: 40 }} />
-        <Text style={styles.skipText} onPress={() => navigation.navigate('MainTabs')}>
+        <Text style={styles.skipText} onPress={handleSkip}>
           Skip
         </Text>
       </View>
 
       <View style={styles.progressContainer}>
         <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressBar, { width: `${33.3}%` }]} />
+          <Animated.View style={[styles.progressBar, { width: '33.3%' }]} />
         </View>
         <Text style={styles.stepLabel}>1/3</Text>
       </View>

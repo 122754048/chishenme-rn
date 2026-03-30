@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { FAVORITES_DATA } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
+import { useApp } from '../context/AppContext';
 
-type NavProp = NativeStackNavigationProp<any>;
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CATEGORIES = ['All', 'Sichuan', 'Japanese', 'Dessert', 'Western'];
 
@@ -21,10 +23,25 @@ export function Favorites() {
   const navigation = useNavigation<NavProp>();
   const [activeCategory, setActiveCategory] = useState('All');
 
+  // Issue #12: Use favorites from AppContext to determine which items to show.
+  // Cross-reference with FAVORITES_DATA (mock catalog) using the favorites list from context.
+  const { favorites, toggleFavorite } = useApp();
+
+  // Show items from FAVORITES_DATA that are in the user's favorites list,
+  // OR show all FAVORITES_DATA if no favorites have been added yet (initial state).
+  const displayData = useMemo(() => {
+    if (favorites.length === 0) return FAVORITES_DATA;
+    return FAVORITES_DATA.filter((item) => favorites.includes(item.id));
+  }, [favorites]);
+
   const filtered =
     activeCategory === 'All'
-      ? FAVORITES_DATA
-      : FAVORITES_DATA.filter((f) => f.category === activeCategory);
+      ? displayData
+      : displayData.filter((f) => f.category === activeCategory);
+
+  const navigateToDetail = (item: { id: number; title: string; image: string }) => {
+    navigation.navigate('Detail', { itemId: item.id, title: item.title, image: item.image });
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -77,7 +94,7 @@ export function Favorites() {
           </Text>
           <TouchableOpacity
             style={styles.exploreBtn}
-            onPress={() => navigation.navigate('Explore')}
+            onPress={() => navigation.navigate('MainTabs')}
           >
             <Text style={styles.exploreBtnText}>Explore Dishes</Text>
           </TouchableOpacity>
@@ -92,12 +109,17 @@ export function Favorites() {
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.gridItem}
-              onPress={() => navigation.navigate('Detail')}
+              onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
             >
               <View style={styles.gridImageWrap}>
-                <SkeletonImage src={item.image} alt={item.title} className="" />
-                <TouchableOpacity style={styles.heartBtn}>
-                  <Text style={styles.heartIcon}>❤️</Text>
+                <SkeletonImage src={item.image} alt={item.title} />
+                <TouchableOpacity
+                  style={styles.heartBtn}
+                  onPress={() => toggleFavorite(item.id)}
+                >
+                  <Text style={styles.heartIcon}>
+                    {favorites.includes(item.id) ? '❤️' : '🤍'}
+                  </Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.gridItemTitle} numberOfLines={2}>

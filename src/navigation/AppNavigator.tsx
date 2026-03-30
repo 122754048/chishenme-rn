@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useApp } from '../context/AppContext';
+import type { RootStackParamList, MainTabParamList } from './types';
 
 import { Home } from '../screens/Home';
 import { Explore } from '../screens/Explore';
@@ -15,34 +16,16 @@ import { Upgrade } from '../screens/Upgrade';
 import { OnboardingCuisines } from '../screens/OnboardingCuisines';
 import { OnboardingRestrictions } from '../screens/OnboardingRestrictions';
 
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<MainTabParamList>();
 
-function TabIcon({ focused, icon }: { focused: boolean; icon: string }) {
+// Issue #2: Removed unused `TabIcon` component (dead code).
+
+// Issue #1: Fixed `TabIconEmoji` — was rendering empty, now renders the emoji text.
+function TabIconEmoji({ emoji }: { emoji: string }) {
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <View
-        style={{
-          transform: [{ scale: focused ? 1.15 : 1 }],
-        }}
-      >
-        <View style={{ alignItems: 'center' }}>
-          <View
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              backgroundColor: focused ? 'transparent' : 'transparent',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <View style={{ transform: [{ scale: 1 }] }}>
-              {/* Using emoji as icons for simplicity */}
-            </View>
-          </View>
-        </View>
-      </View>
+      <Text style={{ fontSize: 18 }}>{emoji}</Text>
     </View>
   );
 }
@@ -163,16 +146,6 @@ function MainTabs() {
         }}
       />
     </Tab.Navigator>
-  );
-}
-
-function TabIconEmoji({ emoji }: { emoji: string }) {
-  return (
-    <View>
-      <View>
-        {/* Text emoji as icon */}
-      </View>
-    </View>
   );
 }
 

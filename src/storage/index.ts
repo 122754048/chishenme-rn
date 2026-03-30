@@ -15,7 +15,8 @@ export const storage = {
 
   async getOnboardingComplete(): Promise<boolean> {
     const val = await AsyncStorage.getItem(KEYS.ONBOARDING_COMPLETE);
-    return val === 'true';
+    if (val === null) return false;
+    return JSON.parse(val) === true;
   },
 
   async setSelectedCuisines(cuisines: string[]): Promise<void> {

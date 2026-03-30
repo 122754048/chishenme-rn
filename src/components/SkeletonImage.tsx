@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, Image, StyleSheet, ViewStyle } from 'react-native';
 
 interface SkeletonImageProps {
   src: string;
   alt: string;
-  className?: string;
+  style?: ViewStyle;
 }
 
-export function SkeletonImage({ src, alt, className = '' }: SkeletonImageProps) {
+// Issue #6: Removed `className` prop (meaningless in RN). Replaced with proper `style` prop.
+export function SkeletonImage({ src, alt, style }: SkeletonImageProps) {
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <View style={[styles.container, className as any]}>
+    <View style={[styles.container, style]}>
       {!loaded && <View style={styles.skeleton} />}
       <Image
         source={{ uri: src }}
         style={[styles.image, loaded ? styles.imageLoaded : styles.imageHidden]}
         onLoad={() => setLoaded(true)}
         resizeMode="cover"
+        accessibilityLabel={alt}
       />
     </View>
   );
@@ -27,10 +29,15 @@ const styles = StyleSheet.create({
   container: {
     position: 'relative',
     overflow: 'hidden',
+    width: '100%',
+    height: '100%',
   },
   skeleton: {
     position: 'absolute',
-    inset: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: '#e5e7eb',
   },
   image: {

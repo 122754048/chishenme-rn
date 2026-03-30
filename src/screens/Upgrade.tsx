@@ -3,11 +3,14 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { useApp } from '../context/AppContext';
 
-type NavProp = NativeStackNavigationProp<any>;
+// Issue #17: Removed unused imports: useAnimatedStyle, withTiming.
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 function PlanCard({
   title,
