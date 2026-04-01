@@ -159,29 +159,29 @@ export function AppNavigator() {
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          animation: 'fade_from_bottom',
+          animation: 'fade',
           animationDuration: 250,
         }}
         initialRouteName={onboardingComplete ? 'MainTabs' : 'OnboardingCuisines'}
       >
         {/* Onboarding flow — slide right for progression feel */}
-        <Stack.Screen name="OnboardingCuisines" component={OnboardingCuisines} options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="OnboardingRestrictions" component={OnboardingRestrictions} options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="Upgrade" component={Upgrade} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="OnboardingCuisines" component={OnboardingCuisines} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
+        <Stack.Screen name="OnboardingRestrictions" component={OnboardingRestrictions} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
+        <Stack.Screen name="Upgrade" component={Upgrade} options={{ animation: 'slide_from_bottom', animationDuration: 350 }} />
 
         {/* Main Tab — fade for root transition */}
         <Stack.Screen name="MainTabs" component={MainTabs} options={{ animation: 'fade' }} />
 
-        {/* Detail pages — slide from bottom for modal feel */}
+        {/* Detail pages — slide from right for detail view */}
         <Stack.Screen
           name="Detail"
           component={Detail}
-          options={{ animation: 'slide_from_bottom' }}
+          options={{ animation: 'slide_from_right', animationDuration: 300 }}
         />
         <Stack.Screen
           name="History"
           component={History}
-          options={{ animation: 'slide_from_right' }}
+          options={{ animation: 'slide_from_right', animationDuration: 300 }}
         />
       </Stack.Navigator>
     </NavigationContainer>
