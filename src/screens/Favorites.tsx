@@ -9,6 +9,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withSpring,
+} from 'react-native-reanimated';
 import { MoreHorizontal, Heart, Star, UtensilsCrossed } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
@@ -19,6 +25,34 @@ import { useApp } from '../context/AppContext';
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CATEGORIES = ['All', 'Sichuan', 'Japanese', 'Dessert', 'Western'];
+
+function AnimatedHeartButton({ isFavorite, onToggle }: { isFavorite: boolean; onToggle: () => void }) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    scale.value = withSequence(
+      withSpring(1.4, { damping: 4, stiffness: 300 }),
+      withSpring(1, { damping: 8, stiffness: 200 })
+    );
+    onToggle();
+  };
+
+  return (
+    <Pressable onPress={handlePress} style={styles.heartBtn}>
+      <Animated.View style={animStyle}>
+        <Heart
+          size={14}
+          color={isFavorite ? theme.colors.error : theme.colors.subtle}
+          fill={isFavorite ? theme.colors.error : 'transparent'}
+          strokeWidth={2}
+        />
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 export function Favorites() {
   const navigation = useNavigation<NavProp>();
@@ -110,17 +144,10 @@ export function Favorites() {
             >
               <View style={styles.gridImageWrap}>
                 <SkeletonImage src={item.image} alt={item.title} />
-                <Pressable
-                  style={({ pressed }) => [styles.heartBtn, pressed && { transform: [{ scale: 1.2 }] }]}
-                  onPress={() => toggleFavorite(item.id)}
-                >
-                  <Heart
-                    size={14}
-                    color={favorites.includes(item.id) ? theme.colors.error : theme.colors.subtle}
-                    fill={favorites.includes(item.id) ? theme.colors.error : 'transparent'}
-                    strokeWidth={2}
-                  />
-                </Pressable>
+                <AnimatedHeartButton
+                  isFavorite={favorites.includes(item.id)}
+                  onToggle={() => toggleFavorite(item.id)}
+                />
               </View>
               <Text style={styles.gridItemTitle} numberOfLines={2}>
                 {item.title}

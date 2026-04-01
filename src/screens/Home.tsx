@@ -130,6 +130,38 @@ function SwipeCard({ card, onSwipe, screenWidth }: { card: CardData; onSwipe: (d
   );
 }
 
+function AnimatedActionBtn({
+  onPress,
+  children,
+  style,
+}: {
+  onPress: () => void;
+  children: React.ReactNode;
+  style?: any;
+}) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    scale.value = withSequence(
+      withSpring(0.85, { damping: 8 }),
+      withSpring(1.1, { damping: 6 }),
+      withSpring(1, { damping: 10 })
+    );
+    onPress();
+  };
+
+  return (
+    <Pressable onPress={handlePress}>
+      <Animated.View style={[style, animStyle]}>
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 export function Home() {
   const navigation = useNavigation<NavProp>();
   const { recommendationsLeft, addToHistory } = useApp();
@@ -221,14 +253,14 @@ export function Home() {
 
         {/* Action Buttons */}
         <View style={styles.actionRow}>
-          <Pressable
-            style={({ pressed }) => [styles.actionBtn, styles.skipBtn, pressed && { transform: [{ scale: 0.92 }] }]}
+          <AnimatedActionBtn
+            style={[styles.actionBtn, styles.skipBtn]}
             onPress={() => handleSwipe('left')}
           >
             <X size={24} color={theme.colors.error} strokeWidth={2.5} />
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.infoBtn, pressed && { transform: [{ scale: 0.92 }] }]}
+          </AnimatedActionBtn>
+          <AnimatedActionBtn
+            style={styles.infoBtn}
             onPress={() => navigateToDetail({
               id: currentCard.id,
               title: currentCard.title,
@@ -236,13 +268,13 @@ export function Home() {
             })}
           >
             <Info size={20} color={theme.colors.muted} strokeWidth={1.8} />
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.actionBtn, styles.likeBtn, pressed && { transform: [{ scale: 0.92 }] }]}
+          </AnimatedActionBtn>
+          <AnimatedActionBtn
+            style={[styles.actionBtn, styles.likeBtn]}
             onPress={() => handleSwipe('right')}
           >
             <Heart size={24} color={theme.colors.primary} fill={theme.colors.primary} strokeWidth={0} />
-          </Pressable>
+          </AnimatedActionBtn>
         </View>
 
         {/* Nearby Hot */}

@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { Home as HomeIcon, Search, Heart, User } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import { theme } from '../theme';
@@ -100,19 +108,50 @@ function MainTabs() {
   );
 }
 
+function LoadingScreen() {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0.6);
+
+  useEffect(() => {
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.12, { duration: 700, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 700, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 700, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.6, { duration: 700, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+  }, []);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <View style={styles.loading}>
+      <Animated.View style={[styles.loadingIconWrap, iconStyle]}>
+        <Text style={styles.loadingIcon}>🍽️</Text>
+      </Animated.View>
+      <Text style={styles.loadingTitle}>ChiShenMe</Text>
+      <Text style={styles.loadingSubtitle}>Deciding what to eat...</Text>
+    </View>
+  );
+}
+
 export function AppNavigator() {
   const { onboardingComplete, isLoading } = useApp();
 
   if (isLoading) {
-    return (
-      <View style={styles.loading}>
-        <View style={styles.loadingIconWrap}>
-          <Text style={styles.loadingIcon}>🍽️</Text>
-        </View>
-        <Text style={styles.loadingTitle}>ChiShenMe</Text>
-        <Text style={styles.loadingSubtitle}>Deciding what to eat...</Text>
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   return (

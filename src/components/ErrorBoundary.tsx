@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { theme } from '../theme';
 
 interface Props {
   children: ReactNode;
@@ -32,14 +33,19 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <Text style={styles.icon}>😵</Text>
+          <View style={styles.iconWrap}>
+            <Text style={styles.icon}>😵</Text>
+          </View>
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.message}>
-            {this.state.error?.message || 'An unexpected error occurred'}
+            {this.state.error?.message || 'An unexpected error occurred. Please try again.'}
           </Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={this.handleRetry}>
+          <Pressable
+            style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+            onPress={this.handleRetry}
+          >
             <Text style={styles.retryText}>Try Again</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       );
     }
@@ -50,43 +56,44 @@ export class ErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: theme.spacing.xl,
+  },
+  iconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.errorLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.md,
   },
   icon: {
-    fontSize: 64,
-    marginBottom: 16,
+    fontSize: 36,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 8,
+    ...theme.typography.h1,
+    color: theme.colors.foreground,
+    marginBottom: theme.spacing.xs,
     textAlign: 'center',
   },
   message: {
-    fontSize: 14,
-    color: '#6b7280',
+    ...theme.typography.body,
+    color: theme.colors.muted,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
+    marginBottom: theme.spacing.lg,
   },
   retryBtn: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radius.full,
+    ...theme.shadows.md,
   },
   retryText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
+    ...theme.typography.h2,
+    color: theme.colors.surface,
   },
 });
