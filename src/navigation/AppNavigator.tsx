@@ -3,7 +3,10 @@ import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Home as HomeIcon, Search, Heart, User } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
+import { theme } from '../theme';
 import type { RootStackParamList, MainTabParamList } from './types';
 
 import { Home } from '../screens/Home';
@@ -19,39 +22,27 @@ import { OnboardingRestrictions } from '../screens/OnboardingRestrictions';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// Issue #2: Removed unused `TabIcon` component (dead code).
-
-// P2: Extracted inline tab icon styles into TabBarIcon component + tabStyles StyleSheet.
-function TabBarIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return (
-    <View style={tabStyles.iconContainer}>
-      <View style={[tabStyles.iconBg, focused && tabStyles.iconBgFocused]}>
-        <View style={focused ? tabStyles.iconScaleFocused : tabStyles.iconScale}>
-          <Text style={tabStyles.emoji}>{emoji}</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          height: 60,
-          backgroundColor: '#ffffff',
-          borderTopWidth: 1,
-          borderTopColor: '#f3f4f6',
-          paddingBottom: 4,
-          paddingTop: 4,
+          height: theme.tabBarHeight + insets.bottom,
+          backgroundColor: theme.colors.surface,
+          borderTopWidth: 0,
+          paddingTop: 8,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          ...theme.shadows.md,
         },
-        tabBarActiveTintColor: '#4CAF50',
-        tabBarInactiveTintColor: '#9ca3af',
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.subtle,
         tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '500',
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 2,
         },
       }}
     >
@@ -60,7 +51,14 @@ function MainTabs() {
         component={Home}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ focused }) => <TabBarIcon emoji="🏠" focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <HomeIcon
+              size={22}
+              color={color}
+              strokeWidth={focused ? 2.2 : 1.8}
+              fill={focused ? theme.colors.primaryLight : 'transparent'}
+            />
+          ),
         }}
       />
       <Tab.Screen
@@ -68,7 +66,9 @@ function MainTabs() {
         component={Explore}
         options={{
           tabBarLabel: 'Explore',
-          tabBarIcon: ({ focused }) => <TabBarIcon emoji="🔍" focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <Search size={22} color={color} strokeWidth={focused ? 2.2 : 1.8} />
+          ),
         }}
       />
       <Tab.Screen
@@ -76,7 +76,14 @@ function MainTabs() {
         component={Favorites}
         options={{
           tabBarLabel: 'Favorites',
-          tabBarIcon: ({ focused }) => <TabBarIcon emoji="❤️" focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <Heart
+              size={22}
+              color={color}
+              strokeWidth={focused ? 2.2 : 1.8}
+              fill={focused ? theme.colors.primary : 'transparent'}
+            />
+          ),
         }}
       />
       <Tab.Screen
@@ -84,7 +91,9 @@ function MainTabs() {
         component={Profile}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ focused }) => <TabBarIcon emoji="👤" focused={focused} />,
+          tabBarIcon: ({ focused, color }) => (
+            <User size={22} color={color} strokeWidth={focused ? 2.2 : 1.8} />
+          ),
         }}
       />
     </Tab.Navigator>
@@ -97,7 +106,9 @@ export function AppNavigator() {
   if (isLoading) {
     return (
       <View style={styles.loading}>
-        <Text style={styles.loadingIcon}>🍽️</Text>
+        <View style={styles.loadingIconWrap}>
+          <Text style={styles.loadingIcon}>🍽️</Text>
+        </View>
         <Text style={styles.loadingTitle}>ChiShenMe</Text>
         <Text style={styles.loadingSubtitle}>Deciding what to eat...</Text>
       </View>
@@ -137,50 +148,29 @@ export function AppNavigator() {
 const styles = StyleSheet.create({
   loading: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loadingIcon: {
-    fontSize: 64,
+  loadingIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
+  loadingIcon: {
+    fontSize: 40,
+  },
   loadingTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#4CAF50',
+    ...theme.typography.display,
+    color: theme.colors.primary,
     marginBottom: 8,
   },
   loadingSubtitle: {
-    fontSize: 14,
-    color: '#9ca3af',
-    fontWeight: '500',
-  },
-});
-
-const tabStyles = StyleSheet.create({
-  iconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconBg: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconBgFocused: {
-    backgroundColor: '#E8F5E9',
-  },
-  iconScale: {
-    transform: [{ scale: 0.95 }],
-  },
-  iconScaleFocused: {
-    transform: [{ scale: 1.1 }],
-  },
-  emoji: {
-    fontSize: 18,
+    ...theme.typography.body,
+    color: theme.colors.subtle,
   },
 });

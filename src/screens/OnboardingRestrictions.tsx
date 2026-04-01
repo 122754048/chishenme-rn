@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated from 'react-native-reanimated';
+import { ArrowLeft, ArrowRight, Info, Plus } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { MEATS, FLAVORS } from '../data/mockData';
 import { useApp } from '../context/AppContext';
-
-// Issue #17: Removed unused imports: useAnimatedStyle, withTiming.
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -25,21 +24,19 @@ function RestrictionButton({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
-      style={[styles.restrictionBtn, isSelected && styles.restrictionBtnSelected]}
+    <Pressable
+      style={({ pressed }) => [
+        styles.restrictionBtn,
+        isSelected && styles.restrictionBtnSelected,
+        pressed && { opacity: 0.85 },
+      ]}
       onPress={onPress}
-      activeOpacity={0.7}
     >
       <Text style={styles.restrictionIcon}>{icon}</Text>
-      <Text
-        style={[
-          styles.restrictionLabel,
-          isSelected && styles.restrictionLabelSelected,
-        ]}
-      >
+      <Text style={[styles.restrictionLabel, isSelected && styles.restrictionLabelSelected]}>
         {label}
       </Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -59,7 +56,6 @@ export function OnboardingRestrictions() {
     navigation.navigate('Upgrade');
   };
 
-  // Issue #10: Skip now marks onboarding complete so user doesn't see it again.
   const handleSkip = async () => {
     await completeOnboarding();
     navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
@@ -68,12 +64,12 @@ export function OnboardingRestrictions() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.skipText} onPress={handleSkip}>
-          Skip
-        </Text>
+        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}>
+          <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
+        </Pressable>
+        <Pressable onPress={handleSkip}>
+          <Text style={styles.skipText}>Skip</Text>
+        </Pressable>
       </View>
 
       <View style={styles.progressContainer}>
@@ -91,7 +87,6 @@ export function OnboardingRestrictions() {
           Tell us about your dietary restrictions or ingredients you'd like to avoid.
         </Text>
 
-        {/* Meats */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>MEATS</Text>
           <View style={styles.grid}>
@@ -107,7 +102,6 @@ export function OnboardingRestrictions() {
           </View>
         </View>
 
-        {/* Flavors & Restrictions */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>FLAVORS & RESTRICTIONS</Text>
           <View style={styles.grid}>
@@ -120,16 +114,16 @@ export function OnboardingRestrictions() {
                 onPress={() => toggle(item.id)}
               />
             ))}
-            <TouchableOpacity style={styles.customBtn} activeOpacity={0.7}>
-              <Text style={styles.customBtnText}>+ Custom</Text>
-            </TouchableOpacity>
+            <Pressable style={({ pressed }) => [styles.customBtn, pressed && { opacity: 0.7 }]}>
+              <Plus size={14} color={theme.colors.subtle} strokeWidth={2} />
+              <Text style={styles.customBtnText}>Custom</Text>
+            </Pressable>
           </View>
         </View>
 
-        {/* Info box */}
         <View style={styles.infoBox}>
           <View style={styles.infoIcon}>
-            <Text style={styles.infoIconText}>ℹ️</Text>
+            <Info size={14} color={theme.colors.primary} strokeWidth={2} />
           </View>
           <View style={styles.infoContent}>
             <Text style={styles.infoTitle}>Why ask this?</Text>
@@ -141,151 +135,117 @@ export function OnboardingRestrictions() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext} activeOpacity={0.8}>
+        <Pressable
+          style={({ pressed }) => [styles.nextButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+          onPress={handleNext}
+        >
           <Text style={styles.nextButtonText}>Next</Text>
-          <Text style={styles.arrowIcon}>→</Text>
-        </TouchableOpacity>
+          <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.surface },
+  container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
   },
   backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  backIcon: { fontSize: 22, color: '#374151' },
-  skipText: { fontSize: 13, color: '#9ca3af', fontWeight: '500' },
+  skipText: { ...theme.typography.caption, color: theme.colors.subtle, fontWeight: '500' },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 24,
-    gap: 8,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    gap: theme.spacing.xs,
   },
-  progressTrack: {
-    flex: 1,
-    height: 4,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: theme.colors.brand,
-    borderRadius: 2,
-  },
-  stepLabel: { fontSize: 11, fontWeight: '700', color: theme.colors.brand },
+  progressTrack: { flex: 1, height: 4, backgroundColor: theme.colors.border, borderRadius: 2, overflow: 'hidden' },
+  progressBar: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 2 },
+  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.primary },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 24 },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: theme.colors.foreground,
-    marginBottom: 8,
-    lineHeight: 34,
-  },
-  subtitle: { fontSize: 14, color: '#6b7280', marginBottom: 24 },
+  scrollContent: { paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg },
+  title: { ...theme.typography.display, color: theme.colors.foreground, marginBottom: theme.spacing.xs },
+  subtitle: { ...theme.typography.body, color: theme.colors.muted, marginBottom: theme.spacing.lg },
   sectionCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    ...theme.shadows.sm,
   },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#9ca3af',
-    letterSpacing: 0.5,
-    marginBottom: 12,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
+  sectionTitle: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.subtle, letterSpacing: 0.5, marginBottom: theme.spacing.sm },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.xs },
   restrictionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radius.md,
     borderWidth: 1.5,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#ffffff',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   restrictionBtnSelected: {
-    backgroundColor: '#2E7D32',
-    borderColor: '#2E7D32',
+    backgroundColor: theme.colors.primaryDark,
+    borderColor: theme.colors.primaryDark,
   },
   restrictionIcon: { fontSize: 16 },
-  restrictionLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-  },
-  restrictionLabelSelected: { color: '#ffffff' },
+  restrictionLabel: { ...theme.typography.body, fontWeight: '500', color: theme.colors.foreground },
+  restrictionLabelSelected: { color: theme.colors.surface },
   customBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radius.md,
     borderWidth: 1.5,
-    borderColor: '#d1d5db',
+    borderColor: theme.colors.subtle,
     borderStyle: 'dashed',
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
   },
-  customBtnText: { fontSize: 14, fontWeight: '500', color: '#9ca3af' },
+  customBtnText: { ...theme.typography.body, fontWeight: '500', color: theme.colors.subtle },
   infoBox: {
     flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
+    backgroundColor: theme.colors.borderLight,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
+    gap: theme.spacing.sm,
     alignItems: 'flex-start',
   },
   infoIcon: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.colors.brandLight,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  infoIconText: { fontSize: 14 },
   infoContent: { flex: 1 },
-  infoTitle: { fontSize: 12, fontWeight: '700', color: theme.colors.foreground, marginBottom: 4 },
-  infoBody: { fontSize: 11, color: '#6b7280', lineHeight: 16 },
+  infoTitle: { ...theme.typography.caption, fontWeight: '700', color: theme.colors.foreground, marginBottom: 4 },
+  infoBody: { ...theme.typography.caption, color: theme.colors.muted, lineHeight: 18 },
   footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: theme.colors.borderLight,
   },
   nextButton: {
-    backgroundColor: theme.colors.brandAccent,
-    borderRadius: 30,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.full,
     paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
-  nextButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '700' },
-  arrowIcon: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
+  nextButtonText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.surface },
 });

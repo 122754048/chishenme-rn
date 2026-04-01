@@ -2,7 +2,7 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
   useWindowDimensions,
@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { useAnimatedStyle, useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
+import { ArrowLeft, Share2, Heart, Zap, Clock, UtensilsCrossed, Star, Plus } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { SkeletonImage } from '../components/SkeletonImage';
@@ -38,12 +39,10 @@ const PAIRINGS = [
 export function Detail() {
   const navigation = useNavigation<NavProp>();
   const { width: screenWidth } = useWindowDimensions();
-  // Issue #7: Receive navigation params for the item.
   const route = useRoute<DetailRouteProp>();
-  const { title: itemTitle, image: itemImage } = route.params ?? { title: 'Salmon Energy Bowl', image: 'https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=1080' };
+  const itemTitle = route.params?.title ?? 'Salmon Energy Bowl';
+  const itemImage = route.params?.image ?? 'https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=1080';
 
-  // Issue #8: Use Reanimated shared value for scroll position instead of useState
-  // to avoid re-rendering the entire component on every scroll event.
   const scrollY = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -52,11 +51,10 @@ export function Detail() {
     },
   });
 
-  // Animated nav bar opacity (becomes opaque after scrolling past hero)
   const navBarStyle = useAnimatedStyle(() => {
     const opacity = Math.min(1, Math.max(0, (scrollY.value - 100) / 80));
     return {
-      backgroundColor: `rgba(245,245,245,${opacity})`,
+      backgroundColor: `rgba(250,250,248,${opacity})`,
     };
   });
 
@@ -67,7 +65,6 @@ export function Detail() {
     };
   });
 
-  // Issue #8: Parallax effect uses Animated.View + useAnimatedStyle (UI thread).
   const heroImageStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -79,25 +76,25 @@ export function Detail() {
 
   return (
     <View style={styles.container}>
-      {/* Custom Nav Bar */}
+      {/* Overlay Nav Bar */}
       <SafeAreaView edges={['top']} style={styles.navBarOuter}>
         <Animated.View style={[styles.navBar, navBarStyle]}>
-          <TouchableOpacity style={styles.navBackBtn} onPress={() => navigation.goBack()}>
-            <Animated.View style={[styles.backCircle, navBtnStyle]}>
-              <Text style={{ fontSize: 18 }}>←</Text>
+          <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]} onPress={() => navigation.goBack()}>
+            <Animated.View style={[styles.navCircle, navBtnStyle]}>
+              <ArrowLeft size={18} color="#FFFFFF" strokeWidth={2} />
             </Animated.View>
-          </TouchableOpacity>
+          </Pressable>
           <View style={styles.navRight}>
-            <TouchableOpacity>
-              <Animated.View style={[styles.navIconBtn, navBtnStyle]}>
-                <Text style={{ fontSize: 14 }}>↗</Text>
+            <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+              <Animated.View style={[styles.navCircle, navBtnStyle]}>
+                <Share2 size={16} color="#FFFFFF" strokeWidth={2} />
               </Animated.View>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Animated.View style={[styles.navIconBtn, navBtnStyle]}>
-                <Text style={{ fontSize: 14 }}>❤️</Text>
+            </Pressable>
+            <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+              <Animated.View style={[styles.navCircle, navBtnStyle]}>
+                <Heart size={16} color="#FFFFFF" strokeWidth={2} />
               </Animated.View>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </Animated.View>
       </SafeAreaView>
@@ -111,12 +108,8 @@ export function Detail() {
         {/* Hero Image with parallax */}
         <View style={styles.heroWrap}>
           <Animated.View style={[styles.heroImage, { width: screenWidth, height: 360 }, heroImageStyle]}>
-            <SkeletonImage
-              src={itemImage}
-              alt={itemTitle}
-            />
+            <SkeletonImage src={itemImage} alt={itemTitle} />
           </Animated.View>
-          <View style={styles.heroGradient} />
         </View>
 
         {/* Content */}
@@ -131,7 +124,7 @@ export function Detail() {
               </View>
             </View>
             <View style={styles.aiBadge}>
-              <Text style={styles.aiBadgeIcon}>⚡</Text>
+              <Zap size={12} color={theme.colors.primary} fill={theme.colors.primary} />
               <Text style={styles.aiBadgeText}>AI Nutrition Analysis</Text>
             </View>
             <Text style={styles.aiDescription}>
@@ -160,9 +153,9 @@ export function Detail() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Best Pairings</Text>
-              <TouchableOpacity>
+              <Pressable>
                 <Text style={styles.viewMore}>View More</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pairingsScroll}>
               {PAIRINGS.map((p) => (
@@ -185,19 +178,19 @@ export function Detail() {
             <Text style={styles.sectionTitle}>Meal Prep Details</Text>
             <View style={styles.mealPrepCard}>
               <View style={styles.mealPrepRow}>
-                <View style={styles.mealPrepIconWrap}>
-                  <Text style={styles.mealPrepIcon}>⏱️</Text>
+                <View style={[styles.mealPrepIconWrap, { backgroundColor: theme.colors.warningLight }]}>
+                  <Clock size={16} color={theme.colors.warning} strokeWidth={2} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.mealPrepRowTitle}>Preparation Time</Text>
                   <Text style={styles.mealPrepRowBody}>Estimated 15-20 mins.</Text>
                 </View>
               </View>
               <View style={styles.mealPrepRow}>
-                <View style={[styles.mealPrepIconWrap, { backgroundColor: theme.colors.brandLight }]}>
-                  <Text style={styles.mealPrepIcon}>🍽️</Text>
+                <View style={[styles.mealPrepIconWrap, { backgroundColor: theme.colors.primaryLight }]}>
+                  <UtensilsCrossed size={16} color={theme.colors.primary} strokeWidth={2} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.mealPrepRowTitle}>Chef's Tip</Text>
                   <Text style={styles.mealPrepRowBody}>Raw salmon should be consumed within 30 minutes for best freshness.</Text>
                 </View>
@@ -212,20 +205,20 @@ export function Detail() {
       {/* Floating Action Bar */}
       <SafeAreaView edges={['bottom']} style={styles.actionBar}>
         <View>
-          <Text style={styles.estimatedLabel}>Estimated Total</Text>
+          <Text style={styles.estimatedLabel}>ESTIMATED TOTAL</Text>
           <Text style={styles.estimatedPrice}>¥ 68.00</Text>
         </View>
-        <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addButtonIcon}>+</Text>
+        <Pressable style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}>
+          <Plus size={18} color={theme.colors.surface} strokeWidth={2.5} />
           <Text style={styles.addButtonText}>Add to My Menu</Text>
-        </TouchableOpacity>
+        </Pressable>
       </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.surface },
+  container: { flex: 1, backgroundColor: theme.colors.background },
   navBarOuter: {
     position: 'absolute',
     top: 0,
@@ -237,157 +230,115 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.xs,
   },
-  navBackBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  backCircle: {
+  navCircle: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: theme.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navRight: { flexDirection: 'row', gap: 8 },
-  navIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  navRight: { flexDirection: 'row', gap: theme.spacing.xs },
   scrollView: { flex: 1 },
   heroWrap: { height: 360, overflow: 'hidden', position: 'relative' },
   heroImage: {},
-  heroGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 120,
-    backgroundColor: 'transparent',
-  },
-  content: { paddingHorizontal: 16, marginTop: -16 },
+  content: { paddingHorizontal: theme.spacing.md, marginTop: -theme.spacing.md },
   titleCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 2,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    ...theme.shadows.md,
   },
-  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  dishTitle: { fontSize: 22, fontWeight: '700', color: theme.colors.foreground, lineHeight: 30, flex: 1 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: theme.spacing.sm },
+  dishTitle: { fontSize: 22, lineHeight: 30, fontWeight: '700', color: theme.colors.foreground, flex: 1 },
   calorieBadge: {
-    backgroundColor: '#81C784',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    backgroundColor: theme.colors.success,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.sm,
     paddingVertical: 6,
     alignItems: 'center',
   },
-  calorieNum: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
-  calorieUnit: { fontSize: 9, color: '#ffffff', fontWeight: '600' },
-  aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 10 },
-  aiBadgeIcon: { fontSize: 12 },
-  aiBadgeText: { fontSize: 12, color: theme.colors.brand, fontWeight: '600' },
-  aiDescription: { fontSize: 13, color: '#6b7280', lineHeight: 20 },
-  section: { marginBottom: 20 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.foreground, marginBottom: 12 },
-  viewMore: { fontSize: 12, color: theme.colors.brand, fontWeight: '500' },
-  nutriGrid: { flexDirection: 'row', gap: 10 },
+  calorieNum: { ...theme.typography.h2, fontWeight: '700', color: theme.colors.surface },
+  calorieUnit: { ...theme.typography.micro, color: theme.colors.surface },
+  aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: theme.spacing.xs },
+  aiBadgeText: { ...theme.typography.caption, color: theme.colors.primary, fontWeight: '600' },
+  aiDescription: { ...theme.typography.body, color: theme.colors.muted, lineHeight: 20 },
+  section: { marginBottom: theme.spacing.lg },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.sm },
+  sectionTitle: { ...theme.typography.h2, color: theme.colors.foreground, marginBottom: theme.spacing.sm },
+  viewMore: { ...theme.typography.caption, color: theme.colors.primary, fontWeight: '500' },
+  nutriGrid: { flexDirection: 'row', gap: theme.spacing.xs },
   nutriCard: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    ...theme.shadows.sm,
   },
-  nutriLabel: { fontSize: 11, color: '#9ca3af', marginBottom: 4 },
-  nutriValue: { fontSize: 17, fontWeight: '700', color: theme.colors.foreground },
-  pairingsScroll: { paddingRight: 16, gap: 12 },
+  nutriLabel: { ...theme.typography.caption, color: theme.colors.subtle, marginBottom: 4 },
+  nutriValue: { fontSize: 17, lineHeight: 24, fontWeight: '700', color: theme.colors.foreground },
+  pairingsScroll: { paddingRight: theme.spacing.md, gap: theme.spacing.sm },
   pairingCard: { width: 140 },
-  pairingImageWrap: { height: 140, borderRadius: 14, overflow: 'hidden', marginBottom: 8, position: 'relative' },
+  pairingImageWrap: { height: 140, borderRadius: theme.radius.md, overflow: 'hidden', marginBottom: theme.spacing.xs, position: 'relative' },
   pairingBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    top: theme.spacing.xs,
+    right: theme.spacing.xs,
+    backgroundColor: 'rgba(255,255,255,0.92)',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: theme.radius.sm,
   },
-  pairingBadgeText: { fontSize: 9, fontWeight: '700', color: theme.colors.foreground },
-  pairingTitle: { fontSize: 13, fontWeight: '600', color: theme.colors.foreground, marginBottom: 2 },
-  pairingPrice: { fontSize: 12, color: '#9ca3af' },
+  pairingBadgeText: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.foreground },
+  pairingTitle: { ...theme.typography.body, fontWeight: '600', color: theme.colors.foreground, marginBottom: 2 },
+  pairingPrice: { ...theme.typography.caption, color: theme.colors.subtle },
   mealPrepCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 16,
-    gap: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    gap: theme.spacing.md,
+    ...theme.shadows.sm,
   },
-  mealPrepRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  mealPrepRow: { flexDirection: 'row', gap: theme.spacing.sm, alignItems: 'flex-start' },
   mealPrepIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.brandAccentLight,
+    borderRadius: theme.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mealPrepIcon: { fontSize: 16 },
-  mealPrepRowTitle: { fontSize: 13, fontWeight: '700', color: theme.colors.foreground, marginBottom: 2 },
-  mealPrepRowBody: { fontSize: 11, color: '#9ca3af', lineHeight: 16 },
+  mealPrepRowTitle: { ...theme.typography.body, fontWeight: '700', color: theme.colors.foreground, marginBottom: 2 },
+  mealPrepRowBody: { ...theme.typography.caption, color: theme.colors.subtle, lineHeight: 18 },
   bottomPadding: { height: 100 },
   actionBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    backgroundColor: theme.colors.surface,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
     paddingBottom: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
+    ...theme.shadows.lg,
   },
-  estimatedLabel: { fontSize: 10, color: '#9ca3af', fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
-  estimatedPrice: { fontSize: 20, fontWeight: '700', color: theme.colors.foreground, marginTop: 2 },
+  estimatedLabel: { ...theme.typography.micro, color: theme.colors.subtle, letterSpacing: 0.5 },
+  estimatedPrice: { ...theme.typography.h1, color: theme.colors.foreground, marginTop: 2 },
   addButton: {
-    backgroundColor: theme.colors.brandAccent,
-    borderRadius: 30,
-    paddingHorizontal: 24,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.full,
+    paddingHorizontal: theme.spacing.lg,
     height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    ...theme.shadows.md,
   },
-  addButtonIcon: { fontSize: 18, color: '#ffffff', fontWeight: '600' },
-  addButtonText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  addButtonText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.surface },
 });

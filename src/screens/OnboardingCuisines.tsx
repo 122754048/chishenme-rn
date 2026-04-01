@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
   Image,
@@ -11,12 +11,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated from 'react-native-reanimated';
+import { Check, Circle, ArrowRight } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { CUISINES } from '../data/mockData';
 import { useApp } from '../context/AppContext';
-
-// Issue #17: Removed unused imports: useAnimatedStyle, withTiming, useSharedValue, withSpring.
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -36,7 +35,6 @@ export function OnboardingCuisines() {
     navigation.navigate('OnboardingRestrictions');
   };
 
-  // Issue #9: Skip now marks onboarding complete so user doesn't see it again.
   const handleSkip = async () => {
     await completeOnboarding();
     navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
@@ -46,9 +44,9 @@ export function OnboardingCuisines() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View style={{ width: 40 }} />
-        <Text style={styles.skipText} onPress={handleSkip}>
-          Skip
-        </Text>
+        <Pressable onPress={handleSkip}>
+          <Text style={styles.skipText}>Skip</Text>
+        </Pressable>
       </View>
 
       <View style={styles.progressContainer}>
@@ -68,14 +66,14 @@ export function OnboardingCuisines() {
           {CUISINES.map((item) => {
             const isSelected = selected.includes(item.id);
             return (
-              <TouchableOpacity
+              <Pressable
                 key={item.id}
-                style={[
+                style={({ pressed }) => [
                   styles.cuisineCard,
                   isSelected && styles.cuisineCardSelected,
+                  pressed && { opacity: 0.85 },
                 ]}
                 onPress={() => toggleSelect(item.id)}
-                activeOpacity={0.7}
               >
                 <View style={styles.cuisineLeft}>
                   <Text style={styles.cuisineIcon}>{item.icon}</Text>
@@ -90,12 +88,14 @@ export function OnboardingCuisines() {
                 </View>
                 <View style={styles.checkmark}>
                   {isSelected ? (
-                    <Text style={styles.checkmarkIcon}>✓</Text>
+                    <View style={styles.checkmarkFilled}>
+                      <Check size={14} color={theme.colors.surface} strokeWidth={3} />
+                    </View>
                   ) : (
-                    <View style={styles.circleEmpty} />
+                    <Circle size={20} color={theme.colors.subtle} strokeWidth={1.5} />
                   )}
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>
@@ -114,180 +114,96 @@ export function OnboardingCuisines() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext} activeOpacity={0.8}>
+        <Pressable
+          style={({ pressed }) => [styles.nextButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+          onPress={handleNext}
+        >
           <Text style={styles.nextButtonText}>Next</Text>
-          <Text style={styles.arrowIcon}>→</Text>
-        </TouchableOpacity>
+          <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.surface,
-  },
+  container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
   },
-  skipText: {
-    fontSize: 13,
-    color: '#9ca3af',
-    fontWeight: '500',
-  },
+  skipText: { ...theme.typography.caption, color: theme.colors.subtle, fontWeight: '500' },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 24,
-    gap: 8,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    gap: theme.spacing.xs,
   },
-  progressTrack: {
-    flex: 1,
-    height: 4,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: theme.colors.brand,
-    borderRadius: 2,
-  },
-  stepLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: theme.colors.brand,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: theme.colors.foreground,
-    marginBottom: 8,
-    lineHeight: 34,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 24,
-  },
-  cuisineGrid: {
-    gap: 10,
-    marginBottom: 24,
-  },
+  progressTrack: { flex: 1, height: 4, backgroundColor: theme.colors.border, borderRadius: 2, overflow: 'hidden' },
+  progressBar: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 2 },
+  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.primary },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg },
+  title: { ...theme.typography.display, color: theme.colors.foreground, marginBottom: theme.spacing.xs },
+  subtitle: { ...theme.typography.body, color: theme.colors.muted, marginBottom: theme.spacing.lg },
+  cuisineGrid: { gap: theme.spacing.xs, marginBottom: theme.spacing.lg },
   cuisineCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     borderWidth: 1.5,
     borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    ...theme.shadows.sm,
   },
   cuisineCardSelected: {
-    backgroundColor: theme.colors.brandLight,
-    borderColor: theme.colors.brand,
+    backgroundColor: theme.colors.primaryLight,
+    borderColor: theme.colors.primary,
   },
-  cuisineLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  cuisineIcon: {
-    fontSize: 18,
-  },
-  cuisineLabel: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#374151',
-  },
-  cuisineLabelSelected: {
-    color: theme.colors.brandDark,
-    fontWeight: '600',
-  },
-  checkmark: {
-    width: 24,
-    height: 24,
+  cuisineLeft: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+  cuisineIcon: { fontSize: 18 },
+  cuisineLabel: { ...theme.typography.body, fontWeight: '500', color: theme.colors.foreground },
+  cuisineLabelSelected: { color: theme.colors.primaryDark, fontWeight: '600' },
+  checkmark: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  checkmarkFilled: {
+    width: 22,
+    height: 22,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkmarkIcon: {
-    fontSize: 16,
-    color: theme.colors.brand,
-    fontWeight: '700',
-  },
-  circleEmpty: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#d1d5db',
-  },
-  banner: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    height: 128,
-  },
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
+  banner: { borderRadius: theme.radius.lg, overflow: 'hidden', height: 128 },
+  bannerImage: { width: '100%', height: '100%', position: 'absolute' },
   bannerOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'flex-end',
-    padding: 16,
+    padding: theme.spacing.md,
   },
-  bannerText: {
-    fontSize: 12,
-    color: '#ffffff',
-    fontWeight: '500',
-    lineHeight: 18,
-  },
+  bannerText: { ...theme.typography.caption, color: theme.colors.surface, fontWeight: '500', lineHeight: 18 },
   footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: theme.colors.borderLight,
   },
   nextButton: {
-    backgroundColor: theme.colors.brandAccent,
-    borderRadius: 30,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.full,
     paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
-  nextButtonText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  arrowIcon: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  nextButtonText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.surface },
 });

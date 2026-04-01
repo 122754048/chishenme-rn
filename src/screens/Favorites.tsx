@@ -2,13 +2,14 @@ import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MoreHorizontal, Heart, Star, UtensilsCrossed } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { FAVORITES_DATA } from '../data/mockData';
@@ -22,13 +23,8 @@ const CATEGORIES = ['All', 'Sichuan', 'Japanese', 'Dessert', 'Western'];
 export function Favorites() {
   const navigation = useNavigation<NavProp>();
   const [activeCategory, setActiveCategory] = useState('All');
-
-  // Issue #12: Use favorites from AppContext to determine which items to show.
-  // Cross-reference with FAVORITES_DATA (mock catalog) using the favorites list from context.
   const { favorites, toggleFavorite } = useApp();
 
-  // Show items from FAVORITES_DATA that are in the user's favorites list,
-  // OR show all FAVORITES_DATA if no favorites have been added yet (initial state).
   const displayData = useMemo(() => {
     if (favorites.length === 0) return FAVORITES_DATA;
     return FAVORITES_DATA.filter((item) => favorites.includes(item.id));
@@ -45,13 +41,13 @@ export function Favorites() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav */}
+      {/* Top Nav — Page mode */}
       <View style={styles.topNav}>
         <View style={{ width: 40 }} />
         <Text style={styles.navTitle}>My Favorites</Text>
-        <TouchableOpacity style={styles.moreBtn}>
-          <Text style={styles.moreIcon}>⋯</Text>
-        </TouchableOpacity>
+        <Pressable style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}>
+          <MoreHorizontal size={20} color={theme.colors.muted} strokeWidth={1.8} />
+        </Pressable>
       </View>
 
       {/* Category Tabs */}
@@ -63,10 +59,11 @@ export function Favorites() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabList}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
+            <Pressable
+              style={({ pressed }) => [
                 styles.tabPill,
                 activeCategory === item && styles.tabPillActive,
+                pressed && { opacity: 0.85 },
               ]}
               onPress={() => setActiveCategory(item)}
             >
@@ -78,7 +75,7 @@ export function Favorites() {
               >
                 {item}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
         />
       </View>
@@ -86,18 +83,18 @@ export function Favorites() {
       {filtered.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
-            <Text style={styles.emptyIconText}>🍽️</Text>
+            <UtensilsCrossed size={36} color={theme.colors.primary} strokeWidth={1.5} />
           </View>
           <Text style={styles.emptyTitle}>No favorites here yet</Text>
           <Text style={styles.emptyBody}>
             Start exploring and save your favorite dishes to see them here.
           </Text>
-          <TouchableOpacity
-            style={styles.exploreBtn}
+          <Pressable
+            style={({ pressed }) => [styles.exploreBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
             onPress={() => navigation.navigate('MainTabs')}
           >
             <Text style={styles.exploreBtnText}>Explore Dishes</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       ) : (
         <FlatList
@@ -107,28 +104,32 @@ export function Favorites() {
           contentContainerStyle={styles.gridContent}
           columnWrapperStyle={styles.gridRow}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.gridItem}
+            <Pressable
+              style={({ pressed }) => [styles.gridItem, pressed && { opacity: 0.85 }]}
               onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
             >
               <View style={styles.gridImageWrap}>
                 <SkeletonImage src={item.image} alt={item.title} />
-                <TouchableOpacity
-                  style={styles.heartBtn}
+                <Pressable
+                  style={({ pressed }) => [styles.heartBtn, pressed && { transform: [{ scale: 1.2 }] }]}
                   onPress={() => toggleFavorite(item.id)}
                 >
-                  <Text style={styles.heartIcon}>
-                    {favorites.includes(item.id) ? '❤️' : '🤍'}
-                  </Text>
-                </TouchableOpacity>
+                  <Heart
+                    size={14}
+                    color={favorites.includes(item.id) ? theme.colors.error : theme.colors.subtle}
+                    fill={favorites.includes(item.id) ? theme.colors.error : 'transparent'}
+                    strokeWidth={2}
+                  />
+                </Pressable>
               </View>
               <Text style={styles.gridItemTitle} numberOfLines={2}>
                 {item.title}
               </Text>
               <View style={styles.gridItemMeta}>
-                <Text style={styles.gridItemRating}>★ {item.rating} ({item.reviews})</Text>
+                <Star size={10} color={theme.colors.star} fill={theme.colors.star} />
+                <Text style={styles.gridItemRating}>{item.rating} ({item.reviews})</Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           )}
         />
       )}
@@ -137,103 +138,96 @@ export function Favorites() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.surface },
+  container: { flex: 1, backgroundColor: theme.colors.background },
   topNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: theme.spacing.md,
+    height: theme.topNavHeight,
+    backgroundColor: theme.colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: theme.colors.borderLight,
   },
-  navTitle: { fontSize: 16, fontWeight: '600', color: theme.colors.foreground },
+  navTitle: { ...theme.typography.h2, color: theme.colors.foreground },
   moreBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
-  moreIcon: { fontSize: 18, color: '#6b7280' },
   tabBar: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 10,
+    backgroundColor: theme.colors.surface,
+    paddingVertical: theme.spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    borderBottomColor: theme.colors.borderLight,
   },
-  tabList: { paddingHorizontal: 16, gap: 8 },
+  tabList: { paddingHorizontal: theme.spacing.md, gap: theme.spacing.xs },
   tabPill: {
-    paddingHorizontal: 14,
+    paddingHorizontal: theme.spacing.md,
     paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    marginRight: 8,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.borderLight,
   },
-  tabPillActive: { backgroundColor: theme.colors.brand },
-  tabPillText: { fontSize: 13, fontWeight: '500', color: '#6b7280' },
-  tabPillTextActive: { color: '#ffffff' },
-  gridContent: { padding: 16, gap: 12 },
+  tabPillActive: { backgroundColor: theme.colors.primary },
+  tabPillText: { ...theme.typography.caption, fontWeight: '500', color: theme.colors.muted },
+  tabPillTextActive: { color: theme.colors.surface },
+  gridContent: { padding: theme.spacing.md, gap: theme.spacing.sm },
   gridRow: { justifyContent: 'space-between' },
-  gridItem: { width: '48%', marginBottom: 16 },
+  gridItem: { width: '48%', marginBottom: theme.spacing.md },
   gridImageWrap: {
     height: 150,
-    borderRadius: 14,
+    borderRadius: theme.radius.md,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: theme.spacing.xs,
     position: 'relative',
   },
   heartBtn: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: theme.spacing.xs,
+    right: theme.spacing.xs,
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: theme.radius.full,
+    backgroundColor: 'rgba(255,255,255,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heartIcon: { fontSize: 14 },
   gridItemTitle: {
-    fontSize: 13,
+    ...theme.typography.body,
     fontWeight: '600',
     color: theme.colors.foreground,
-    lineHeight: 18,
     marginBottom: 4,
   },
-  gridItemMeta: { flexDirection: 'row', alignItems: 'center' },
-  gridItemRating: { fontSize: 11, color: '#9ca3af' },
+  gridItemMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  gridItemRating: { ...theme.typography.caption, color: theme.colors.subtle },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: theme.spacing.xl,
   },
   emptyIcon: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: theme.colors.brandLight,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: theme.spacing.md,
   },
-  emptyIconText: { fontSize: 36 },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    ...theme.typography.h1,
     color: theme.colors.foreground,
-    marginBottom: 8,
+    marginBottom: theme.spacing.xs,
     textAlign: 'center',
   },
   emptyBody: {
-    fontSize: 14,
-    color: '#9ca3af',
+    ...theme.typography.body,
+    color: theme.colors.subtle,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
+    marginBottom: theme.spacing.lg,
   },
   exploreBtn: {
-    backgroundColor: theme.colors.brand,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 30,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.radius.full,
   },
-  exploreBtnText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  exploreBtnText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.surface },
 });

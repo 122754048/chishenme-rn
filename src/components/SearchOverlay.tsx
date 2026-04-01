@@ -3,12 +3,13 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   Modal,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Search, X, Clock, TrendingUp } from 'lucide-react-native';
 import { theme } from '../theme';
 
 interface SearchOverlayProps {
@@ -28,7 +29,6 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
     const trimmed = query.trim();
     if (trimmed.length > 0) {
       onSearch?.(trimmed);
-      // Add to recent searches (avoid duplicates, keep at top)
       setRecentSearches((prev) => [trimmed, ...prev.filter((s) => s !== trimmed)].slice(0, 10));
     }
   };
@@ -42,11 +42,11 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.header}>
           <View style={styles.searchBar}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Search size={16} color={theme.colors.subtle} strokeWidth={1.8} />
             <TextInput
               style={styles.input}
               placeholder="Search for food or restaurants"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={theme.colors.subtle}
               value={query}
               onChangeText={setQuery}
               autoFocus
@@ -54,52 +54,52 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
               onSubmitEditing={handleSubmit}
             />
             {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery('')}>
-                <Text style={styles.clearBtn}>✕</Text>
-              </TouchableOpacity>
+              <Pressable onPress={() => setQuery('')} style={({ pressed }) => [pressed && { opacity: 0.5 }]}>
+                <X size={14} color={theme.colors.subtle} strokeWidth={2} />
+              </Pressable>
             )}
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
+          <Pressable onPress={onClose} style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]}>
             <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <View style={styles.content}>
-          {/* Recent Searches */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Recent Searches</Text>
-              <TouchableOpacity onPress={handleClearRecent}>
+              <Pressable onPress={handleClearRecent}>
                 <Text style={styles.clearAll}>Clear</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
             {recentSearches.map((term) => (
-              <TouchableOpacity
+              <Pressable
                 key={term}
-                style={styles.recentItem}
+                style={({ pressed }) => [styles.recentItem, pressed && { backgroundColor: theme.colors.borderLight }]}
                 onPress={() => setQuery(term)}
               >
-                <Text style={styles.clockIcon}>🕐</Text>
+                <Clock size={14} color={theme.colors.subtle} strokeWidth={1.8} />
                 <Text style={styles.recentText}>{term}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
 
-          {/* Trending */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.trendingIcon}>📈</Text>
-              <Text style={styles.sectionTitle}>Trending Now</Text>
+              <View style={styles.trendingHeader}>
+                <TrendingUp size={14} color={theme.colors.primary} strokeWidth={2} />
+                <Text style={styles.sectionTitle}>Trending Now</Text>
+              </View>
             </View>
             <View style={styles.tagContainer}>
               {TRENDING_TAGS.map((tag) => (
-                <TouchableOpacity
+                <Pressable
                   key={tag}
-                  style={styles.tag}
+                  style={({ pressed }) => [styles.tag, pressed && { backgroundColor: theme.colors.border }]}
                   onPress={() => setQuery(tag)}
                 >
                   <Text style={styles.tagText}>{tag}</Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -110,110 +110,62 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
+  container: { flex: 1, backgroundColor: theme.colors.surface },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-    gap: 12,
+    borderBottomColor: theme.colors.borderLight,
+    gap: theme.spacing.sm,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    backgroundColor: theme.colors.borderLight,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.sm,
     height: 40,
-    gap: 8,
+    gap: theme.spacing.xs,
   },
-  searchIcon: {
-    fontSize: 14,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: '#374151',
-  },
-  clearBtn: {
-    fontSize: 12,
-    color: '#9ca3af',
-  },
-  cancelBtn: {
-    paddingHorizontal: 4,
-  },
-  cancelText: {
-    fontSize: 15,
-    color: theme.colors.brand,
-    fontWeight: '500',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  section: {
-    marginBottom: 24,
-  },
+  input: { flex: 1, ...theme.typography.body, color: theme.colors.foreground },
+  cancelBtn: { paddingHorizontal: 4 },
+  cancelText: { ...theme.typography.body, color: theme.colors.primary, fontWeight: '500' },
+  content: { flex: 1, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.md },
+  section: { marginBottom: theme.spacing.lg },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: theme.spacing.xs,
   },
   sectionTitle: {
-    fontSize: 11,
+    ...theme.typography.micro,
     fontWeight: '700',
-    color: '#9ca3af',
+    color: theme.colors.subtle,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  clearAll: {
-    fontSize: 12,
-    color: theme.colors.brand,
-    fontWeight: '500',
-  },
-  trendingIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
+  clearAll: { ...theme.typography.caption, color: theme.colors.primary, fontWeight: '500' },
+  trendingHeader: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   recentItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#fafafa',
-    gap: 12,
+    borderBottomColor: theme.colors.borderLight,
+    gap: theme.spacing.sm,
   },
-  clockIcon: {
-    fontSize: 14,
-  },
-  recentText: {
-    fontSize: 15,
-    color: '#374151',
-  },
-  tagContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
-  },
+  recentText: { ...theme.typography.body, color: theme.colors.foreground },
+  tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.xs, marginTop: 4 },
   tag: {
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 12,
+    backgroundColor: theme.colors.borderLight,
+    paddingHorizontal: theme.spacing.sm,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: theme.radius.full,
   },
-  tagText: {
-    fontSize: 14,
-    color: '#4b5563',
-    fontWeight: '500',
-  },
+  tagText: { ...theme.typography.body, color: '#4B5563', fontWeight: '500' },
 });

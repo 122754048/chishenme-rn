@@ -1,14 +1,13 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated from 'react-native-reanimated';
+import { ArrowLeft, ArrowRight, Zap, Shield, Check, Lock, CreditCard } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { useApp } from '../context/AppContext';
-
-// Issue #17: Removed unused imports: useAnimatedStyle, withTiming.
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,16 +25,27 @@ function PlanCard({
   subtitle: string;
   price: string;
   priceSuffix?: string;
-  features: Array<{ icon?: string; text: string; iconType?: 'zap' | 'shield' | 'check' }>;
+  features: Array<{ text: string; iconType?: 'zap' | 'shield' | 'check' }>;
   highlighted?: boolean;
   badge?: string;
   onSelect: () => void;
 }) {
+  const getIcon = (type?: string) => {
+    switch (type) {
+      case 'zap': return <Zap size={14} color={theme.colors.primary} fill={theme.colors.primary} />;
+      case 'shield': return <Shield size={14} color={theme.colors.accent} strokeWidth={2} />;
+      default: return <Check size={14} color={theme.colors.success} strokeWidth={2.5} />;
+    }
+  };
+
   return (
-    <TouchableOpacity
-      style={[styles.planCard, highlighted && styles.planCardHighlighted]}
+    <Pressable
+      style={({ pressed }) => [
+        styles.planCard,
+        highlighted && styles.planCardHighlighted,
+        pressed && { opacity: 0.9 },
+      ]}
       onPress={onSelect}
-      activeOpacity={0.8}
     >
       {badge && (
         <View style={[styles.badge, highlighted ? styles.badgeHighlighted : styles.badgeNormal]}>
@@ -55,14 +65,12 @@ function PlanCard({
       <View style={styles.featuresList}>
         {features.map((f, i) => (
           <View key={i} style={styles.featureRow}>
-            <Text style={styles.featureIcon}>
-              {f.iconType === 'zap' ? '⚡' : f.iconType === 'shield' ? '🛡️' : '✓'}
-            </Text>
+            {getIcon(f.iconType)}
             <Text style={[styles.featureText, highlighted && styles.featureTextHighlighted]}>{f.text}</Text>
           </View>
         ))}
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -78,10 +86,12 @@ export function Upgrade() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.skipText} onPress={handleStart}>Skip</Text>
+        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}>
+          <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
+        </Pressable>
+        <Pressable onPress={handleStart}>
+          <Text style={styles.skipText}>Skip</Text>
+        </Pressable>
       </View>
 
       <View style={styles.progressContainer}>
@@ -140,131 +150,123 @@ export function Upgrade() {
 
         <View style={styles.trustBadges}>
           <View style={styles.trustBadge}>
-            <Text style={styles.trustIcon}>🔒</Text>
+            <Lock size={18} color={theme.colors.muted} strokeWidth={1.8} />
             <Text style={styles.trustLabel}>SECURE PAYMENT</Text>
           </View>
           <View style={styles.trustBadge}>
-            <Text style={styles.trustIcon}>💳</Text>
+            <CreditCard size={18} color={theme.colors.muted} strokeWidth={1.8} />
             <Text style={styles.trustLabel}>CANCEL ANYTIME</Text>
           </View>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.upgradeButton} onPress={handleStart} activeOpacity={0.8}>
+        <Pressable
+          style={({ pressed }) => [styles.upgradeButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+          onPress={handleStart}
+        >
           <Text style={styles.upgradeButtonText}>Upgrade to Pro ¥9.9/mo</Text>
-          <Text style={styles.arrowIcon}>→</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleStart} style={styles.skipButton}>
+          <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
+        </Pressable>
+        <Pressable onPress={handleStart} style={({ pressed }) => [styles.skipButton, pressed && { opacity: 0.7 }]}>
           <Text style={styles.skipButtonText}>Skip for now</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.surface },
+  container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
   },
   backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  backIcon: { fontSize: 22, color: '#374151' },
-  skipText: { fontSize: 13, color: '#9ca3af', fontWeight: '500' },
+  skipText: { ...theme.typography.caption, color: theme.colors.subtle, fontWeight: '500' },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 24,
-    gap: 8,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    gap: theme.spacing.xs,
   },
-  progressTrack: { flex: 1, height: 4, backgroundColor: '#e5e7eb', borderRadius: 2, overflow: 'hidden' },
-  progressBar: { height: '100%', backgroundColor: theme.colors.brand, borderRadius: 2 },
-  stepLabel: { fontSize: 11, fontWeight: '700', color: theme.colors.brand },
+  progressTrack: { flex: 1, height: 4, backgroundColor: theme.colors.border, borderRadius: 2, overflow: 'hidden' },
+  progressBar: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 2 },
+  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.primary },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 24 },
-  title: { fontSize: 26, fontWeight: '700', color: theme.colors.foreground, marginBottom: 8, lineHeight: 34 },
-  subtitle: { fontSize: 14, color: '#6b7280', marginBottom: 24 },
-  plans: { gap: 14, marginBottom: 20 },
+  scrollContent: { paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg },
+  title: { ...theme.typography.display, color: theme.colors.foreground, marginBottom: theme.spacing.xs },
+  subtitle: { ...theme.typography.body, color: theme.colors.muted, marginBottom: theme.spacing.lg },
+  plans: { gap: theme.spacing.sm, marginBottom: theme.spacing.lg },
   planCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
     borderWidth: 1.5,
     borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    ...theme.shadows.sm,
   },
   planCardHighlighted: {
-    backgroundColor: theme.colors.brandLight,
-    borderColor: theme.colors.brand,
+    backgroundColor: theme.colors.primaryLight,
+    borderColor: theme.colors.primary,
   },
   badge: {
     position: 'absolute',
     top: 0,
     right: 0,
-    paddingHorizontal: 12,
+    paddingHorizontal: theme.spacing.sm,
     paddingVertical: 4,
-    borderTopRightRadius: 14,
-    borderBottomLeftRadius: 8,
+    borderTopRightRadius: theme.radius.md,
+    borderBottomLeftRadius: theme.radius.sm,
   },
-  badgeHighlighted: { backgroundColor: theme.colors.brand },
-  badgeNormal: { backgroundColor: '#ffffff' },
-  badgeText: { fontSize: 10, fontWeight: '700', color: '#ffffff' },
-  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  planSubtitle: { fontSize: 10, fontWeight: '700', color: '#9ca3af', letterSpacing: 0.5, marginBottom: 2 },
-  planTitle: { fontSize: 18, fontWeight: '700', color: theme.colors.foreground },
-  planTitleHighlighted: { color: theme.colors.brand },
+  badgeHighlighted: { backgroundColor: theme.colors.primary },
+  badgeNormal: { backgroundColor: theme.colors.surface },
+  badgeText: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.surface },
+  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: theme.spacing.sm },
+  planSubtitle: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.subtle, letterSpacing: 0.5, marginBottom: 2 },
+  planTitle: { ...theme.typography.h1, color: theme.colors.foreground },
+  planTitleHighlighted: { color: theme.colors.primary },
   priceBlock: { alignItems: 'flex-end' },
-  price: { fontSize: 18, fontWeight: '700', color: theme.colors.foreground },
-  priceHighlighted: { color: theme.colors.brand },
-  priceSuffix: { fontSize: 11, color: '#9ca3af', marginTop: 1 },
-  featuresList: { gap: 8 },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  featureIcon: { fontSize: 13 },
-  featureText: { fontSize: 12, color: '#4b5563' },
-  featureTextHighlighted: { color: '#1f2937', fontWeight: '500' },
-  trustBadges: { flexDirection: 'row', gap: 12 },
+  price: { ...theme.typography.h1, color: theme.colors.foreground },
+  priceHighlighted: { color: theme.colors.primary },
+  priceSuffix: { ...theme.typography.caption, color: theme.colors.subtle, marginTop: 1 },
+  featuresList: { gap: theme.spacing.xs },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+  featureText: { ...theme.typography.caption, color: '#4B5563' },
+  featureTextHighlighted: { color: theme.colors.foreground, fontWeight: '500' },
+  trustBadges: { flexDirection: 'row', gap: theme.spacing.sm },
   trustBadge: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    gap: 4,
+    ...theme.shadows.sm,
   },
-  trustIcon: { fontSize: 18, marginBottom: 4 },
-  trustLabel: { fontSize: 8, fontWeight: '700', color: '#9ca3af', letterSpacing: 0.5 },
+  trustLabel: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.subtle, letterSpacing: 0.5 },
   footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-    gap: 8,
+    borderTopColor: theme.colors.borderLight,
+    gap: theme.spacing.xs,
   },
   upgradeButton: {
-    backgroundColor: theme.colors.brand,
-    borderRadius: 30,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.full,
     paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: theme.spacing.xs,
   },
-  upgradeButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '700' },
-  arrowIcon: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
-  skipButton: { paddingVertical: 8, alignItems: 'center' },
-  skipButtonText: { fontSize: 12, color: '#9ca3af', fontWeight: '500' },
+  upgradeButtonText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.surface },
+  skipButton: { paddingVertical: theme.spacing.xs, alignItems: 'center' },
+  skipButtonText: { ...theme.typography.caption, color: theme.colors.subtle, fontWeight: '500' },
 });

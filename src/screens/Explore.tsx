@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Menu, User, Search, Star, Plus } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { EXPLORE_CARDS } from '../data/mockData';
@@ -40,35 +41,38 @@ export function Explore() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav */}
+      {/* Top Nav — Page mode */}
       <View style={styles.topNav}>
-        <Text style={styles.menuIcon}>☰</Text>
+        <Pressable style={({ pressed }) => [styles.navBtn, pressed && styles.pressed]}>
+          <Menu size={20} color={theme.colors.foreground} strokeWidth={1.8} />
+        </Pressable>
         <Text style={styles.navTitle}>Discover</Text>
-        <TouchableOpacity>
-          <Text style={styles.profileIcon}>👤</Text>
-        </TouchableOpacity>
+        <Pressable style={({ pressed }) => [styles.navBtn, pressed && styles.pressed]}>
+          <User size={20} color={theme.colors.foreground} strokeWidth={1.8} />
+        </Pressable>
       </View>
 
       {/* Sticky Search + Categories */}
       <View style={styles.stickyBar}>
-        <TouchableOpacity
-          style={styles.searchBar}
+        <Pressable
+          style={({ pressed }) => [styles.searchBar, pressed && { opacity: 0.85 }]}
           onPress={() => setShowSearch(true)}
         >
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Search size={16} color={theme.colors.subtle} strokeWidth={1.8} />
           <Text style={styles.searchPlaceholder}>Search for food or restaurants</Text>
-        </TouchableOpacity>
+        </Pressable>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryScroll}
         >
           {CATEGORIES.map((cat, idx) => (
-            <TouchableOpacity
+            <Pressable
               key={cat}
-              style={[
+              style={({ pressed }) => [
                 styles.categoryPill,
                 idx === activeCategory && styles.categoryPillActive,
+                pressed && { opacity: 0.85 },
               ]}
               onPress={() => setActiveCategory(idx)}
             >
@@ -80,7 +84,7 @@ export function Explore() {
               >
                 {cat}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </ScrollView>
       </View>
@@ -90,9 +94,9 @@ export function Explore() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Today's Picks</Text>
-            <TouchableOpacity>
+            <Pressable>
               <Text style={styles.seeAllText}>See all</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
           <ScrollView
             horizontal
@@ -100,9 +104,9 @@ export function Explore() {
             contentContainerStyle={styles.picksScroll}
           >
             {EXPLORE_CARDS.map((item) => (
-              <TouchableOpacity
+              <Pressable
                 key={item.id}
-                style={styles.pickCard}
+                style={({ pressed }) => [styles.pickCard, pressed && { opacity: 0.85 }]}
                 onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
               >
                 <View style={styles.pickImageWrap}>
@@ -114,12 +118,14 @@ export function Explore() {
                   )}
                 </View>
                 <Text style={styles.pickTitle}>{item.title}</Text>
-                <Text style={styles.pickMeta}>★ {item.rating} ({item.reviews}) • {item.subtitle}</Text>
-              </TouchableOpacity>
+                <View style={styles.pickMetaRow}>
+                  <Star size={10} color={theme.colors.star} fill={theme.colors.star} />
+                  <Text style={styles.pickMeta}>{item.rating} ({item.reviews}) · {item.subtitle}</Text>
+                </View>
+              </Pressable>
             ))}
-            {/* Extra placeholder cards for horizontal scroll feel */}
-            <TouchableOpacity
-              style={styles.pickCard}
+            <Pressable
+              style={({ pressed }) => [styles.pickCard, pressed && { opacity: 0.85 }]}
               onPress={() => navigateToDetail({ id: 99, title: 'Butter Croissant', image: 'https://images.unsplash.com/photo-1555126634-323283e090fa?w=400' })}
             >
               <View style={styles.pickImageWrap}>
@@ -129,8 +135,11 @@ export function Explore() {
                 />
               </View>
               <Text style={styles.pickTitle}>Butter Croissant</Text>
-              <Text style={styles.pickMeta}>★ 4.6 (42+) • Bakery • 5 min</Text>
-            </TouchableOpacity>
+              <View style={styles.pickMetaRow}>
+                <Star size={10} color={theme.colors.star} fill={theme.colors.star} />
+                <Text style={styles.pickMeta}>4.6 (42+) · Bakery · 5 min</Text>
+              </View>
+            </Pressable>
           </ScrollView>
         </View>
 
@@ -138,13 +147,12 @@ export function Explore() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Seasonal Recommendations</Text>
 
-          {/* Hero seasonal card */}
-          <TouchableOpacity
-            style={styles.seasonalHero}
-            onPress={() => navigateToDetail({ id: 100, title: 'Maple Glazed Roasted Squash', image: 'https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYWxtb24lMjBib3dsfGVufDF8fHx8MTc3NDY4NDE4N3ww&ixlib=rb-4.1.0&q=80&w=1080' })}
+          <Pressable
+            style={({ pressed }) => [styles.seasonalHero, pressed && { opacity: 0.9 }]}
+            onPress={() => navigateToDetail({ id: 100, title: 'Maple Glazed Roasted Squash', image: 'https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=1080' })}
           >
             <SkeletonImage
-              src="https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYWxtb24lMjBib3dsfGVufDF8fHx8MTc3NDY4NDE4N3ww&ixlib=rb-4.1.0&q=80&w=1080"
+              src="https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=1080"
               alt="Autumn Special"
             />
             <View style={styles.seasonalHeroOverlay}>
@@ -154,16 +162,15 @@ export function Explore() {
               <Text style={styles.seasonalHeroTitle}>Maple Glazed Roasted Squash</Text>
               <Text style={styles.seasonalHeroSubtitle}>Experience the warmth of the season in every bite.</Text>
             </View>
-          </TouchableOpacity>
+          </Pressable>
 
-          {/* Issue #15: Fixed — listItem SkeletonImage now has explicit dimensions via wrapper View */}
           {SEASONAL_ITEMS.map((item) => (
-            <TouchableOpacity
+            <Pressable
               key={item.id}
-              style={styles.listItem}
+              style={({ pressed }) => [styles.listItem, pressed && { opacity: 0.85 }]}
               onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
             >
-              <View style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden' }}>
+              <View style={styles.listItemImage}>
                 <SkeletonImage src={item.image} alt={item.title} />
               </View>
               <View style={styles.listItemContent}>
@@ -172,11 +179,11 @@ export function Explore() {
               </View>
               <View style={styles.listItemRight}>
                 <Text style={styles.listItemPrice}>{item.price}</Text>
-                <TouchableOpacity style={styles.addBtn}>
-                  <Text style={styles.addBtnText}>+</Text>
-                </TouchableOpacity>
+                <Pressable style={({ pressed }) => [styles.addBtn, pressed && { backgroundColor: theme.colors.primaryLight }]}>
+                  <Plus size={16} color={theme.colors.primary} strokeWidth={2.5} />
+                </Pressable>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
 
@@ -189,73 +196,73 @@ export function Explore() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.surface },
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  pressed: { opacity: 0.85, transform: [{ scale: 0.97 }] },
   topNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: theme.spacing.md,
+    height: theme.topNavHeight,
+    backgroundColor: theme.colors.surface,
   },
-  menuIcon: { fontSize: 20 },
-  navTitle: { fontSize: 16, fontWeight: '600', color: theme.colors.foreground },
-  profileIcon: { fontSize: 22 },
+  navBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: theme.radius.md },
+  navTitle: { ...theme.typography.h2, color: theme.colors.foreground },
   stickyBar: {
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.xs,
+    paddingBottom: theme.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-    gap: 10,
+    borderBottomColor: theme.colors.borderLight,
+    gap: theme.spacing.xs,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    backgroundColor: theme.colors.borderLight,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.sm,
     height: 40,
-    gap: 8,
+    gap: theme.spacing.xs,
   },
-  searchIcon: { fontSize: 14 },
-  searchPlaceholder: { fontSize: 14, color: '#9ca3af' },
-  categoryScroll: { flexDirection: 'row', gap: 8 },
+  searchPlaceholder: { ...theme.typography.body, color: theme.colors.subtle },
+  categoryScroll: { flexDirection: 'row', gap: theme.spacing.xs },
   categoryPill: {
-    paddingHorizontal: 14,
+    paddingHorizontal: theme.spacing.md,
     paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.borderLight,
   },
-  categoryPillActive: { backgroundColor: theme.colors.brand },
-  categoryPillText: { fontSize: 13, fontWeight: '500', color: '#6b7280' },
-  categoryPillTextActive: { color: '#ffffff' },
+  categoryPillActive: { backgroundColor: theme.colors.primary },
+  categoryPillText: { ...theme.typography.caption, fontWeight: '500', color: theme.colors.muted },
+  categoryPillTextActive: { color: theme.colors.surface },
   scrollView: { flex: 1 },
-  section: { paddingHorizontal: 16, paddingTop: 20 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.foreground, marginBottom: 12 },
-  seeAllText: { fontSize: 12, color: theme.colors.brand, fontWeight: '500' },
-  picksScroll: { paddingRight: 16, gap: 12 },
+  section: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.lg },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.sm },
+  sectionTitle: { ...theme.typography.h2, color: theme.colors.foreground, marginBottom: theme.spacing.sm },
+  seeAllText: { ...theme.typography.caption, color: theme.colors.primary, fontWeight: '500' },
+  picksScroll: { paddingRight: theme.spacing.md, gap: theme.spacing.sm },
   pickCard: { width: 200 },
-  pickImageWrap: { height: 140, borderRadius: 14, overflow: 'hidden', marginBottom: 8, position: 'relative' },
+  pickImageWrap: { height: 140, borderRadius: theme.radius.md, overflow: 'hidden', marginBottom: theme.spacing.xs, position: 'relative' },
   pickBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingHorizontal: 8,
+    top: theme.spacing.xs,
+    right: theme.spacing.xs,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    paddingHorizontal: theme.spacing.xs,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: theme.radius.sm,
   },
-  pickBadgeText: { fontSize: 9, fontWeight: '700', color: theme.colors.foreground },
-  pickTitle: { fontSize: 13, fontWeight: '600', color: theme.colors.foreground, marginBottom: 2 },
-  pickMeta: { fontSize: 10, color: '#9ca3af' },
+  pickBadgeText: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.foreground },
+  pickTitle: { ...theme.typography.body, fontWeight: '600', color: theme.colors.foreground, marginBottom: 2 },
+  pickMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  pickMeta: { ...theme.typography.micro, color: theme.colors.subtle },
   seasonalHero: {
     height: 180,
-    borderRadius: 14,
+    borderRadius: theme.radius.lg,
     overflow: 'hidden',
-    marginBottom: 12,
+    marginBottom: theme.spacing.sm,
     position: 'relative',
   },
   seasonalHeroOverlay: {
@@ -263,47 +270,43 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: theme.spacing.md,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   autumnBadge: {
-    backgroundColor: theme.colors.brandAccent,
-    paddingHorizontal: 8,
+    backgroundColor: theme.colors.warning,
+    paddingHorizontal: theme.spacing.xs,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: theme.radius.sm,
     alignSelf: 'flex-start',
     marginBottom: 6,
   },
-  autumnBadgeText: { fontSize: 9, fontWeight: '700', color: '#ffffff' },
-  seasonalHeroTitle: { fontSize: 16, fontWeight: '700', color: '#ffffff', lineHeight: 22 },
-  seasonalHeroSubtitle: { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  autumnBadgeText: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.surface },
+  seasonalHeroTitle: { ...theme.typography.h2, fontWeight: '700', color: theme.colors.surface },
+  seasonalHeroSubtitle: { ...theme.typography.caption, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
   listItem: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 10,
-    gap: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
     alignItems: 'center',
+    ...theme.shadows.sm,
   },
+  listItemImage: { width: 56, height: 56, borderRadius: theme.radius.sm, overflow: 'hidden' },
   listItemContent: { flex: 1 },
-  listItemTitle: { fontSize: 14, fontWeight: '700', color: theme.colors.foreground },
-  listItemSubtitle: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
-  listItemRight: { alignItems: 'flex-end', justifyContent: 'space-between', height: 60 },
-  listItemPrice: { fontSize: 14, fontWeight: '700', color: theme.colors.brand },
+  listItemTitle: { ...theme.typography.body, fontWeight: '700', color: theme.colors.foreground },
+  listItemSubtitle: { ...theme.typography.caption, color: theme.colors.subtle, marginTop: 2 },
+  listItemRight: { alignItems: 'flex-end', justifyContent: 'space-between', height: 56 },
+  listItemPrice: { ...theme.typography.body, fontWeight: '700', color: theme.colors.primary },
   addBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#f3f4f6',
+    width: 28,
+    height: 28,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addBtnText: { fontSize: 16, color: theme.colors.brand, fontWeight: '600' },
-  bottomPadding: { height: 20 },
+  bottomPadding: { height: theme.spacing['2xl'] },
 });
