@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,7 @@ import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
 
 const SWIPE_THRESHOLD = 100;
+const SWIPE_VELOCITY_THRESHOLD = 650;
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface CardData {
@@ -57,23 +58,32 @@ function SwipeCard({
 }) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const hasCommittedSwipe = useSharedValue(false);
 
   const panGesture = Gesture.Pan()
+    .activeOffsetX([-8, 8])
     .onUpdate((event) => {
       translateX.value = event.translationX;
       translateY.value = event.translationY;
     })
     .onEnd((event) => {
-      if (event.translationX > SWIPE_THRESHOLD || event.velocityX > 500) {
-        translateX.value = withTiming(screenWidth * 1.5, { duration: 300 });
-        runOnJS(onSwipe)('right');
-      } else if (event.translationX < -SWIPE_THRESHOLD || event.velocityX < -500) {
-        translateX.value = withTiming(-screenWidth * 1.5, { duration: 300 });
-        runOnJS(onSwipe)('left');
-      } else {
+      const shouldSwipeRight =
+        event.translationX > SWIPE_THRESHOLD || event.velocityX > SWIPE_VELOCITY_THRESHOLD;
+      const shouldSwipeLeft =
+        event.translationX < -SWIPE_THRESHOLD || event.velocityX < -SWIPE_VELOCITY_THRESHOLD;
+
+      if (hasCommittedSwipe.value || (!shouldSwipeRight && !shouldSwipeLeft)) {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
+        hasCommittedSwipe.value = false;
+        return;
       }
+
+      hasCommittedSwipe.value = true;
+      const direction = shouldSwipeRight ? 'right' : 'left';
+      translateX.value = withTiming(direction === 'right' ? screenWidth * 1.5 : -screenWidth * 1.5, { duration: 260 });
+      translateY.value = withTiming(0, { duration: 260 });
+      runOnJS(onSwipe)(direction);
     });
 
   const cardStyle = useAnimatedStyle(() => ({
@@ -170,26 +180,32 @@ export function Home() {
   const navigation = useNavigation<NavProp>();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { recommendationsLeft, addToHistory } = useApp();
+  const { recommendationsLeft, addToHistory, consumeRecommendation } = useApp();
   const [cardIndex, setCardIndex] = useState(0);
   const { width: screenWidth } = useWindowDimensions();
-  const [localRecsLeft, setLocalRecsLeft] = useState(recommendationsLeft);
+  const isSwipeProcessingRef = useRef(false);
 
   const handleSwipe = useCallback(
-    (direction: 'left' | 'right' = 'right') => {
+    async (direction: 'left' | 'right' = 'right') => {
+      if (isSwipeProcessingRef.current) return;
+      isSwipeProcessingRef.current = true;
       const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
-      setLocalRecsLeft((prev) => Math.max(0, prev - 1));
-      addToHistory({
-        id: currentCard.id,
-        title: currentCard.title,
-        img: currentCard.image,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        category: currentCard.tags[0] || 'Other',
-        status: direction === 'right' ? 'Liked' : 'Skipped',
-      });
-      setCardIndex((prev) => prev + 1);
+      try {
+        consumeRecommendation();
+        await addToHistory({
+          id: currentCard.id,
+          title: currentCard.title,
+          img: currentCard.image,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          category: currentCard.tags[0] || 'Other',
+          status: direction === 'right' ? 'Liked' : 'Skipped',
+        });
+        setCardIndex((prev) => prev + 1);
+      } finally {
+        isSwipeProcessingRef.current = false;
+      }
     },
-    [cardIndex, addToHistory]
+    [cardIndex, addToHistory, consumeRecommendation]
   );
 
   const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
@@ -214,7 +230,7 @@ export function Home() {
           <View style={styles.statusLeft}>
             <Zap size={14} color={theme.colors.primary} fill={theme.colors.primary} />
             <Text style={styles.statusText}>
-              <Text style={styles.statusBold}>{localRecsLeft}</Text> recommendations left today
+              <Text style={styles.statusBold}>{recommendationsLeft}</Text> recommendations left today
             </Text>
           </View>
           <Pressable
@@ -451,7 +467,7 @@ function makeStyles(t: AppTheme) {
     cardMetaText: { ...t.typography.caption, color: t.colors.muted },
     tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     tag: { backgroundColor: t.colors.borderLight, paddingHorizontal: t.spacing.xs, paddingVertical: 4, borderRadius: t.radius.sm },
-    tagText: { ...t.typography.micro, color: '#4B5563', fontWeight: '500' },
+    tagText: { ...t.typography.micro, color: t.colors.muted, fontWeight: '500' },
     actionRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: t.spacing.lg, paddingVertical: t.spacing.sm },
     actionBtn: {
       width: 56,

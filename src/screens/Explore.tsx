@@ -26,7 +26,7 @@ const SEASONAL_ITEMS = [
     id: 1,
     title: 'Cinnamon Apple Tart',
     subtitle: 'Warm, flaky, and sweet.',
-    price: '¥9.00',
+    price: 'Â¥9.00',
     image: 'https://images.unsplash.com/photo-1620991565081-82743a5a499c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxibHVlYmVycnklMjBwYW5jYWtlc3xlbnwxfHx8fDE3NzQ2ODQxOTh8MA&ixlib=rb-4.1.0&q=80&w=1080',
   },
 ];
@@ -44,7 +44,7 @@ export function Explore() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav �?Page mode */}
+      {/* Top Nav â€?Page mode */}
       <View style={styles.topNav}>
         <Pressable style={({ pressed }) => [styles.navBtn, pressed && styles.pressed]}>
           <Menu size={20} color={theme.colors.foreground} strokeWidth={1.8} />
@@ -123,7 +123,7 @@ export function Explore() {
                 <Text style={styles.pickTitle}>{item.title}</Text>
                 <View style={styles.pickMetaRow}>
                   <Star size={10} color={theme.colors.star} fill={theme.colors.star} />
-                  <Text style={styles.pickMeta}>{item.rating} ({item.reviews}) · {item.subtitle}</Text>
+                  <Text style={styles.pickMeta}>{item.rating} ({item.reviews}) Â· {item.subtitle}</Text>
                 </View>
               </Pressable>
             ))}
@@ -140,7 +140,7 @@ export function Explore() {
               <Text style={styles.pickTitle}>Butter Croissant</Text>
               <View style={styles.pickMetaRow}>
                 <Star size={10} color={theme.colors.star} fill={theme.colors.star} />
-                <Text style={styles.pickMeta}>4.6 (42+) · Bakery · 5 min</Text>
+                <Text style={styles.pickMeta}>4.6 (42+) Â· Bakery Â· 5 min</Text>
               </View>
             </Pressable>
           </ScrollView>
@@ -182,8 +182,11 @@ export function Explore() {
               </View>
               <View style={styles.listItemRight}>
                 <Text style={styles.listItemPrice}>{item.price}</Text>
-                <Pressable style={({ pressed }) => [styles.addBtn, pressed && { backgroundColor: theme.colors.primaryLight }]}>
-                  <Plus size={16} color={theme.colors.primary} strokeWidth={2.5} />
+                <Pressable
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.addBtn, pressed && { backgroundColor: theme.colors.primaryLight }]}
+                >
+                  <Plus size={18} color={theme.colors.primary} strokeWidth={2.5} />
                 </Pressable>
               </View>
             </Pressable>
@@ -207,11 +210,11 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: t.spacing.md,
-    height: theme.topNavHeight,
+    height: t.topNavHeight,
     backgroundColor: t.colors.surface,
   },
   navBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: t.radius.md },
-  navTitle: { ...theme.typography.h2, color: t.colors.foreground },
+  navTitle: { ...t.typography.h2, color: t.colors.foreground },
   stickyBar: {
     backgroundColor: t.colors.surface,
     paddingHorizontal: t.spacing.md,
@@ -230,7 +233,7 @@ function makeStyles(t: AppTheme) {
     height: 40,
     gap: t.spacing.xs,
   },
-  searchPlaceholder: { ...theme.typography.body, color: t.colors.subtle },
+  searchPlaceholder: { ...t.typography.body, color: t.colors.subtle },
   categoryScroll: { flexDirection: 'row', gap: t.spacing.xs },
   categoryPill: {
     paddingHorizontal: t.spacing.md,
@@ -239,13 +242,13 @@ function makeStyles(t: AppTheme) {
     backgroundColor: t.colors.borderLight,
   },
   categoryPillActive: { backgroundColor: t.colors.primary },
-  categoryPillText: { ...theme.typography.caption, fontWeight: '500', color: t.colors.muted },
+  categoryPillText: { ...t.typography.caption, fontWeight: '500', color: t.colors.muted },
   categoryPillTextActive: { color: t.colors.surface },
   scrollView: { flex: 1 },
   section: { paddingHorizontal: t.spacing.md, paddingTop: t.spacing.lg },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: t.spacing.sm },
-  sectionTitle: { ...theme.typography.h2, color: t.colors.foreground, marginBottom: t.spacing.sm },
-  seeAllText: { ...theme.typography.caption, color: t.colors.primary, fontWeight: '500' },
+  sectionTitle: { ...t.typography.h2, color: t.colors.foreground, marginBottom: t.spacing.sm },
+  seeAllText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '500' },
   picksScroll: { paddingRight: t.spacing.md, gap: t.spacing.sm },
   pickCard: { width: 200 },
   pickImageWrap: { height: 140, borderRadius: t.radius.md, overflow: 'hidden', marginBottom: t.spacing.xs, position: 'relative' },
@@ -258,10 +261,10 @@ function makeStyles(t: AppTheme) {
     paddingVertical: 3,
     borderRadius: t.radius.sm,
   },
-  pickBadgeText: { ...theme.typography.micro, fontWeight: '700', color: t.colors.foreground },
-  pickTitle: { ...theme.typography.body, fontWeight: '600', color: t.colors.foreground, marginBottom: 2 },
+  pickBadgeText: { ...t.typography.micro, fontWeight: '700', color: t.colors.foreground },
+  pickTitle: { ...t.typography.body, fontWeight: '600', color: t.colors.foreground, marginBottom: 2 },
   pickMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  pickMeta: { ...theme.typography.micro, color: t.colors.subtle },
+  pickMeta: { ...t.typography.micro, color: t.colors.subtle },
   seasonalHero: {
     height: 180,
     borderRadius: t.radius.lg,
@@ -285,9 +288,9 @@ function makeStyles(t: AppTheme) {
     alignSelf: 'flex-start',
     marginBottom: 6,
   },
-  autumnBadgeText: { ...theme.typography.micro, fontWeight: '700', color: t.colors.surface },
-  seasonalHeroTitle: { ...theme.typography.h2, fontWeight: '700', color: t.colors.surface },
-  seasonalHeroSubtitle: { ...theme.typography.caption, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  autumnBadgeText: { ...t.typography.micro, fontWeight: '700', color: t.colors.surface },
+  seasonalHeroTitle: { ...t.typography.h2, fontWeight: '700', color: t.colors.surface },
+  seasonalHeroSubtitle: { ...t.typography.caption, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
   listItem: {
     flexDirection: 'row',
     backgroundColor: t.colors.surface,
@@ -296,17 +299,17 @@ function makeStyles(t: AppTheme) {
     gap: t.spacing.sm,
     marginBottom: t.spacing.xs,
     alignItems: 'center',
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
   listItemImage: { width: 56, height: 56, borderRadius: t.radius.sm, overflow: 'hidden' },
   listItemContent: { flex: 1 },
-  listItemTitle: { ...theme.typography.body, fontWeight: '700', color: t.colors.foreground },
-  listItemSubtitle: { ...theme.typography.caption, color: t.colors.subtle, marginTop: 2 },
+  listItemTitle: { ...t.typography.body, fontWeight: '700', color: t.colors.foreground },
+  listItemSubtitle: { ...t.typography.caption, color: t.colors.subtle, marginTop: 2 },
   listItemRight: { alignItems: 'flex-end', justifyContent: 'space-between', height: 56 },
-  listItemPrice: { ...theme.typography.body, fontWeight: '700', color: t.colors.primary },
+  listItemPrice: { ...t.typography.body, fontWeight: '700', color: t.colors.primary },
   addBtn: {
-    width: 28,
-    height: 28,
+    width: 36,
+    height: 36,
     borderRadius: t.radius.full,
     backgroundColor: t.colors.borderLight,
     alignItems: 'center',

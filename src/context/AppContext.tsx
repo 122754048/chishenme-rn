@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 import { storage } from '../storage';
 
 interface AppState {
@@ -25,6 +25,7 @@ interface AppContextType extends AppState {
   toggleFavorite: (id: number) => Promise<void>;
   isFavorite: (id: number) => boolean;
   addToHistory: (item: AppState['history'][0]) => Promise<void>;
+  consumeRecommendation: () => void;
   refreshRecommendations: () => void;
 }
 
@@ -40,6 +41,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function load() {
       try {
         const [oc, cuisines, restrictions, favs, hist] = await Promise.all([
@@ -49,6 +52,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           storage.getFavorites(),
           storage.getHistory(),
         ]);
+        if (!isMounted) return;
         setOnboardingComplete(oc);
         setSelectedCuisines(cuisines);
         setSelectedRestrictions(restrictions);
@@ -57,68 +61,93 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.warn('Failed to load app data:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
     load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const completeOnboarding = async () => {
+  const completeOnboarding = useCallback(async () => {
     await storage.setOnboardingComplete(true);
     setOnboardingComplete(true);
-  };
+  }, []);
 
-  const setCuisines = async (cuisines: string[]) => {
+  const setCuisines = useCallback(async (cuisines: string[]) => {
     await storage.setSelectedCuisines(cuisines);
     setSelectedCuisines(cuisines);
-  };
+  }, []);
 
-  const setRestrictions = async (restrictions: string[]) => {
+  const setRestrictions = useCallback(async (restrictions: string[]) => {
     await storage.setSelectedRestrictions(restrictions);
     setSelectedRestrictions(restrictions);
-  };
+  }, []);
 
-  const toggleFavorite = async (id: number) => {
-    let updated: number[];
-    if (favorites.includes(id)) {
-      updated = favorites.filter((f) => f !== id);
-    } else {
-      updated = [...favorites, id];
-    }
+  const toggleFavorite = useCallback(async (id: number) => {
+    const updated = favorites.includes(id) ? favorites.filter((f) => f !== id) : [...favorites, id];
     await storage.setFavorites(updated);
     setFavorites(updated);
-  };
+  }, [favorites]);
 
-  const isFavorite = (id: number) => favorites.includes(id);
+  const isFavorite = useCallback((id: number) => favorites.includes(id), [favorites]);
 
-  const addToHistory = async (item: AppState['history'][0]) => {
+  const addToHistory = useCallback(async (item: AppState['history'][0]) => {
     await storage.addToHistory(item);
     setHistory((prev) => [item, ...prev].slice(0, 50));
-  };
+  }, []);
 
-  const refreshRecommendations = () => {
+  const consumeRecommendation = useCallback(() => {
+    setRecommendationsLeft((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const refreshRecommendations = useCallback(() => {
     setRecommendationsLeft(7);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      onboardingComplete,
+      selectedCuisines,
+      selectedRestrictions,
+      favorites,
+      history,
+      recommendationsLeft,
+      isLoading,
+      completeOnboarding,
+      setCuisines,
+      setRestrictions,
+      toggleFavorite,
+      isFavorite,
+      addToHistory,
+      consumeRecommendation,
+      refreshRecommendations,
+    }),
+    [
+      onboardingComplete,
+      selectedCuisines,
+      selectedRestrictions,
+      favorites,
+      history,
+      recommendationsLeft,
+      isLoading,
+      completeOnboarding,
+      setCuisines,
+      setRestrictions,
+      toggleFavorite,
+      isFavorite,
+      addToHistory,
+      consumeRecommendation,
+      refreshRecommendations,
+    ]
+  );
 
   return (
-    <AppContext.Provider
-      value={{
-        onboardingComplete,
-        selectedCuisines,
-        selectedRestrictions,
-        favorites,
-        history,
-        recommendationsLeft,
-        isLoading,
-        completeOnboarding,
-        setCuisines,
-        setRestrictions,
-        toggleFavorite,
-        isFavorite,
-        addToHistory,
-        refreshRecommendations,
-      }}
-    >
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );

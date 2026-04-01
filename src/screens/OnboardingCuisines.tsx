@@ -139,7 +139,7 @@ function makeStyles(t: AppTheme) {
     paddingHorizontal: t.spacing.md,
     paddingVertical: t.spacing.xs,
   },
-  skipText: { ...theme.typography.caption, color: t.colors.subtle, fontWeight: '500' },
+  skipText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -149,11 +149,11 @@ function makeStyles(t: AppTheme) {
   },
   progressTrack: { flex: 1, height: 4, backgroundColor: t.colors.border, borderRadius: 2, overflow: 'hidden' },
   progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
-  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: t.colors.primary },
+  stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
-  title: { ...theme.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
-  subtitle: { ...theme.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
+  title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
+  subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
   cuisineGrid: { gap: t.spacing.xs, marginBottom: t.spacing.lg },
   cuisineCard: {
     flexDirection: 'row',
@@ -165,7 +165,7 @@ function makeStyles(t: AppTheme) {
     paddingVertical: t.spacing.sm,
     borderWidth: 1.5,
     borderColor: 'transparent',
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
   cuisineCardSelected: {
     backgroundColor: t.colors.primaryLight,
@@ -173,7 +173,7 @@ function makeStyles(t: AppTheme) {
   },
   cuisineLeft: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm },
   cuisineIcon: { fontSize: 18 },
-  cuisineLabel: { ...theme.typography.body, fontWeight: '500', color: t.colors.foreground },
+  cuisineLabel: { ...t.typography.body, fontWeight: '500', color: t.colors.foreground },
   cuisineLabelSelected: { color: t.colors.primaryDark, fontWeight: '600' },
   checkmark: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   checkmarkFilled: {
@@ -192,7 +192,7 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'flex-end',
     padding: t.spacing.md,
   },
-  bannerText: { ...theme.typography.caption, color: t.colors.surface, fontWeight: '500', lineHeight: 18 },
+  bannerText: { ...t.typography.caption, color: t.colors.surface, fontWeight: '500', lineHeight: 18 },
   footer: {
     paddingHorizontal: t.spacing.md,
     paddingVertical: t.spacing.md,
@@ -209,7 +209,7 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'center',
     gap: 6,
   },
-  nextButtonText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
+  nextButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
 });
 }
 

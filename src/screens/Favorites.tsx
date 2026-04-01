@@ -31,9 +31,9 @@ const heartBtnStyle = {
   position: 'absolute' as const,
   top: 8,
   right: 8,
-  width: 32,
-  height: 32,
-  borderRadius: 16,
+  width: 40,
+  height: 40,
+  borderRadius: 20,
   backgroundColor: 'rgba(255,255,255,0.92)',
   alignItems: 'center' as const,
   justifyContent: 'center' as const,
@@ -57,7 +57,7 @@ function AnimatedHeartButton({ isFavorite, onToggle }: { isFavorite: boolean; on
     <Pressable onPress={handlePress} style={heartBtnStyle}>
       <Animated.View style={animStyle}>
         <Heart
-          size={14}
+          size={16}
           color={isFavorite ? theme.colors.error : theme.colors.subtle}
           fill={isFavorite ? theme.colors.error : 'transparent'}
           strokeWidth={2}
@@ -187,12 +187,12 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: t.spacing.md,
-    height: theme.topNavHeight,
+    height: t.topNavHeight,
     backgroundColor: t.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: t.colors.borderLight,
   },
-  navTitle: { ...theme.typography.h2, color: t.colors.foreground },
+  navTitle: { ...t.typography.h2, color: t.colors.foreground },
   moreBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
   tabBar: {
     backgroundColor: t.colors.surface,
@@ -208,7 +208,7 @@ function makeStyles(t: AppTheme) {
     backgroundColor: t.colors.borderLight,
   },
   tabPillActive: { backgroundColor: t.colors.primary },
-  tabPillText: { ...theme.typography.caption, fontWeight: '500', color: t.colors.muted },
+  tabPillText: { ...t.typography.caption, fontWeight: '500', color: t.colors.muted },
   tabPillTextActive: { color: t.colors.surface },
   gridContent: { padding: t.spacing.md, gap: t.spacing.sm },
   gridRow: { justifyContent: 'space-between' },
@@ -232,13 +232,13 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'center',
   },
   gridItemTitle: {
-    ...theme.typography.body,
+    ...t.typography.body,
     fontWeight: '600',
     color: t.colors.foreground,
     marginBottom: 4,
   },
   gridItemMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  gridItemRating: { ...theme.typography.caption, color: t.colors.subtle },
+  gridItemRating: { ...t.typography.caption, color: t.colors.subtle },
   emptyState: {
     flex: 1,
     alignItems: 'center',
@@ -255,13 +255,13 @@ function makeStyles(t: AppTheme) {
     marginBottom: t.spacing.md,
   },
   emptyTitle: {
-    ...theme.typography.h1,
+    ...t.typography.h1,
     color: t.colors.foreground,
     marginBottom: t.spacing.xs,
     textAlign: 'center',
   },
   emptyBody: {
-    ...theme.typography.body,
+    ...t.typography.body,
     color: t.colors.subtle,
     textAlign: 'center',
     marginBottom: t.spacing.lg,
@@ -272,7 +272,7 @@ function makeStyles(t: AppTheme) {
     paddingVertical: t.spacing.sm,
     borderRadius: t.radius.full,
   },
-  exploreBtnText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
+  exploreBtnText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
 });
 }
 
