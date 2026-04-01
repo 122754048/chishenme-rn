@@ -21,7 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Bell, Zap, X, Info, Heart, Star, MapPin } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { theme } from '../theme';
+import { theme, useTheme } from '../theme';
 import { SWIPE_CARDS, CATEGORIES, NEARBY_ITEMS } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
@@ -164,6 +164,7 @@ function AnimatedActionBtn({
 
 export function Home() {
   const navigation = useNavigation<NavProp>();
+  const { theme: currentTheme } = useTheme();
   const { recommendationsLeft, addToHistory } = useApp();
   const [cardIndex, setCardIndex] = useState(0);
   const { width: screenWidth } = useWindowDimensions();

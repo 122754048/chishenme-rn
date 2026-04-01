@@ -1,4 +1,6 @@
-export const theme = {
+import { useColorScheme } from 'react-native';
+
+export const lightTheme = {
   colors: {
     // Brand
     primary: '#FF6B35',
@@ -30,7 +32,7 @@ export const theme = {
     star: '#F2994A',
     premium: '#FFD700',
 
-    // Legacy aliases (for migration convenience)
+    // Legacy aliases
     brand: '#FF6B35',
     brandDark: '#E85D2C',
     brandLight: '#FFF0E8',
@@ -96,3 +98,62 @@ export const theme = {
   topNavHeight: 56,
   tabBarHeight: 56,
 };
+
+export const darkTheme = {
+  ...lightTheme,
+  colors: {
+    ...lightTheme.colors,
+    // Dark mode adjustments
+    background: '#0F0F0F',
+    surface: '#1A1A1A',
+    foreground: '#F9FAFB',
+    muted: '#9CA3AF',
+    subtle: '#6B7280',
+    border: '#2A2A2A',
+    borderLight: '#1F1F1F',
+
+    // Adjusted for dark mode contrast
+    primaryLight: 'rgba(255, 107, 53, 0.15)',
+    successLight: 'rgba(76, 175, 80, 0.15)',
+    warningLight: 'rgba(242, 153, 74, 0.15)',
+    errorLight: 'rgba(239, 68, 68, 0.15)',
+    accentLight: 'rgba(46, 196, 182, 0.15)',
+    brandAccentLight: 'rgba(242, 153, 74, 0.15)',
+  },
+  shadows: {
+    sm: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    md: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 10,
+      elevation: 6,
+    },
+    lg: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.4,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+  },
+};
+
+export function useTheme() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  return {
+    theme: isDark ? darkTheme : lightTheme,
+    isDark,
+    colorScheme,
+  };
+}
+
+// Export default theme for backward compatibility
+export const theme = lightTheme;
