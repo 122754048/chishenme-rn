@@ -10,7 +10,8 @@ import {
   Platform,
 } from 'react-native';
 import { Search, X, Clock, TrendingUp } from 'lucide-react-native';
-import { theme } from '../theme';
+import { useThemedStyles, useThemeColors, theme } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 
 interface SearchOverlayProps {
   visible: boolean;
@@ -22,6 +23,8 @@ const DEFAULT_RECENT_SEARCHES = ['Salmon Bowl', 'Ramen', 'Pizza near me'];
 const TRENDING_TAGS = ['Healthy Salad', 'Sichuan Hot Pot', 'Matcha Latte', 'Poke Bowl', 'Dim Sum', 'Korean BBQ'];
 
 export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps) {
+  const theme = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const [query, setQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>(DEFAULT_RECENT_SEARCHES);
 
@@ -109,63 +112,66 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.surface },
+function makeStyles(t: AppTheme) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: t.colors.surface },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing.xs,
+    paddingHorizontal: t.spacing.md,
+    paddingTop: t.spacing.sm,
+    paddingBottom: t.spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderLight,
-    gap: theme.spacing.sm,
+    borderBottomColor: t.colors.borderLight,
+    gap: t.spacing.sm,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.borderLight,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: t.colors.borderLight,
+    borderRadius: t.radius.md,
+    paddingHorizontal: t.spacing.sm,
     height: 40,
-    gap: theme.spacing.xs,
+    gap: t.spacing.xs,
   },
-  input: { flex: 1, ...theme.typography.body, color: theme.colors.foreground },
+  input: { flex: 1, ...theme.typography.body, color: t.colors.foreground },
   cancelBtn: { paddingHorizontal: 4 },
-  cancelText: { ...theme.typography.body, color: theme.colors.primary, fontWeight: '500' },
-  content: { flex: 1, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.md },
-  section: { marginBottom: theme.spacing.lg },
+  cancelText: { ...theme.typography.body, color: t.colors.primary, fontWeight: '500' },
+  content: { flex: 1, paddingHorizontal: t.spacing.md, paddingTop: t.spacing.md },
+  section: { marginBottom: t.spacing.lg },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.xs,
+    marginBottom: t.spacing.xs,
   },
   sectionTitle: {
     ...theme.typography.micro,
     fontWeight: '700',
-    color: theme.colors.subtle,
+    color: t.colors.subtle,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  clearAll: { ...theme.typography.caption, color: theme.colors.primary, fontWeight: '500' },
+  clearAll: { ...theme.typography.caption, color: t.colors.primary, fontWeight: '500' },
   trendingHeader: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   recentItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: t.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderLight,
-    gap: theme.spacing.sm,
+    borderBottomColor: t.colors.borderLight,
+    gap: t.spacing.sm,
   },
-  recentText: { ...theme.typography.body, color: theme.colors.foreground },
-  tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.xs, marginTop: 4 },
+  recentText: { ...theme.typography.body, color: t.colors.foreground },
+  tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs, marginTop: 4 },
   tag: {
-    backgroundColor: theme.colors.borderLight,
-    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: t.colors.borderLight,
+    paddingHorizontal: t.spacing.sm,
     paddingVertical: 6,
-    borderRadius: theme.radius.full,
+    borderRadius: t.radius.full,
   },
   tagText: { ...theme.typography.body, color: '#4B5563', fontWeight: '500' },
 });
+}
+

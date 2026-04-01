@@ -17,7 +17,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MoreHorizontal, Heart, Star, UtensilsCrossed } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { theme } from '../theme';
+import { useThemedStyles, useThemeColors, theme } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 import { FAVORITES_DATA } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
@@ -25,6 +26,18 @@ import { useApp } from '../context/AppContext';
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CATEGORIES = ['All', 'Sichuan', 'Japanese', 'Dessert', 'Western'];
+
+const heartBtnStyle = {
+  position: 'absolute' as const,
+  top: 8,
+  right: 8,
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: 'rgba(255,255,255,0.92)',
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+};
 
 function AnimatedHeartButton({ isFavorite, onToggle }: { isFavorite: boolean; onToggle: () => void }) {
   const scale = useSharedValue(1);
@@ -41,7 +54,7 @@ function AnimatedHeartButton({ isFavorite, onToggle }: { isFavorite: boolean; on
   };
 
   return (
-    <Pressable onPress={handlePress} style={styles.heartBtn}>
+    <Pressable onPress={handlePress} style={heartBtnStyle}>
       <Animated.View style={animStyle}>
         <Heart
           size={14}
@@ -55,6 +68,8 @@ function AnimatedHeartButton({ isFavorite, onToggle }: { isFavorite: boolean; on
 }
 
 export function Favorites() {
+  const theme = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
   const [activeCategory, setActiveCategory] = useState('All');
   const { favorites, toggleFavorite } = useApp();
@@ -75,7 +90,7 @@ export function Favorites() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav — Page mode */}
+      {/* Top Nav �?Page mode */}
       <View style={styles.topNav}>
         <View style={{ width: 40 }} />
         <Text style={styles.navTitle}>My Favorites</Text>
@@ -164,53 +179,54 @@ export function Favorites() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
+function makeStyles(t: AppTheme) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: t.colors.background },
   topNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: t.spacing.md,
     height: theme.topNavHeight,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: t.colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderLight,
+    borderBottomColor: t.colors.borderLight,
   },
-  navTitle: { ...theme.typography.h2, color: theme.colors.foreground },
+  navTitle: { ...theme.typography.h2, color: t.colors.foreground },
   moreBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
   tabBar: {
-    backgroundColor: theme.colors.surface,
-    paddingVertical: theme.spacing.xs,
+    backgroundColor: t.colors.surface,
+    paddingVertical: t.spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderLight,
+    borderBottomColor: t.colors.borderLight,
   },
-  tabList: { paddingHorizontal: theme.spacing.md, gap: theme.spacing.xs },
+  tabList: { paddingHorizontal: t.spacing.md, gap: t.spacing.xs },
   tabPill: {
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: t.spacing.md,
     paddingVertical: 6,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.borderLight,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.borderLight,
   },
-  tabPillActive: { backgroundColor: theme.colors.primary },
-  tabPillText: { ...theme.typography.caption, fontWeight: '500', color: theme.colors.muted },
-  tabPillTextActive: { color: theme.colors.surface },
-  gridContent: { padding: theme.spacing.md, gap: theme.spacing.sm },
+  tabPillActive: { backgroundColor: t.colors.primary },
+  tabPillText: { ...theme.typography.caption, fontWeight: '500', color: t.colors.muted },
+  tabPillTextActive: { color: t.colors.surface },
+  gridContent: { padding: t.spacing.md, gap: t.spacing.sm },
   gridRow: { justifyContent: 'space-between' },
-  gridItem: { width: '48%', marginBottom: theme.spacing.md },
+  gridItem: { width: '48%', marginBottom: t.spacing.md },
   gridImageWrap: {
     height: 150,
-    borderRadius: theme.radius.md,
+    borderRadius: t.radius.md,
     overflow: 'hidden',
-    marginBottom: theme.spacing.xs,
+    marginBottom: t.spacing.xs,
     position: 'relative',
   },
   heartBtn: {
     position: 'absolute',
-    top: theme.spacing.xs,
-    right: theme.spacing.xs,
+    top: t.spacing.xs,
+    right: t.spacing.xs,
     width: 32,
     height: 32,
-    borderRadius: theme.radius.full,
+    borderRadius: t.radius.full,
     backgroundColor: 'rgba(255,255,255,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -218,43 +234,47 @@ const styles = StyleSheet.create({
   gridItemTitle: {
     ...theme.typography.body,
     fontWeight: '600',
-    color: theme.colors.foreground,
+    color: t.colors.foreground,
     marginBottom: 4,
   },
   gridItemMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  gridItemRating: { ...theme.typography.caption, color: theme.colors.subtle },
+  gridItemRating: { ...theme.typography.caption, color: t.colors.subtle },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: theme.spacing.xl,
+    paddingHorizontal: t.spacing.xl,
   },
   emptyIcon: {
     width: 80,
     height: 80,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.primaryLight,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.md,
+    marginBottom: t.spacing.md,
   },
   emptyTitle: {
     ...theme.typography.h1,
-    color: theme.colors.foreground,
-    marginBottom: theme.spacing.xs,
+    color: t.colors.foreground,
+    marginBottom: t.spacing.xs,
     textAlign: 'center',
   },
   emptyBody: {
     ...theme.typography.body,
-    color: theme.colors.subtle,
+    color: t.colors.subtle,
     textAlign: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: t.spacing.lg,
   },
   exploreBtn: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.radius.full,
+    backgroundColor: t.colors.primary,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.sm,
+    borderRadius: t.radius.full,
   },
-  exploreBtnText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.surface },
+  exploreBtnText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
 });
+}
+
+
+

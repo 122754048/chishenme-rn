@@ -6,7 +6,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated from 'react-native-reanimated';
 import { ArrowLeft, ArrowRight, Info, Plus } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { theme } from '../theme';
+import { useThemedStyles, useThemeColors, theme } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 import { MEATS, FLAVORS } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 
@@ -26,21 +27,42 @@ function RestrictionButton({
   return (
     <Pressable
       style={({ pressed }) => [
-        styles.restrictionBtn,
-        isSelected && styles.restrictionBtnSelected,
+        rbStyles.restrictionBtn,
+        isSelected && rbStyles.restrictionBtnSelected,
         pressed && { opacity: 0.85 },
       ]}
       onPress={onPress}
     >
-      <Text style={styles.restrictionIcon}>{icon}</Text>
-      <Text style={[styles.restrictionLabel, isSelected && styles.restrictionLabelSelected]}>
+      <Text style={rbStyles.restrictionIcon}>{icon}</Text>
+      <Text style={[rbStyles.restrictionLabel, isSelected && rbStyles.restrictionLabelSelected]}>
         {label}
       </Text>
     </Pressable>
   );
 }
 
+// Static styles for RestrictionButton (color is constant across themes)
+const rbStyles = StyleSheet.create({
+  restrictionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+  },
+  restrictionBtnSelected: { backgroundColor: '#E85D2C', borderColor: '#E85D2C' },
+  restrictionIcon: { fontSize: 16 },
+  restrictionLabel: { fontSize: 14, lineHeight: 22, fontWeight: '500', color: '#374151' },
+  restrictionLabelSelected: { color: '#FFFFFF' },
+});
+
 export function OnboardingRestrictions() {
+  const theme = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
   const { setRestrictions, completeOnboarding } = useApp();
   const [selected, setSelected] = useState<string[]>(['spicy']);
@@ -147,105 +169,110 @@ export function OnboardingRestrictions() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
+function makeStyles(t: AppTheme) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: t.colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.xs,
   },
   backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  skipText: { ...theme.typography.caption, color: theme.colors.subtle, fontWeight: '500' },
+  skipText: { ...theme.typography.caption, color: t.colors.subtle, fontWeight: '500' },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
-    gap: theme.spacing.xs,
+    paddingHorizontal: t.spacing.md,
+    marginBottom: t.spacing.lg,
+    gap: t.spacing.xs,
   },
-  progressTrack: { flex: 1, height: 4, backgroundColor: theme.colors.border, borderRadius: 2, overflow: 'hidden' },
-  progressBar: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 2 },
-  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.primary },
+  progressTrack: { flex: 1, height: 4, backgroundColor: t.colors.border, borderRadius: 2, overflow: 'hidden' },
+  progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
+  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: t.colors.primary },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg },
-  title: { ...theme.typography.display, color: theme.colors.foreground, marginBottom: theme.spacing.xs },
-  subtitle: { ...theme.typography.body, color: theme.colors.muted, marginBottom: theme.spacing.lg },
+  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
+  title: { ...theme.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
+  subtitle: { ...theme.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
   sectionCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radius.md,
+    padding: t.spacing.md,
+    marginBottom: t.spacing.md,
     ...theme.shadows.sm,
   },
-  sectionTitle: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.subtle, letterSpacing: 0.5, marginBottom: theme.spacing.sm },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.xs },
+  sectionTitle: { ...theme.typography.micro, fontWeight: '700', color: t.colors.subtle, letterSpacing: 0.5, marginBottom: t.spacing.sm },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs },
   restrictionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.radius.md,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.sm,
+    borderRadius: t.radius.md,
     borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderColor: t.colors.border,
+    backgroundColor: t.colors.surface,
   },
   restrictionBtnSelected: {
-    backgroundColor: theme.colors.primaryDark,
-    borderColor: theme.colors.primaryDark,
+    backgroundColor: t.colors.primaryDark,
+    borderColor: t.colors.primaryDark,
   },
   restrictionIcon: { fontSize: 16 },
-  restrictionLabel: { ...theme.typography.body, fontWeight: '500', color: theme.colors.foreground },
-  restrictionLabelSelected: { color: theme.colors.surface },
+  restrictionLabel: { ...theme.typography.body, fontWeight: '500', color: t.colors.foreground },
+  restrictionLabelSelected: { color: t.colors.surface },
   customBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.radius.md,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.sm,
+    borderRadius: t.radius.md,
     borderWidth: 1.5,
-    borderColor: theme.colors.subtle,
+    borderColor: t.colors.subtle,
     borderStyle: 'dashed',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: t.colors.surface,
   },
-  customBtnText: { ...theme.typography.body, fontWeight: '500', color: theme.colors.subtle },
+  customBtnText: { ...theme.typography.body, fontWeight: '500', color: t.colors.subtle },
   infoBox: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.borderLight,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.sm,
-    gap: theme.spacing.sm,
+    backgroundColor: t.colors.borderLight,
+    borderRadius: t.radius.md,
+    padding: t.spacing.sm,
+    gap: t.spacing.sm,
     alignItems: 'flex-start',
   },
   infoIcon: {
     width: 32,
     height: 32,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.primaryLight,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   infoContent: { flex: 1 },
-  infoTitle: { ...theme.typography.caption, fontWeight: '700', color: theme.colors.foreground, marginBottom: 4 },
-  infoBody: { ...theme.typography.caption, color: theme.colors.muted, lineHeight: 18 },
+  infoTitle: { ...theme.typography.caption, fontWeight: '700', color: t.colors.foreground, marginBottom: 4 },
+  infoBody: { ...theme.typography.caption, color: t.colors.muted, lineHeight: 18 },
   footer: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.md,
+    backgroundColor: t.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.borderLight,
+    borderTopColor: t.colors.borderLight,
   },
   nextButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.full,
+    backgroundColor: t.colors.primary,
+    borderRadius: t.radius.full,
     paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
-  nextButtonText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.surface },
+  nextButtonText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
 });
+}
+
+
+

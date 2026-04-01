@@ -155,5 +155,7 @@ export function useTheme() {
   };
 }
 
+export { useThemedStyles, useThemeColors } from './useTheme';
+
 // Export default theme for backward compatibility
 export const theme = lightTheme;

@@ -13,13 +13,16 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated from 'react-native-reanimated';
 import { Check, Circle, ArrowRight } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { theme } from '../theme';
+import { useThemedStyles, useThemeColors, theme } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 import { CUISINES } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function OnboardingCuisines() {
+  const theme = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
   const { setCuisines, completeOnboarding } = useApp();
   const [selected, setSelected] = useState<string[]>(['Sichuan', 'Western']);
@@ -126,84 +129,89 @@ export function OnboardingCuisines() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
+function makeStyles(t: AppTheme) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: t.colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.xs,
   },
-  skipText: { ...theme.typography.caption, color: theme.colors.subtle, fontWeight: '500' },
+  skipText: { ...theme.typography.caption, color: t.colors.subtle, fontWeight: '500' },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
-    gap: theme.spacing.xs,
+    paddingHorizontal: t.spacing.md,
+    marginBottom: t.spacing.lg,
+    gap: t.spacing.xs,
   },
-  progressTrack: { flex: 1, height: 4, backgroundColor: theme.colors.border, borderRadius: 2, overflow: 'hidden' },
-  progressBar: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 2 },
-  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.primary },
+  progressTrack: { flex: 1, height: 4, backgroundColor: t.colors.border, borderRadius: 2, overflow: 'hidden' },
+  progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
+  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: t.colors.primary },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg },
-  title: { ...theme.typography.display, color: theme.colors.foreground, marginBottom: theme.spacing.xs },
-  subtitle: { ...theme.typography.body, color: theme.colors.muted, marginBottom: theme.spacing.lg },
-  cuisineGrid: { gap: theme.spacing.xs, marginBottom: theme.spacing.lg },
+  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
+  title: { ...theme.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
+  subtitle: { ...theme.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
+  cuisineGrid: { gap: t.spacing.xs, marginBottom: t.spacing.lg },
   cuisineCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radius.md,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.sm,
     borderWidth: 1.5,
     borderColor: 'transparent',
     ...theme.shadows.sm,
   },
   cuisineCardSelected: {
-    backgroundColor: theme.colors.primaryLight,
-    borderColor: theme.colors.primary,
+    backgroundColor: t.colors.primaryLight,
+    borderColor: t.colors.primary,
   },
-  cuisineLeft: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+  cuisineLeft: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm },
   cuisineIcon: { fontSize: 18 },
-  cuisineLabel: { ...theme.typography.body, fontWeight: '500', color: theme.colors.foreground },
-  cuisineLabelSelected: { color: theme.colors.primaryDark, fontWeight: '600' },
+  cuisineLabel: { ...theme.typography.body, fontWeight: '500', color: t.colors.foreground },
+  cuisineLabelSelected: { color: t.colors.primaryDark, fontWeight: '600' },
   checkmark: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   checkmarkFilled: {
     width: 22,
     height: 22,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.primary,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  banner: { borderRadius: theme.radius.lg, overflow: 'hidden', height: 128 },
+  banner: { borderRadius: t.radius.lg, overflow: 'hidden', height: 128 },
   bannerImage: { width: '100%', height: '100%', position: 'absolute' },
   bannerOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'flex-end',
-    padding: theme.spacing.md,
+    padding: t.spacing.md,
   },
-  bannerText: { ...theme.typography.caption, color: theme.colors.surface, fontWeight: '500', lineHeight: 18 },
+  bannerText: { ...theme.typography.caption, color: t.colors.surface, fontWeight: '500', lineHeight: 18 },
   footer: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.md,
+    backgroundColor: t.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.borderLight,
+    borderTopColor: t.colors.borderLight,
   },
   nextButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.full,
+    backgroundColor: t.colors.primary,
+    borderRadius: t.radius.full,
     paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
-  nextButtonText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.surface },
+  nextButtonText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
 });
+}
+
+
+

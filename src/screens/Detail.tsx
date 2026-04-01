@@ -13,7 +13,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { useAnimatedStyle, useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { ArrowLeft, Share2, Heart, Zap, Clock, UtensilsCrossed, Star, Plus } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { theme } from '../theme';
+import { useThemedStyles, useThemeColors, theme } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 import { SkeletonImage } from '../components/SkeletonImage';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -37,6 +38,8 @@ const PAIRINGS = [
 ];
 
 export function Detail() {
+  const theme = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
   const { width: screenWidth } = useWindowDimensions();
   const route = useRoute<DetailRouteProp>();
@@ -217,8 +220,9 @@ export function Detail() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
+function makeStyles(t: AppTheme) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: t.colors.background },
   navBarOuter: {
     position: 'absolute',
     top: 0,
@@ -230,115 +234,119 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.xs,
+    paddingHorizontal: t.spacing.md,
+    paddingBottom: t.spacing.xs,
   },
   navCircle: {
     width: 36,
     height: 36,
-    borderRadius: theme.radius.full,
+    borderRadius: t.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navRight: { flexDirection: 'row', gap: theme.spacing.xs },
+  navRight: { flexDirection: 'row', gap: t.spacing.xs },
   scrollView: { flex: 1 },
   heroWrap: { height: 360, overflow: 'hidden', position: 'relative' },
   heroImage: {},
-  content: { paddingHorizontal: theme.spacing.md, marginTop: -theme.spacing.md },
+  content: { paddingHorizontal: t.spacing.md, marginTop: -theme.spacing.md },
   titleCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radius.lg,
+    padding: t.spacing.lg,
+    marginBottom: t.spacing.md,
     ...theme.shadows.md,
   },
-  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: theme.spacing.sm },
-  dishTitle: { fontSize: 22, lineHeight: 30, fontWeight: '700', color: theme.colors.foreground, flex: 1 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: t.spacing.sm },
+  dishTitle: { fontSize: 22, lineHeight: 30, fontWeight: '700', color: t.colors.foreground, flex: 1 },
   calorieBadge: {
-    backgroundColor: theme.colors.success,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: t.colors.success,
+    borderRadius: t.radius.md,
+    paddingHorizontal: t.spacing.sm,
     paddingVertical: 6,
     alignItems: 'center',
   },
-  calorieNum: { ...theme.typography.h2, fontWeight: '700', color: theme.colors.surface },
-  calorieUnit: { ...theme.typography.micro, color: theme.colors.surface },
-  aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: theme.spacing.xs },
-  aiBadgeText: { ...theme.typography.caption, color: theme.colors.primary, fontWeight: '600' },
-  aiDescription: { ...theme.typography.body, color: theme.colors.muted, lineHeight: 20 },
-  section: { marginBottom: theme.spacing.lg },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.sm },
-  sectionTitle: { ...theme.typography.h2, color: theme.colors.foreground, marginBottom: theme.spacing.sm },
-  viewMore: { ...theme.typography.caption, color: theme.colors.primary, fontWeight: '500' },
-  nutriGrid: { flexDirection: 'row', gap: theme.spacing.xs },
+  calorieNum: { ...theme.typography.h2, fontWeight: '700', color: t.colors.surface },
+  calorieUnit: { ...theme.typography.micro, color: t.colors.surface },
+  aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: t.spacing.xs },
+  aiBadgeText: { ...theme.typography.caption, color: t.colors.primary, fontWeight: '600' },
+  aiDescription: { ...theme.typography.body, color: t.colors.muted, lineHeight: 20 },
+  section: { marginBottom: t.spacing.lg },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: t.spacing.sm },
+  sectionTitle: { ...theme.typography.h2, color: t.colors.foreground, marginBottom: t.spacing.sm },
+  viewMore: { ...theme.typography.caption, color: t.colors.primary, fontWeight: '500' },
+  nutriGrid: { flexDirection: 'row', gap: t.spacing.xs },
   nutriCard: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radius.md,
+    padding: t.spacing.md,
     alignItems: 'center',
     ...theme.shadows.sm,
   },
-  nutriLabel: { ...theme.typography.caption, color: theme.colors.subtle, marginBottom: 4 },
-  nutriValue: { fontSize: 17, lineHeight: 24, fontWeight: '700', color: theme.colors.foreground },
-  pairingsScroll: { paddingRight: theme.spacing.md, gap: theme.spacing.sm },
+  nutriLabel: { ...theme.typography.caption, color: t.colors.subtle, marginBottom: 4 },
+  nutriValue: { fontSize: 17, lineHeight: 24, fontWeight: '700', color: t.colors.foreground },
+  pairingsScroll: { paddingRight: t.spacing.md, gap: t.spacing.sm },
   pairingCard: { width: 140 },
-  pairingImageWrap: { height: 140, borderRadius: theme.radius.md, overflow: 'hidden', marginBottom: theme.spacing.xs, position: 'relative' },
+  pairingImageWrap: { height: 140, borderRadius: t.radius.md, overflow: 'hidden', marginBottom: t.spacing.xs, position: 'relative' },
   pairingBadge: {
     position: 'absolute',
-    top: theme.spacing.xs,
-    right: theme.spacing.xs,
+    top: t.spacing.xs,
+    right: t.spacing.xs,
     backgroundColor: 'rgba(255,255,255,0.92)',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: theme.radius.sm,
+    borderRadius: t.radius.sm,
   },
-  pairingBadgeText: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.foreground },
-  pairingTitle: { ...theme.typography.body, fontWeight: '600', color: theme.colors.foreground, marginBottom: 2 },
-  pairingPrice: { ...theme.typography.caption, color: theme.colors.subtle },
+  pairingBadgeText: { ...theme.typography.micro, fontWeight: '700', color: t.colors.foreground },
+  pairingTitle: { ...theme.typography.body, fontWeight: '600', color: t.colors.foreground, marginBottom: 2 },
+  pairingPrice: { ...theme.typography.caption, color: t.colors.subtle },
   mealPrepCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    gap: theme.spacing.md,
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radius.md,
+    padding: t.spacing.md,
+    gap: t.spacing.md,
     ...theme.shadows.sm,
   },
-  mealPrepRow: { flexDirection: 'row', gap: theme.spacing.sm, alignItems: 'flex-start' },
+  mealPrepRow: { flexDirection: 'row', gap: t.spacing.sm, alignItems: 'flex-start' },
   mealPrepIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: theme.radius.full,
+    borderRadius: t.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mealPrepRowTitle: { ...theme.typography.body, fontWeight: '700', color: theme.colors.foreground, marginBottom: 2 },
-  mealPrepRowBody: { ...theme.typography.caption, color: theme.colors.subtle, lineHeight: 18 },
+  mealPrepRowTitle: { ...theme.typography.body, fontWeight: '700', color: t.colors.foreground, marginBottom: 2 },
+  mealPrepRowBody: { ...theme.typography.caption, color: t.colors.subtle, lineHeight: 18 },
   bottomPadding: { height: 100 },
   actionBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: t.colors.surface,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.sm,
+    paddingHorizontal: t.spacing.lg,
+    paddingTop: t.spacing.sm,
     paddingBottom: 4,
     ...theme.shadows.lg,
   },
-  estimatedLabel: { ...theme.typography.micro, color: theme.colors.subtle, letterSpacing: 0.5 },
-  estimatedPrice: { ...theme.typography.h1, color: theme.colors.foreground, marginTop: 2 },
+  estimatedLabel: { ...theme.typography.micro, color: t.colors.subtle, letterSpacing: 0.5 },
+  estimatedPrice: { ...theme.typography.h1, color: t.colors.foreground, marginTop: 2 },
   addButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.full,
-    paddingHorizontal: theme.spacing.lg,
+    backgroundColor: t.colors.primary,
+    borderRadius: t.radius.full,
+    paddingHorizontal: t.spacing.lg,
     height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     ...theme.shadows.md,
   },
-  addButtonText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.surface },
+  addButtonText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
 });
+}
+
+
+

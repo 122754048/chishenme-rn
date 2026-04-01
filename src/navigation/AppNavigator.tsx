@@ -14,7 +14,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Home as HomeIcon, Search, Heart, User } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
-import { theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 import type { RootStackParamList, MainTabParamList } from './types';
 
 import { Home } from '../screens/Home';
@@ -31,6 +32,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
+  const theme = useThemeColors();
   const insets = useSafeAreaInsets();
 
   return (
@@ -109,6 +111,8 @@ function MainTabs() {
 }
 
 function LoadingScreen() {
+  const theme = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.6);
 
@@ -164,56 +168,41 @@ export function AppNavigator() {
         }}
         initialRouteName={onboardingComplete ? 'MainTabs' : 'OnboardingCuisines'}
       >
-        {/* Onboarding flow — slide right for progression feel */}
+        {/* Onboarding — slide right */}
         <Stack.Screen name="OnboardingCuisines" component={OnboardingCuisines} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
         <Stack.Screen name="OnboardingRestrictions" component={OnboardingRestrictions} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
         <Stack.Screen name="Upgrade" component={Upgrade} options={{ animation: 'slide_from_bottom', animationDuration: 350 }} />
 
-        {/* Main Tab — fade for root transition */}
+        {/* Main Tab — fade */}
         <Stack.Screen name="MainTabs" component={MainTabs} options={{ animation: 'fade' }} />
 
-        {/* Detail pages — slide from right for detail view */}
-        <Stack.Screen
-          name="Detail"
-          component={Detail}
-          options={{ animation: 'slide_from_right', animationDuration: 300 }}
-        />
-        <Stack.Screen
-          name="History"
-          component={History}
-          options={{ animation: 'slide_from_right', animationDuration: 300 }}
-        />
+        {/* Detail pages */}
+        <Stack.Screen name="Detail" component={Detail} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
+        <Stack.Screen name="History" component={History} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  loadingIcon: {
-    fontSize: 40,
-  },
-  loadingTitle: {
-    ...theme.typography.display,
-    color: theme.colors.primary,
-    marginBottom: 8,
-  },
-  loadingSubtitle: {
-    ...theme.typography.body,
-    color: theme.colors.subtle,
-  },
-});
+function makeStyles(t: AppTheme) {
+  return StyleSheet.create({
+    loading: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadingIconWrap: {
+      width: 80,
+      height: 80,
+      borderRadius: t.radius.lg,
+      backgroundColor: t.colors.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    loadingIcon: { fontSize: 40 },
+    loadingTitle: { ...t.typography.display, color: t.colors.primary, marginBottom: 8 },
+    loadingSubtitle: { ...t.typography.body, color: t.colors.subtle },
+  });
+}

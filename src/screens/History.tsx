@@ -11,13 +11,16 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowLeft, MoreHorizontal, Heart, Ban, RefreshCw, ClipboardList } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { theme } from '../theme';
+import { useThemedStyles, useThemeColors, theme } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 import { useApp } from '../context/AppContext';
 import { SkeletonImage } from '../components/SkeletonImage';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function History() {
+  const theme = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
   const { history } = useApp();
 
@@ -33,7 +36,7 @@ export function History() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav â€” Page mode */}
+      {/* Top Nav â€?Page mode */}
       <View style={styles.topNav}>
         <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}>
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
@@ -102,82 +105,87 @@ export function History() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
+function makeStyles(t: AppTheme) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: t.colors.background },
   topNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: t.spacing.md,
     height: theme.topNavHeight,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: t.colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderLight,
+    borderBottomColor: t.colors.borderLight,
   },
   backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  navTitle: { ...theme.typography.h2, color: theme.colors.foreground },
+  navTitle: { ...theme.typography.h2, color: t.colors.foreground },
   moreBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.lg, paddingBottom: theme.spacing['2xl'] },
-  group: { marginBottom: theme.spacing.xl },
-  groupHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.sm, gap: theme.spacing.sm },
+  scrollContent: { paddingHorizontal: t.spacing.md, paddingTop: t.spacing.lg, paddingBottom: t.spacing['2xl'] },
+  group: { marginBottom: t.spacing.xl },
+  groupHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: t.spacing.sm, gap: t.spacing.sm },
   groupLabel: {
     ...theme.typography.micro,
     fontWeight: '700',
-    color: theme.colors.subtle,
+    color: t.colors.subtle,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  groupLine: { flex: 1, height: 1, backgroundColor: theme.colors.border },
-  groupItems: { gap: theme.spacing.xs },
+  groupLine: { flex: 1, height: 1, backgroundColor: t.colors.border },
+  groupItems: { gap: t.spacing.xs },
   historyItem: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.sm,
-    gap: theme.spacing.sm,
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radius.md,
+    padding: t.spacing.sm,
+    gap: t.spacing.sm,
     alignItems: 'center',
     ...theme.shadows.sm,
   },
-  historyImageWrap: { width: 48, height: 48, borderRadius: theme.radius.sm, overflow: 'hidden' },
+  historyImageWrap: { width: 48, height: 48, borderRadius: t.radius.sm, overflow: 'hidden' },
   historyItemContent: { flex: 1 },
-  historyItemTitle: { ...theme.typography.body, fontWeight: '600', color: theme.colors.foreground },
-  historyItemMeta: { ...theme.typography.micro, color: theme.colors.subtle, marginTop: 2 },
+  historyItemTitle: { ...theme.typography.body, fontWeight: '600', color: t.colors.foreground },
+  historyItemMeta: { ...theme.typography.micro, color: t.colors.subtle, marginTop: 2 },
   likedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: theme.colors.primaryLight,
-    borderRadius: theme.radius.full,
-    paddingHorizontal: theme.spacing.xs,
+    backgroundColor: t.colors.primaryLight,
+    borderRadius: t.radius.full,
+    paddingHorizontal: t.spacing.xs,
     paddingVertical: 5,
   },
-  likedText: { ...theme.typography.micro, fontWeight: '600', color: theme.colors.primary },
+  likedText: { ...theme.typography.micro, fontWeight: '600', color: t.colors.primary },
   skippedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: theme.colors.borderLight,
-    borderRadius: theme.radius.full,
-    paddingHorizontal: theme.spacing.xs,
+    backgroundColor: t.colors.borderLight,
+    borderRadius: t.radius.full,
+    paddingHorizontal: t.spacing.xs,
     paddingVertical: 5,
   },
-  skippedText: { ...theme.typography.micro, fontWeight: '600', color: theme.colors.subtle },
+  skippedText: { ...theme.typography.micro, fontWeight: '600', color: t.colors.subtle },
   endState: {
     alignItems: 'center',
-    paddingTop: theme.spacing['2xl'],
-    paddingBottom: theme.spacing.lg,
-    gap: theme.spacing.xs,
+    paddingTop: t.spacing['2xl'],
+    paddingBottom: t.spacing.lg,
+    gap: t.spacing.xs,
   },
   endIcon: {
     width: 48,
     height: 48,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.surface,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
     ...theme.shadows.sm,
   },
-  endText: { ...theme.typography.caption, color: theme.colors.subtle },
+  endText: { ...theme.typography.caption, color: t.colors.subtle },
 });
+}
+
+
+

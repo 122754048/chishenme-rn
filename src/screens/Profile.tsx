@@ -11,7 +11,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Bell, Heart, Clock, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Star } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { theme } from '../theme';
+import { useThemedStyles, useThemeColors, theme } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
 
@@ -25,30 +26,48 @@ interface MenuRowProps {
   onPress?: () => void;
 }
 
+const mrStyles = StyleSheet.create({
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F9FAFB',
+    gap: 12,
+  },
+  menuIconWrap: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  menuLabel: { flex: 1, fontSize: 14, lineHeight: 22, fontWeight: '500', color: '#111827' },
+  menuRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  menuValue: { fontSize: 12, lineHeight: 18, fontWeight: '500', color: '#9CA3AF' },
+});
+
 function MenuRow({ icon, iconBg, label, value, onPress }: MenuRowProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.menuRow, pressed && { backgroundColor: theme.colors.borderLight }]} onPress={onPress} >
-      <View style={[styles.menuIconWrap, { backgroundColor: iconBg }]}>
+    <Pressable style={({ pressed }) => [mrStyles.menuRow, pressed && { backgroundColor: '#F3F4F6' }]} onPress={onPress}>
+      <View style={[mrStyles.menuIconWrap, { backgroundColor: iconBg }]}>
         {icon}
       </View>
-      <Text style={styles.menuLabel}>{label}</Text>
-      <View style={styles.menuRight}>
-        {value && <Text style={styles.menuValue}>{value}</Text>}
-        <ChevronRight size={16} color={theme.colors.subtle} strokeWidth={1.5} />
+      <Text style={mrStyles.menuLabel}>{label}</Text>
+      <View style={mrStyles.menuRight}>
+        {value && <Text style={mrStyles.menuValue}>{value}</Text>}
+        <ChevronRight size={16} color="#9CA3AF" strokeWidth={1.5} />
       </View>
     </Pressable>
   );
 }
 
 export function Profile() {
+  const theme = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
   const { favorites } = useApp();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav — Brand mode */}
+      {/* Top Nav �?Brand mode */}
       <View style={styles.topNav}>
-        <Text style={styles.logo}>🍽️ ChiShenMe</Text>
+        <Text style={styles.logo}>🍽�?ChiShenMe</Text>
         <Pressable style={({ pressed }) => [styles.bellBtn, pressed && { opacity: 0.7 }]}>
           <Bell size={20} color={theme.colors.foreground} strokeWidth={1.8} />
         </Pressable>
@@ -156,127 +175,132 @@ export function Profile() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
+function makeStyles(t: AppTheme) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: t.colors.background },
   topNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: t.spacing.md,
     height: theme.topNavHeight,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: t.colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderLight,
+    borderBottomColor: t.colors.borderLight,
   },
-  logo: { ...theme.typography.h1, color: theme.colors.foreground },
+  logo: { ...theme.typography.h1, color: t.colors.foreground },
   bellBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   scrollView: { flex: 1 },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
-    gap: theme.spacing.md,
+    paddingHorizontal: t.spacing.lg,
+    paddingTop: t.spacing.lg,
+    paddingBottom: t.spacing.md,
+    gap: t.spacing.md,
   },
   avatarWrap: { position: 'relative' },
-  avatarImage: { width: 64, height: 64, borderRadius: theme.radius.full, overflow: 'hidden' },
+  avatarImage: { width: 64, height: 64, borderRadius: t.radius.full, overflow: 'hidden' },
   avatarBadge: {
     position: 'absolute',
     bottom: 0,
     right: -2,
     width: 20,
     height: 20,
-    borderRadius: theme.radius.full,
-    backgroundColor: theme.colors.surface,
+    borderRadius: t.radius.full,
+    backgroundColor: t.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     ...theme.shadows.sm,
   },
   profileInfo: { flex: 1 },
-  profileName: { ...theme.typography.h1, color: theme.colors.foreground, marginBottom: 2 },
-  profileJoined: { ...theme.typography.caption, color: theme.colors.subtle, marginBottom: 6 },
+  profileName: { ...theme.typography.h1, color: t.colors.foreground, marginBottom: 2 },
+  profileJoined: { ...theme.typography.caption, color: t.colors.subtle, marginBottom: 6 },
   levelBadge: {
     backgroundColor: '#FFDEBA',
-    paddingHorizontal: theme.spacing.xs,
+    paddingHorizontal: t.spacing.xs,
     paddingVertical: 3,
-    borderRadius: theme.radius.full,
+    borderRadius: t.radius.full,
     alignSelf: 'flex-start',
   },
   levelBadgeText: {
     ...theme.typography.micro,
     fontWeight: '700',
-    color: theme.colors.brandWarmDark,
+    color: t.colors.brandWarmDark,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  membershipCards: { paddingHorizontal: theme.spacing.md, gap: theme.spacing.sm, marginBottom: theme.spacing.md },
+  membershipCards: { paddingHorizontal: t.spacing.md, gap: t.spacing.sm, marginBottom: t.spacing.md },
   membershipCard: {
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
+    borderRadius: t.radius.lg,
+    padding: t.spacing.md,
     overflow: 'hidden',
   },
-  proCard: { backgroundColor: theme.colors.primary },
-  familyCard: { backgroundColor: theme.colors.brandWarm },
+  proCard: { backgroundColor: t.colors.primary },
+  familyCard: { backgroundColor: t.colors.brandWarm },
   membershipLabel: {
     ...theme.typography.micro,
     color: 'rgba(255,255,255,0.7)',
     letterSpacing: 1,
     marginBottom: 2,
   },
-  membershipTitle: { ...theme.typography.h1, color: theme.colors.surface, marginBottom: 4 },
+  membershipTitle: { ...theme.typography.h1, color: t.colors.surface, marginBottom: 4 },
   membershipDesc: {
     ...theme.typography.caption,
     color: 'rgba(255,255,255,0.8)',
-    marginBottom: theme.spacing.sm,
+    marginBottom: t.spacing.sm,
     paddingRight: 40,
   },
   manageBtn: {
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: theme.spacing.md,
+    backgroundColor: t.colors.surface,
+    paddingHorizontal: t.spacing.md,
     paddingVertical: 6,
-    borderRadius: theme.radius.full,
+    borderRadius: t.radius.full,
     alignSelf: 'flex-start',
   },
-  manageBtnText: { ...theme.typography.caption, fontWeight: '700', color: theme.colors.primary },
+  manageBtnText: { ...theme.typography.caption, fontWeight: '700', color: t.colors.primary },
   menuCard: {
-    backgroundColor: theme.colors.surface,
-    marginHorizontal: theme.spacing.md,
-    borderRadius: theme.radius.lg,
-    marginBottom: theme.spacing.sm,
+    backgroundColor: t.colors.surface,
+    marginHorizontal: t.spacing.md,
+    borderRadius: t.radius.lg,
+    marginBottom: t.spacing.sm,
     overflow: 'hidden',
     ...theme.shadows.sm,
   },
   menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderLight,
-    gap: theme.spacing.sm,
+    borderBottomColor: t.colors.borderLight,
+    gap: t.spacing.sm,
   },
   menuIconWrap: {
     width: 32,
     height: 32,
-    borderRadius: theme.radius.full,
+    borderRadius: t.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuLabel: { ...theme.typography.body, fontWeight: '500', color: theme.colors.foreground, flex: 1 },
+  menuLabel: { ...theme.typography.body, fontWeight: '500', color: t.colors.foreground, flex: 1 },
   menuRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  menuValue: { ...theme.typography.caption, color: theme.colors.subtle },
+  menuValue: { ...theme.typography.caption, color: t.colors.subtle },
   signOutBtn: {
-    backgroundColor: theme.colors.surface,
-    marginHorizontal: theme.spacing.md,
-    borderRadius: theme.radius.lg,
-    paddingVertical: theme.spacing.md,
+    backgroundColor: t.colors.surface,
+    marginHorizontal: t.spacing.md,
+    borderRadius: t.radius.lg,
+    paddingVertical: t.spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.xs,
+    gap: t.spacing.xs,
     ...theme.shadows.sm,
   },
-  signOutText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.error },
-  bottomPadding: { height: theme.spacing.lg },
+  signOutText: { ...theme.typography.body, fontWeight: '700', color: t.colors.error },
+  bottomPadding: { height: t.spacing.lg },
 });
+}
+
+
+

@@ -6,10 +6,43 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated from 'react-native-reanimated';
 import { ArrowLeft, ArrowRight, Zap, Shield, Check, Lock, CreditCard } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { theme } from '../theme';
+import { useThemedStyles, useThemeColors, theme } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 import { useApp } from '../context/AppContext';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
+
+const pcStyles = StyleSheet.create({
+  planCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  planCardHighlighted: { backgroundColor: '#FFF0E8', borderColor: '#FF6B35' },
+  badge: { position: 'absolute', top: 0, right: 0, paddingHorizontal: 12, paddingVertical: 4, borderTopRightRadius: 12, borderBottomLeftRadius: 8 },
+  badgeHighlighted: { backgroundColor: '#FF6B35' },
+  badgeNormal: { backgroundColor: '#FFFFFF' },
+  badgeText: { fontSize: 10, lineHeight: 14, fontWeight: '600', color: '#FFFFFF' },
+  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  planSubtitle: { fontSize: 10, lineHeight: 14, fontWeight: '600', color: '#9CA3AF', letterSpacing: 0.5, marginBottom: 2 },
+  planTitle: { fontSize: 20, lineHeight: 28, fontWeight: '700', color: '#111827' },
+  planTitleHighlighted: { color: '#FF6B35' },
+  priceBlock: { alignItems: 'flex-end' },
+  price: { fontSize: 20, lineHeight: 28, fontWeight: '700', color: '#111827' },
+  priceHighlighted: { color: '#FF6B35' },
+  priceSuffix: { fontSize: 12, lineHeight: 18, fontWeight: '500', color: '#9CA3AF', marginTop: 1 },
+  featuresList: { gap: 8 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  featureText: { fontSize: 12, lineHeight: 18, fontWeight: '500', color: '#4B5563' },
+  featureTextHighlighted: { color: '#1F2937', fontWeight: '600' },
+});
 
 function PlanCard({
   title,
@@ -32,41 +65,41 @@ function PlanCard({
 }) {
   const getIcon = (type?: string) => {
     switch (type) {
-      case 'zap': return <Zap size={14} color={theme.colors.primary} fill={theme.colors.primary} />;
-      case 'shield': return <Shield size={14} color={theme.colors.accent} strokeWidth={2} />;
-      default: return <Check size={14} color={theme.colors.success} strokeWidth={2.5} />;
+      case 'zap': return <Zap size={14} color="#FF6B35" fill="#FF6B35" />;
+      case 'shield': return <Shield size={14} color="#2EC4B6" strokeWidth={2} />;
+      default: return <Check size={14} color="#4CAF50" strokeWidth={2.5} />;
     }
   };
 
   return (
     <Pressable
       style={({ pressed }) => [
-        styles.planCard,
-        highlighted && styles.planCardHighlighted,
+        pcStyles.planCard,
+        highlighted && pcStyles.planCardHighlighted,
         pressed && { opacity: 0.9 },
       ]}
       onPress={onSelect}
     >
       {badge && (
-        <View style={[styles.badge, highlighted ? styles.badgeHighlighted : styles.badgeNormal]}>
-          <Text style={styles.badgeText}>{badge}</Text>
+        <View style={[pcStyles.badge, highlighted ? pcStyles.badgeHighlighted : pcStyles.badgeNormal]}>
+          <Text style={pcStyles.badgeText}>{badge}</Text>
         </View>
       )}
-      <View style={styles.planHeader}>
+      <View style={pcStyles.planHeader}>
         <View>
-          <Text style={styles.planSubtitle}>{subtitle}</Text>
-          <Text style={[styles.planTitle, highlighted && styles.planTitleHighlighted]}>{title}</Text>
+          <Text style={pcStyles.planSubtitle}>{subtitle}</Text>
+          <Text style={[pcStyles.planTitle, highlighted && pcStyles.planTitleHighlighted]}>{title}</Text>
         </View>
-        <View style={styles.priceBlock}>
-          <Text style={[styles.price, highlighted && styles.priceHighlighted]}>{price}</Text>
-          {priceSuffix && <Text style={styles.priceSuffix}>{priceSuffix}</Text>}
+        <View style={pcStyles.priceBlock}>
+          <Text style={[pcStyles.price, highlighted && pcStyles.priceHighlighted]}>{price}</Text>
+          {priceSuffix && <Text style={pcStyles.priceSuffix}>{priceSuffix}</Text>}
         </View>
       </View>
-      <View style={styles.featuresList}>
+      <View style={pcStyles.featuresList}>
         {features.map((f, i) => (
-          <View key={i} style={styles.featureRow}>
+          <View key={i} style={pcStyles.featureRow}>
             {getIcon(f.iconType)}
-            <Text style={[styles.featureText, highlighted && styles.featureTextHighlighted]}>{f.text}</Text>
+            <Text style={[pcStyles.featureText, highlighted && pcStyles.featureTextHighlighted]}>{f.text}</Text>
           </View>
         ))}
       </View>
@@ -75,6 +108,8 @@ function PlanCard({
 }
 
 export function Upgrade() {
+  const theme = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
   const { completeOnboarding } = useApp();
 
@@ -176,97 +211,102 @@ export function Upgrade() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
+function makeStyles(t: AppTheme) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: t.colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.xs,
   },
   backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  skipText: { ...theme.typography.caption, color: theme.colors.subtle, fontWeight: '500' },
+  skipText: { ...theme.typography.caption, color: t.colors.subtle, fontWeight: '500' },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
-    gap: theme.spacing.xs,
+    paddingHorizontal: t.spacing.md,
+    marginBottom: t.spacing.lg,
+    gap: t.spacing.xs,
   },
-  progressTrack: { flex: 1, height: 4, backgroundColor: theme.colors.border, borderRadius: 2, overflow: 'hidden' },
-  progressBar: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 2 },
-  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.primary },
+  progressTrack: { flex: 1, height: 4, backgroundColor: t.colors.border, borderRadius: 2, overflow: 'hidden' },
+  progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
+  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: t.colors.primary },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg },
-  title: { ...theme.typography.display, color: theme.colors.foreground, marginBottom: theme.spacing.xs },
-  subtitle: { ...theme.typography.body, color: theme.colors.muted, marginBottom: theme.spacing.lg },
-  plans: { gap: theme.spacing.sm, marginBottom: theme.spacing.lg },
+  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
+  title: { ...theme.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
+  subtitle: { ...theme.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
+  plans: { gap: t.spacing.sm, marginBottom: t.spacing.lg },
   planCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radius.md,
+    padding: t.spacing.md,
     borderWidth: 1.5,
     borderColor: 'transparent',
     ...theme.shadows.sm,
   },
   planCardHighlighted: {
-    backgroundColor: theme.colors.primaryLight,
-    borderColor: theme.colors.primary,
+    backgroundColor: t.colors.primaryLight,
+    borderColor: t.colors.primary,
   },
   badge: {
     position: 'absolute',
     top: 0,
     right: 0,
-    paddingHorizontal: theme.spacing.sm,
+    paddingHorizontal: t.spacing.sm,
     paddingVertical: 4,
-    borderTopRightRadius: theme.radius.md,
-    borderBottomLeftRadius: theme.radius.sm,
+    borderTopRightRadius: t.radius.md,
+    borderBottomLeftRadius: t.radius.sm,
   },
-  badgeHighlighted: { backgroundColor: theme.colors.primary },
-  badgeNormal: { backgroundColor: theme.colors.surface },
-  badgeText: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.surface },
-  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: theme.spacing.sm },
-  planSubtitle: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.subtle, letterSpacing: 0.5, marginBottom: 2 },
-  planTitle: { ...theme.typography.h1, color: theme.colors.foreground },
-  planTitleHighlighted: { color: theme.colors.primary },
+  badgeHighlighted: { backgroundColor: t.colors.primary },
+  badgeNormal: { backgroundColor: t.colors.surface },
+  badgeText: { ...theme.typography.micro, fontWeight: '700', color: t.colors.surface },
+  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: t.spacing.sm },
+  planSubtitle: { ...theme.typography.micro, fontWeight: '700', color: t.colors.subtle, letterSpacing: 0.5, marginBottom: 2 },
+  planTitle: { ...theme.typography.h1, color: t.colors.foreground },
+  planTitleHighlighted: { color: t.colors.primary },
   priceBlock: { alignItems: 'flex-end' },
-  price: { ...theme.typography.h1, color: theme.colors.foreground },
-  priceHighlighted: { color: theme.colors.primary },
-  priceSuffix: { ...theme.typography.caption, color: theme.colors.subtle, marginTop: 1 },
-  featuresList: { gap: theme.spacing.xs },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+  price: { ...theme.typography.h1, color: t.colors.foreground },
+  priceHighlighted: { color: t.colors.primary },
+  priceSuffix: { ...theme.typography.caption, color: t.colors.subtle, marginTop: 1 },
+  featuresList: { gap: t.spacing.xs },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs },
   featureText: { ...theme.typography.caption, color: '#4B5563' },
-  featureTextHighlighted: { color: theme.colors.foreground, fontWeight: '500' },
-  trustBadges: { flexDirection: 'row', gap: theme.spacing.sm },
+  featureTextHighlighted: { color: t.colors.foreground, fontWeight: '500' },
+  trustBadges: { flexDirection: 'row', gap: t.spacing.sm },
   trustBadge: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.sm,
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radius.md,
+    padding: t.spacing.sm,
     alignItems: 'center',
     gap: 4,
     ...theme.shadows.sm,
   },
-  trustLabel: { ...theme.typography.micro, fontWeight: '700', color: theme.colors.subtle, letterSpacing: 0.5 },
+  trustLabel: { ...theme.typography.micro, fontWeight: '700', color: t.colors.subtle, letterSpacing: 0.5 },
   footer: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.md,
+    backgroundColor: t.colors.surface,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.borderLight,
-    gap: theme.spacing.xs,
+    borderTopColor: t.colors.borderLight,
+    gap: t.spacing.xs,
   },
   upgradeButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.full,
+    backgroundColor: t.colors.primary,
+    borderRadius: t.radius.full,
     paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.xs,
+    gap: t.spacing.xs,
   },
-  upgradeButtonText: { ...theme.typography.body, fontWeight: '700', color: theme.colors.surface },
-  skipButton: { paddingVertical: theme.spacing.xs, alignItems: 'center' },
-  skipButtonText: { ...theme.typography.caption, color: theme.colors.subtle, fontWeight: '500' },
+  upgradeButtonText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
+  skipButton: { paddingVertical: t.spacing.xs, alignItems: 'center' },
+  skipButtonText: { ...theme.typography.caption, color: t.colors.subtle, fontWeight: '500' },
 });
+}
+
+
+
