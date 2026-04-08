@@ -1,6 +1,8 @@
 import json
-from datetime import datetime
-from fastapi import FastAPI, HTTPException, Header, Depends
+from datetime import UTC, datetime
+from decimal import Decimal
+from fastapi import FastAPI, HTTPException, Header, Depends, Request
+from pydantic import ValidationError
 
 from .config import settings
 from .db import init_db, tx, utc_now_iso
@@ -16,8 +18,10 @@ from .schemas import (
     MembershipResponse,
     AuthRequest,
     AuthResponse,
+    AccountDeletionResponse,
 )
 from .security import hash_password, verify_password, create_access_token, decode_access_token
+from .services.alipay import verify_alipay_rsa2_signature
 
 app = FastAPI(title=settings.app_name)
 
@@ -29,7 +33,7 @@ def on_startup() -> None:
 
 
 def _today() -> str:
-    return datetime.utcnow().date().isoformat()
+    return datetime.now(UTC).date().isoformat()
 
 
 def _current_user(authorization: str | None = Header(default=None)) -> str:
@@ -37,14 +41,48 @@ def _current_user(authorization: str | None = Header(default=None)) -> str:
         raise HTTPException(status_code=401, detail='missing bearer token')
     token = authorization.split(' ', 1)[1].strip()
     try:
-        return decode_access_token(token)
+        user_id = decode_access_token(token)
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
+    with tx() as conn:
+        exists = conn.execute('SELECT 1 FROM users WHERE user_id = ?', (user_id,)).fetchone()
+        if not exists:
+            raise HTTPException(status_code=401, detail='user not found')
+    return user_id
 
 
 def _plan_for_user(conn, user_id: str) -> str:
     row = conn.execute('SELECT plan FROM subscriptions WHERE user_id = ?', (user_id,)).fetchone()
     return row['plan'] if row else 'free'
+
+
+def _membership_for_user(conn, user_id: str) -> dict:
+    row = conn.execute(
+        'SELECT plan, source, product_id, expires_at, updated_at FROM subscriptions WHERE user_id = ?',
+        (user_id,),
+    ).fetchone()
+    if not row:
+        return {
+            'user_id': user_id,
+            'plan': 'free',
+            'source': 'local',
+            'product_id': None,
+            'expires_at': None,
+            'updated_at': datetime.now(UTC),
+        }
+    return {'user_id': user_id, **dict(row)}
+
+
+def _plan_from_revenuecat_product(product_id: str | None) -> str | None:
+    if product_id == settings.revenuecat_family_product_id:
+        return 'family'
+    if product_id == settings.revenuecat_pro_product_id:
+        return 'pro'
+    return None
+
+
+def _revenuecat_event_is_inactive(event_type: str) -> bool:
+    return event_type.upper() in {'EXPIRATION', 'CANCELLATION', 'BILLING_ISSUE', 'TRANSFER'}
 
 
 def _quota_for_user(conn, user_id: str) -> dict:
@@ -103,8 +141,8 @@ def register(payload: AuthRequest) -> AuthResponse:
             (payload.user_id, hash_password(payload.password), utc_now_iso()),
         )
         conn.execute(
-            'INSERT INTO subscriptions (user_id, plan, updated_at) VALUES (?, ?, ?)',
-            (payload.user_id, 'free', utc_now_iso()),
+            'INSERT OR IGNORE INTO subscriptions (user_id, plan, source, updated_at) VALUES (?, ?, ?, ?)',
+            (payload.user_id, 'free', 'local', utc_now_iso()),
         )
 
     return AuthResponse(access_token=create_access_token(payload.user_id))
@@ -131,8 +169,19 @@ def plans() -> list[Plan]:
 @app.get('/membership/me', response_model=MembershipResponse)
 def membership_me(user_id: str = Depends(_current_user)) -> MembershipResponse:
     with tx() as conn:
-        plan = _plan_for_user(conn, user_id)
-    return MembershipResponse(user_id=user_id, plan=plan, updated_at=datetime.utcnow())
+        membership = _membership_for_user(conn, user_id)
+    return MembershipResponse(**membership)
+
+
+@app.delete('/account/me', response_model=AccountDeletionResponse)
+def account_delete(user_id: str = Depends(_current_user)) -> AccountDeletionResponse:
+    with tx() as conn:
+        conn.execute('DELETE FROM daily_quotas WHERE user_id = ?', (user_id,))
+        conn.execute('DELETE FROM idempotency_keys WHERE user_id = ?', (user_id,))
+        conn.execute('DELETE FROM orders WHERE user_id = ?', (user_id,))
+        conn.execute('DELETE FROM subscriptions WHERE user_id = ?', (user_id,))
+        conn.execute('DELETE FROM users WHERE user_id = ?', (user_id,))
+    return AccountDeletionResponse(deleted=True)
 
 
 @app.get('/quota/today', response_model=QuotaResponse)
@@ -189,7 +238,7 @@ def alipay_create_order(
             return OrderCreateResponse(**cached)
 
         amount = 9.9 if payload.plan == 'pro' else 19.9
-        order_no = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
+        order_no = datetime.now(UTC).strftime('%Y%m%d%H%M%S%f')
         conn.execute(
             'INSERT INTO orders (order_no, user_id, plan, amount, status, created_at) VALUES (?, ?, ?, ?, ?, ?)',
             (order_no, user_id, payload.plan, amount, 'created', utc_now_iso()),
@@ -215,10 +264,27 @@ def order_status(order_no: str, user_id: str = Depends(_current_user)) -> OrderS
         return OrderStatusResponse(**dict(row))
 
 
+async def _notify_params_from_request(request: Request) -> dict:
+    content_type = request.headers.get('content-type', '')
+    if 'application/json' in content_type:
+        body = await request.json()
+        return dict(body)
+    form = await request.form()
+    return dict(form)
+
+
 @app.post('/billing/alipay/notify')
-def alipay_notify(payload: AlipayNotifyPayload) -> dict:
-    # TODO: replace with RSA2 verification using Alipay official signature process
-    if payload.sign != settings.alipay_notify_token:
+async def alipay_notify(request: Request) -> dict:
+    notify_params = await _notify_params_from_request(request)
+    try:
+        payload = AlipayNotifyPayload.model_validate(notify_params)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors()) from exc
+    if payload.app_id != settings.alipay_app_id:
+        raise HTTPException(status_code=401, detail='invalid alipay app id')
+    if payload.sign_type != 'RSA2':
+        raise HTTPException(status_code=400, detail='unsupported alipay sign type')
+    if not verify_alipay_rsa2_signature(notify_params, settings.alipay_public_key):
         raise HTTPException(status_code=401, detail='invalid notify signature')
 
     if payload.trade_status not in {'TRADE_SUCCESS', 'TRADE_FINISHED'}:
@@ -232,7 +298,7 @@ def alipay_notify(payload: AlipayNotifyPayload) -> dict:
         if not row:
             raise HTTPException(status_code=404, detail='order not found')
 
-        if abs(float(row['amount']) - payload.total_amount) > 0.0001:
+        if abs(Decimal(str(row['amount'])) - payload.total_amount) > Decimal('0.0001'):
             raise HTTPException(status_code=400, detail='amount mismatch')
 
         if row['status'] != 'paid':
@@ -241,8 +307,48 @@ def alipay_notify(payload: AlipayNotifyPayload) -> dict:
                 ('paid', utc_now_iso(), payload.out_trade_no),
             )
             conn.execute(
-                'INSERT OR REPLACE INTO subscriptions (user_id, plan, updated_at) VALUES (?, ?, ?)',
-                (row['user_id'], row['plan'], utc_now_iso()),
+                'INSERT OR REPLACE INTO subscriptions (user_id, plan, source, product_id, expires_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+                (row['user_id'], row['plan'], 'alipay', None, None, utc_now_iso()),
             )
 
         return {'ok': True, 'order_no': payload.out_trade_no, 'plan_activated': row['plan'], 'status': 'paid'}
+
+
+@app.post('/billing/revenuecat/webhook')
+async def revenuecat_webhook(request: Request, authorization: str | None = Header(default=None)) -> dict:
+    expected = f'Bearer {settings.revenuecat_webhook_secret}'
+    if not settings.revenuecat_webhook_secret or authorization != expected:
+        raise HTTPException(status_code=401, detail='invalid revenuecat webhook secret')
+
+    body = await request.json()
+    event = body.get('event') if isinstance(body, dict) else None
+    if not isinstance(event, dict):
+        raise HTTPException(status_code=422, detail='missing revenuecat event')
+
+    user_id = event.get('app_user_id')
+    product_id = event.get('product_id')
+    event_type = str(event.get('type') or '').upper()
+    entitlement_ids = event.get('entitlement_ids') or []
+    if not isinstance(user_id, str) or not user_id:
+        raise HTTPException(status_code=422, detail='missing revenuecat app_user_id')
+    if entitlement_ids and settings.revenuecat_entitlement_id not in entitlement_ids:
+        return {'ok': True, 'ignored': True}
+
+    plan = _plan_from_revenuecat_product(product_id)
+    if not plan:
+        return {'ok': True, 'ignored': True}
+
+    expires_at = None
+    expiration_ms = event.get('expiration_at_ms')
+    if isinstance(expiration_ms, int):
+        expires_at = datetime.fromtimestamp(expiration_ms / 1000, UTC).isoformat()
+
+    next_plan = 'free' if _revenuecat_event_is_inactive(event_type) else plan
+    next_product_id = None if next_plan == 'free' else product_id
+
+    with tx() as conn:
+        conn.execute(
+            'INSERT OR REPLACE INTO subscriptions (user_id, plan, source, product_id, expires_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+            (user_id, next_plan, 'apple_iap', next_product_id, expires_at, utc_now_iso()),
+        )
+    return {'ok': True, 'user_id': user_id, 'plan': next_plan, 'source': 'apple_iap'}

@@ -264,6 +264,14 @@ export const storage = {
     }
   },
 
+  async ensureBackendUserId(): Promise<string> {
+    const cached = await this.getBackendUserId();
+    if (cached) return cached;
+    const created = `rn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    await this.setBackendUserId(created);
+    return created;
+  },
+
   async clearAll(): Promise<void> {
     try {
       await AsyncStorage.multiRemove(Object.values(KEYS));

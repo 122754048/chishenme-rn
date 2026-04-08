@@ -8,7 +8,7 @@ class SettingsTest(unittest.TestCase):
         settings = Settings(
             env='production',
             jwt_secret='replace-in-prod',
-            alipay_notify_token='replace-with-server-side-notify-token',
+            alipay_app_id='your-alipay-app-id',
             alipay_public_key='replace-with-alipay-public-key',
         )
         with self.assertRaises(ValueError):
@@ -18,7 +18,7 @@ class SettingsTest(unittest.TestCase):
         settings = Settings(
             env='dev',
             jwt_secret='replace-in-prod',
-            alipay_notify_token='replace-with-server-side-notify-token',
+            alipay_app_id='your-alipay-app-id',
             alipay_public_key='replace-with-alipay-public-key',
         )
         settings.assert_runtime_safe()

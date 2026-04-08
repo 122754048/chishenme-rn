@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "chishenme-rn",
+    "name": "吃什么",
     "slug": "chishenme-rn",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.chishenme-rn"
+      "bundleIdentifier": "com.chishenme.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,6 +26,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

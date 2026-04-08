@@ -1,12 +1,15 @@
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import UTC, datetime
+from pathlib import Path
 
 from .config import settings
 
 
 def _conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(settings.db_path, timeout=5, isolation_level=None)
+    db_path = Path(settings.db_path)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(db_path), timeout=5, isolation_level=None)
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA foreign_keys = ON')
     return conn
@@ -26,6 +29,9 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS subscriptions (
                 user_id TEXT PRIMARY KEY,
                 plan TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT 'local',
+                product_id TEXT,
+                expires_at TEXT,
                 updated_at TEXT NOT NULL
             );
 
@@ -57,10 +63,20 @@ def init_db() -> None:
             );
             '''
         )
+        columns = {
+            row['name']
+            for row in conn.execute('PRAGMA table_info(subscriptions)').fetchall()
+        }
+        if 'source' not in columns:
+            conn.execute("ALTER TABLE subscriptions ADD COLUMN source TEXT NOT NULL DEFAULT 'local'")
+        if 'product_id' not in columns:
+            conn.execute('ALTER TABLE subscriptions ADD COLUMN product_id TEXT')
+        if 'expires_at' not in columns:
+            conn.execute('ALTER TABLE subscriptions ADD COLUMN expires_at TEXT')
 
 
 def utc_now_iso() -> str:
-    return datetime.utcnow().isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 @contextmanager

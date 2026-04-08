@@ -1,49 +1,40 @@
-from datetime import datetime
-from uuid import uuid4
-from typing import Dict
+import base64
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 
 
-class AlipayService:
-    """Skeleton Alipay service.
+def _format_public_key(raw_key: str) -> str:
+    stripped = raw_key.strip().replace('\\n', '\n')
+    if 'BEGIN PUBLIC KEY' in stripped:
+        return stripped
+    compact = ''.join(stripped.split())
+    return f'-----BEGIN PUBLIC KEY-----\n{compact}\n-----END PUBLIC KEY-----'
 
-    NOTE: This service is intentionally stubbed. In production:
-    1) Build signed request payload with RSA2.
-    2) Verify async callback signature.
-    3) Validate app_id, seller_id, total_amount, order_no.
-    """
 
-    def __init__(self):
-        self.orders: Dict[str, dict] = {}
+def build_alipay_sign_content(params: dict) -> str:
+    pairs = []
+    for key, value in params.items():
+        if key in {'sign', 'sign_type'} or value in {None, ''}:
+            continue
+        pairs.append((key, str(value)))
+    return '&'.join(f'{key}={value}' for key, value in sorted(pairs))
 
-    def create_order(self, user_id: str, plan: str) -> dict:
-        if plan not in {'pro', 'family'}:
-            raise ValueError('unsupported plan')
-        order_no = datetime.utcnow().strftime('%Y%m%d%H%M%S') + uuid4().hex[:10]
-        amount = 9.9 if plan == 'pro' else 19.9
-        order = {
-            'order_no': order_no,
-            'user_id': user_id,
-            'plan': plan,
-            'amount': amount,
-            'status': 'created',
-            'created_at': datetime.utcnow(),
-        }
-        self.orders[order_no] = order
-        return {
-            'order_no': order_no,
-            'status': 'created',
-            'pay_url': f'https://openapi.alipay.com/gateway.do?out_trade_no={order_no}',
-        }
 
-    def get_order(self, order_no: str) -> dict | None:
-        return self.orders.get(order_no)
+def verify_alipay_rsa2_signature(params: dict, alipay_public_key: str) -> bool:
+    sign = params.get('sign')
+    if not sign:
+        return False
 
-    def mark_paid(self, order_no: str) -> dict | None:
-        order = self.orders.get(order_no)
-        if not order:
-            return None
-        if order['status'] == 'paid':
-            return order
-        order['status'] = 'paid'
-        order['paid_at'] = datetime.utcnow()
-        return order
+    try:
+        public_key = serialization.load_pem_public_key(_format_public_key(alipay_public_key).encode('utf-8'))
+        public_key.verify(
+            base64.b64decode(str(sign)),
+            build_alipay_sign_content(params).encode('utf-8'),
+            padding.PKCS1v15(),
+            hashes.SHA256(),
+        )
+        return True
+    except (ValueError, TypeError, InvalidSignature):
+        return False

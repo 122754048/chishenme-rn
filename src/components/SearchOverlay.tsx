@@ -82,14 +82,27 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
               autoFocus
               returnKeyType="search"
               onSubmitEditing={handleSubmit}
+              accessibilityLabel="搜索美食或餐厅"
             />
             {query.length > 0 && (
-              <Pressable onPress={() => setQuery('')} style={({ pressed }) => [pressed && { opacity: 0.5 }]}>
+              <Pressable
+                onPress={() => setQuery('')}
+                style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.5 }]}
+                accessibilityRole="button"
+                accessibilityLabel="清空搜索内容"
+                hitSlop={8}
+              >
                 <X size={14} color={theme.colors.subtle} strokeWidth={2} />
               </Pressable>
             )}
           </View>
-          <Pressable onPress={onClose} style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]}>
+          <Pressable
+            onPress={onClose}
+            style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel="关闭搜索"
+            hitSlop={8}
+          >
             <Text style={styles.cancelText}>取消</Text>
           </Pressable>
         </View>
@@ -98,7 +111,7 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>最近搜索</Text>
-              <Pressable onPress={handleClearRecent}>
+              <Pressable onPress={handleClearRecent} accessibilityRole="button" accessibilityLabel="清除最近搜索" hitSlop={8}>
                 <Text style={styles.clearAll}>清除</Text>
               </Pressable>
             </View>
@@ -113,6 +126,8 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
                   onSearch?.(term);
                   onClose();
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`搜索 ${term}`}
               >
                 <Clock size={14} color={theme.colors.subtle} strokeWidth={1.8} />
                 <Text style={styles.recentText}>{term}</Text>
@@ -139,6 +154,8 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
                     onSearch?.(tag);
                     onClose();
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`搜索 ${tag}`}
                 >
                   <Text style={styles.tagText}>{tag}</Text>
                 </Pressable>
@@ -175,6 +192,7 @@ function makeStyles(t: AppTheme) {
     gap: t.spacing.xs,
   },
   input: { flex: 1, ...t.typography.body, color: t.colors.foreground },
+  iconBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   cancelBtn: { paddingHorizontal: 4 },
   cancelText: { ...t.typography.body, color: t.colors.primary, fontWeight: '500' },
   content: { flex: 1, paddingHorizontal: t.spacing.md, paddingTop: t.spacing.md },

@@ -61,7 +61,7 @@ function MainTabs() {
         name="Home"
         component={Home}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: '首页',
           tabBarIcon: ({ focused, color }) => (
             <HomeIcon
               size={22}
@@ -76,7 +76,7 @@ function MainTabs() {
         name="Explore"
         component={Explore}
         options={{
-          tabBarLabel: 'Explore',
+          tabBarLabel: '发现',
           tabBarIcon: ({ focused, color }) => (
             <Search size={22} color={color} strokeWidth={focused ? 2.2 : 1.8} />
           ),
@@ -86,7 +86,7 @@ function MainTabs() {
         name="Favorites"
         component={Favorites}
         options={{
-          tabBarLabel: 'Favorites',
+          tabBarLabel: '收藏',
           tabBarIcon: ({ focused, color }) => (
             <Heart
               size={22}
@@ -101,7 +101,7 @@ function MainTabs() {
         name="Profile"
         component={Profile}
         options={{
-          tabBarLabel: 'Profile',
+          tabBarLabel: '我的',
           tabBarIcon: ({ focused, color }) => (
             <User size={22} color={color} strokeWidth={focused ? 2.2 : 1.8} />
           ),
@@ -147,7 +147,7 @@ function LoadingScreen() {
         <Text style={styles.loadingIcon}>🍽️</Text>
       </Animated.View>
       <Text style={styles.loadingTitle}>ChiShenMe</Text>
-      <Text style={styles.loadingSubtitle}>Deciding what to eat...</Text>
+      <Text style={styles.loadingSubtitle}>正在为你挑选美食…</Text>
     </View>
   );
 }

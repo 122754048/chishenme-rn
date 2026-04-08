@@ -3,6 +3,7 @@ import { AppState as RNAppState } from 'react-native';
 import { storage } from '../storage';
 import { consumeQuota, DAILY_FREE_QUOTA, getQuotaByPlan, getQuotaForToday, getResetQuotaForFree } from '../utils/quota';
 import { backendApi } from '../api/backend';
+import { subscriptionService } from '../services/subscriptions';
 
 interface AppState {
   onboardingComplete: boolean;
@@ -73,10 +74,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setFavorites(favs);
         setHistory(hist);
         let effectivePlan = plan;
+        let token: string | null = null;
         if (backendApi.isEnabled()) {
-          const token = await backendApi.ensureToken();
+          token = await backendApi.ensureToken();
           setBackendToken(token);
-          if (token) {
+        }
+        const revenueCatUserId = await storage.ensureBackendUserId();
+        const iapPlan = await subscriptionService.syncCustomerPlan(revenueCatUserId ?? undefined);
+        if (iapPlan !== null) {
+          effectivePlan = iapPlan;
+        } else if (token) {
             const [serverMembership, serverQuota] = await Promise.all([
               backendApi.getMembership(token),
               backendApi.getQuotaToday(token),
@@ -85,7 +92,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setMembershipPlanState(serverMembership.plan);
             setRecommendationsLeft(serverQuota.left);
             await storage.setRecommendationQuota(serverQuota);
-          }
         }
         setMembershipPlanState(effectivePlan);
         await syncDailyQuota(effectivePlan);
@@ -101,21 +107,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const sub = RNAppState.addEventListener('change', (status) => {
       if (status === 'active') {
-        if (backendApi.isEnabled() && backendToken) {
-          void Promise.all([
-            backendApi.getMembership(backendToken),
-            backendApi.getQuotaToday(backendToken),
-          ]).then(([membership, quota]) => {
+        void (async () => {
+          const userId = await storage.ensureBackendUserId();
+          const iapPlan = await subscriptionService.syncCustomerPlan(userId ?? undefined);
+          if (iapPlan !== null) {
+            setMembershipPlanState(iapPlan);
+            await storage.setMembershipPlan(iapPlan);
+            await syncDailyQuota(iapPlan);
+            return;
+          }
+          if (backendApi.isEnabled() && backendToken) {
+            const [membership, quota] = await Promise.all([
+              backendApi.getMembership(backendToken),
+              backendApi.getQuotaToday(backendToken),
+            ]);
             setMembershipPlanState(membership.plan);
             setRecommendationsLeft(quota.left);
-            void storage.setMembershipPlan(membership.plan);
-            void storage.setRecommendationQuota(quota);
-          }).catch((error) => {
-            console.warn('Failed to sync membership/quota from backend:', error);
-          });
-          return;
-        }
-        void syncDailyQuota(membershipPlan);
+            await storage.setMembershipPlan(membership.plan);
+            await storage.setRecommendationQuota(quota);
+            return;
+          }
+          await syncDailyQuota(membershipPlan);
+        })().catch((error) => {
+          console.warn('Failed to sync active app membership/quota:', error);
+        });
       }
     });
     return () => sub.remove();
@@ -152,6 +167,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const consumeRecommendation = () => {
+    if (membershipPlan !== 'free') {
+      void syncDailyQuota(membershipPlan);
+      return;
+    }
     if (backendApi.isEnabled() && backendToken) {
       void backendApi.consumeQuota(backendToken).then((result) => {
         setRecommendationsLeft(result.left);

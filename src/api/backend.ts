@@ -27,16 +27,8 @@ async function request<T>(path: string, init?: RequestInit, token?: string): Pro
   return (await res.json()) as T;
 }
 
-function randomUserId() {
-  return `rn_${Math.random().toString(36).slice(2, 10)}`;
-}
-
 async function getOrCreateUserId() {
-  const cached = await storage.getBackendUserId();
-  if (cached) return cached;
-  const created = randomUserId();
-  await storage.setBackendUserId(created);
-  return created;
+  return storage.ensureBackendUserId();
 }
 
 export const backendApi = {
@@ -91,5 +83,9 @@ export const backendApi = {
 
   async getOrder(token: string, orderNo: string): Promise<{ order_no: string; status: 'created' | 'paid' | 'failed' }> {
     return request(`/billing/orders/${orderNo}`, { method: 'GET' }, token);
+  },
+
+  async deleteAccount(token: string): Promise<{ deleted: boolean }> {
+    return request('/account/me', { method: 'DELETE' }, token);
   },
 };

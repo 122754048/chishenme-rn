@@ -32,6 +32,9 @@ function RestrictionButton({
         pressed && { opacity: 0.85 },
       ]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}${isSelected ? '，已选择' : '，未选择'}`}
+      accessibilityState={{ selected: isSelected }}
     >
       <Text style={rbStyles.restrictionIcon}>{icon}</Text>
       <Text style={[rbStyles.restrictionLabel, isSelected && rbStyles.restrictionLabelSelected]}>
@@ -93,12 +96,18 @@ export function OnboardingRestrictions() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
+          accessibilityRole="button"
+          accessibilityLabel="返回菜系选择"
+          hitSlop={8}
+        >
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Pressable onPress={handleSkip}>
+        <Pressable onPress={handleSkip} accessibilityRole="button" accessibilityLabel="稍后完善忌口" hitSlop={8}>
           <Text style={styles.skipText}>稍后完善</Text>
         </Pressable>
       </View>
@@ -148,6 +157,8 @@ export function OnboardingRestrictions() {
             <Pressable
               style={({ pressed }) => [styles.customBtn, pressed && { opacity: 0.7 }]}
               onPress={() => toggle('custom')}
+              accessibilityRole="button"
+              accessibilityLabel={selected.includes('custom') ? '关闭自定义忌口输入' : '添加自定义忌口'}
             >
               <Plus size={14} color={theme.colors.subtle} strokeWidth={2} />
               <Text style={styles.customBtnText}>{selected.includes('custom') ? '已添加自定义' : '自定义'}</Text>
@@ -163,14 +174,26 @@ export function OnboardingRestrictions() {
                 onChangeText={setCustomInput}
                 onSubmitEditing={addCustomRestriction}
                 returnKeyType="done"
+                accessibilityLabel="自定义忌口"
               />
-              <Pressable style={styles.customAddBtn} onPress={addCustomRestriction}>
+              <Pressable
+                style={styles.customAddBtn}
+                onPress={addCustomRestriction}
+                accessibilityRole="button"
+                accessibilityLabel="添加自定义忌口"
+              >
                 <Text style={styles.customAddBtnText}>添加</Text>
               </Pressable>
             </View>
           )}
           {selected.filter((s) => s.startsWith('custom:')).map((tag) => (
-            <Pressable key={tag} style={styles.customTag} onPress={() => toggle(tag)}>
+            <Pressable
+              key={tag}
+              style={styles.customTag}
+              onPress={() => toggle(tag)}
+              accessibilityRole="button"
+              accessibilityLabel={`移除自定义忌口 ${tag.replace('custom:', '')}`}
+            >
               <Text style={styles.customTagText}>{tag.replace('custom:', '')} ×</Text>
             </Pressable>
           ))}
@@ -193,6 +216,8 @@ export function OnboardingRestrictions() {
         <Pressable
           style={({ pressed }) => [styles.nextButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           onPress={handleNext}
+          accessibilityRole="button"
+          accessibilityLabel="进入下一步，选择升级方案"
         >
           <Text style={styles.nextButtonText}>下一步</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
@@ -225,7 +250,7 @@ function makeStyles(t: AppTheme) {
   progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
   stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
+  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: 112 },
   title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
   subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
   sectionCard: {

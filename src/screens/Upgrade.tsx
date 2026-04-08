@@ -79,6 +79,9 @@ function PlanCard({
         pressed && { opacity: 0.9 },
       ]}
       onPress={onSelect}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}，${price}${priceSuffix ?? ''}${highlighted ? '，已选择' : ''}`}
+      accessibilityState={{ selected: Boolean(highlighted) }}
     >
       {badge && (
         <View style={[pcStyles.badge, highlighted ? pcStyles.badgeHighlighted : pcStyles.badgeNormal]}>
@@ -131,12 +134,18 @@ export function Upgrade() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
+          accessibilityRole="button"
+          accessibilityLabel="返回忌口设置"
+          hitSlop={8}
+        >
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Pressable onPress={handleSkip}>
+        <Pressable onPress={handleSkip} accessibilityRole="button" accessibilityLabel="暂时跳过升级" hitSlop={8}>
           <Text style={styles.skipText}>稍后完善</Text>
         </Pressable>
       </View>
@@ -154,6 +163,9 @@ export function Upgrade() {
         </Text>
         <Text style={styles.subtitle}>
           解锁 AI 智能点餐、个性化食谱和多设备家庭共享。
+        </Text>
+        <Text style={styles.subscriptionNote}>
+          订阅将通过 Apple ID 自动续订，可随时在 Apple ID 订阅设置中取消。已购买用户可在下一步恢复购买。
         </Text>
 
         <View style={styles.plans}>
@@ -213,6 +225,12 @@ export function Upgrade() {
         <Pressable
           style={({ pressed }) => [styles.upgradeButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           onPress={handleStart}
+          accessibilityRole="button"
+          accessibilityLabel={selectedPlan === 'free'
+            ? '继续使用免费版'
+            : selectedPlan === 'family'
+              ? '升级家庭版，19.9 元每月'
+              : '升级 Pro，9.9 元每月'}
         >
           <Text style={styles.upgradeButtonText}>
             {selectedPlan === 'free'
@@ -223,8 +241,21 @@ export function Upgrade() {
           </Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
-        <Pressable onPress={handleSkip} style={({ pressed }) => [styles.skipButton, pressed && { opacity: 0.7 }]}>
+        <Pressable
+          onPress={handleSkip}
+          style={({ pressed }) => [styles.skipButton, pressed && { opacity: 0.7 }]}
+          accessibilityRole="button"
+          accessibilityLabel="暂时跳过升级"
+        >
           <Text style={styles.skipButtonText}>暂时跳过</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => navigation.navigate('Checkout', { plan: selectedPlan === 'free' ? 'pro' : selectedPlan })}
+          style={({ pressed }) => [styles.restoreButton, pressed && { opacity: 0.7 }]}
+          accessibilityRole="button"
+          accessibilityLabel="恢复购买"
+        >
+          <Text style={styles.restoreButtonText}>已订阅？恢复购买</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -254,9 +285,10 @@ function makeStyles(t: AppTheme) {
   progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
   stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
+  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: 112 },
   title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
   subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
+  subscriptionNote: { ...t.typography.caption, color: t.colors.subtle, lineHeight: 18, marginBottom: t.spacing.md },
   plans: { gap: t.spacing.sm, marginBottom: t.spacing.lg },
   planCard: {
     backgroundColor: t.colors.surface,
@@ -325,5 +357,7 @@ function makeStyles(t: AppTheme) {
   upgradeButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
   skipButton: { paddingVertical: t.spacing.xs, alignItems: 'center' },
   skipButtonText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
+  restoreButton: { paddingVertical: t.spacing.xs, alignItems: 'center' },
+  restoreButtonText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700' },
 });
 }

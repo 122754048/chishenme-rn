@@ -36,15 +36,17 @@ export class ErrorBoundary extends Component<Props, State> {
           <View style={styles.iconWrap}>
             <Text style={styles.icon}>😵</Text>
           </View>
-          <Text style={styles.title}>Something went wrong</Text>
+          <Text style={styles.title}>页面暂时出错了</Text>
           <Text style={styles.message}>
-            {this.state.error?.message || 'An unexpected error occurred. Please try again.'}
+            {this.state.error?.message || '请稍后重试，或返回上一页重新操作。'}
           </Text>
           <Pressable
             style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
             onPress={this.handleRetry}
+            accessibilityRole="button"
+            accessibilityLabel="重试"
           >
-            <Text style={styles.retryText}>Try Again</Text>
+            <Text style={styles.retryText}>重试</Text>
           </Pressable>
         </View>
       );

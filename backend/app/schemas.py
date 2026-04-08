@@ -1,8 +1,10 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from decimal import Decimal
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
 
 PlanName = Literal['free', 'pro', 'family']
+SubscriptionSource = Literal['local', 'alipay', 'apple_iap']
 
 
 class Plan(BaseModel):
@@ -45,9 +47,13 @@ class OrderStatusResponse(BaseModel):
 
 
 class AlipayNotifyPayload(BaseModel):
+    model_config = ConfigDict(extra='allow')
+
+    app_id: str
     out_trade_no: str
     trade_status: str
-    total_amount: float
+    total_amount: Decimal
+    sign_type: Literal['RSA2'] = 'RSA2'
     sign: str = Field(min_length=1)
 
 
@@ -55,6 +61,13 @@ class MembershipResponse(BaseModel):
     user_id: str
     plan: PlanName
     updated_at: datetime
+    source: SubscriptionSource = 'local'
+    product_id: str | None = None
+    expires_at: str | None = None
+
+
+class AccountDeletionResponse(BaseModel):
+    deleted: bool
 
 
 class AuthRequest(BaseModel):

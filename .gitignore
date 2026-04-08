@@ -4,5 +4,10 @@ dist/
 *.tsbuildinfo
 .env
 .env.local
+.qa-venv/
+.venv/
+__pycache__/
+*.pyc
+*.db
 ios/
 android/

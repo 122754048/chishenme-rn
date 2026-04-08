@@ -44,10 +44,10 @@ export function OnboardingCuisines() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <View style={{ width: 40 }} />
-        <Pressable onPress={handleSkip}>
+        <Pressable onPress={handleSkip} accessibilityRole="button" accessibilityLabel="稍后完善口味偏好" hitSlop={8}>
           <Text style={styles.skipText}>稍后完善</Text>
         </Pressable>
       </View>
@@ -77,6 +77,9 @@ export function OnboardingCuisines() {
                   pressed && { opacity: 0.85 },
                 ]}
                 onPress={() => toggleSelect(item.id)}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.label}${isSelected ? '，已选择' : '，未选择'}`}
+                accessibilityState={{ selected: isSelected }}
               >
                 <View style={styles.cuisineLeft}>
                   <Text style={styles.cuisineIcon}>{item.icon}</Text>
@@ -120,6 +123,8 @@ export function OnboardingCuisines() {
         <Pressable
           style={({ pressed }) => [styles.nextButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           onPress={handleNext}
+          accessibilityRole="button"
+          accessibilityLabel="进入下一步，设置忌口"
         >
           <Text style={styles.nextButtonText}>下一步</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
@@ -151,7 +156,7 @@ function makeStyles(t: AppTheme) {
   progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
   stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
+  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: 112 },
   title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
   subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
   cuisineGrid: { gap: t.spacing.xs, marginBottom: t.spacing.lg },

@@ -4,7 +4,7 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -20,7 +20,7 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { X, Heart, Star, MapPin, SlidersHorizontal, Search } from 'lucide-react-native';
+import { X, Heart, Star, MapPin, Compass, Search } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
@@ -31,8 +31,6 @@ import { OnboardingGuide } from '../components/OnboardingGuide';
 import { useApp } from '../context/AppContext';
 import { SearchOverlay } from '../components/SearchOverlay';
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_HEIGHT = Math.max(SCREEN_HEIGHT * 0.65, 520);
 const SWIPE_THRESHOLD = 100;
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -44,12 +42,14 @@ function SwipeCard({
   screenWidth,
   styles,
   enabled,
+  cardHeight,
 }: {
   card: SwipeCardData;
   onSwipe: (dir: 'left' | 'right') => void;
   screenWidth: number;
   styles: ReturnType<typeof makeStyles>;
   enabled: boolean;
+  cardHeight: number;
 }) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -91,7 +91,7 @@ function SwipeCard({
 
   return (
     <GestureDetector gesture={panGesture}>
-      <Animated.View style={[styles.card, { width: screenWidth - 32 }, cardAnimStyle]}>
+      <Animated.View style={[styles.card, { width: screenWidth - 32, height: cardHeight }, cardAnimStyle]}>
         {/* LIKE / NOPE overlays */}
         <Animated.View style={[styles.badgeLike, likeOpacity]}>
           <Text style={styles.badgeLikeText}>喜欢</Text>
@@ -175,7 +175,15 @@ function AnimatedActionBtn({
   };
 
   return (
-    <Pressable onPress={handlePress} style={actionBtnStyles.wrapper} disabled={disabled}>
+    <Pressable
+      onPress={handlePress}
+      style={actionBtnStyles.wrapper}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: Boolean(disabled) }}
+      hitSlop={8}
+    >
       <Animated.View style={[style, animStyle, disabled && actionBtnStyles.disabled]}>{children}</Animated.View>
       {label ? <Text style={actionBtnStyles.label}>{label}</Text> : null}
     </Pressable>
@@ -194,6 +202,7 @@ export function Home() {
   const navigation = useNavigation<NavProp>();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const {
     addToHistory,
     toggleFavorite,
@@ -206,6 +215,7 @@ export function Home() {
   const [showSearch, setShowSearch] = useState(false);
   const isUnlimitedPlan = recommendationsLeft < 0;
   const quotaLocked = !isUnlimitedPlan && recommendationsLeft <= 0;
+  const cardHeight = Math.min(Math.max(screenHeight * 0.58, 420), 560);
 
   const handleSwipe = useCallback(
     (direction: 'left' | 'right' = 'right') => {
@@ -259,12 +269,18 @@ export function Home() {
           <Pressable
             style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
             onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
+            accessibilityRole="button"
+            accessibilityLabel="发现更多美食"
+            hitSlop={8}
           >
-            <SlidersHorizontal size={20} color={theme.colors.foreground} strokeWidth={1.8} />
+            <Compass size={20} color={theme.colors.foreground} strokeWidth={1.8} />
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
             onPress={() => setShowSearch(true)}
+            accessibilityRole="button"
+            accessibilityLabel="搜索美食或餐厅"
+            hitSlop={8}
           >
             <Search size={20} color={theme.colors.foreground} strokeWidth={1.8} />
           </Pressable>
@@ -274,14 +290,24 @@ export function Home() {
       {quotaLocked && (
         <View style={styles.limitBar}>
           <Text style={styles.limitText}>今日免费推荐次数已用完，升级后可不限次探索</Text>
-          <Pressable onPress={() => navigation.navigate('Upgrade')}>
+          <Pressable
+            onPress={() => navigation.navigate('Upgrade')}
+            accessibilityRole="button"
+            accessibilityLabel="升级会员，解锁不限次推荐"
+            hitSlop={8}
+          >
             <Text style={styles.limitAction}>去升级</Text>
           </Pressable>
         </View>
       )}
 
       {!isUnlimitedPlan && recommendationsLeft <= 2 && selectedCuisines.length === 0 && selectedRestrictions.length === 0 && (
-        <Pressable style={styles.profilePrompt} onPress={() => navigation.navigate('OnboardingCuisines')}>
+        <Pressable
+          style={styles.profilePrompt}
+          onPress={() => navigation.navigate('OnboardingCuisines')}
+          accessibilityRole="button"
+          accessibilityLabel="完善口味偏好"
+        >
           <Text style={styles.profilePromptText}>完善口味偏好，可显著提升推荐命中率</Text>
         </Pressable>
       )}
@@ -293,9 +319,10 @@ export function Home() {
             key={`${currentCard.id}-${cardIndex}`}
             card={currentCard}
             onSwipe={handleSwipe}
-            screenWidth={SCREEN_WIDTH}
+            screenWidth={screenWidth}
             styles={styles}
             enabled={!quotaLocked}
+            cardHeight={cardHeight}
           />
         )}
       </View>
@@ -418,7 +445,6 @@ function makeStyles(t: AppTheme) {
 
     /* ── Card ── */
     card: {
-      height: CARD_HEIGHT,
       borderRadius: 16,
       overflow: 'hidden',
       backgroundColor: t.colors.surface,
