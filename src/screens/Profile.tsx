@@ -11,7 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Bell, Heart, Clock, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Star } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors, theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
@@ -65,9 +65,9 @@ export function Profile() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav �?Brand mode */}
+      {/* Top Nav — Brand mode */}
       <View style={styles.topNav}>
-        <Text style={styles.logo}>🍽�?ChiShenMe</Text>
+        <Text style={styles.logo}>🍽️ ChiShenMe</Text>
         <Pressable style={({ pressed }) => [styles.bellBtn, pressed && { opacity: 0.7 }]}>
           <Bell size={20} color={theme.colors.foreground} strokeWidth={1.8} />
         </Pressable>
@@ -183,12 +183,12 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: t.spacing.md,
-    height: theme.topNavHeight,
+    height: t.topNavHeight,
     backgroundColor: t.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: t.colors.borderLight,
   },
-  logo: { ...theme.typography.h1, color: t.colors.foreground },
+  logo: { ...t.typography.h1, color: t.colors.foreground },
   bellBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   scrollView: { flex: 1 },
   profileHeader: {
@@ -211,11 +211,11 @@ function makeStyles(t: AppTheme) {
     backgroundColor: t.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
   profileInfo: { flex: 1 },
-  profileName: { ...theme.typography.h1, color: t.colors.foreground, marginBottom: 2 },
-  profileJoined: { ...theme.typography.caption, color: t.colors.subtle, marginBottom: 6 },
+  profileName: { ...t.typography.h1, color: t.colors.foreground, marginBottom: 2 },
+  profileJoined: { ...t.typography.caption, color: t.colors.subtle, marginBottom: 6 },
   levelBadge: {
     backgroundColor: '#FFDEBA',
     paddingHorizontal: t.spacing.xs,
@@ -224,7 +224,7 @@ function makeStyles(t: AppTheme) {
     alignSelf: 'flex-start',
   },
   levelBadgeText: {
-    ...theme.typography.micro,
+    ...t.typography.micro,
     fontWeight: '700',
     color: t.colors.brandWarmDark,
     textTransform: 'uppercase',
@@ -239,14 +239,14 @@ function makeStyles(t: AppTheme) {
   proCard: { backgroundColor: t.colors.primary },
   familyCard: { backgroundColor: t.colors.brandWarm },
   membershipLabel: {
-    ...theme.typography.micro,
+    ...t.typography.micro,
     color: 'rgba(255,255,255,0.7)',
     letterSpacing: 1,
     marginBottom: 2,
   },
-  membershipTitle: { ...theme.typography.h1, color: t.colors.surface, marginBottom: 4 },
+  membershipTitle: { ...t.typography.h1, color: t.colors.surface, marginBottom: 4 },
   membershipDesc: {
-    ...theme.typography.caption,
+    ...t.typography.caption,
     color: 'rgba(255,255,255,0.8)',
     marginBottom: t.spacing.sm,
     paddingRight: 40,
@@ -258,14 +258,14 @@ function makeStyles(t: AppTheme) {
     borderRadius: t.radius.full,
     alignSelf: 'flex-start',
   },
-  manageBtnText: { ...theme.typography.caption, fontWeight: '700', color: t.colors.primary },
+  manageBtnText: { ...t.typography.caption, fontWeight: '700', color: t.colors.primary },
   menuCard: {
     backgroundColor: t.colors.surface,
     marginHorizontal: t.spacing.md,
     borderRadius: t.radius.lg,
     marginBottom: t.spacing.sm,
     overflow: 'hidden',
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
   menuRow: {
     flexDirection: 'row',
@@ -283,9 +283,9 @@ function makeStyles(t: AppTheme) {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuLabel: { ...theme.typography.body, fontWeight: '500', color: t.colors.foreground, flex: 1 },
+  menuLabel: { ...t.typography.body, fontWeight: '500', color: t.colors.foreground, flex: 1 },
   menuRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  menuValue: { ...theme.typography.caption, color: t.colors.subtle },
+  menuValue: { ...t.typography.caption, color: t.colors.subtle },
   signOutBtn: {
     backgroundColor: t.colors.surface,
     marginHorizontal: t.spacing.md,
@@ -295,12 +295,9 @@ function makeStyles(t: AppTheme) {
     alignItems: 'center',
     justifyContent: 'center',
     gap: t.spacing.xs,
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
-  signOutText: { ...theme.typography.body, fontWeight: '700', color: t.colors.error },
+  signOutText: { ...t.typography.body, fontWeight: '700', color: t.colors.error },
   bottomPadding: { height: t.spacing.lg },
 });
 }
-
-
-

@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated from 'react-native-reanimated';
 import { ArrowLeft, ArrowRight, Info, Plus } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors, theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { MEATS, FLAVORS } from '../data/mockData';
 import { useApp } from '../context/AppContext';
@@ -180,7 +180,7 @@ function makeStyles(t: AppTheme) {
     paddingVertical: t.spacing.xs,
   },
   backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  skipText: { ...theme.typography.caption, color: t.colors.subtle, fontWeight: '500' },
+  skipText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -190,19 +190,19 @@ function makeStyles(t: AppTheme) {
   },
   progressTrack: { flex: 1, height: 4, backgroundColor: t.colors.border, borderRadius: 2, overflow: 'hidden' },
   progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
-  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: t.colors.primary },
+  stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
-  title: { ...theme.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
-  subtitle: { ...theme.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
+  title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
+  subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
   sectionCard: {
     backgroundColor: t.colors.surface,
     borderRadius: t.radius.md,
     padding: t.spacing.md,
     marginBottom: t.spacing.md,
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
-  sectionTitle: { ...theme.typography.micro, fontWeight: '700', color: t.colors.subtle, letterSpacing: 0.5, marginBottom: t.spacing.sm },
+  sectionTitle: { ...t.typography.micro, fontWeight: '700', color: t.colors.subtle, letterSpacing: 0.5, marginBottom: t.spacing.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs },
   restrictionBtn: {
     flexDirection: 'row',
@@ -220,7 +220,7 @@ function makeStyles(t: AppTheme) {
     borderColor: t.colors.primaryDark,
   },
   restrictionIcon: { fontSize: 16 },
-  restrictionLabel: { ...theme.typography.body, fontWeight: '500', color: t.colors.foreground },
+  restrictionLabel: { ...t.typography.body, fontWeight: '500', color: t.colors.foreground },
   restrictionLabelSelected: { color: t.colors.surface },
   customBtn: {
     flexDirection: 'row',
@@ -234,7 +234,7 @@ function makeStyles(t: AppTheme) {
     borderStyle: 'dashed',
     backgroundColor: t.colors.surface,
   },
-  customBtnText: { ...theme.typography.body, fontWeight: '500', color: t.colors.subtle },
+  customBtnText: { ...t.typography.body, fontWeight: '500', color: t.colors.subtle },
   infoBox: {
     flexDirection: 'row',
     backgroundColor: t.colors.borderLight,
@@ -252,8 +252,8 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'center',
   },
   infoContent: { flex: 1 },
-  infoTitle: { ...theme.typography.caption, fontWeight: '700', color: t.colors.foreground, marginBottom: 4 },
-  infoBody: { ...theme.typography.caption, color: t.colors.muted, lineHeight: 18 },
+  infoTitle: { ...t.typography.caption, fontWeight: '700', color: t.colors.foreground, marginBottom: 4 },
+  infoBody: { ...t.typography.caption, color: t.colors.muted, lineHeight: 18 },
   footer: {
     paddingHorizontal: t.spacing.md,
     paddingVertical: t.spacing.md,
@@ -270,9 +270,6 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'center',
     gap: 6,
   },
-  nextButtonText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
+  nextButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
 });
 }
-
-
-

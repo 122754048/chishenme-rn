@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Search, X, Clock, TrendingUp } from 'lucide-react-native';
-import { useThemedStyles, useThemeColors, theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 
 interface SearchOverlayProps {
@@ -135,9 +135,9 @@ function makeStyles(t: AppTheme) {
     height: 40,
     gap: t.spacing.xs,
   },
-  input: { flex: 1, ...theme.typography.body, color: t.colors.foreground },
+  input: { flex: 1, ...t.typography.body, color: t.colors.foreground },
   cancelBtn: { paddingHorizontal: 4 },
-  cancelText: { ...theme.typography.body, color: t.colors.primary, fontWeight: '500' },
+  cancelText: { ...t.typography.body, color: t.colors.primary, fontWeight: '500' },
   content: { flex: 1, paddingHorizontal: t.spacing.md, paddingTop: t.spacing.md },
   section: { marginBottom: t.spacing.lg },
   sectionHeader: {
@@ -147,13 +147,13 @@ function makeStyles(t: AppTheme) {
     marginBottom: t.spacing.xs,
   },
   sectionTitle: {
-    ...theme.typography.micro,
+    ...t.typography.micro,
     fontWeight: '700',
     color: t.colors.subtle,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  clearAll: { ...theme.typography.caption, color: t.colors.primary, fontWeight: '500' },
+  clearAll: { ...t.typography.caption, color: t.colors.primary, fontWeight: '500' },
   trendingHeader: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   recentItem: {
     flexDirection: 'row',
@@ -163,7 +163,7 @@ function makeStyles(t: AppTheme) {
     borderBottomColor: t.colors.borderLight,
     gap: t.spacing.sm,
   },
-  recentText: { ...theme.typography.body, color: t.colors.foreground },
+  recentText: { ...t.typography.body, color: t.colors.foreground },
   tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs, marginTop: 4 },
   tag: {
     backgroundColor: t.colors.borderLight,
@@ -171,7 +171,6 @@ function makeStyles(t: AppTheme) {
     paddingVertical: 6,
     borderRadius: t.radius.full,
   },
-  tagText: { ...theme.typography.body, color: '#4B5563', fontWeight: '500' },
+  tagText: { ...t.typography.body, color: t.colors.foreground, fontWeight: '500' },
 });
 }
-

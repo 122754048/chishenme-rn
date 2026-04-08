@@ -11,7 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Menu, User, Search, Star, Plus } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors, theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { EXPLORE_CARDS } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
@@ -44,7 +44,7 @@ export function Explore() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav â€?Page mode */}
+      {/* Top Nav â€” Page mode */}
       <View style={styles.topNav}>
         <Pressable style={({ pressed }) => [styles.navBtn, pressed && styles.pressed]}>
           <Menu size={20} color={theme.colors.foreground} strokeWidth={1.8} />
@@ -207,11 +207,11 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: t.spacing.md,
-    height: theme.topNavHeight,
+    height: t.topNavHeight,
     backgroundColor: t.colors.surface,
   },
   navBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: t.radius.md },
-  navTitle: { ...theme.typography.h2, color: t.colors.foreground },
+  navTitle: { ...t.typography.h2, color: t.colors.foreground },
   stickyBar: {
     backgroundColor: t.colors.surface,
     paddingHorizontal: t.spacing.md,
@@ -230,7 +230,7 @@ function makeStyles(t: AppTheme) {
     height: 40,
     gap: t.spacing.xs,
   },
-  searchPlaceholder: { ...theme.typography.body, color: t.colors.subtle },
+  searchPlaceholder: { ...t.typography.body, color: t.colors.subtle },
   categoryScroll: { flexDirection: 'row', gap: t.spacing.xs },
   categoryPill: {
     paddingHorizontal: t.spacing.md,
@@ -239,13 +239,13 @@ function makeStyles(t: AppTheme) {
     backgroundColor: t.colors.borderLight,
   },
   categoryPillActive: { backgroundColor: t.colors.primary },
-  categoryPillText: { ...theme.typography.caption, fontWeight: '500', color: t.colors.muted },
+  categoryPillText: { ...t.typography.caption, fontWeight: '500', color: t.colors.muted },
   categoryPillTextActive: { color: t.colors.surface },
   scrollView: { flex: 1 },
   section: { paddingHorizontal: t.spacing.md, paddingTop: t.spacing.lg },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: t.spacing.sm },
-  sectionTitle: { ...theme.typography.h2, color: t.colors.foreground, marginBottom: t.spacing.sm },
-  seeAllText: { ...theme.typography.caption, color: t.colors.primary, fontWeight: '500' },
+  sectionTitle: { ...t.typography.h2, color: t.colors.foreground, marginBottom: t.spacing.sm },
+  seeAllText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '500' },
   picksScroll: { paddingRight: t.spacing.md, gap: t.spacing.sm },
   pickCard: { width: 200 },
   pickImageWrap: { height: 140, borderRadius: t.radius.md, overflow: 'hidden', marginBottom: t.spacing.xs, position: 'relative' },
@@ -258,10 +258,10 @@ function makeStyles(t: AppTheme) {
     paddingVertical: 3,
     borderRadius: t.radius.sm,
   },
-  pickBadgeText: { ...theme.typography.micro, fontWeight: '700', color: t.colors.foreground },
-  pickTitle: { ...theme.typography.body, fontWeight: '600', color: t.colors.foreground, marginBottom: 2 },
+  pickBadgeText: { ...t.typography.micro, fontWeight: '700', color: t.colors.foreground },
+  pickTitle: { ...t.typography.body, fontWeight: '600', color: t.colors.foreground, marginBottom: 2 },
   pickMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  pickMeta: { ...theme.typography.micro, color: t.colors.subtle },
+  pickMeta: { ...t.typography.micro, color: t.colors.subtle },
   seasonalHero: {
     height: 180,
     borderRadius: t.radius.lg,
@@ -285,9 +285,9 @@ function makeStyles(t: AppTheme) {
     alignSelf: 'flex-start',
     marginBottom: 6,
   },
-  autumnBadgeText: { ...theme.typography.micro, fontWeight: '700', color: t.colors.surface },
-  seasonalHeroTitle: { ...theme.typography.h2, fontWeight: '700', color: t.colors.surface },
-  seasonalHeroSubtitle: { ...theme.typography.caption, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  autumnBadgeText: { ...t.typography.micro, fontWeight: '700', color: t.colors.surface },
+  seasonalHeroTitle: { ...t.typography.h2, fontWeight: '700', color: t.colors.surface },
+  seasonalHeroSubtitle: { ...t.typography.caption, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
   listItem: {
     flexDirection: 'row',
     backgroundColor: t.colors.surface,
@@ -296,14 +296,14 @@ function makeStyles(t: AppTheme) {
     gap: t.spacing.sm,
     marginBottom: t.spacing.xs,
     alignItems: 'center',
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
   listItemImage: { width: 56, height: 56, borderRadius: t.radius.sm, overflow: 'hidden' },
   listItemContent: { flex: 1 },
-  listItemTitle: { ...theme.typography.body, fontWeight: '700', color: t.colors.foreground },
-  listItemSubtitle: { ...theme.typography.caption, color: t.colors.subtle, marginTop: 2 },
+  listItemTitle: { ...t.typography.body, fontWeight: '700', color: t.colors.foreground },
+  listItemSubtitle: { ...t.typography.caption, color: t.colors.subtle, marginTop: 2 },
   listItemRight: { alignItems: 'flex-end', justifyContent: 'space-between', height: 56 },
-  listItemPrice: { ...theme.typography.body, fontWeight: '700', color: t.colors.primary },
+  listItemPrice: { ...t.typography.body, fontWeight: '700', color: t.colors.primary },
   addBtn: {
     width: 28,
     height: 28,
@@ -315,6 +315,3 @@ function makeStyles(t: AppTheme) {
   bottomPadding: { height: t.spacing['2xl'] },
 });
 }
-
-
-

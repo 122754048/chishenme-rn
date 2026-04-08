@@ -11,7 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowLeft, MoreHorizontal, Heart, Ban, RefreshCw, ClipboardList } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors, theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { useApp } from '../context/AppContext';
 import { SkeletonImage } from '../components/SkeletonImage';
@@ -36,7 +36,7 @@ export function History() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav â€?Page mode */}
+      {/* Top Nav â€” Page mode */}
       <View style={styles.topNav}>
         <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}>
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
@@ -113,20 +113,20 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: t.spacing.md,
-    height: theme.topNavHeight,
+    height: t.topNavHeight,
     backgroundColor: t.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: t.colors.borderLight,
   },
   backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  navTitle: { ...theme.typography.h2, color: t.colors.foreground },
+  navTitle: { ...t.typography.h2, color: t.colors.foreground },
   moreBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: t.spacing.md, paddingTop: t.spacing.lg, paddingBottom: t.spacing['2xl'] },
   group: { marginBottom: t.spacing.xl },
   groupHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: t.spacing.sm, gap: t.spacing.sm },
   groupLabel: {
-    ...theme.typography.micro,
+    ...t.typography.micro,
     fontWeight: '700',
     color: t.colors.subtle,
     letterSpacing: 0.5,
@@ -141,12 +141,12 @@ function makeStyles(t: AppTheme) {
     padding: t.spacing.sm,
     gap: t.spacing.sm,
     alignItems: 'center',
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
   historyImageWrap: { width: 48, height: 48, borderRadius: t.radius.sm, overflow: 'hidden' },
   historyItemContent: { flex: 1 },
-  historyItemTitle: { ...theme.typography.body, fontWeight: '600', color: t.colors.foreground },
-  historyItemMeta: { ...theme.typography.micro, color: t.colors.subtle, marginTop: 2 },
+  historyItemTitle: { ...t.typography.body, fontWeight: '600', color: t.colors.foreground },
+  historyItemMeta: { ...t.typography.micro, color: t.colors.subtle, marginTop: 2 },
   likedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -156,7 +156,7 @@ function makeStyles(t: AppTheme) {
     paddingHorizontal: t.spacing.xs,
     paddingVertical: 5,
   },
-  likedText: { ...theme.typography.micro, fontWeight: '600', color: t.colors.primary },
+  likedText: { ...t.typography.micro, fontWeight: '600', color: t.colors.primary },
   skippedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -166,7 +166,7 @@ function makeStyles(t: AppTheme) {
     paddingHorizontal: t.spacing.xs,
     paddingVertical: 5,
   },
-  skippedText: { ...theme.typography.micro, fontWeight: '600', color: t.colors.subtle },
+  skippedText: { ...t.typography.micro, fontWeight: '600', color: t.colors.subtle },
   endState: {
     alignItems: 'center',
     paddingTop: t.spacing['2xl'],
@@ -181,11 +181,8 @@ function makeStyles(t: AppTheme) {
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
-  endText: { ...theme.typography.caption, color: t.colors.subtle },
+  endText: { ...t.typography.caption, color: t.colors.subtle },
 });
 }
-
-
-
