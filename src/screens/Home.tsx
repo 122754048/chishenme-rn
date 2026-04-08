@@ -4,8 +4,7 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  ScrollView,
-  useWindowDimensions,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -15,44 +14,38 @@ import Animated, {
   withTiming,
   withSequence,
   runOnJS,
+  interpolate,
+  Extrapolation,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Bell, Zap, X, Info, Heart, Star, MapPin } from 'lucide-react-native';
+import { X, Heart, Star, MapPin, SlidersHorizontal, Search } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
-import { SWIPE_CARDS, CATEGORIES, NEARBY_ITEMS } from '../data/mockData';
+import { SWIPE_CARDS } from '../data/mockData';
+import type { SwipeCardData } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
+import { OnboardingGuide } from '../components/OnboardingGuide';
 import { useApp } from '../context/AppContext';
 
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_HEIGHT = Math.max(SCREEN_HEIGHT * 0.65, 520);
 const SWIPE_THRESHOLD = 100;
+
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface CardData {
-  id: number;
-  title: string;
-  price: string;
-  restaurant: string;
-  distance: string;
-  rating: number;
-  tags: string[];
-  badge: string;
-  image: string;
-}
-
+/* ─── Swipe Card ─── */
 function SwipeCard({
   card,
   onSwipe,
   screenWidth,
-  theme,
   styles,
 }: {
-  card: CardData;
+  card: SwipeCardData;
   onSwipe: (dir: 'left' | 'right') => void;
   screenWidth: number;
-  theme: AppTheme;
   styles: ReturnType<typeof makeStyles>;
 }) {
   const translateX = useSharedValue(0);
@@ -61,7 +54,7 @@ function SwipeCard({
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
       translateX.value = event.translationX;
-      translateY.value = event.translationY;
+      translateY.value = event.translationY * 0.4;
     })
     .onEnd((event) => {
       if (event.translationX > SWIPE_THRESHOLD || event.velocityX > 500) {
@@ -76,59 +69,71 @@ function SwipeCard({
       }
     });
 
-  const cardStyle = useAnimatedStyle(() => ({
+  const cardAnimStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
-      { rotate: `${translateX.value / 15}deg` },
+      { rotate: `${translateX.value / 20}deg` },
     ],
   }));
 
   const likeOpacity = useAnimatedStyle(() => ({
-    opacity: Math.max(0, Math.min(1, translateX.value / 100)),
+    opacity: interpolate(translateX.value, [0, 80], [0, 1], Extrapolation.CLAMP),
   }));
 
   const nopeOpacity = useAnimatedStyle(() => ({
-    opacity: Math.max(0, Math.min(1, -translateX.value / 100)),
+    opacity: interpolate(translateX.value, [-80, 0], [1, 0], Extrapolation.CLAMP),
   }));
 
   return (
     <GestureDetector gesture={panGesture}>
-      <Animated.View style={[styles.card, { width: screenWidth - 32 }, cardStyle]}>
+      <Animated.View style={[styles.card, { width: screenWidth - 32 }, cardAnimStyle]}>
+        {/* LIKE / NOPE overlays */}
         <Animated.View style={[styles.badgeLike, likeOpacity]}>
-          <Text style={styles.badgeLikeText}>LIKE</Text>
+          <Text style={styles.badgeLikeText}>喜欢</Text>
         </Animated.View>
         <Animated.View style={[styles.badgeNope, nopeOpacity]}>
-          <Text style={styles.badgeNopeText}>NOPE</Text>
+          <Text style={styles.badgeNopeText}>跳过</Text>
         </Animated.View>
+
+        {/* Full-height image with overlay info */}
         <View style={styles.cardImage}>
-          <SkeletonImage src={card.image} alt={card.title} />
-          <View style={styles.cardImageOverlay} />
-          <View style={styles.cardBadges}>
-            <View style={styles.badgePill}>
-              <Text style={styles.badgePillText}>{card.badge}</Text>
-            </View>
-            <View style={styles.ratingBadge}>
-              <Star size={10} color={theme.colors.star} fill={theme.colors.star} />
-              <Text style={styles.ratingText}>{card.rating}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.cardBody}>
-          <View style={styles.cardTitleRow}>
-            <Text style={styles.cardTitle}>{card.title}</Text>
-            <Text style={styles.cardPrice}>{card.price}</Text>
-          </View>
-          <View style={styles.cardMeta}>
-            <MapPin size={12} color={theme.colors.muted} />
-            <Text style={styles.cardMetaText}>{card.restaurant} · {card.distance}</Text>
-          </View>
-          <View style={styles.tagRow}>
-            {card.tags.map((tag) => (
-              <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
+          <SkeletonImage src={card.image} alt={card.name} />
+          {/* Gradient overlay - bottom half */}
+          <View style={styles.cardGradientOverlay} />
+
+          {/* Info overlaid on image bottom */}
+          <View style={styles.cardInfoOverlay}>
+            {/* Category pill + Rating */}
+            <View style={styles.cardInfoTopRow}>
+              <View style={styles.categoryPill}>
+                <Text style={styles.categoryPillText}>{card.category}</Text>
               </View>
-            ))}
+              <View style={styles.ratingBadge}>
+                <Star size={12} color="#FFD700" fill="#FFD700" />
+                <Text style={styles.ratingText}>{card.rating}</Text>
+              </View>
+            </View>
+
+            {/* Dish Name */}
+            <Text style={styles.cardName}>{card.name}</Text>
+
+            {/* Distance + Price + PrepTime */}
+            <View style={styles.cardMetaRow}>
+              <MapPin size={12} color="rgba(255,255,255,0.85)" />
+              <Text style={styles.cardMetaText}>{card.distance}</Text>
+              <Text style={styles.cardMetaDot}>·</Text>
+              <Text style={styles.cardMetaText}>{card.price}</Text>
+              <Text style={styles.cardMetaDot}>·</Text>
+              <Text style={styles.cardMetaText}>{card.prepTime}</Text>
+            </View>
+
+            {/* Tags */}
+            <View style={styles.cardTagRow}>
+              {card.tags.map((tag) => (
+                <Text key={tag} style={styles.cardTag}>{tag}</Text>
+              ))}
+            </View>
           </View>
         </View>
       </Animated.View>
@@ -136,14 +141,17 @@ function SwipeCard({
   );
 }
 
+/* ─── Animated Action Button ─── */
 function AnimatedActionBtn({
   onPress,
   children,
   style,
+  label,
 }: {
   onPress: () => void;
   children: React.ReactNode;
   style?: object;
+  label?: string;
 }) {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -160,31 +168,36 @@ function AnimatedActionBtn({
   };
 
   return (
-    <Pressable onPress={handlePress}>
+    <Pressable onPress={handlePress} style={actionBtnStyles.wrapper}>
       <Animated.View style={[style, animStyle]}>{children}</Animated.View>
+      {label ? <Text style={actionBtnStyles.label}>{label}</Text> : null}
     </Pressable>
   );
 }
 
+/* Static styles for sub-component (avoids scope issues with makeStyles) */
+const actionBtnStyles = StyleSheet.create({
+  wrapper: { alignItems: 'center', gap: 6 },
+  label: { fontSize: 11, fontWeight: '500', color: '#9CA3AF', marginTop: 2 },
+});
+
+/* ═══════════ Home Screen ═══════════ */
 export function Home() {
   const navigation = useNavigation<NavProp>();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { recommendationsLeft, addToHistory } = useApp();
+  const { addToHistory } = useApp();
   const [cardIndex, setCardIndex] = useState(0);
-  const { width: screenWidth } = useWindowDimensions();
-  const [localRecsLeft, setLocalRecsLeft] = useState(recommendationsLeft);
 
   const handleSwipe = useCallback(
     (direction: 'left' | 'right' = 'right') => {
       const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
-      setLocalRecsLeft((prev) => Math.max(0, prev - 1));
       addToHistory({
         id: currentCard.id,
-        title: currentCard.title,
+        title: currentCard.name,
         img: currentCard.image,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        category: currentCard.tags[0] || 'Other',
+        category: currentCard.category,
         status: direction === 'right' ? 'Liked' : 'Skipped',
       });
       setCardIndex((prev) => prev + 1);
@@ -192,309 +205,301 @@ export function Home() {
     [cardIndex, addToHistory]
   );
 
-  const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
+  const handleFavorite = useCallback(() => {
+    const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
+    addToHistory({
+      id: currentCard.id,
+      title: currentCard.name,
+      img: currentCard.image,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      category: currentCard.category,
+      status: 'Liked',
+    });
+    setCardIndex((prev) => prev + 1);
+  }, [cardIndex, addToHistory]);
 
-  const navigateToDetail = (item: { id: number; title: string; image: string }) => {
-    navigation.navigate('Detail', { itemId: item.id, title: item.title, image: item.image });
-  };
+  const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav — Brand mode */}
-      <View style={styles.topNav}>
-        <Text style={styles.logo}>🍽️ ChiShenMe</Text>
-        <Pressable style={({ pressed }) => [styles.bellBtn, pressed && styles.pressed]}>
-          <Bell size={20} color={theme.colors.foreground} strokeWidth={1.8} />
-        </Pressable>
-      </View>
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Status Bar */}
-        <View style={styles.statusBar}>
-          <View style={styles.statusLeft}>
-            <Zap size={14} color={theme.colors.primary} fill={theme.colors.primary} />
-            <Text style={styles.statusText}>
-              <Text style={styles.statusBold}>{localRecsLeft}</Text> recommendations left today
-            </Text>
-          </View>
+      {/* ─── Minimal Top Bar ─── */}
+      <View style={styles.topBar}>
+        <Text style={styles.brandText}>🍊 吃什么</Text>
+        <View style={styles.topBarRight}>
           <Pressable
-            style={({ pressed }) => [styles.proBtn, pressed && styles.pressed]}
-            onPress={() => navigation.navigate('Upgrade')}
+            style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
+            onPress={() => { /* TODO: 打开筛选浮层 */ }}
           >
-            <Text style={styles.proBtnText}>Go PRO</Text>
+            <SlidersHorizontal size={20} color={theme.colors.foreground} strokeWidth={1.8} />
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
+            onPress={() => { /* TODO: 打开搜索 */ }}
+          >
+            <Search size={20} color={theme.colors.foreground} strokeWidth={1.8} />
           </Pressable>
         </View>
+      </View>
 
-        {/* Quick Categories */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesRow}
+      {/* ─── Full-screen Card Area ─── */}
+      <View style={styles.cardContainer}>
+        {currentCard && (
+          <SwipeCard
+            key={`${currentCard.id}-${cardIndex}`}
+            card={currentCard}
+            onSwipe={handleSwipe}
+            screenWidth={SCREEN_WIDTH}
+            styles={styles}
+          />
+        )}
+      </View>
+
+      {/* ─── Action Buttons ─── */}
+      <View style={styles.actionRow}>
+        <AnimatedActionBtn
+          style={[styles.actionBtn, styles.skipBtn]}
+          onPress={() => handleSwipe('left')}
+          label="跳过"
         >
-          {CATEGORIES.map((cat) => (
-            <Pressable
-              key={cat.label}
-              style={({ pressed }) => [styles.categoryItem, pressed && styles.pressed]}
-              onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
-            >
-              <View style={styles.categoryIcon}>
-                <Text style={styles.categoryEmoji}>{cat.icon}</Text>
-              </View>
-              <Text style={styles.categoryLabel}>{cat.label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+          <X size={26} color={theme.colors.muted} strokeWidth={2.5} />
+        </AnimatedActionBtn>
 
-        {/* Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>What to Eat Today</Text>
-          <Text style={styles.sectionSubtitle}>Swipe right to like, left to skip</Text>
-        </View>
+        <AnimatedActionBtn
+          style={[styles.actionBtn, styles.favoriteBtn]}
+          onPress={handleFavorite}
+          label="收藏"
+        >
+          <Star size={26} color={theme.colors.primary} strokeWidth={2} />
+        </AnimatedActionBtn>
 
-        {/* Swipe Card */}
-        <View style={styles.cardContainer}>
-          {currentCard && (
-            <SwipeCard
-              key={`${currentCard.id}-${cardIndex}`}
-              card={currentCard}
-              onSwipe={handleSwipe}
-              screenWidth={screenWidth}
-              theme={theme}
-              styles={styles}
-            />
-          )}
-        </View>
+        <AnimatedActionBtn
+          style={[styles.actionBtn, styles.likeBtn]}
+          onPress={() => handleSwipe('right')}
+          label="喜欢"
+        >
+          <Heart size={26} color="#EF4444" fill="#EF4444" strokeWidth={0} />
+        </AnimatedActionBtn>
+      </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionRow}>
-          <AnimatedActionBtn style={[styles.actionBtn, styles.skipBtn]} onPress={() => handleSwipe('left')}>
-            <X size={24} color={theme.colors.error} strokeWidth={2.5} />
-          </AnimatedActionBtn>
-          <AnimatedActionBtn
-            style={styles.infoBtn}
-            onPress={() =>
-              navigateToDetail({ id: currentCard.id, title: currentCard.title, image: currentCard.image })
-            }
-          >
-            <Info size={20} color={theme.colors.muted} strokeWidth={1.8} />
-          </AnimatedActionBtn>
-          <AnimatedActionBtn style={[styles.actionBtn, styles.likeBtn]} onPress={() => handleSwipe('right')}>
-            <Heart size={24} color={theme.colors.primary} fill={theme.colors.primary} strokeWidth={0} />
-          </AnimatedActionBtn>
-        </View>
-
-        {/* Nearby Hot */}
-        <View style={styles.nearbySection}>
-          <View style={styles.nearbyHeader}>
-            <Text style={styles.nearbyTitle}>Nearby Hot</Text>
-            <Pressable onPress={() => navigation.navigate('MainTabs')}>
-              <Text style={styles.seeAllText}>See all →</Text>
-            </Pressable>
-          </View>
-          <View style={styles.nearbyList}>
-            {NEARBY_ITEMS.map((item) => (
-              <Pressable
-                key={item.id}
-                style={({ pressed }) => [styles.nearbyItem, pressed && { opacity: 0.85 }]}
-                onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
-              >
-                <View style={styles.nearbyImageWrap}>
-                  <SkeletonImage src={item.image} alt={item.title} />
-                </View>
-                <View style={styles.nearbyItemContent}>
-                  <Text style={styles.nearbyItemTitle}>{item.title}</Text>
-                  <Text style={styles.nearbyItemSubtitle}>{item.subtitle}</Text>
-                </View>
-                <View style={styles.nearbyItemRight}>
-                  <View style={styles.nearbyRatingRow}>
-                    <Star size={10} color={theme.colors.star} fill={theme.colors.star} />
-                    <Text style={styles.nearbyRating}>{item.rating}</Text>
-                  </View>
-                  <Text style={styles.nearbyPrice}>{item.price}</Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.bottomPadding} />
-      </ScrollView>
+      {/* ─── First-use Onboarding Guide ─── */}
+      <OnboardingGuide />
     </SafeAreaView>
   );
 }
 
+/* ═══════════ Styles ═══════════ */
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: t.colors.background },
     pressed: { opacity: 0.85, transform: [{ scale: 0.97 }] },
-    topNav: {
+
+    /* ── Top Bar ── */
+    topBar: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingHorizontal: t.spacing.md,
-      height: t.topNavHeight,
-    },
-    logo: { ...t.typography.h1, color: t.colors.foreground },
-    bellBtn: { width: 40, height: 40, borderRadius: t.radius.md, alignItems: 'center', justifyContent: 'center' },
-    scrollView: { flex: 1 },
-    statusBar: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      backgroundColor: t.colors.surface,
-      marginHorizontal: t.spacing.md,
-      marginTop: t.spacing.xs,
-      borderRadius: t.radius.md,
-      paddingHorizontal: t.spacing.md,
-      paddingVertical: t.spacing.sm,
-      ...t.shadows.sm,
-    },
-    statusLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    statusText: { ...t.typography.caption, color: t.colors.muted },
-    statusBold: { fontWeight: '700', color: t.colors.foreground },
-    proBtn: {
-      backgroundColor: t.colors.primaryLight,
-      paddingHorizontal: t.spacing.sm,
-      paddingVertical: 4,
-      borderRadius: t.radius.full,
-    },
-    proBtnText: { ...t.typography.micro, color: t.colors.primary, fontWeight: '700' },
-    categoriesRow: { paddingHorizontal: t.spacing.md, paddingVertical: t.spacing.md, gap: 4 },
-    categoryItem: { alignItems: 'center', gap: 4, marginRight: t.spacing.sm },
-    categoryIcon: {
-      width: 48,
       height: 48,
-      backgroundColor: t.colors.surface,
+    },
+    brandText: {
+      fontSize: 22,
+      fontWeight: '800',
+      color: t.colors.primary,
+    },
+    topBarRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    topBarIconBtn: {
+      width: 40,
+      height: 40,
       borderRadius: t.radius.md,
       alignItems: 'center',
       justifyContent: 'center',
-      ...t.shadows.sm,
     },
-    categoryEmoji: { fontSize: 22 },
-    categoryLabel: { ...t.typography.micro, color: t.colors.muted },
-    sectionHeader: { paddingHorizontal: t.spacing.md, marginBottom: t.spacing.sm },
-    sectionTitle: { ...t.typography.h1, color: t.colors.foreground },
-    sectionSubtitle: { ...t.typography.caption, color: t.colors.subtle, marginTop: 2 },
-    cardContainer: { minHeight: 390, alignItems: 'center', paddingHorizontal: t.spacing.md },
+
+    /* ── Card Container ── */
+    cardContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: t.spacing.md,
+    },
+
+    /* ── Card ── */
     card: {
-      position: 'absolute',
+      height: CARD_HEIGHT,
+      borderRadius: 16,
+      overflow: 'hidden',
       backgroundColor: t.colors.surface,
-      borderRadius: t.radius.lg,
-      ...t.shadows.md,
+      ...t.shadows.lg,
     },
+
+    /* LIKE / NOPE badges */
     badgeLike: {
       position: 'absolute',
-      top: 16,
-      left: 16,
+      top: 24,
+      left: 20,
       zIndex: 10,
       borderWidth: 3,
-      borderColor: t.colors.success,
-      backgroundColor: 'rgba(76,175,80,0.15)',
+      borderColor: '#4CAF50',
+      backgroundColor: 'rgba(76,175,80,0.2)',
       borderRadius: t.radius.sm,
-      paddingHorizontal: 16,
-      paddingVertical: 6,
-      transform: [{ rotate: '-12deg' }],
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+      transform: [{ rotate: '-15deg' }],
     },
-    badgeLikeText: { ...t.typography.caption, fontWeight: '700', color: t.colors.success },
+    badgeLikeText: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: '#4CAF50',
+      letterSpacing: 2,
+    },
     badgeNope: {
       position: 'absolute',
-      top: 16,
-      right: 16,
+      top: 24,
+      right: 20,
       zIndex: 10,
       borderWidth: 3,
-      borderColor: t.colors.error,
-      backgroundColor: 'rgba(239,68,68,0.15)',
+      borderColor: '#EF4444',
+      backgroundColor: 'rgba(239,68,68,0.2)',
       borderRadius: t.radius.sm,
-      paddingHorizontal: 16,
-      paddingVertical: 6,
-      transform: [{ rotate: '12deg' }],
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+      transform: [{ rotate: '15deg' }],
     },
-    badgeNopeText: { ...t.typography.caption, fontWeight: '700', color: t.colors.error },
+    badgeNopeText: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: '#EF4444',
+      letterSpacing: 2,
+    },
+
+    /* ── Image area (full card) ── */
     cardImage: {
-      height: 240,
+      width: '100%',
+      height: '100%',
       position: 'relative',
-      borderTopLeftRadius: t.radius.lg,
-      borderTopRightRadius: t.radius.lg,
-      overflow: 'hidden',
     },
-    cardImageOverlay: {
+
+    /* Gradient overlay placeholder */
+    cardGradientOverlay: {
       position: 'absolute',
       bottom: 0,
       left: 0,
       right: 0,
-      height: 80,
-      backgroundColor: 'rgba(0,0,0,0.06)',
+      height: '55%',
+      backgroundColor: 'transparent',
     },
-    cardBadges: { position: 'absolute', top: t.spacing.sm, left: t.spacing.sm, flexDirection: 'row', gap: 6 },
-    badgePill: {
-      backgroundColor: 'rgba(255,255,255,0.92)',
-      paddingHorizontal: t.spacing.sm,
-      paddingVertical: 4,
-      borderRadius: t.radius.full,
+
+    /* ── Info overlay on image ── */
+    cardInfoOverlay: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: 20,
+      paddingBottom: 24,
+      paddingTop: 60,
+      backgroundColor: 'rgba(0,0,0,0.45)',
     },
-    badgePillText: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary, textTransform: 'uppercase', letterSpacing: 0.5 },
-    ratingBadge: {
-      backgroundColor: 'rgba(255,255,255,0.92)',
-      paddingHorizontal: t.spacing.sm,
-      paddingVertical: 4,
-      borderRadius: t.radius.full,
+
+    cardInfoTopRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 3,
+      gap: 8,
+      marginBottom: 8,
     },
-    ratingText: { ...t.typography.micro, fontWeight: '600', color: t.colors.foreground },
-    cardBody: { padding: t.spacing.md },
-    cardTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
-    cardTitle: { ...t.typography.h1, color: t.colors.foreground, flex: 1 },
-    cardPrice: { ...t.typography.h1, color: t.colors.foreground },
-    cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: t.spacing.xs },
-    cardMetaText: { ...t.typography.caption, color: t.colors.muted },
-    tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-    tag: { backgroundColor: t.colors.borderLight, paddingHorizontal: t.spacing.xs, paddingVertical: 4, borderRadius: t.radius.sm },
-    tagText: { ...t.typography.micro, color: '#4B5563', fontWeight: '500' },
-    actionRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: t.spacing.lg, paddingVertical: t.spacing.sm },
-    actionBtn: {
-      width: 56,
-      height: 56,
+
+    categoryPill: {
+      backgroundColor: t.colors.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
       borderRadius: t.radius.full,
+    },
+    categoryPillText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+
+    ratingBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: t.radius.full,
+    },
+    ratingText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#FFFFFF',
+    },
+
+    cardName: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      marginBottom: 6,
+    },
+
+    cardMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginBottom: 8,
+    },
+    cardMetaText: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: 'rgba(255,255,255,0.85)',
+    },
+    cardMetaDot: {
+      fontSize: 13,
+      color: 'rgba(255,255,255,0.5)',
+    },
+
+    cardTagRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    cardTag: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: 'rgba(255,255,255,0.8)',
+    },
+
+    /* ── Action Buttons ── */
+    actionRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 32,
+      paddingVertical: 16,
+      paddingBottom: 8,
+    },
+    actionBtn: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: t.colors.surface,
+      borderWidth: 2,
       ...t.shadows.md,
     },
-    skipBtn: {},
-    likeBtn: {},
-    infoBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: t.radius.full,
-      backgroundColor: t.colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...t.shadows.sm,
+    skipBtn: {
+      borderColor: t.colors.border,
     },
-    nearbySection: { paddingHorizontal: t.spacing.md, marginTop: t.spacing.xs },
-    nearbyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: t.spacing.sm },
-    nearbyTitle: { ...t.typography.h2, color: t.colors.foreground },
-    seeAllText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '500' },
-    nearbyList: { gap: t.spacing.xs },
-    nearbyItem: {
-      flexDirection: 'row',
-      backgroundColor: t.colors.surface,
-      borderRadius: t.radius.md,
-      padding: t.spacing.sm,
-      gap: t.spacing.sm,
-      alignItems: 'center',
-      ...t.shadows.sm,
+    favoriteBtn: {
+      borderColor: t.colors.primary,
     },
-    nearbyImageWrap: { width: 72, height: 72, borderRadius: t.radius.sm, overflow: 'hidden' },
-    nearbyItemContent: { flex: 1 },
-    nearbyItemTitle: { ...t.typography.body, fontWeight: '700', color: t.colors.foreground },
-    nearbyItemSubtitle: { ...t.typography.caption, color: t.colors.subtle, marginTop: 2 },
-    nearbyItemRight: { alignItems: 'flex-end' },
-    nearbyRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-    nearbyRating: { ...t.typography.caption, color: t.colors.star, fontWeight: '700' },
-    nearbyPrice: { ...t.typography.body, fontWeight: '700', color: t.colors.primary, marginTop: 2 },
-    bottomPadding: { height: t.spacing['2xl'] },
+    likeBtn: {
+      borderColor: '#EF4444',
+    },
   });
 }
