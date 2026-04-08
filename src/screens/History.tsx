@@ -27,7 +27,7 @@ export function History() {
   const groupedHistory = React.useMemo(() => {
     const groups: Record<string, typeof history> = {};
     history.forEach((item) => {
-      const groupKey = 'RECENT';
+      const groupKey = '最近';
       if (!groups[groupKey]) groups[groupKey] = [];
       groups[groupKey].push(item);
     });
@@ -41,7 +41,7 @@ export function History() {
         <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}>
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Text style={styles.navTitle}>History</Text>
+        <Text style={styles.navTitle}>浏览记录</Text>
         <Pressable style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}>
           <MoreHorizontal size={20} color={theme.colors.muted} strokeWidth={1.8} />
         </Pressable>
@@ -53,7 +53,7 @@ export function History() {
             <View style={styles.endIcon}>
               <ClipboardList size={24} color={theme.colors.subtle} strokeWidth={1.5} />
             </View>
-            <Text style={styles.endText}>No history yet. Start swiping!</Text>
+            <Text style={styles.endText}>还没有浏览记录，开始滑动吧！</Text>
           </View>
         ) : (
           groupedHistory.map((group) => (
@@ -77,12 +77,12 @@ export function History() {
                     {item.status === 'Liked' ? (
                       <View style={styles.likedBadge}>
                         <Heart size={10} color={theme.colors.primary} fill={theme.colors.primary} />
-                        <Text style={styles.likedText}>Liked</Text>
+                        <Text style={styles.likedText}>喜欢</Text>
                       </View>
                     ) : (
                       <View style={styles.skippedBadge}>
                         <Ban size={10} color={theme.colors.subtle} strokeWidth={2} />
-                        <Text style={styles.skippedText}>Skipped</Text>
+                        <Text style={styles.skippedText}>跳过</Text>
                       </View>
                     )}
                   </View>
@@ -97,7 +97,7 @@ export function History() {
             <View style={styles.endIcon}>
               <RefreshCw size={20} color={theme.colors.subtle} strokeWidth={1.5} />
             </View>
-            <Text style={styles.endText}>No more history to show</Text>
+            <Text style={styles.endText}>没有更多记录了</Text>
           </View>
         )}
       </ScrollView>

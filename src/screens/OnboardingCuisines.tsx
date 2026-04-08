@@ -48,7 +48,7 @@ export function OnboardingCuisines() {
       <View style={styles.header}>
         <View style={{ width: 40 }} />
         <Pressable onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={styles.skipText}>跳过</Text>
         </Pressable>
       </View>
 
@@ -61,9 +61,9 @@ export function OnboardingCuisines() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>
-          Which cuisines do you{'\n'}like?
+          你喜欢什么{'\n'}菜系？
         </Text>
-        <Text style={styles.subtitle}>Select multiple to personalize your food journey.</Text>
+        <Text style={styles.subtitle}>可以多选，帮你定制专属美食推荐。</Text>
 
         <View style={styles.cuisineGrid}>
           {CUISINES.map((item) => {
@@ -110,7 +110,7 @@ export function OnboardingCuisines() {
           />
           <View style={styles.bannerOverlay}>
             <Text style={styles.bannerText}>
-              Customize your palate to get the best{'\n'}recommendations every day.
+              定制你的口味偏好，{'\n'}每天为你推荐最合适的美食。
             </Text>
           </View>
         </View>
@@ -121,7 +121,7 @@ export function OnboardingCuisines() {
           style={({ pressed }) => [styles.nextButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           onPress={handleNext}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          <Text style={styles.nextButtonText}>下一步</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
       </View>

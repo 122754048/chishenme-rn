@@ -96,10 +96,10 @@ function SwipeCard({
     <GestureDetector gesture={panGesture}>
       <Animated.View style={[styles.card, { width: screenWidth - 32 }, cardStyle]}>
         <Animated.View style={[styles.badgeLike, likeOpacity]}>
-          <Text style={styles.badgeLikeText}>LIKE</Text>
+          <Text style={styles.badgeLikeText}>喜欢</Text>
         </Animated.View>
         <Animated.View style={[styles.badgeNope, nopeOpacity]}>
-          <Text style={styles.badgeNopeText}>NOPE</Text>
+          <Text style={styles.badgeNopeText}>跳过</Text>
         </Animated.View>
         <View style={styles.cardImage}>
           <SkeletonImage src={card.image} alt={card.title} />
@@ -214,14 +214,14 @@ export function Home() {
           <View style={styles.statusLeft}>
             <Zap size={14} color={theme.colors.primary} fill={theme.colors.primary} />
             <Text style={styles.statusText}>
-              <Text style={styles.statusBold}>{localRecsLeft}</Text> recommendations left today
+              今日还剩 <Text style={styles.statusBold}>{localRecsLeft}</Text> 次推荐
             </Text>
           </View>
           <Pressable
             style={({ pressed }) => [styles.proBtn, pressed && styles.pressed]}
             onPress={() => navigation.navigate('Upgrade')}
           >
-            <Text style={styles.proBtnText}>Go PRO</Text>
+            <Text style={styles.proBtnText}>升级 PRO</Text>
           </Pressable>
         </View>
 
@@ -247,8 +247,8 @@ export function Home() {
 
         {/* Section Header */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>What to Eat Today</Text>
-          <Text style={styles.sectionSubtitle}>Swipe right to like, left to skip</Text>
+          <Text style={styles.sectionTitle}>今日推荐</Text>
+          <Text style={styles.sectionSubtitle}>右滑喜欢，左滑跳过</Text>
         </View>
 
         {/* Swipe Card */}
@@ -286,9 +286,9 @@ export function Home() {
         {/* Nearby Hot */}
         <View style={styles.nearbySection}>
           <View style={styles.nearbyHeader}>
-            <Text style={styles.nearbyTitle}>Nearby Hot</Text>
+            <Text style={styles.nearbyTitle}>附近热门</Text>
             <Pressable onPress={() => navigation.navigate('MainTabs')}>
-              <Text style={styles.seeAllText}>See all →</Text>
+              <Text style={styles.seeAllText}>查看全部 →</Text>
             </Pressable>
           </View>
           <View style={styles.nearbyList}>

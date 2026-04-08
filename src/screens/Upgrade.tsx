@@ -125,7 +125,7 @@ export function Upgrade() {
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
         <Pressable onPress={handleStart}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={styles.skipText}>跳过</Text>
         </Pressable>
       </View>
 
@@ -138,46 +138,46 @@ export function Upgrade() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>
-          Unlock Unlimited{'\n'}Exploration
+          解锁无限{'\n'}美食探索
         </Text>
         <Text style={styles.subtitle}>
-          Unlock AI smart ordering, personalized recipes, and multi-device family sharing.
+          解锁 AI 智能点餐、个性化食谱和多设备家庭共享。
         </Text>
 
         <View style={styles.plans}>
           <PlanCard
-            title="Free"
-            subtitle="BASIC"
+            title="免费版"
+            subtitle="基础"
             price="¥0"
-            priceSuffix="Free Forever"
+            priceSuffix="永久免费"
             features={[
-              { text: '3 AI order suggestions daily', iconType: 'check' },
-              { text: 'Basic restaurant search', iconType: 'check' },
+              { text: '每日 3 次 AI 点餐建议', iconType: 'check' },
+              { text: '基础餐厅搜索', iconType: 'check' },
             ]}
             onSelect={() => {}}
           />
           <PlanCard
-            title="Pro"
-            subtitle="ADVANCED"
+            title="Pro 版"
+            subtitle="进阶"
             price="¥9.9"
-            priceSuffix="/mo"
-            badge="MOST POPULAR"
+            priceSuffix="/月"
+            badge="最受欢迎"
             features={[
-              { text: 'Unlimited AI deep order analysis', iconType: 'zap' },
-              { text: 'Precise allergen & health filters', iconType: 'shield' },
-              { text: 'Offline mode & Ad-free experience', iconType: 'check' },
+              { text: '无限次 AI 深度点餐分析', iconType: 'zap' },
+              { text: '精准过敏原与健康筛选', iconType: 'shield' },
+              { text: '离线模式 & 无广告体验', iconType: 'check' },
             ]}
             highlighted
             onSelect={() => {}}
           />
           <PlanCard
-            title="Family"
-            subtitle="WIN-WIN"
+            title="家庭版"
+            subtitle="共赢"
             price="¥19.9"
-            priceSuffix="/mo"
+            priceSuffix="/月"
             features={[
-              { text: 'Up to 6 family members shared', iconType: 'check' },
-              { text: 'Auto-generated weekly family meal plans', iconType: 'check' },
+              { text: '最多 6 位家庭成员共享', iconType: 'check' },
+              { text: '自动生成每周家庭菜谱', iconType: 'check' },
             ]}
             onSelect={() => {}}
           />
@@ -186,11 +186,11 @@ export function Upgrade() {
         <View style={styles.trustBadges}>
           <View style={styles.trustBadge}>
             <Lock size={18} color={theme.colors.muted} strokeWidth={1.8} />
-            <Text style={styles.trustLabel}>SECURE PAYMENT</Text>
+            <Text style={styles.trustLabel}>安全支付</Text>
           </View>
           <View style={styles.trustBadge}>
             <CreditCard size={18} color={theme.colors.muted} strokeWidth={1.8} />
-            <Text style={styles.trustLabel}>CANCEL ANYTIME</Text>
+            <Text style={styles.trustLabel}>随时取消</Text>
           </View>
         </View>
       </ScrollView>
@@ -200,11 +200,11 @@ export function Upgrade() {
           style={({ pressed }) => [styles.upgradeButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           onPress={handleStart}
         >
-          <Text style={styles.upgradeButtonText}>Upgrade to Pro ¥9.9/mo</Text>
+          <Text style={styles.upgradeButtonText}>升级 Pro ¥9.9/月</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
         <Pressable onPress={handleStart} style={({ pressed }) => [styles.skipButton, pressed && { opacity: 0.7 }]}>
-          <Text style={styles.skipButtonText}>Skip for now</Text>
+          <Text style={styles.skipButtonText}>暂时跳过</Text>
         </Pressable>
       </View>
     </SafeAreaView>

@@ -25,7 +25,7 @@ import { useApp } from '../context/AppContext';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-const CATEGORIES = ['All', 'Sichuan', 'Japanese', 'Dessert', 'Western'];
+const CATEGORIES = ['全部', '川菜', '日料', '甜品', '西餐'];
 
 function AnimatedHeartButton({ isFavorite, onToggle, themeColors }: { isFavorite: boolean; onToggle: () => void; themeColors: AppTheme }) {
   const scale = useSharedValue(1);
@@ -71,7 +71,7 @@ export function Favorites() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState('全部');
   const { favorites, toggleFavorite } = useApp();
 
   const displayData = useMemo(() => {
@@ -80,7 +80,7 @@ export function Favorites() {
   }, [favorites]);
 
   const filtered =
-    activeCategory === 'All'
+    activeCategory === '全部'
       ? displayData
       : displayData.filter((f) => f.category === activeCategory);
 
@@ -93,7 +93,7 @@ export function Favorites() {
       {/* Top Nav — Page mode */}
       <View style={styles.topNav}>
         <View style={{ width: 40 }} />
-        <Text style={styles.navTitle}>My Favorites</Text>
+        <Text style={styles.navTitle}>我的收藏</Text>
         <Pressable style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}>
           <MoreHorizontal size={20} color={theme.colors.muted} strokeWidth={1.8} />
         </Pressable>
@@ -134,15 +134,15 @@ export function Favorites() {
           <View style={styles.emptyIcon}>
             <UtensilsCrossed size={36} color={theme.colors.primary} strokeWidth={1.5} />
           </View>
-          <Text style={styles.emptyTitle}>No favorites here yet</Text>
+          <Text style={styles.emptyTitle}>还没有收藏哦</Text>
           <Text style={styles.emptyBody}>
-            Start exploring and save your favorite dishes to see them here.
+            去发现好吃的，把喜欢的菜品收藏起来吧。
           </Text>
           <Pressable
             style={({ pressed }) => [styles.exploreBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
             onPress={() => navigation.navigate('MainTabs')}
           >
-            <Text style={styles.exploreBtnText}>Explore Dishes</Text>
+            <Text style={styles.exploreBtnText}>去发现美食</Text>
           </Pressable>
         </View>
       ) : (
