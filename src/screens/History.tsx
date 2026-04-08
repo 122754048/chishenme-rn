@@ -70,7 +70,11 @@ export function History() {
               </View>
               <View style={styles.groupItems}>
                 {group.items.map((item, index) => (
-                  <View key={`${group.group}-${index}`} style={styles.historyItem}>
+                  <Pressable
+                    key={`${group.group}-${index}`}
+                    style={({ pressed }) => [styles.historyItem, pressed && { opacity: 0.85 }]}
+                    onPress={() => navigation.navigate('Detail', { itemId: item.id, title: item.title, image: item.img })}
+                  >
                     <View style={styles.historyImageWrap}>
                       <SkeletonImage src={item.img} alt={item.title} />
                     </View>
@@ -91,7 +95,7 @@ export function History() {
                         <Text style={styles.skippedText}>跳过</Text>
                       </View>
                     )}
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             </View>

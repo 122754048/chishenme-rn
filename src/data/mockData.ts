@@ -383,4 +383,19 @@ export const EXPLORE_CARDS = [
     image:
       'https://images.unsplash.com/photo-1544982503-9f984c14501a?w=800&q=80',
   },
+  {
+    id: 3,
+    title: '炙烤三文鱼寿司卷',
+    category: '日料',
+    cuisine: '日式',
+    mealType: '晚餐',
+    priceBand: '¥¥',
+    dietTag: ['高蛋白'],
+    rating: 4.8,
+    reviews: '88+',
+    subtitle: '日式 · 18分钟',
+    badge: '新品',
+    image:
+      'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&q=80',
+  },
 ];
