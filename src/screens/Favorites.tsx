@@ -93,7 +93,10 @@ export function Favorites() {
       <View style={styles.topNav}>
         <View style={{ width: 40 }} />
         <Text style={styles.navTitle}>我的收藏</Text>
-        <Pressable style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}>
+        <Pressable
+          style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}
+          onPress={() => navigation.navigate('History')}
+        >
           <MoreHorizontal size={20} color={theme.colors.muted} strokeWidth={1.8} />
         </Pressable>
       </View>

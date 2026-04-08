@@ -177,7 +177,7 @@ export function Detail() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>最佳搭配</Text>
-              <Pressable>
+              <Pressable onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}>
                 <Text style={styles.viewMore}>查看更多</Text>
               </Pressable>
             </View>
@@ -232,9 +232,14 @@ export function Detail() {
           <Text style={styles.estimatedLabel}>预估总价</Text>
           <Text style={styles.estimatedPrice}>¥ 68.00</Text>
         </View>
-        <Pressable style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}>
+        <Pressable
+          style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+          onPress={() => {
+            if (itemId > 0) toggleFavorite(itemId);
+          }}
+        >
           <Plus size={18} color={theme.colors.surface} strokeWidth={2.5} />
-          <Text style={styles.addButtonText}>加入菜单</Text>
+          <Text style={styles.addButtonText}>{liked ? '已加入收藏' : '加入收藏'}</Text>
         </Pressable>
       </SafeAreaView>
     </View>

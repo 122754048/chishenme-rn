@@ -48,7 +48,10 @@ export function History() {
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
         <Text style={styles.navTitle}>浏览记录</Text>
-        <Pressable style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}>
+        <Pressable
+          style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
+        >
           <MoreHorizontal size={20} color={theme.colors.muted} strokeWidth={1.8} />
         </Pressable>
       </View>

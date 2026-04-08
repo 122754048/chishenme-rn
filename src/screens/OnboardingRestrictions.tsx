@@ -136,9 +136,12 @@ export function OnboardingRestrictions() {
                 onPress={() => toggle(item.id)}
               />
             ))}
-            <Pressable style={({ pressed }) => [styles.customBtn, pressed && { opacity: 0.7 }]}>
+            <Pressable
+              style={({ pressed }) => [styles.customBtn, pressed && { opacity: 0.7 }]}
+              onPress={() => toggle('custom')}
+            >
               <Plus size={14} color={theme.colors.subtle} strokeWidth={2} />
-              <Text style={styles.customBtnText}>自定义</Text>
+              <Text style={styles.customBtnText}>{selected.includes('custom') ? '已添加自定义' : '自定义'}</Text>
             </Pressable>
           </View>
         </View>
