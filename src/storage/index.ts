@@ -6,6 +6,8 @@ const KEYS = {
   SELECTED_RESTRICTIONS: '@chishenme/selected_restrictions',
   FAVORITES: '@chishenme/favorites',
   HISTORY: '@chishenme/history',
+  MEMBERSHIP_PLAN: '@chishenme/membership_plan',
+  RECENT_SEARCHES: '@chishenme/recent_searches',
 };
 
 export const storage = {
@@ -87,6 +89,7 @@ export const storage = {
     title: string;
     img: string;
     time: string;
+    createdAt?: number;
     category: string;
     status: 'Liked' | 'Skipped';
   }): Promise<void> {
@@ -105,6 +108,7 @@ export const storage = {
       title: string;
       img: string;
       time: string;
+      createdAt?: number;
       category: string;
       status: 'Liked' | 'Skipped';
     }>
@@ -115,6 +119,33 @@ export const storage = {
     } catch (error) {
       console.warn('Failed to read history:', error);
       return [];
+    }
+  },
+
+  async setMembershipPlan(plan: 'free' | 'pro' | 'family'): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.MEMBERSHIP_PLAN, plan);
+    } catch (error) {
+      console.warn('Failed to save membership plan:', error);
+    }
+  },
+
+  async getMembershipPlan(): Promise<'free' | 'pro' | 'family'> {
+    try {
+      const val = await AsyncStorage.getItem(KEYS.MEMBERSHIP_PLAN);
+      if (val === 'free' || val === 'pro' || val === 'family') return val;
+      return 'free';
+    } catch (error) {
+      console.warn('Failed to read membership plan:', error);
+      return 'free';
+    }
+  },
+
+  async clearAll(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove(Object.values(KEYS));
+    } catch (error) {
+      console.warn('Failed to clear app data:', error);
     }
   },
 };

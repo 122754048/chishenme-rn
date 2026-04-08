@@ -11,10 +11,12 @@ interface AppState {
     title: string;
     img: string;
     time: string;
+    createdAt?: number;
     category: string;
     status: 'Liked' | 'Skipped';
   }>;
   recommendationsLeft: number;
+  membershipPlan: 'free' | 'pro' | 'family';
   isLoading: boolean;
 }
 
@@ -26,6 +28,9 @@ interface AppContextType extends AppState {
   isFavorite: (id: number) => boolean;
   addToHistory: (item: AppState['history'][0]) => Promise<void>;
   refreshRecommendations: () => void;
+  consumeRecommendation: () => void;
+  resetApp: () => Promise<void>;
+  setMembershipPlan: (plan: 'free' | 'pro' | 'family') => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -37,23 +42,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [favorites, setFavorites] = useState<number[]>([]);
   const [history, setHistory] = useState<AppState['history']>([]);
   const [recommendationsLeft, setRecommendationsLeft] = useState(7);
+  const [membershipPlan, setMembershipPlanState] = useState<'free' | 'pro' | 'family'>('free');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [oc, cuisines, restrictions, favs, hist] = await Promise.all([
+        const [oc, cuisines, restrictions, favs, hist, plan] = await Promise.all([
           storage.getOnboardingComplete(),
           storage.getSelectedCuisines(),
           storage.getSelectedRestrictions(),
           storage.getFavorites(),
           storage.getHistory(),
+          storage.getMembershipPlan(),
         ]);
         setOnboardingComplete(oc);
         setSelectedCuisines(cuisines);
         setSelectedRestrictions(restrictions);
         setFavorites(favs);
         setHistory(hist);
+        setMembershipPlanState(plan);
       } catch (error) {
         console.warn('Failed to load app data:', error);
       } finally {
@@ -79,14 +87,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleFavorite = async (id: number) => {
-    let updated: number[];
-    if (favorites.includes(id)) {
-      updated = favorites.filter((f) => f !== id);
-    } else {
-      updated = [...favorites, id];
-    }
-    await storage.setFavorites(updated);
-    setFavorites(updated);
+    setFavorites((prev) => {
+      const updated = prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id];
+      void storage.setFavorites(updated);
+      return updated;
+    });
   };
 
   const isFavorite = (id: number) => favorites.includes(id);
@@ -100,6 +105,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRecommendationsLeft(7);
   };
 
+  const consumeRecommendation = () => {
+    setRecommendationsLeft((prev) => Math.max(0, prev - 1));
+  };
+
+  const setMembershipPlan = async (plan: 'free' | 'pro' | 'family') => {
+    await storage.setMembershipPlan(plan);
+    setMembershipPlanState(plan);
+  };
+
+  const resetApp = async () => {
+    await storage.clearAll();
+    setOnboardingComplete(false);
+    setSelectedCuisines([]);
+    setSelectedRestrictions([]);
+    setFavorites([]);
+    setHistory([]);
+    setRecommendationsLeft(7);
+    setMembershipPlanState('free');
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -109,6 +134,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         favorites,
         history,
         recommendationsLeft,
+        membershipPlan,
         isLoading,
         completeOnboarding,
         setCuisines,
@@ -117,6 +143,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isFavorite,
         addToHistory,
         refreshRecommendations,
+        consumeRecommendation,
+        resetApp,
+        setMembershipPlan,
       }}
     >
       {children}

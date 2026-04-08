@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   useWindowDimensions,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { SkeletonImage } from '../components/SkeletonImage';
+import { useApp } from '../context/AppContext';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type DetailRouteProp = RouteProp<RootStackParamList, 'Detail'>;
@@ -41,10 +43,13 @@ export function Detail() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
+  const { toggleFavorite, isFavorite } = useApp();
   const { width: screenWidth } = useWindowDimensions();
   const route = useRoute<DetailRouteProp>();
+  const itemId = route.params?.itemId ?? 0;
   const itemTitle = route.params?.title ?? 'Salmon Energy Bowl';
   const itemImage = route.params?.image ?? 'https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=1080';
+  const liked = itemId > 0 && isFavorite(itemId);
 
   const scrollY = useSharedValue(0);
 
@@ -64,7 +69,7 @@ export function Detail() {
   const navBtnStyle = useAnimatedStyle(() => {
     const navOpaque = scrollY.value > 150;
     return {
-      backgroundColor: navOpaque ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.25)',
+      backgroundColor: navOpaque ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.85)',
     };
   });
 
@@ -77,6 +82,12 @@ export function Detail() {
     };
   });
 
+  const handleShare = async () => {
+    await Share.share({
+      message: `${itemTitle}\n${itemImage}`,
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Overlay Nav Bar */}
@@ -84,18 +95,28 @@ export function Detail() {
         <Animated.View style={[styles.navBar, navBarStyle]}>
           <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]} onPress={() => navigation.goBack()}>
             <Animated.View style={[styles.navCircle, navBtnStyle]}>
-              <ArrowLeft size={18} color="#FFFFFF" strokeWidth={2} />
+              <ArrowLeft size={18} color={theme.colors.foreground} strokeWidth={2} />
             </Animated.View>
           </Pressable>
           <View style={styles.navRight}>
-            <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+            <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]} onPress={handleShare}>
               <Animated.View style={[styles.navCircle, navBtnStyle]}>
-                <Share2 size={16} color="#FFFFFF" strokeWidth={2} />
+                <Share2 size={16} color={theme.colors.foreground} strokeWidth={2} />
               </Animated.View>
             </Pressable>
-            <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+            <Pressable
+              style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+              onPress={() => {
+                if (itemId > 0) toggleFavorite(itemId);
+              }}
+            >
               <Animated.View style={[styles.navCircle, navBtnStyle]}>
-                <Heart size={16} color="#FFFFFF" strokeWidth={2} />
+                <Heart
+                  size={16}
+                  color={liked ? theme.colors.error : theme.colors.foreground}
+                  fill={liked ? theme.colors.error : 'transparent'}
+                  strokeWidth={2}
+                />
               </Animated.View>
             </Pressable>
           </View>

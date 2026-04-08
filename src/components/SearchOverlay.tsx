@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Search, X, Clock, TrendingUp } from 'lucide-react-native';
 import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
@@ -21,12 +22,33 @@ interface SearchOverlayProps {
 
 const DEFAULT_RECENT_SEARCHES = ['三文鱼碗', '拉面', '附近的披萨'];
 const TRENDING_TAGS = ['健康沙拉', '四川火锅', '抹茶拿铁', '夏威夷拌饭', '早茶点心', '韩式烤肉'];
+const RECENT_SEARCHES_KEY = '@chishenme/recent_searches';
 
 export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps) {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const [query, setQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>(DEFAULT_RECENT_SEARCHES);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    async function loadRecentSearches() {
+      try {
+        const saved = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
+        if (saved) setRecentSearches(JSON.parse(saved));
+      } catch (error) {
+        console.warn('Failed to read recent searches:', error);
+      } finally {
+        setHydrated(true);
+      }
+    }
+    loadRecentSearches();
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    void AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recentSearches));
+  }, [recentSearches, hydrated]);
 
   const handleSubmit = () => {
     const trimmed = query.trim();
@@ -79,7 +101,12 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
               <Pressable
                 key={term}
                 style={({ pressed }) => [styles.recentItem, pressed && { backgroundColor: theme.colors.borderLight }]}
-                onPress={() => setQuery(term)}
+                onPress={() => {
+                  setQuery(term);
+                  setRecentSearches((prev) => [term, ...prev.filter((s) => s !== term)].slice(0, 10));
+                  onSearch?.(term);
+                  onClose();
+                }}
               >
                 <Clock size={14} color={theme.colors.subtle} strokeWidth={1.8} />
                 <Text style={styles.recentText}>{term}</Text>

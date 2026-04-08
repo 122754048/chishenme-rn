@@ -26,12 +26,18 @@ export function History() {
 
   const groupedHistory = React.useMemo(() => {
     const groups: Record<string, typeof history> = {};
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
     history.forEach((item) => {
-      const groupKey = '最近';
+      const age = item.createdAt ? now - item.createdAt : 0;
+      const groupKey = age < oneDay ? '今天' : age < oneDay * 2 ? '昨天' : '近7天';
       if (!groups[groupKey]) groups[groupKey] = [];
       groups[groupKey].push(item);
     });
-    return Object.entries(groups).map(([group, items]) => ({ group, items }));
+    const order: Array<'今天' | '昨天' | '近7天'> = ['今天', '昨天', '近7天'];
+    return order
+      .filter((group) => groups[group]?.length)
+      .map((group) => ({ group, items: groups[group] }));
   }, [history]);
 
   return (

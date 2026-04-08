@@ -356,6 +356,11 @@ export const EXPLORE_CARDS = [
   {
     id: 1,
     title: '禅意花园沙拉碗',
+    category: '中餐',
+    cuisine: '轻食',
+    mealType: '午餐',
+    priceBand: '¥',
+    dietTag: ['低脂', '高纤维'],
     rating: 4.9,
     reviews: '120+',
     subtitle: '健康 · 15分钟',
@@ -366,6 +371,11 @@ export const EXPLORE_CARDS = [
   {
     id: 2,
     title: '松露蘑菇披萨',
+    category: '推荐',
+    cuisine: '意式',
+    mealType: '晚餐',
+    priceBand: '¥¥',
+    dietTag: ['素食友好'],
     rating: 4.7,
     reviews: '65+',
     subtitle: '意式 · 20分钟',

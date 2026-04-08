@@ -29,6 +29,7 @@ import type { SwipeCardData } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { OnboardingGuide } from '../components/OnboardingGuide';
 import { useApp } from '../context/AppContext';
+import { SearchOverlay } from '../components/SearchOverlay';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_HEIGHT = Math.max(SCREEN_HEIGHT * 0.65, 520);
@@ -186,8 +187,17 @@ export function Home() {
   const navigation = useNavigation<NavProp>();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { addToHistory } = useApp();
+  const {
+    addToHistory,
+    toggleFavorite,
+    recommendationsLeft,
+    refreshRecommendations,
+    consumeRecommendation,
+    selectedCuisines,
+    selectedRestrictions,
+  } = useApp();
   const [cardIndex, setCardIndex] = useState(0);
+  const [showSearch, setShowSearch] = useState(false);
 
   const handleSwipe = useCallback(
     (direction: 'left' | 'right' = 'right') => {
@@ -197,12 +207,14 @@ export function Home() {
         title: currentCard.name,
         img: currentCard.image,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        createdAt: Date.now(),
         category: currentCard.category,
         status: direction === 'right' ? 'Liked' : 'Skipped',
       });
+      consumeRecommendation();
       setCardIndex((prev) => prev + 1);
     },
-    [cardIndex, addToHistory]
+    [cardIndex, addToHistory, consumeRecommendation]
   );
 
   const handleFavorite = useCallback(() => {
@@ -212,11 +224,14 @@ export function Home() {
       title: currentCard.name,
       img: currentCard.image,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      createdAt: Date.now(),
       category: currentCard.category,
       status: 'Liked',
     });
+    toggleFavorite(currentCard.id);
+    consumeRecommendation();
     setCardIndex((prev) => prev + 1);
-  }, [cardIndex, addToHistory]);
+  }, [cardIndex, addToHistory, toggleFavorite, consumeRecommendation]);
 
   const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
 
@@ -224,22 +239,40 @@ export function Home() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* ─── Minimal Top Bar ─── */}
       <View style={styles.topBar}>
-        <Text style={styles.brandText}>🍊 吃什么</Text>
+        <View>
+          <Text style={styles.brandText}>🍊 吃什么</Text>
+          <Text style={styles.recommendationsHint}>今日推荐剩余 {recommendationsLeft} 次</Text>
+        </View>
         <View style={styles.topBarRight}>
           <Pressable
             style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
-            onPress={() => { /* TODO: 打开筛选浮层 */ }}
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
           >
             <SlidersHorizontal size={20} color={theme.colors.foreground} strokeWidth={1.8} />
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
-            onPress={() => { /* TODO: 打开搜索 */ }}
+            onPress={() => setShowSearch(true)}
           >
             <Search size={20} color={theme.colors.foreground} strokeWidth={1.8} />
           </Pressable>
         </View>
       </View>
+
+      {recommendationsLeft === 0 && (
+        <View style={styles.limitBar}>
+          <Text style={styles.limitText}>今日推荐已用完，点击刷新继续探索</Text>
+          <Pressable onPress={refreshRecommendations}>
+            <Text style={styles.limitAction}>立即刷新</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {recommendationsLeft <= 4 && selectedCuisines.length === 0 && selectedRestrictions.length === 0 && (
+        <Pressable style={styles.profilePrompt} onPress={() => navigation.navigate('OnboardingCuisines')}>
+          <Text style={styles.profilePromptText}>完善口味偏好，可显著提升推荐命中率</Text>
+        </Pressable>
+      )}
 
       {/* ─── Full-screen Card Area ─── */}
       <View style={styles.cardContainer}>
@@ -283,6 +316,7 @@ export function Home() {
 
       {/* ─── First-use Onboarding Guide ─── */}
       <OnboardingGuide />
+      <SearchOverlay visible={showSearch} onClose={() => setShowSearch(false)} />
     </SafeAreaView>
   );
 }
@@ -306,6 +340,11 @@ function makeStyles(t: AppTheme) {
       fontWeight: '800',
       color: t.colors.primary,
     },
+    recommendationsHint: {
+      ...t.typography.micro,
+      color: t.colors.subtle,
+      marginTop: -2,
+    },
     topBarRight: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -318,6 +357,30 @@ function makeStyles(t: AppTheme) {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    limitBar: {
+      marginHorizontal: t.spacing.md,
+      marginTop: t.spacing.xs,
+      marginBottom: t.spacing.xs,
+      backgroundColor: t.colors.warningLight,
+      borderRadius: t.radius.md,
+      paddingHorizontal: t.spacing.sm,
+      paddingVertical: t.spacing.xs,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    limitText: { ...t.typography.caption, color: t.colors.foreground, flex: 1, marginRight: t.spacing.xs },
+    limitAction: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700' },
+    profilePrompt: {
+      marginHorizontal: t.spacing.md,
+      marginTop: t.spacing.xs,
+      marginBottom: t.spacing.xs,
+      backgroundColor: t.colors.primaryLight,
+      borderRadius: t.radius.md,
+      paddingHorizontal: t.spacing.sm,
+      paddingVertical: t.spacing.xs,
+    },
+    profilePromptText: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '600' },
 
     /* ── Card Container ── */
     cardContainer: {

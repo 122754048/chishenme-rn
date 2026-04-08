@@ -64,8 +64,8 @@ export function OnboardingRestrictions() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
-  const { setRestrictions, completeOnboarding } = useApp();
-  const [selected, setSelected] = useState<string[]>(['spicy']);
+  const { setRestrictions, completeOnboarding, selectedRestrictions } = useApp();
+  const [selected, setSelected] = useState<string[]>(() => selectedRestrictions);
 
   const toggle = (id: string) => {
     setSelected((prev) =>
@@ -90,7 +90,7 @@ export function OnboardingRestrictions() {
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
         <Pressable onPress={handleSkip}>
-          <Text style={styles.skipText}>跳过</Text>
+          <Text style={styles.skipText}>稍后完善</Text>
         </Pressable>
       </View>
 

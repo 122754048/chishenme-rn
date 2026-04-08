@@ -61,14 +61,23 @@ export function Profile() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
-  const { favorites } = useApp();
+  const { favorites, resetApp, membershipPlan } = useApp();
+  const planTitle = membershipPlan === 'pro' ? 'PRO 计划' : membershipPlan === 'family' ? '家庭版计划' : '免费版';
+  const planDescription = membershipPlan === 'pro'
+    ? '享受无限智能推荐和优先预订服务。'
+    : membershipPlan === 'family'
+      ? '已启用家庭共享与多人口味协同推荐。'
+      : '你正在使用免费功能，升级可解锁更多能力。';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Top Nav — Brand mode */}
       <View style={styles.topNav}>
         <Text style={styles.logo}>🍽️ ChiShenMe</Text>
-        <Pressable style={({ pressed }) => [styles.bellBtn, pressed && { opacity: 0.7 }]}>
+        <Pressable
+          style={({ pressed }) => [styles.bellBtn, pressed && { opacity: 0.7 }]}
+          onPress={() => navigation.navigate('History')}
+        >
           <Bell size={20} color={theme.colors.foreground} strokeWidth={1.8} />
         </Pressable>
       </View>
@@ -104,9 +113,9 @@ export function Profile() {
           >
             <View>
               <Text style={styles.membershipLabel}>会员状态</Text>
-              <Text style={styles.membershipTitle}>PRO 计划</Text>
+              <Text style={styles.membershipTitle}>{planTitle}</Text>
               <Text style={styles.membershipDesc}>
-                享受无限智能推荐和优先预订服务。
+                {planDescription}
               </Text>
               <View style={styles.manageBtn}>
                 <Text style={styles.manageBtnText}>管理套餐</Text>
@@ -114,7 +123,10 @@ export function Profile() {
             </View>
           </Pressable>
 
-          <Pressable style={({ pressed }) => [styles.membershipCard, styles.familyCard, pressed && { opacity: 0.9 }]}>
+          <Pressable
+            style={({ pressed }) => [styles.membershipCard, styles.familyCard, pressed && { opacity: 0.9 }]}
+            onPress={() => navigation.navigate('Upgrade')}
+          >
             <View>
               <Text style={[styles.membershipLabel, { color: 'rgba(0,0,0,0.4)' }]}>家庭共享</Text>
               <Text style={[styles.membershipTitle, { color: 'rgba(0,0,0,0.75)' }]}>还剩 4 个名额</Text>
@@ -164,7 +176,13 @@ export function Profile() {
           />
         </View>
 
-        <Pressable style={({ pressed }) => [styles.signOutBtn, pressed && { opacity: 0.85 }]}>
+        <Pressable
+          style={({ pressed }) => [styles.signOutBtn, pressed && { opacity: 0.85 }]}
+          onPress={async () => {
+            await resetApp();
+            navigation.reset({ index: 0, routes: [{ name: 'OnboardingCuisines' }] });
+          }}
+        >
           <LogOut size={16} color={theme.colors.error} strokeWidth={2} />
           <Text style={styles.signOutText}>退出登录</Text>
         </Pressable>

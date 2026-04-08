@@ -24,8 +24,8 @@ export function OnboardingCuisines() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
-  const { setCuisines, completeOnboarding } = useApp();
-  const [selected, setSelected] = useState<string[]>(['Sichuan', 'Western']);
+  const { setCuisines, completeOnboarding, selectedCuisines } = useApp();
+  const [selected, setSelected] = useState<string[]>(() => selectedCuisines);
 
   const toggleSelect = (id: string) => {
     setSelected((prev) =>
@@ -48,7 +48,7 @@ export function OnboardingCuisines() {
       <View style={styles.header}>
         <View style={{ width: 40 }} />
         <Pressable onPress={handleSkip}>
-          <Text style={styles.skipText}>跳过</Text>
+          <Text style={styles.skipText}>稍后完善</Text>
         </Pressable>
       </View>
 

@@ -25,6 +25,7 @@ import { Profile } from '../screens/Profile';
 import { Detail } from '../screens/Detail';
 import { History } from '../screens/History';
 import { Upgrade } from '../screens/Upgrade';
+import { Checkout } from '../screens/Checkout';
 import { OnboardingCuisines } from '../screens/OnboardingCuisines';
 import { OnboardingRestrictions } from '../screens/OnboardingRestrictions';
 
@@ -172,6 +173,7 @@ export function AppNavigator() {
         <Stack.Screen name="OnboardingCuisines" component={OnboardingCuisines} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
         <Stack.Screen name="OnboardingRestrictions" component={OnboardingRestrictions} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
         <Stack.Screen name="Upgrade" component={Upgrade} options={{ animation: 'slide_from_bottom', animationDuration: 350 }} />
+        <Stack.Screen name="Checkout" component={Checkout} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
 
         {/* Main Tab — fade */}
         <Stack.Screen name="MainTabs" component={MainTabs} options={{ animation: 'fade' }} />

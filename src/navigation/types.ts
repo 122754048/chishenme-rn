@@ -11,6 +11,7 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   Detail: { itemId?: number; title?: string; image?: string } | undefined;
   History: undefined;
+  Checkout: { plan: 'pro' | 'family' };
 };
 
 // Tab navigator param list

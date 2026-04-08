@@ -75,7 +75,6 @@ export function Favorites() {
   const { favorites, toggleFavorite } = useApp();
 
   const displayData = useMemo(() => {
-    if (favorites.length === 0) return FAVORITES_DATA;
     return FAVORITES_DATA.filter((item) => favorites.includes(item.id));
   }, [favorites]);
 
