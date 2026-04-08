@@ -356,6 +356,11 @@ export const EXPLORE_CARDS = [
   {
     id: 1,
     title: '禅意花园沙拉碗',
+    category: '中餐',
+    cuisine: '轻食',
+    mealType: '午餐',
+    priceBand: '¥',
+    dietTag: ['低脂', '高纤维'],
     rating: 4.9,
     reviews: '120+',
     subtitle: '健康 · 15分钟',
@@ -366,11 +371,31 @@ export const EXPLORE_CARDS = [
   {
     id: 2,
     title: '松露蘑菇披萨',
+    category: '推荐',
+    cuisine: '意式',
+    mealType: '晚餐',
+    priceBand: '¥¥',
+    dietTag: ['素食友好'],
     rating: 4.7,
     reviews: '65+',
     subtitle: '意式 · 20分钟',
     badge: null,
     image:
       'https://images.unsplash.com/photo-1544982503-9f984c14501a?w=800&q=80',
+  },
+  {
+    id: 3,
+    title: '炙烤三文鱼寿司卷',
+    category: '日料',
+    cuisine: '日式',
+    mealType: '晚餐',
+    priceBand: '¥¥',
+    dietTag: ['高蛋白'],
+    rating: 4.8,
+    reviews: '88+',
+    subtitle: '日式 · 18分钟',
+    badge: '新品',
+    image:
+      'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&q=80',
   },
 ];

@@ -11,12 +11,13 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   Detail: { itemId?: number; title?: string; image?: string } | undefined;
   History: undefined;
+  Checkout: { plan: 'pro' | 'family' };
 };
 
 // Tab navigator param list
 export type MainTabParamList = {
   Home: undefined;
-  Explore: undefined;
+  Explore: { initialQuery?: string } | undefined;
   Favorites: undefined;
   Profile: undefined;
 };

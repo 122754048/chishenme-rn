@@ -29,6 +29,7 @@ import type { SwipeCardData } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { OnboardingGuide } from '../components/OnboardingGuide';
 import { useApp } from '../context/AppContext';
+import { SearchOverlay } from '../components/SearchOverlay';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_HEIGHT = Math.max(SCREEN_HEIGHT * 0.65, 520);
@@ -42,16 +43,19 @@ function SwipeCard({
   onSwipe,
   screenWidth,
   styles,
+  enabled,
 }: {
   card: SwipeCardData;
   onSwipe: (dir: 'left' | 'right') => void;
   screenWidth: number;
   styles: ReturnType<typeof makeStyles>;
+  enabled: boolean;
 }) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
   const panGesture = Gesture.Pan()
+    .enabled(enabled)
     .onUpdate((event) => {
       translateX.value = event.translationX;
       translateY.value = event.translationY * 0.4;
@@ -147,11 +151,13 @@ function AnimatedActionBtn({
   children,
   style,
   label,
+  disabled,
 }: {
   onPress: () => void;
   children: React.ReactNode;
   style?: object;
   label?: string;
+  disabled?: boolean;
 }) {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -159,6 +165,7 @@ function AnimatedActionBtn({
   }));
 
   const handlePress = () => {
+    if (disabled) return;
     scale.value = withSequence(
       withSpring(0.85, { damping: 8 }),
       withSpring(1.1, { damping: 6 }),
@@ -168,8 +175,8 @@ function AnimatedActionBtn({
   };
 
   return (
-    <Pressable onPress={handlePress} style={actionBtnStyles.wrapper}>
-      <Animated.View style={[style, animStyle]}>{children}</Animated.View>
+    <Pressable onPress={handlePress} style={actionBtnStyles.wrapper} disabled={disabled}>
+      <Animated.View style={[style, animStyle, disabled && actionBtnStyles.disabled]}>{children}</Animated.View>
       {label ? <Text style={actionBtnStyles.label}>{label}</Text> : null}
     </Pressable>
   );
@@ -179,6 +186,7 @@ function AnimatedActionBtn({
 const actionBtnStyles = StyleSheet.create({
   wrapper: { alignItems: 'center', gap: 6 },
   label: { fontSize: 11, fontWeight: '500', color: '#9CA3AF', marginTop: 2 },
+  disabled: { opacity: 0.45 },
 });
 
 /* ═══════════ Home Screen ═══════════ */
@@ -186,37 +194,54 @@ export function Home() {
   const navigation = useNavigation<NavProp>();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { addToHistory } = useApp();
+  const {
+    addToHistory,
+    toggleFavorite,
+    recommendationsLeft,
+    consumeRecommendation,
+    selectedCuisines,
+    selectedRestrictions,
+  } = useApp();
   const [cardIndex, setCardIndex] = useState(0);
+  const [showSearch, setShowSearch] = useState(false);
+  const isUnlimitedPlan = recommendationsLeft < 0;
+  const quotaLocked = !isUnlimitedPlan && recommendationsLeft <= 0;
 
   const handleSwipe = useCallback(
     (direction: 'left' | 'right' = 'right') => {
+      if (quotaLocked) return;
       const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
       addToHistory({
         id: currentCard.id,
         title: currentCard.name,
         img: currentCard.image,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        createdAt: Date.now(),
         category: currentCard.category,
         status: direction === 'right' ? 'Liked' : 'Skipped',
       });
+      consumeRecommendation();
       setCardIndex((prev) => prev + 1);
     },
-    [cardIndex, addToHistory]
+    [cardIndex, addToHistory, consumeRecommendation, quotaLocked]
   );
 
   const handleFavorite = useCallback(() => {
+    if (quotaLocked) return;
     const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
     addToHistory({
       id: currentCard.id,
       title: currentCard.name,
       img: currentCard.image,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      createdAt: Date.now(),
       category: currentCard.category,
       status: 'Liked',
     });
+    toggleFavorite(currentCard.id);
+    consumeRecommendation();
     setCardIndex((prev) => prev + 1);
-  }, [cardIndex, addToHistory]);
+  }, [cardIndex, addToHistory, toggleFavorite, consumeRecommendation, quotaLocked]);
 
   const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
 
@@ -224,22 +249,42 @@ export function Home() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* ─── Minimal Top Bar ─── */}
       <View style={styles.topBar}>
-        <Text style={styles.brandText}>🍊 吃什么</Text>
+        <View>
+          <Text style={styles.brandText}>🍊 吃什么</Text>
+          <Text style={styles.recommendationsHint}>
+            {isUnlimitedPlan ? '今日推荐不限次' : `今日推荐剩余 ${recommendationsLeft} 次`}
+          </Text>
+        </View>
         <View style={styles.topBarRight}>
           <Pressable
             style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
-            onPress={() => { /* TODO: 打开筛选浮层 */ }}
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
           >
             <SlidersHorizontal size={20} color={theme.colors.foreground} strokeWidth={1.8} />
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
-            onPress={() => { /* TODO: 打开搜索 */ }}
+            onPress={() => setShowSearch(true)}
           >
             <Search size={20} color={theme.colors.foreground} strokeWidth={1.8} />
           </Pressable>
         </View>
       </View>
+
+      {quotaLocked && (
+        <View style={styles.limitBar}>
+          <Text style={styles.limitText}>今日免费推荐次数已用完，升级后可不限次探索</Text>
+          <Pressable onPress={() => navigation.navigate('Upgrade')}>
+            <Text style={styles.limitAction}>去升级</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {!isUnlimitedPlan && recommendationsLeft <= 2 && selectedCuisines.length === 0 && selectedRestrictions.length === 0 && (
+        <Pressable style={styles.profilePrompt} onPress={() => navigation.navigate('OnboardingCuisines')}>
+          <Text style={styles.profilePromptText}>完善口味偏好，可显著提升推荐命中率</Text>
+        </Pressable>
+      )}
 
       {/* ─── Full-screen Card Area ─── */}
       <View style={styles.cardContainer}>
@@ -250,6 +295,7 @@ export function Home() {
             onSwipe={handleSwipe}
             screenWidth={SCREEN_WIDTH}
             styles={styles}
+            enabled={!quotaLocked}
           />
         )}
       </View>
@@ -260,6 +306,7 @@ export function Home() {
           style={[styles.actionBtn, styles.skipBtn]}
           onPress={() => handleSwipe('left')}
           label="跳过"
+          disabled={quotaLocked}
         >
           <X size={26} color={theme.colors.muted} strokeWidth={2.5} />
         </AnimatedActionBtn>
@@ -268,6 +315,7 @@ export function Home() {
           style={[styles.actionBtn, styles.favoriteBtn]}
           onPress={handleFavorite}
           label="收藏"
+          disabled={quotaLocked}
         >
           <Star size={26} color={theme.colors.primary} strokeWidth={2} />
         </AnimatedActionBtn>
@@ -276,6 +324,7 @@ export function Home() {
           style={[styles.actionBtn, styles.likeBtn]}
           onPress={() => handleSwipe('right')}
           label="喜欢"
+          disabled={quotaLocked}
         >
           <Heart size={26} color="#EF4444" fill="#EF4444" strokeWidth={0} />
         </AnimatedActionBtn>
@@ -283,6 +332,17 @@ export function Home() {
 
       {/* ─── First-use Onboarding Guide ─── */}
       <OnboardingGuide />
+      <SearchOverlay
+        visible={showSearch}
+        onClose={() => setShowSearch(false)}
+        onSearch={(query) => {
+          navigation.navigate('MainTabs', {
+            screen: 'Explore',
+            params: { initialQuery: query },
+          });
+          setShowSearch(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -306,6 +366,11 @@ function makeStyles(t: AppTheme) {
       fontWeight: '800',
       color: t.colors.primary,
     },
+    recommendationsHint: {
+      ...t.typography.micro,
+      color: t.colors.subtle,
+      marginTop: -2,
+    },
     topBarRight: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -318,6 +383,30 @@ function makeStyles(t: AppTheme) {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    limitBar: {
+      marginHorizontal: t.spacing.md,
+      marginTop: t.spacing.xs,
+      marginBottom: t.spacing.xs,
+      backgroundColor: t.colors.warningLight,
+      borderRadius: t.radius.md,
+      paddingHorizontal: t.spacing.sm,
+      paddingVertical: t.spacing.xs,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    limitText: { ...t.typography.caption, color: t.colors.foreground, flex: 1, marginRight: t.spacing.xs },
+    limitAction: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700' },
+    profilePrompt: {
+      marginHorizontal: t.spacing.md,
+      marginTop: t.spacing.xs,
+      marginBottom: t.spacing.xs,
+      backgroundColor: t.colors.primaryLight,
+      borderRadius: t.radius.md,
+      paddingHorizontal: t.spacing.sm,
+      paddingVertical: t.spacing.xs,
+    },
+    profilePromptText: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '600' },
 
     /* ── Card Container ── */
     cardContainer: {

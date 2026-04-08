@@ -26,12 +26,18 @@ export function History() {
 
   const groupedHistory = React.useMemo(() => {
     const groups: Record<string, typeof history> = {};
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
     history.forEach((item) => {
-      const groupKey = '最近';
+      const age = item.createdAt ? now - item.createdAt : oneDay * 7 + 1;
+      const groupKey = age < oneDay ? '今天' : age < oneDay * 2 ? '昨天' : '近7天';
       if (!groups[groupKey]) groups[groupKey] = [];
       groups[groupKey].push(item);
     });
-    return Object.entries(groups).map(([group, items]) => ({ group, items }));
+    const order: Array<'今天' | '昨天' | '近7天'> = ['今天', '昨天', '近7天'];
+    return order
+      .filter((group) => groups[group]?.length)
+      .map((group) => ({ group, items: groups[group] }));
   }, [history]);
 
   return (
@@ -42,7 +48,10 @@ export function History() {
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
         <Text style={styles.navTitle}>浏览记录</Text>
-        <Pressable style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}>
+        <Pressable
+          style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}
+        >
           <MoreHorizontal size={20} color={theme.colors.muted} strokeWidth={1.8} />
         </Pressable>
       </View>
@@ -64,7 +73,11 @@ export function History() {
               </View>
               <View style={styles.groupItems}>
                 {group.items.map((item, index) => (
-                  <View key={`${group.group}-${index}`} style={styles.historyItem}>
+                  <Pressable
+                    key={`${group.group}-${index}`}
+                    style={({ pressed }) => [styles.historyItem, pressed && { opacity: 0.85 }]}
+                    onPress={() => navigation.navigate('Detail', { itemId: item.id, title: item.title, image: item.img })}
+                  >
                     <View style={styles.historyImageWrap}>
                       <SkeletonImage src={item.img} alt={item.title} />
                     </View>
@@ -85,7 +98,7 @@ export function History() {
                         <Text style={styles.skippedText}>跳过</Text>
                       </View>
                     )}
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             </View>

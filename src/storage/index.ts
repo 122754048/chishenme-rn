@@ -6,7 +6,22 @@ const KEYS = {
   SELECTED_RESTRICTIONS: '@chishenme/selected_restrictions',
   FAVORITES: '@chishenme/favorites',
   HISTORY: '@chishenme/history',
+  MEMBERSHIP_PLAN: '@chishenme/membership_plan',
+  RECENT_SEARCHES: '@chishenme/recent_searches',
+  RECOMMENDATION_QUOTA: '@chishenme/recommendation_quota',
+  PAYMENT_EVENTS: '@chishenme/payment_events',
+  BACKEND_TOKEN: '@chishenme/backend_token',
+  BACKEND_USER_ID: '@chishenme/backend_user_id',
 };
+
+export interface PaymentEvent {
+  id: string;
+  plan: 'pro' | 'family';
+  flow: 'pay' | 'trial';
+  status: 'processing' | 'success' | 'failed';
+  createdAt: number;
+  reason?: string;
+}
 
 export const storage = {
   async setOnboardingComplete(value: boolean): Promise<void> {
@@ -87,6 +102,7 @@ export const storage = {
     title: string;
     img: string;
     time: string;
+    createdAt?: number;
     category: string;
     status: 'Liked' | 'Skipped';
   }): Promise<void> {
@@ -105,6 +121,7 @@ export const storage = {
       title: string;
       img: string;
       time: string;
+      createdAt?: number;
       category: string;
       status: 'Liked' | 'Skipped';
     }>
@@ -115,6 +132,143 @@ export const storage = {
     } catch (error) {
       console.warn('Failed to read history:', error);
       return [];
+    }
+  },
+
+  async setMembershipPlan(plan: 'free' | 'pro' | 'family'): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.MEMBERSHIP_PLAN, plan);
+    } catch (error) {
+      console.warn('Failed to save membership plan:', error);
+    }
+  },
+
+  async setRecentSearches(searches: string[]): Promise<void> {
+    try {
+      const normalized = searches
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+        .filter((item, index, arr) => arr.indexOf(item) === index)
+        .slice(0, 10);
+      await AsyncStorage.setItem(KEYS.RECENT_SEARCHES, JSON.stringify(normalized));
+    } catch (error) {
+      console.warn('Failed to save recent searches:', error);
+    }
+  },
+
+  async getRecentSearches(): Promise<string[]> {
+    try {
+      const val = await AsyncStorage.getItem(KEYS.RECENT_SEARCHES);
+      const parsed = val ? JSON.parse(val) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((item) => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+        .filter((item, index, arr) => arr.indexOf(item) === index)
+        .slice(0, 10);
+    } catch (error) {
+      console.warn('Failed to read recent searches:', error);
+      return [];
+    }
+  },
+
+  async getMembershipPlan(): Promise<'free' | 'pro' | 'family'> {
+    try {
+      const val = await AsyncStorage.getItem(KEYS.MEMBERSHIP_PLAN);
+      if (val === 'free' || val === 'pro' || val === 'family') return val;
+      return 'free';
+    } catch (error) {
+      console.warn('Failed to read membership plan:', error);
+      return 'free';
+    }
+  },
+
+  async setRecommendationQuota(payload: { date: string; left: number }): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.RECOMMENDATION_QUOTA, JSON.stringify(payload));
+    } catch (error) {
+      console.warn('Failed to save recommendation quota:', error);
+    }
+  },
+
+  async getRecommendationQuota(): Promise<{ date: string; left: number } | null> {
+    try {
+      const val = await AsyncStorage.getItem(KEYS.RECOMMENDATION_QUOTA);
+      if (!val) return null;
+      const parsed = JSON.parse(val);
+      if (typeof parsed?.date === 'string' && typeof parsed?.left === 'number') {
+        return parsed;
+      }
+      return null;
+    } catch (error) {
+      console.warn('Failed to read recommendation quota:', error);
+      return null;
+    }
+  },
+
+  async appendPaymentEvent(event: PaymentEvent): Promise<void> {
+    try {
+      const existing = await this.getPaymentEvents();
+      const updated = [event, ...existing].slice(0, 30);
+      await AsyncStorage.setItem(KEYS.PAYMENT_EVENTS, JSON.stringify(updated));
+    } catch (error) {
+      console.warn('Failed to save payment event:', error);
+    }
+  },
+
+  async getPaymentEvents(): Promise<PaymentEvent[]> {
+    try {
+      const val = await AsyncStorage.getItem(KEYS.PAYMENT_EVENTS);
+      if (!val) return [];
+      const parsed = JSON.parse(val);
+      if (!Array.isArray(parsed)) return [];
+      return parsed;
+    } catch (error) {
+      console.warn('Failed to read payment events:', error);
+      return [];
+    }
+  },
+
+  async setBackendToken(token: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.BACKEND_TOKEN, token);
+    } catch (error) {
+      console.warn('Failed to save backend token:', error);
+    }
+  },
+
+  async getBackendToken(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(KEYS.BACKEND_TOKEN);
+    } catch (error) {
+      console.warn('Failed to read backend token:', error);
+      return null;
+    }
+  },
+
+  async setBackendUserId(userId: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.BACKEND_USER_ID, userId);
+    } catch (error) {
+      console.warn('Failed to save backend user id:', error);
+    }
+  },
+
+  async getBackendUserId(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(KEYS.BACKEND_USER_ID);
+    } catch (error) {
+      console.warn('Failed to read backend user id:', error);
+      return null;
+    }
+  },
+
+  async clearAll(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove(Object.values(KEYS));
+    } catch (error) {
+      console.warn('Failed to clear app data:', error);
     }
   },
 };

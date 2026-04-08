@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -64,8 +64,9 @@ export function OnboardingRestrictions() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
-  const { setRestrictions, completeOnboarding } = useApp();
-  const [selected, setSelected] = useState<string[]>(['spicy']);
+  const { setRestrictions, completeOnboarding, selectedRestrictions } = useApp();
+  const [selected, setSelected] = useState<string[]>(() => selectedRestrictions);
+  const [customInput, setCustomInput] = useState('');
 
   const toggle = (id: string) => {
     setSelected((prev) =>
@@ -76,6 +77,14 @@ export function OnboardingRestrictions() {
   const handleNext = async () => {
     await setRestrictions(selected);
     navigation.navigate('Upgrade');
+  };
+
+  const addCustomRestriction = () => {
+    const trimmed = customInput.trim();
+    if (!trimmed) return;
+    const key = `custom:${trimmed}`;
+    if (!selected.includes(key)) setSelected((prev) => [...prev, key]);
+    setCustomInput('');
   };
 
   const handleSkip = async () => {
@@ -90,7 +99,7 @@ export function OnboardingRestrictions() {
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
         <Pressable onPress={handleSkip}>
-          <Text style={styles.skipText}>跳过</Text>
+          <Text style={styles.skipText}>稍后完善</Text>
         </Pressable>
       </View>
 
@@ -136,11 +145,35 @@ export function OnboardingRestrictions() {
                 onPress={() => toggle(item.id)}
               />
             ))}
-            <Pressable style={({ pressed }) => [styles.customBtn, pressed && { opacity: 0.7 }]}>
+            <Pressable
+              style={({ pressed }) => [styles.customBtn, pressed && { opacity: 0.7 }]}
+              onPress={() => toggle('custom')}
+            >
               <Plus size={14} color={theme.colors.subtle} strokeWidth={2} />
-              <Text style={styles.customBtnText}>自定义</Text>
+              <Text style={styles.customBtnText}>{selected.includes('custom') ? '已添加自定义' : '自定义'}</Text>
             </Pressable>
           </View>
+          {selected.includes('custom') && (
+            <View style={styles.customComposer}>
+              <TextInput
+                style={styles.customInput}
+                placeholder="输入自定义忌口，如：香菜"
+                placeholderTextColor={theme.colors.subtle}
+                value={customInput}
+                onChangeText={setCustomInput}
+                onSubmitEditing={addCustomRestriction}
+                returnKeyType="done"
+              />
+              <Pressable style={styles.customAddBtn} onPress={addCustomRestriction}>
+                <Text style={styles.customAddBtnText}>添加</Text>
+              </Pressable>
+            </View>
+          )}
+          {selected.filter((s) => s.startsWith('custom:')).map((tag) => (
+            <Pressable key={tag} style={styles.customTag} onPress={() => toggle(tag)}>
+              <Text style={styles.customTagText}>{tag.replace('custom:', '')} ×</Text>
+            </Pressable>
+          ))}
         </View>
 
         <View style={styles.infoBox}>
@@ -235,6 +268,33 @@ function makeStyles(t: AppTheme) {
     backgroundColor: t.colors.surface,
   },
   customBtnText: { ...t.typography.body, fontWeight: '500', color: t.colors.subtle },
+  customComposer: { flexDirection: 'row', gap: t.spacing.xs, marginTop: t.spacing.sm },
+  customInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: t.colors.border,
+    borderRadius: t.radius.md,
+    paddingHorizontal: t.spacing.sm,
+    paddingVertical: t.spacing.xs,
+    color: t.colors.foreground,
+    ...t.typography.body,
+  },
+  customAddBtn: {
+    backgroundColor: t.colors.primary,
+    borderRadius: t.radius.md,
+    paddingHorizontal: t.spacing.sm,
+    justifyContent: 'center',
+  },
+  customAddBtnText: { ...t.typography.caption, color: t.colors.surface, fontWeight: '700' },
+  customTag: {
+    marginTop: t.spacing.xs,
+    alignSelf: 'flex-start',
+    backgroundColor: t.colors.primaryLight,
+    borderRadius: t.radius.full,
+    paddingHorizontal: t.spacing.sm,
+    paddingVertical: 6,
+  },
+  customTagText: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '600' },
   infoBox: {
     flexDirection: 'row',
     backgroundColor: t.colors.borderLight,

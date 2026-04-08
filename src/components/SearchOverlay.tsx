@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 import { Search, X, Clock, TrendingUp } from 'lucide-react-native';
 import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
+import { storage } from '../storage';
 
 interface SearchOverlayProps {
   visible: boolean;
@@ -26,17 +27,43 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const [query, setQuery] = useState('');
-  const [recentSearches, setRecentSearches] = useState<string[]>(DEFAULT_RECENT_SEARCHES);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+  const userInteractedRef = React.useRef(false);
+
+  useEffect(() => {
+    async function loadRecentSearches() {
+      try {
+        const saved = await storage.getRecentSearches();
+        if (!userInteractedRef.current) {
+          setRecentSearches(saved);
+        }
+      } catch (error) {
+        console.warn('Failed to read recent searches:', error);
+      } finally {
+        setHydrated(true);
+      }
+    }
+    loadRecentSearches();
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    void storage.setRecentSearches(recentSearches);
+  }, [recentSearches, hydrated]);
 
   const handleSubmit = () => {
     const trimmed = query.trim();
     if (trimmed.length > 0) {
+      userInteractedRef.current = true;
       onSearch?.(trimmed);
       setRecentSearches((prev) => [trimmed, ...prev.filter((s) => s !== trimmed)].slice(0, 10));
+      onClose();
     }
   };
 
   const handleClearRecent = () => {
+    userInteractedRef.current = true;
     setRecentSearches([]);
   };
 
@@ -75,11 +102,17 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
                 <Text style={styles.clearAll}>清除</Text>
               </Pressable>
             </View>
-            {recentSearches.map((term) => (
+            {(recentSearches.length > 0 ? recentSearches : DEFAULT_RECENT_SEARCHES).map((term) => (
               <Pressable
                 key={term}
                 style={({ pressed }) => [styles.recentItem, pressed && { backgroundColor: theme.colors.borderLight }]}
-                onPress={() => setQuery(term)}
+                onPress={() => {
+                  userInteractedRef.current = true;
+                  setQuery(term);
+                  setRecentSearches((prev) => [term, ...prev.filter((s) => s !== term)].slice(0, 10));
+                  onSearch?.(term);
+                  onClose();
+                }}
               >
                 <Clock size={14} color={theme.colors.subtle} strokeWidth={1.8} />
                 <Text style={styles.recentText}>{term}</Text>
@@ -99,7 +132,13 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
                 <Pressable
                   key={tag}
                   style={({ pressed }) => [styles.tag, pressed && { backgroundColor: theme.colors.border }]}
-                  onPress={() => setQuery(tag)}
+                  onPress={() => {
+                    userInteractedRef.current = true;
+                    setQuery(tag);
+                    setRecentSearches((prev) => [tag, ...prev.filter((s) => s !== tag)].slice(0, 10));
+                    onSearch?.(tag);
+                    onClose();
+                  }}
                 >
                   <Text style={styles.tagText}>{tag}</Text>
                 </Pressable>
