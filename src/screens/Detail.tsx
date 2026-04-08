@@ -13,7 +13,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { useAnimatedStyle, useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { ArrowLeft, Share2, Heart, Zap, Clock, UtensilsCrossed, Star, Plus } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors, theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { SkeletonImage } from '../components/SkeletonImage';
 
@@ -23,16 +23,16 @@ type DetailRouteProp = RouteProp<RootStackParamList, 'Detail'>;
 const PAIRINGS = [
   {
     id: 1,
-    title: 'Kale & Green Grape Juice',
+    title: '羽衣甘蓝青葡萄汁',
     price: '¥28',
-    badge: 'REFRESHING',
+    badge: '清爽',
     image: 'https://images.unsplash.com/photo-1611497426695-412abe2f287b?w=400',
   },
   {
     id: 2,
-    title: 'Japanese Miso Soup',
+    title: '日式味噌汤',
     price: '¥12',
-    badge: 'WARMING',
+    badge: '暖心',
     image: 'https://images.unsplash.com/photo-1763470260619-f971902b20db?w=400',
   },
 ];
@@ -123,26 +123,26 @@ export function Detail() {
               <Text style={styles.dishTitle}>{itemTitle}</Text>
               <View style={styles.calorieBadge}>
                 <Text style={styles.calorieNum}>485</Text>
-                <Text style={styles.calorieUnit}>kcal</Text>
+                <Text style={styles.calorieUnit}>千卡</Text>
               </View>
             </View>
             <View style={styles.aiBadge}>
               <Zap size={12} color={theme.colors.primary} fill={theme.colors.primary} />
-              <Text style={styles.aiBadgeText}>AI Nutrition Analysis</Text>
+              <Text style={styles.aiBadgeText}>AI 营养分析</Text>
             </View>
             <Text style={styles.aiDescription}>
-              ChiShenMe AI Recommendation: This meal is rich in high-quality protein and Omega-3. Its low-glycemic ingredients provide sustained energy for up to 4 hours, making it perfect for lunch to maintain productivity throughout the afternoon.
+              吃什么 AI 推荐：这道菜富含优质蛋白和 Omega-3 脂肪酸，低升糖指数的食材可以持续供能约 4 小时，非常适合午餐食用，帮助你保持下午的工作效率。
             </Text>
           </View>
 
           {/* Nutritional Facts */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Nutritional Facts</Text>
+            <Text style={styles.sectionTitle}>营养信息</Text>
             <View style={styles.nutriGrid}>
               {[
-                { label: 'Protein', value: '32g' },
-                { label: 'Fat', value: '18g' },
-                { label: 'Carbs', value: '45g' },
+                { label: '蛋白质', value: '32g' },
+                { label: '脂肪', value: '18g' },
+                { label: '碳水', value: '45g' },
               ].map((n) => (
                 <View key={n.label} style={styles.nutriCard}>
                   <Text style={styles.nutriLabel}>{n.label}</Text>
@@ -155,9 +155,9 @@ export function Detail() {
           {/* Best Pairings */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Best Pairings</Text>
+              <Text style={styles.sectionTitle}>最佳搭配</Text>
               <Pressable>
-                <Text style={styles.viewMore}>View More</Text>
+                <Text style={styles.viewMore}>查看更多</Text>
               </Pressable>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pairingsScroll}>
@@ -178,15 +178,15 @@ export function Detail() {
 
           {/* Meal Prep */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Meal Prep Details</Text>
+            <Text style={styles.sectionTitle}>备餐详情</Text>
             <View style={styles.mealPrepCard}>
               <View style={styles.mealPrepRow}>
                 <View style={[styles.mealPrepIconWrap, { backgroundColor: theme.colors.warningLight }]}>
                   <Clock size={16} color={theme.colors.warning} strokeWidth={2} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.mealPrepRowTitle}>Preparation Time</Text>
-                  <Text style={styles.mealPrepRowBody}>Estimated 15-20 mins.</Text>
+                  <Text style={styles.mealPrepRowTitle}>准备时间</Text>
+                  <Text style={styles.mealPrepRowBody}>预计 15-20 分钟</Text>
                 </View>
               </View>
               <View style={styles.mealPrepRow}>
@@ -194,8 +194,8 @@ export function Detail() {
                   <UtensilsCrossed size={16} color={theme.colors.primary} strokeWidth={2} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.mealPrepRowTitle}>Chef's Tip</Text>
-                  <Text style={styles.mealPrepRowBody}>Raw salmon should be consumed within 30 minutes for best freshness.</Text>
+                  <Text style={styles.mealPrepRowTitle}>主厨贴士</Text>
+                  <Text style={styles.mealPrepRowBody}>生鲑鱼建议在 30 分钟内食用，口感最佳。</Text>
                 </View>
               </View>
             </View>
@@ -208,12 +208,12 @@ export function Detail() {
       {/* Floating Action Bar */}
       <SafeAreaView edges={['bottom']} style={styles.actionBar}>
         <View>
-          <Text style={styles.estimatedLabel}>ESTIMATED TOTAL</Text>
+          <Text style={styles.estimatedLabel}>预估总价</Text>
           <Text style={styles.estimatedPrice}>¥ 68.00</Text>
         </View>
         <Pressable style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}>
           <Plus size={18} color={theme.colors.surface} strokeWidth={2.5} />
-          <Text style={styles.addButtonText}>Add to My Menu</Text>
+          <Text style={styles.addButtonText}>加入菜单</Text>
         </Pressable>
       </SafeAreaView>
     </View>
@@ -248,13 +248,13 @@ function makeStyles(t: AppTheme) {
   scrollView: { flex: 1 },
   heroWrap: { height: 360, overflow: 'hidden', position: 'relative' },
   heroImage: {},
-  content: { paddingHorizontal: t.spacing.md, marginTop: -theme.spacing.md },
+  content: { paddingHorizontal: t.spacing.md, marginTop: -t.spacing.md },
   titleCard: {
     backgroundColor: t.colors.surface,
     borderRadius: t.radius.lg,
     padding: t.spacing.lg,
     marginBottom: t.spacing.md,
-    ...theme.shadows.md,
+    ...t.shadows.md,
   },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: t.spacing.sm },
   dishTitle: { fontSize: 22, lineHeight: 30, fontWeight: '700', color: t.colors.foreground, flex: 1 },
@@ -265,15 +265,15 @@ function makeStyles(t: AppTheme) {
     paddingVertical: 6,
     alignItems: 'center',
   },
-  calorieNum: { ...theme.typography.h2, fontWeight: '700', color: t.colors.surface },
-  calorieUnit: { ...theme.typography.micro, color: t.colors.surface },
+  calorieNum: { ...t.typography.h2, fontWeight: '700', color: t.colors.surface },
+  calorieUnit: { ...t.typography.micro, color: t.colors.surface },
   aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: t.spacing.xs },
-  aiBadgeText: { ...theme.typography.caption, color: t.colors.primary, fontWeight: '600' },
-  aiDescription: { ...theme.typography.body, color: t.colors.muted, lineHeight: 20 },
+  aiBadgeText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '600' },
+  aiDescription: { ...t.typography.body, color: t.colors.muted, lineHeight: 20 },
   section: { marginBottom: t.spacing.lg },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: t.spacing.sm },
-  sectionTitle: { ...theme.typography.h2, color: t.colors.foreground, marginBottom: t.spacing.sm },
-  viewMore: { ...theme.typography.caption, color: t.colors.primary, fontWeight: '500' },
+  sectionTitle: { ...t.typography.h2, color: t.colors.foreground, marginBottom: t.spacing.sm },
+  viewMore: { ...t.typography.caption, color: t.colors.primary, fontWeight: '500' },
   nutriGrid: { flexDirection: 'row', gap: t.spacing.xs },
   nutriCard: {
     flex: 1,
@@ -281,9 +281,9 @@ function makeStyles(t: AppTheme) {
     borderRadius: t.radius.md,
     padding: t.spacing.md,
     alignItems: 'center',
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
-  nutriLabel: { ...theme.typography.caption, color: t.colors.subtle, marginBottom: 4 },
+  nutriLabel: { ...t.typography.caption, color: t.colors.subtle, marginBottom: 4 },
   nutriValue: { fontSize: 17, lineHeight: 24, fontWeight: '700', color: t.colors.foreground },
   pairingsScroll: { paddingRight: t.spacing.md, gap: t.spacing.sm },
   pairingCard: { width: 140 },
@@ -297,15 +297,15 @@ function makeStyles(t: AppTheme) {
     paddingVertical: 2,
     borderRadius: t.radius.sm,
   },
-  pairingBadgeText: { ...theme.typography.micro, fontWeight: '700', color: t.colors.foreground },
-  pairingTitle: { ...theme.typography.body, fontWeight: '600', color: t.colors.foreground, marginBottom: 2 },
-  pairingPrice: { ...theme.typography.caption, color: t.colors.subtle },
+  pairingBadgeText: { ...t.typography.micro, fontWeight: '700', color: t.colors.foreground },
+  pairingTitle: { ...t.typography.body, fontWeight: '600', color: t.colors.foreground, marginBottom: 2 },
+  pairingPrice: { ...t.typography.caption, color: t.colors.subtle },
   mealPrepCard: {
     backgroundColor: t.colors.surface,
     borderRadius: t.radius.md,
     padding: t.spacing.md,
     gap: t.spacing.md,
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
   mealPrepRow: { flexDirection: 'row', gap: t.spacing.sm, alignItems: 'flex-start' },
   mealPrepIconWrap: {
@@ -315,8 +315,8 @@ function makeStyles(t: AppTheme) {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mealPrepRowTitle: { ...theme.typography.body, fontWeight: '700', color: t.colors.foreground, marginBottom: 2 },
-  mealPrepRowBody: { ...theme.typography.caption, color: t.colors.subtle, lineHeight: 18 },
+  mealPrepRowTitle: { ...t.typography.body, fontWeight: '700', color: t.colors.foreground, marginBottom: 2 },
+  mealPrepRowBody: { ...t.typography.caption, color: t.colors.subtle, lineHeight: 18 },
   bottomPadding: { height: 100 },
   actionBar: {
     position: 'absolute',
@@ -330,10 +330,10 @@ function makeStyles(t: AppTheme) {
     paddingHorizontal: t.spacing.lg,
     paddingTop: t.spacing.sm,
     paddingBottom: 4,
-    ...theme.shadows.lg,
+    ...t.shadows.lg,
   },
-  estimatedLabel: { ...theme.typography.micro, color: t.colors.subtle, letterSpacing: 0.5 },
-  estimatedPrice: { ...theme.typography.h1, color: t.colors.foreground, marginTop: 2 },
+  estimatedLabel: { ...t.typography.micro, color: t.colors.subtle, letterSpacing: 0.5 },
+  estimatedPrice: { ...t.typography.h1, color: t.colors.foreground, marginTop: 2 },
   addButton: {
     backgroundColor: t.colors.primary,
     borderRadius: t.radius.full,
@@ -342,11 +342,8 @@ function makeStyles(t: AppTheme) {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    ...theme.shadows.md,
+    ...t.shadows.md,
   },
-  addButtonText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
+  addButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
 });
 }
-
-
-
