@@ -17,7 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MoreHorizontal, Heart, Star, UtensilsCrossed } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors, theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { FAVORITES_DATA } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
@@ -25,21 +25,9 @@ import { useApp } from '../context/AppContext';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-const CATEGORIES = ['All', 'Sichuan', 'Japanese', 'Dessert', 'Western'];
+const CATEGORIES = ['全部', '川菜', '日料', '甜品', '西餐'];
 
-const heartBtnStyle = {
-  position: 'absolute' as const,
-  top: 8,
-  right: 8,
-  width: 32,
-  height: 32,
-  borderRadius: 16,
-  backgroundColor: 'rgba(255,255,255,0.92)',
-  alignItems: 'center' as const,
-  justifyContent: 'center' as const,
-};
-
-function AnimatedHeartButton({ isFavorite, onToggle }: { isFavorite: boolean; onToggle: () => void }) {
+function AnimatedHeartButton({ isFavorite, onToggle, themeColors }: { isFavorite: boolean; onToggle: () => void; themeColors: AppTheme }) {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -58,8 +46,8 @@ function AnimatedHeartButton({ isFavorite, onToggle }: { isFavorite: boolean; on
       <Animated.View style={animStyle}>
         <Heart
           size={14}
-          color={isFavorite ? theme.colors.error : theme.colors.subtle}
-          fill={isFavorite ? theme.colors.error : 'transparent'}
+          color={isFavorite ? themeColors.colors.error : themeColors.colors.subtle}
+          fill={isFavorite ? themeColors.colors.error : 'transparent'}
           strokeWidth={2}
         />
       </Animated.View>
@@ -67,11 +55,23 @@ function AnimatedHeartButton({ isFavorite, onToggle }: { isFavorite: boolean; on
   );
 }
 
+const heartBtnStyle = {
+  position: 'absolute' as const,
+  top: 8,
+  right: 8,
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  backgroundColor: 'rgba(255,255,255,0.92)',
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+};
+
 export function Favorites() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState('全部');
   const { favorites, toggleFavorite } = useApp();
 
   const displayData = useMemo(() => {
@@ -80,7 +80,7 @@ export function Favorites() {
   }, [favorites]);
 
   const filtered =
-    activeCategory === 'All'
+    activeCategory === '全部'
       ? displayData
       : displayData.filter((f) => f.category === activeCategory);
 
@@ -90,10 +90,10 @@ export function Favorites() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav �?Page mode */}
+      {/* Top Nav — Page mode */}
       <View style={styles.topNav}>
         <View style={{ width: 40 }} />
-        <Text style={styles.navTitle}>My Favorites</Text>
+        <Text style={styles.navTitle}>我的收藏</Text>
         <Pressable style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}>
           <MoreHorizontal size={20} color={theme.colors.muted} strokeWidth={1.8} />
         </Pressable>
@@ -134,15 +134,15 @@ export function Favorites() {
           <View style={styles.emptyIcon}>
             <UtensilsCrossed size={36} color={theme.colors.primary} strokeWidth={1.5} />
           </View>
-          <Text style={styles.emptyTitle}>No favorites here yet</Text>
+          <Text style={styles.emptyTitle}>还没有收藏哦</Text>
           <Text style={styles.emptyBody}>
-            Start exploring and save your favorite dishes to see them here.
+            去发现好吃的，把喜欢的菜品收藏起来吧。
           </Text>
           <Pressable
             style={({ pressed }) => [styles.exploreBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
             onPress={() => navigation.navigate('MainTabs')}
           >
-            <Text style={styles.exploreBtnText}>Explore Dishes</Text>
+            <Text style={styles.exploreBtnText}>去发现美食</Text>
           </Pressable>
         </View>
       ) : (
@@ -162,6 +162,7 @@ export function Favorites() {
                 <AnimatedHeartButton
                   isFavorite={favorites.includes(item.id)}
                   onToggle={() => toggleFavorite(item.id)}
+                  themeColors={theme}
                 />
               </View>
               <Text style={styles.gridItemTitle} numberOfLines={2}>
@@ -187,12 +188,12 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: t.spacing.md,
-    height: theme.topNavHeight,
+    height: t.topNavHeight,
     backgroundColor: t.colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: t.colors.borderLight,
   },
-  navTitle: { ...theme.typography.h2, color: t.colors.foreground },
+  navTitle: { ...t.typography.h2, color: t.colors.foreground },
   moreBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
   tabBar: {
     backgroundColor: t.colors.surface,
@@ -208,7 +209,7 @@ function makeStyles(t: AppTheme) {
     backgroundColor: t.colors.borderLight,
   },
   tabPillActive: { backgroundColor: t.colors.primary },
-  tabPillText: { ...theme.typography.caption, fontWeight: '500', color: t.colors.muted },
+  tabPillText: { ...t.typography.caption, fontWeight: '500', color: t.colors.muted },
   tabPillTextActive: { color: t.colors.surface },
   gridContent: { padding: t.spacing.md, gap: t.spacing.sm },
   gridRow: { justifyContent: 'space-between' },
@@ -232,13 +233,13 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'center',
   },
   gridItemTitle: {
-    ...theme.typography.body,
+    ...t.typography.body,
     fontWeight: '600',
     color: t.colors.foreground,
     marginBottom: 4,
   },
   gridItemMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  gridItemRating: { ...theme.typography.caption, color: t.colors.subtle },
+  gridItemRating: { ...t.typography.caption, color: t.colors.subtle },
   emptyState: {
     flex: 1,
     alignItems: 'center',
@@ -255,13 +256,13 @@ function makeStyles(t: AppTheme) {
     marginBottom: t.spacing.md,
   },
   emptyTitle: {
-    ...theme.typography.h1,
+    ...t.typography.h1,
     color: t.colors.foreground,
     marginBottom: t.spacing.xs,
     textAlign: 'center',
   },
   emptyBody: {
-    ...theme.typography.body,
+    ...t.typography.body,
     color: t.colors.subtle,
     textAlign: 'center',
     marginBottom: t.spacing.lg,
@@ -272,9 +273,6 @@ function makeStyles(t: AppTheme) {
     paddingVertical: t.spacing.sm,
     borderRadius: t.radius.full,
   },
-  exploreBtnText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
+  exploreBtnText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
 });
 }
-
-
-

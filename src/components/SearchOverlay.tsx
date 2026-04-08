@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Search, X, Clock, TrendingUp } from 'lucide-react-native';
-import { useThemedStyles, useThemeColors, theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 
 interface SearchOverlayProps {
@@ -19,8 +19,8 @@ interface SearchOverlayProps {
   onSearch?: (query: string) => void;
 }
 
-const DEFAULT_RECENT_SEARCHES = ['Salmon Bowl', 'Ramen', 'Pizza near me'];
-const TRENDING_TAGS = ['Healthy Salad', 'Sichuan Hot Pot', 'Matcha Latte', 'Poke Bowl', 'Dim Sum', 'Korean BBQ'];
+const DEFAULT_RECENT_SEARCHES = ['三文鱼碗', '拉面', '附近的披萨'];
+const TRENDING_TAGS = ['健康沙拉', '四川火锅', '抹茶拿铁', '夏威夷拌饭', '早茶点心', '韩式烤肉'];
 
 export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps) {
   const theme = useThemeColors();
@@ -48,7 +48,7 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
             <Search size={16} color={theme.colors.subtle} strokeWidth={1.8} />
             <TextInput
               style={styles.input}
-              placeholder="Search for food or restaurants"
+              placeholder="搜索美食或餐厅"
               placeholderTextColor={theme.colors.subtle}
               value={query}
               onChangeText={setQuery}
@@ -63,16 +63,16 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
             )}
           </View>
           <Pressable onPress={onClose} style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={styles.cancelText}>取消</Text>
           </Pressable>
         </View>
 
         <View style={styles.content}>
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recent Searches</Text>
+              <Text style={styles.sectionTitle}>最近搜索</Text>
               <Pressable onPress={handleClearRecent}>
-                <Text style={styles.clearAll}>Clear</Text>
+                <Text style={styles.clearAll}>清除</Text>
               </Pressable>
             </View>
             {recentSearches.map((term) => (
@@ -91,7 +91,7 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
             <View style={styles.sectionHeader}>
               <View style={styles.trendingHeader}>
                 <TrendingUp size={14} color={theme.colors.primary} strokeWidth={2} />
-                <Text style={styles.sectionTitle}>Trending Now</Text>
+                <Text style={styles.sectionTitle}>热门搜索</Text>
               </View>
             </View>
             <View style={styles.tagContainer}>
@@ -135,9 +135,9 @@ function makeStyles(t: AppTheme) {
     height: 40,
     gap: t.spacing.xs,
   },
-  input: { flex: 1, ...theme.typography.body, color: t.colors.foreground },
+  input: { flex: 1, ...t.typography.body, color: t.colors.foreground },
   cancelBtn: { paddingHorizontal: 4 },
-  cancelText: { ...theme.typography.body, color: t.colors.primary, fontWeight: '500' },
+  cancelText: { ...t.typography.body, color: t.colors.primary, fontWeight: '500' },
   content: { flex: 1, paddingHorizontal: t.spacing.md, paddingTop: t.spacing.md },
   section: { marginBottom: t.spacing.lg },
   sectionHeader: {
@@ -147,13 +147,13 @@ function makeStyles(t: AppTheme) {
     marginBottom: t.spacing.xs,
   },
   sectionTitle: {
-    ...theme.typography.micro,
+    ...t.typography.micro,
     fontWeight: '700',
     color: t.colors.subtle,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  clearAll: { ...theme.typography.caption, color: t.colors.primary, fontWeight: '500' },
+  clearAll: { ...t.typography.caption, color: t.colors.primary, fontWeight: '500' },
   trendingHeader: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   recentItem: {
     flexDirection: 'row',
@@ -163,7 +163,7 @@ function makeStyles(t: AppTheme) {
     borderBottomColor: t.colors.borderLight,
     gap: t.spacing.sm,
   },
-  recentText: { ...theme.typography.body, color: t.colors.foreground },
+  recentText: { ...t.typography.body, color: t.colors.foreground },
   tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs, marginTop: 4 },
   tag: {
     backgroundColor: t.colors.borderLight,
@@ -171,7 +171,6 @@ function makeStyles(t: AppTheme) {
     paddingVertical: 6,
     borderRadius: t.radius.full,
   },
-  tagText: { ...theme.typography.body, color: '#4B5563', fontWeight: '500' },
+  tagText: { ...t.typography.body, color: t.colors.foreground, fontWeight: '500' },
 });
 }
-

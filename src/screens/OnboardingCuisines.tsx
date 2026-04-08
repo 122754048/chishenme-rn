@@ -13,7 +13,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated from 'react-native-reanimated';
 import { Check, Circle, ArrowRight } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors, theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { CUISINES } from '../data/mockData';
 import { useApp } from '../context/AppContext';
@@ -48,7 +48,7 @@ export function OnboardingCuisines() {
       <View style={styles.header}>
         <View style={{ width: 40 }} />
         <Pressable onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={styles.skipText}>跳过</Text>
         </Pressable>
       </View>
 
@@ -61,9 +61,9 @@ export function OnboardingCuisines() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>
-          Which cuisines do you{'\n'}like?
+          你喜欢什么{'\n'}菜系？
         </Text>
-        <Text style={styles.subtitle}>Select multiple to personalize your food journey.</Text>
+        <Text style={styles.subtitle}>可以多选，帮你定制专属美食推荐。</Text>
 
         <View style={styles.cuisineGrid}>
           {CUISINES.map((item) => {
@@ -110,7 +110,7 @@ export function OnboardingCuisines() {
           />
           <View style={styles.bannerOverlay}>
             <Text style={styles.bannerText}>
-              Customize your palate to get the best{'\n'}recommendations every day.
+              定制你的口味偏好，{'\n'}每天为你推荐最合适的美食。
             </Text>
           </View>
         </View>
@@ -121,7 +121,7 @@ export function OnboardingCuisines() {
           style={({ pressed }) => [styles.nextButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           onPress={handleNext}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          <Text style={styles.nextButtonText}>下一步</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
       </View>
@@ -139,7 +139,7 @@ function makeStyles(t: AppTheme) {
     paddingHorizontal: t.spacing.md,
     paddingVertical: t.spacing.xs,
   },
-  skipText: { ...theme.typography.caption, color: t.colors.subtle, fontWeight: '500' },
+  skipText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -149,11 +149,11 @@ function makeStyles(t: AppTheme) {
   },
   progressTrack: { flex: 1, height: 4, backgroundColor: t.colors.border, borderRadius: 2, overflow: 'hidden' },
   progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
-  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: t.colors.primary },
+  stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
-  title: { ...theme.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
-  subtitle: { ...theme.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
+  title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
+  subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
   cuisineGrid: { gap: t.spacing.xs, marginBottom: t.spacing.lg },
   cuisineCard: {
     flexDirection: 'row',
@@ -165,7 +165,7 @@ function makeStyles(t: AppTheme) {
     paddingVertical: t.spacing.sm,
     borderWidth: 1.5,
     borderColor: 'transparent',
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
   cuisineCardSelected: {
     backgroundColor: t.colors.primaryLight,
@@ -173,7 +173,7 @@ function makeStyles(t: AppTheme) {
   },
   cuisineLeft: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm },
   cuisineIcon: { fontSize: 18 },
-  cuisineLabel: { ...theme.typography.body, fontWeight: '500', color: t.colors.foreground },
+  cuisineLabel: { ...t.typography.body, fontWeight: '500', color: t.colors.foreground },
   cuisineLabelSelected: { color: t.colors.primaryDark, fontWeight: '600' },
   checkmark: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   checkmarkFilled: {
@@ -192,7 +192,7 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'flex-end',
     padding: t.spacing.md,
   },
-  bannerText: { ...theme.typography.caption, color: t.colors.surface, fontWeight: '500', lineHeight: 18 },
+  bannerText: { ...t.typography.caption, color: t.colors.surface, fontWeight: '500', lineHeight: 18 },
   footer: {
     paddingHorizontal: t.spacing.md,
     paddingVertical: t.spacing.md,
@@ -209,9 +209,6 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'center',
     gap: 6,
   },
-  nextButtonText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
+  nextButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
 });
 }
-
-
-

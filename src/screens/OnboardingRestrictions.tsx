@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated from 'react-native-reanimated';
 import { ArrowLeft, ArrowRight, Info, Plus } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors, theme } from '../theme';
+import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { MEATS, FLAVORS } from '../data/mockData';
 import { useApp } from '../context/AppContext';
@@ -90,7 +90,7 @@ export function OnboardingRestrictions() {
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
         <Pressable onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={styles.skipText}>跳过</Text>
         </Pressable>
       </View>
 
@@ -103,14 +103,14 @@ export function OnboardingRestrictions() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>
-          Any dietary{'\n'}restrictions?
+          有什么{'\n'}忌口吗？
         </Text>
         <Text style={styles.subtitle}>
-          Tell us about your dietary restrictions or ingredients you'd like to avoid.
+          告诉我们你的饮食限制或想要避开的食材。
         </Text>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>MEATS</Text>
+          <Text style={styles.sectionTitle}>肉类</Text>
           <View style={styles.grid}>
             {MEATS.map((item) => (
               <RestrictionButton
@@ -125,7 +125,7 @@ export function OnboardingRestrictions() {
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>FLAVORS & RESTRICTIONS</Text>
+          <Text style={styles.sectionTitle}>口味与忌口</Text>
           <View style={styles.grid}>
             {FLAVORS.map((item) => (
               <RestrictionButton
@@ -138,7 +138,7 @@ export function OnboardingRestrictions() {
             ))}
             <Pressable style={({ pressed }) => [styles.customBtn, pressed && { opacity: 0.7 }]}>
               <Plus size={14} color={theme.colors.subtle} strokeWidth={2} />
-              <Text style={styles.customBtnText}>Custom</Text>
+              <Text style={styles.customBtnText}>自定义</Text>
             </Pressable>
           </View>
         </View>
@@ -148,9 +148,9 @@ export function OnboardingRestrictions() {
             <Info size={14} color={theme.colors.primary} strokeWidth={2} />
           </View>
           <View style={styles.infoContent}>
-            <Text style={styles.infoTitle}>Why ask this?</Text>
+            <Text style={styles.infoTitle}>为什么要问这些？</Text>
             <Text style={styles.infoBody}>
-              We'll filter out dishes containing these items to ensure every recommendation is safe and delicious for you.
+              我们会过滤掉含有这些食材的菜品，确保每一道推荐都安全又美味。
             </Text>
           </View>
         </View>
@@ -161,7 +161,7 @@ export function OnboardingRestrictions() {
           style={({ pressed }) => [styles.nextButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           onPress={handleNext}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          <Text style={styles.nextButtonText}>下一步</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
       </View>
@@ -180,7 +180,7 @@ function makeStyles(t: AppTheme) {
     paddingVertical: t.spacing.xs,
   },
   backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  skipText: { ...theme.typography.caption, color: t.colors.subtle, fontWeight: '500' },
+  skipText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -190,19 +190,19 @@ function makeStyles(t: AppTheme) {
   },
   progressTrack: { flex: 1, height: 4, backgroundColor: t.colors.border, borderRadius: 2, overflow: 'hidden' },
   progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
-  stepLabel: { ...theme.typography.micro, fontWeight: '700', color: t.colors.primary },
+  stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
-  title: { ...theme.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
-  subtitle: { ...theme.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
+  title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
+  subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
   sectionCard: {
     backgroundColor: t.colors.surface,
     borderRadius: t.radius.md,
     padding: t.spacing.md,
     marginBottom: t.spacing.md,
-    ...theme.shadows.sm,
+    ...t.shadows.sm,
   },
-  sectionTitle: { ...theme.typography.micro, fontWeight: '700', color: t.colors.subtle, letterSpacing: 0.5, marginBottom: t.spacing.sm },
+  sectionTitle: { ...t.typography.micro, fontWeight: '700', color: t.colors.subtle, letterSpacing: 0.5, marginBottom: t.spacing.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs },
   restrictionBtn: {
     flexDirection: 'row',
@@ -220,7 +220,7 @@ function makeStyles(t: AppTheme) {
     borderColor: t.colors.primaryDark,
   },
   restrictionIcon: { fontSize: 16 },
-  restrictionLabel: { ...theme.typography.body, fontWeight: '500', color: t.colors.foreground },
+  restrictionLabel: { ...t.typography.body, fontWeight: '500', color: t.colors.foreground },
   restrictionLabelSelected: { color: t.colors.surface },
   customBtn: {
     flexDirection: 'row',
@@ -234,7 +234,7 @@ function makeStyles(t: AppTheme) {
     borderStyle: 'dashed',
     backgroundColor: t.colors.surface,
   },
-  customBtnText: { ...theme.typography.body, fontWeight: '500', color: t.colors.subtle },
+  customBtnText: { ...t.typography.body, fontWeight: '500', color: t.colors.subtle },
   infoBox: {
     flexDirection: 'row',
     backgroundColor: t.colors.borderLight,
@@ -252,8 +252,8 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'center',
   },
   infoContent: { flex: 1 },
-  infoTitle: { ...theme.typography.caption, fontWeight: '700', color: t.colors.foreground, marginBottom: 4 },
-  infoBody: { ...theme.typography.caption, color: t.colors.muted, lineHeight: 18 },
+  infoTitle: { ...t.typography.caption, fontWeight: '700', color: t.colors.foreground, marginBottom: 4 },
+  infoBody: { ...t.typography.caption, color: t.colors.muted, lineHeight: 18 },
   footer: {
     paddingHorizontal: t.spacing.md,
     paddingVertical: t.spacing.md,
@@ -270,9 +270,6 @@ function makeStyles(t: AppTheme) {
     justifyContent: 'center',
     gap: 6,
   },
-  nextButtonText: { ...theme.typography.body, fontWeight: '700', color: t.colors.surface },
+  nextButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
 });
 }
-
-
-
