@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -111,9 +111,21 @@ export function Upgrade() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
-  const { completeOnboarding } = useApp();
+  const { completeOnboarding, setMembershipPlan } = useApp();
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'family'>('pro');
 
   const handleStart = async () => {
+    if (selectedPlan === 'free') {
+      await setMembershipPlan('free');
+      await completeOnboarding();
+      navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+      return;
+    }
+    navigation.navigate('Checkout', { plan: selectedPlan });
+  };
+
+  const handleSkip = async () => {
+    await setMembershipPlan('free');
     await completeOnboarding();
     navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
   };
@@ -124,8 +136,8 @@ export function Upgrade() {
         <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}>
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Pressable onPress={handleStart}>
-          <Text style={styles.skipText}>跳过</Text>
+        <Pressable onPress={handleSkip}>
+          <Text style={styles.skipText}>稍后完善</Text>
         </Pressable>
       </View>
 
@@ -154,7 +166,8 @@ export function Upgrade() {
               { text: '每日 3 次 AI 点餐建议', iconType: 'check' },
               { text: '基础餐厅搜索', iconType: 'check' },
             ]}
-            onSelect={() => {}}
+            highlighted={selectedPlan === 'free'}
+            onSelect={() => setSelectedPlan('free')}
           />
           <PlanCard
             title="Pro 版"
@@ -167,8 +180,8 @@ export function Upgrade() {
               { text: '精准过敏原与健康筛选', iconType: 'shield' },
               { text: '离线模式 & 无广告体验', iconType: 'check' },
             ]}
-            highlighted
-            onSelect={() => {}}
+            highlighted={selectedPlan === 'pro'}
+            onSelect={() => setSelectedPlan('pro')}
           />
           <PlanCard
             title="家庭版"
@@ -179,7 +192,8 @@ export function Upgrade() {
               { text: '最多 6 位家庭成员共享', iconType: 'check' },
               { text: '自动生成每周家庭菜谱', iconType: 'check' },
             ]}
-            onSelect={() => {}}
+            highlighted={selectedPlan === 'family'}
+            onSelect={() => setSelectedPlan('family')}
           />
         </View>
 
@@ -200,10 +214,16 @@ export function Upgrade() {
           style={({ pressed }) => [styles.upgradeButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           onPress={handleStart}
         >
-          <Text style={styles.upgradeButtonText}>升级 Pro ¥9.9/月</Text>
+          <Text style={styles.upgradeButtonText}>
+            {selectedPlan === 'free'
+              ? '继续使用免费版'
+              : selectedPlan === 'family'
+                ? '升级家庭版 ¥19.9/月'
+                : '升级 Pro ¥9.9/月'}
+          </Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
-        <Pressable onPress={handleStart} style={({ pressed }) => [styles.skipButton, pressed && { opacity: 0.7 }]}>
+        <Pressable onPress={handleSkip} style={({ pressed }) => [styles.skipButton, pressed && { opacity: 0.7 }]}>
           <Text style={styles.skipButtonText}>暂时跳过</Text>
         </Pressable>
       </View>
