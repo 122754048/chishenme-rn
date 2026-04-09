@@ -3,106 +3,52 @@ import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated from 'react-native-reanimated';
-import { ArrowLeft, ArrowRight, Zap, Shield, Check, Lock, CreditCard } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, Check, Shield, Sparkles, Users } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
-import { useApp } from '../context/AppContext';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-const pcStyles = StyleSheet.create({
-  planCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  planCardHighlighted: { backgroundColor: '#FFF0E8', borderColor: '#FF6B35' },
-  badge: { position: 'absolute', top: 0, right: 0, paddingHorizontal: 12, paddingVertical: 4, borderTopRightRadius: 12, borderBottomLeftRadius: 8 },
-  badgeHighlighted: { backgroundColor: '#FF6B35' },
-  badgeNormal: { backgroundColor: '#FFFFFF' },
-  badgeText: { fontSize: 10, lineHeight: 14, fontWeight: '600', color: '#FFFFFF' },
-  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  planSubtitle: { fontSize: 10, lineHeight: 14, fontWeight: '600', color: '#9CA3AF', letterSpacing: 0.5, marginBottom: 2 },
-  planTitle: { fontSize: 20, lineHeight: 28, fontWeight: '700', color: '#111827' },
-  planTitleHighlighted: { color: '#FF6B35' },
-  priceBlock: { alignItems: 'flex-end' },
-  price: { fontSize: 20, lineHeight: 28, fontWeight: '700', color: '#111827' },
-  priceHighlighted: { color: '#FF6B35' },
-  priceSuffix: { fontSize: 12, lineHeight: 18, fontWeight: '500', color: '#9CA3AF', marginTop: 1 },
-  featuresList: { gap: 8 },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  featureText: { fontSize: 12, lineHeight: 18, fontWeight: '500', color: '#4B5563' },
-  featureTextHighlighted: { color: '#1F2937', fontWeight: '600' },
-});
-
-function PlanCard({
+function ValuePlanCard({
   title,
   subtitle,
   price,
-  priceSuffix,
-  features,
-  highlighted,
   badge,
-  onSelect,
+  selected,
+  features,
+  icon,
+  onPress,
 }: {
   title: string;
   subtitle: string;
   price: string;
-  priceSuffix?: string;
-  features: Array<{ text: string; iconType?: 'zap' | 'shield' | 'check' }>;
-  highlighted?: boolean;
   badge?: string;
-  onSelect: () => void;
+  selected: boolean;
+  features: string[];
+  icon: React.ReactNode;
+  onPress: () => void;
 }) {
-  const getIcon = (type?: string) => {
-    switch (type) {
-      case 'zap': return <Zap size={14} color="#FF6B35" fill="#FF6B35" />;
-      case 'shield': return <Shield size={14} color="#2EC4B6" strokeWidth={2} />;
-      default: return <Check size={14} color="#4CAF50" strokeWidth={2.5} />;
-    }
-  };
-
   return (
-    <Pressable
-      style={({ pressed }) => [
-        pcStyles.planCard,
-        highlighted && pcStyles.planCardHighlighted,
-        pressed && { opacity: 0.9 },
-      ]}
-      onPress={onSelect}
-      accessibilityRole="button"
-      accessibilityLabel={`${title}，${price}${priceSuffix ?? ''}${highlighted ? '，已选择' : ''}`}
-      accessibilityState={{ selected: Boolean(highlighted) }}
-    >
-      {badge && (
-        <View style={[pcStyles.badge, highlighted ? pcStyles.badgeHighlighted : pcStyles.badgeNormal]}>
-          <Text style={pcStyles.badgeText}>{badge}</Text>
+    <Pressable style={({ pressed }) => [valueStyles.card, selected && valueStyles.cardSelected, pressed && { opacity: 0.92 }]} onPress={onPress}>
+      {badge ? (
+        <View style={valueStyles.badge}>
+          <Text style={valueStyles.badgeText}>{badge}</Text>
         </View>
-      )}
-      <View style={pcStyles.planHeader}>
-        <View>
-          <Text style={pcStyles.planSubtitle}>{subtitle}</Text>
-          <Text style={[pcStyles.planTitle, highlighted && pcStyles.planTitleHighlighted]}>{title}</Text>
+      ) : null}
+      <View style={valueStyles.header}>
+        <View style={valueStyles.iconWrap}>{icon}</View>
+        <View style={valueStyles.titleWrap}>
+          <Text style={valueStyles.title}>{title}</Text>
+          <Text style={valueStyles.subtitle}>{subtitle}</Text>
         </View>
-        <View style={pcStyles.priceBlock}>
-          <Text style={[pcStyles.price, highlighted && pcStyles.priceHighlighted]}>{price}</Text>
-          {priceSuffix && <Text style={pcStyles.priceSuffix}>{priceSuffix}</Text>}
-        </View>
+        <Text style={valueStyles.price}>{price}</Text>
       </View>
-      <View style={pcStyles.featuresList}>
-        {features.map((f, i) => (
-          <View key={i} style={pcStyles.featureRow}>
-            {getIcon(f.iconType)}
-            <Text style={[pcStyles.featureText, highlighted && pcStyles.featureTextHighlighted]}>{f.text}</Text>
+      <View style={valueStyles.features}>
+        {features.map((feature) => (
+          <View key={feature} style={valueStyles.featureRow}>
+            <Check size={14} color="#FF6B35" strokeWidth={2.5} />
+            <Text style={valueStyles.featureText}>{feature}</Text>
           </View>
         ))}
       </View>
@@ -110,151 +56,147 @@ function PlanCard({
   );
 }
 
+const valueStyles = StyleSheet.create({
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardSelected: {
+    borderColor: '#FF6B35',
+    backgroundColor: '#FFF4EE',
+  },
+  badge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#FF6B35',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 10,
+  },
+  badgeText: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF0E8',
+  },
+  titleWrap: { flex: 1 },
+  title: { fontSize: 18, lineHeight: 26, fontWeight: '700', color: '#111827' },
+  subtitle: { fontSize: 12, lineHeight: 18, color: '#6B7280', marginTop: 2 },
+  price: { fontSize: 18, lineHeight: 26, fontWeight: '700', color: '#111827' },
+  features: { gap: 8 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  featureText: { fontSize: 13, lineHeight: 18, color: '#374151', flex: 1 },
+});
+
 export function Upgrade() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
-  const { completeOnboarding, setMembershipPlan } = useApp();
-  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'family'>('pro');
-
-  const handleStart = async () => {
-    if (selectedPlan === 'free') {
-      await setMembershipPlan('free');
-      await completeOnboarding();
-      navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
-      return;
-    }
-    navigation.navigate('Checkout', { plan: selectedPlan });
-  };
-
-  const handleSkip = async () => {
-    await setMembershipPlan('free');
-    await completeOnboarding();
-    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
-  };
+  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'family'>('pro');
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
-          accessibilityRole="button"
-          accessibilityLabel="返回忌口设置"
-          hitSlop={8}
-        >
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Pressable onPress={handleSkip} accessibilityRole="button" accessibilityLabel="暂时跳过升级" hitSlop={8}>
-          <Text style={styles.skipText}>稍后完善</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.progressContainer}>
-        <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressBar, { width: '100%' }]} />
-        </View>
-        <Text style={styles.stepLabel}>3/3</Text>
+        <Text style={styles.headerTitle}>升级你的决策能力</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>
-          解锁无限{'\n'}美食探索
-        </Text>
-        <Text style={styles.subtitle}>
-          解锁 AI 智能点餐、个性化食谱和多设备家庭共享。
-        </Text>
+        <View style={styles.heroCard}>
+          <Text style={styles.heroEyebrow}>不是买次数，而是买更好的结果</Text>
+          <Text style={styles.heroTitle}>少纠结，少试错，更快决定今天吃什么</Text>
+          <Text style={styles.heroBody}>
+            升级后你会得到更强的推荐解释、更多备选方案、更细的筛选维度，以及适合多人用餐的协同决策能力。
+          </Text>
+        </View>
+
+        <View style={styles.valueStrip}>
+          <View style={styles.valueItem}>
+            <Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.valueText}>为什么推荐你一眼能懂</Text>
+          </View>
+          <View style={styles.valueItem}>
+            <Shield size={18} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.valueText}>忌口和健康风险看得更清楚</Text>
+          </View>
+          <View style={styles.valueItem}>
+            <Users size={18} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.valueText}>多人吃饭也能更快达成一致</Text>
+          </View>
+        </View>
+
+        <View style={styles.planList}>
+          <ValuePlanCard
+            title="Pro"
+            subtitle="给自己一个更快、更准的决策助手"
+            price="¥9.9/月"
+            badge="最适合日常使用"
+            selected={selectedPlan === 'pro'}
+            icon={<Sparkles size={18} color="#FF6B35" strokeWidth={2.2} />}
+            features={[
+              '不限次查看更精准的推荐解释',
+              '解锁更多备选方案与对比理由',
+              '按场景、预算、口味更细地筛选',
+            ]}
+            onPress={() => setSelectedPlan('pro')}
+          />
+
+          <ValuePlanCard
+            title="Family"
+            subtitle="把晚餐分歧，变成可以协商的结果"
+            price="¥19.9/月"
+            selected={selectedPlan === 'family'}
+            icon={<Users size={18} color="#FF6B35" strokeWidth={2.2} />}
+            features={[
+              '融合多人偏好，减少家庭晚餐分歧',
+              '共享收藏和已做过的决策',
+              '更适合情侣、室友和家庭共用',
+            ]}
+            onPress={() => setSelectedPlan('family')}
+          />
+        </View>
+
         <Text style={styles.subscriptionNote}>
-          订阅将通过 Apple ID 自动续订，可随时在 Apple ID 订阅设置中取消。已购买用户可在下一步恢复购买。
+          订阅通过 Apple ID 自动续订，可随时在 Apple ID 的订阅设置中取消。已购买用户可在下一步恢复购买。
         </Text>
-
-        <View style={styles.plans}>
-          <PlanCard
-            title="免费版"
-            subtitle="基础"
-            price="¥0"
-            priceSuffix="永久免费"
-            features={[
-              { text: '每日 3 次 AI 点餐建议', iconType: 'check' },
-              { text: '基础餐厅搜索', iconType: 'check' },
-            ]}
-            highlighted={selectedPlan === 'free'}
-            onSelect={() => setSelectedPlan('free')}
-          />
-          <PlanCard
-            title="Pro 版"
-            subtitle="进阶"
-            price="¥9.9"
-            priceSuffix="/月"
-            badge="最受欢迎"
-            features={[
-              { text: '无限次 AI 深度点餐分析', iconType: 'zap' },
-              { text: '精准过敏原与健康筛选', iconType: 'shield' },
-              { text: '离线模式 & 无广告体验', iconType: 'check' },
-            ]}
-            highlighted={selectedPlan === 'pro'}
-            onSelect={() => setSelectedPlan('pro')}
-          />
-          <PlanCard
-            title="家庭版"
-            subtitle="共赢"
-            price="¥19.9"
-            priceSuffix="/月"
-            features={[
-              { text: '最多 6 位家庭成员共享', iconType: 'check' },
-              { text: '自动生成每周家庭菜谱', iconType: 'check' },
-            ]}
-            highlighted={selectedPlan === 'family'}
-            onSelect={() => setSelectedPlan('family')}
-          />
-        </View>
-
-        <View style={styles.trustBadges}>
-          <View style={styles.trustBadge}>
-            <Lock size={18} color={theme.colors.muted} strokeWidth={1.8} />
-            <Text style={styles.trustLabel}>安全支付</Text>
-          </View>
-          <View style={styles.trustBadge}>
-            <CreditCard size={18} color={theme.colors.muted} strokeWidth={1.8} />
-            <Text style={styles.trustLabel}>随时取消</Text>
-          </View>
-        </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable
-          style={({ pressed }) => [styles.upgradeButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
-          onPress={handleStart}
-          accessibilityRole="button"
-          accessibilityLabel={selectedPlan === 'free'
-            ? '继续使用免费版'
-            : selectedPlan === 'family'
-              ? '升级家庭版，19.9 元每月'
-              : '升级 Pro，9.9 元每月'}
-        >
-          <Text style={styles.upgradeButtonText}>
-            {selectedPlan === 'free'
-              ? '继续使用免费版'
-              : selectedPlan === 'family'
-                ? '升级家庭版 ¥19.9/月'
-                : '升级 Pro ¥9.9/月'}
-          </Text>
+        <Pressable style={styles.upgradeButton} onPress={() => navigation.navigate('Checkout', { plan: selectedPlan })}>
+          <Text style={styles.upgradeButtonText}>{selectedPlan === 'family' ? '继续升级 Family' : '继续升级 Pro'}</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
-        <Pressable
-          onPress={handleSkip}
-          style={({ pressed }) => [styles.skipButton, pressed && { opacity: 0.7 }]}
-          accessibilityRole="button"
-          accessibilityLabel="暂时跳过升级"
-        >
-          <Text style={styles.skipButtonText}>暂时跳过</Text>
+        <Pressable style={styles.secondaryButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.secondaryButtonText}>继续使用基础版</Text>
         </Pressable>
-        <Pressable
-          onPress={() => navigation.navigate('Checkout', { plan: selectedPlan === 'free' ? 'pro' : selectedPlan })}
-          style={({ pressed }) => [styles.restoreButton, pressed && { opacity: 0.7 }]}
-          accessibilityRole="button"
-          accessibilityLabel="恢复购买"
-        >
+        <Pressable style={styles.restoreButton} onPress={() => navigation.navigate('Checkout', { plan: selectedPlan })}>
           <Text style={styles.restoreButtonText}>已订阅？恢复购买</Text>
         </Pressable>
       </View>
@@ -264,100 +206,66 @@ export function Upgrade() {
 
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: t.colors.background },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: t.spacing.xs,
-  },
-  backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  skipText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: t.spacing.md,
-    marginBottom: t.spacing.lg,
-    gap: t.spacing.xs,
-  },
-  progressTrack: { flex: 1, height: 4, backgroundColor: t.colors.border, borderRadius: 2, overflow: 'hidden' },
-  progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
-  stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: 112 },
-  title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
-  subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
-  subscriptionNote: { ...t.typography.caption, color: t.colors.subtle, lineHeight: 18, marginBottom: t.spacing.md },
-  plans: { gap: t.spacing.sm, marginBottom: t.spacing.lg },
-  planCard: {
-    backgroundColor: t.colors.surface,
-    borderRadius: t.radius.md,
-    padding: t.spacing.md,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    ...t.shadows.sm,
-  },
-  planCardHighlighted: {
-    backgroundColor: t.colors.primaryLight,
-    borderColor: t.colors.primary,
-  },
-  badge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    paddingHorizontal: t.spacing.sm,
-    paddingVertical: 4,
-    borderTopRightRadius: t.radius.md,
-    borderBottomLeftRadius: t.radius.sm,
-  },
-  badgeHighlighted: { backgroundColor: t.colors.primary },
-  badgeNormal: { backgroundColor: t.colors.surface },
-  badgeText: { ...t.typography.micro, fontWeight: '700', color: t.colors.surface },
-  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: t.spacing.sm },
-  planSubtitle: { ...t.typography.micro, fontWeight: '700', color: t.colors.subtle, letterSpacing: 0.5, marginBottom: 2 },
-  planTitle: { ...t.typography.h1, color: t.colors.foreground },
-  planTitleHighlighted: { color: t.colors.primary },
-  priceBlock: { alignItems: 'flex-end' },
-  price: { ...t.typography.h1, color: t.colors.foreground },
-  priceHighlighted: { color: t.colors.primary },
-  priceSuffix: { ...t.typography.caption, color: t.colors.subtle, marginTop: 1 },
-  featuresList: { gap: t.spacing.xs },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.xs },
-  featureText: { ...t.typography.caption, color: '#4B5563' },
-  featureTextHighlighted: { color: t.colors.foreground, fontWeight: '500' },
-  trustBadges: { flexDirection: 'row', gap: t.spacing.sm },
-  trustBadge: {
-    flex: 1,
-    backgroundColor: t.colors.surface,
-    borderRadius: t.radius.md,
-    padding: t.spacing.sm,
-    alignItems: 'center',
-    gap: 4,
-    ...t.shadows.sm,
-  },
-  trustLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.subtle, letterSpacing: 0.5 },
-  footer: {
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: t.spacing.md,
-    backgroundColor: t.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: t.colors.borderLight,
-    gap: t.spacing.xs,
-  },
-  upgradeButton: {
-    backgroundColor: t.colors.primary,
-    borderRadius: t.radius.full,
-    paddingVertical: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: t.spacing.xs,
-  },
-  upgradeButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
-  skipButton: { paddingVertical: t.spacing.xs, alignItems: 'center' },
-  skipButtonText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
-  restoreButton: { paddingVertical: t.spacing.xs, alignItems: 'center' },
-  restoreButtonText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700' },
-});
+    container: { flex: 1, backgroundColor: t.colors.background },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: t.spacing.md,
+      height: t.topNavHeight,
+      backgroundColor: t.colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: t.colors.borderLight,
+    },
+    backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
+    headerTitle: { ...t.typography.h2, color: t.colors.foreground },
+    scrollView: { flex: 1 },
+    scrollContent: { padding: t.spacing.md, paddingBottom: 120, gap: t.spacing.md },
+    heroCard: {
+      backgroundColor: t.colors.surface,
+      borderRadius: t.radius.lg,
+      padding: t.spacing.lg,
+      ...t.shadows.md,
+    },
+    heroEyebrow: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700', marginBottom: 6 },
+    heroTitle: { ...t.typography.display, color: t.colors.foreground, marginBottom: 8 },
+    heroBody: { ...t.typography.body, color: t.colors.muted, lineHeight: 22 },
+    valueStrip: {
+      backgroundColor: t.colors.surface,
+      borderRadius: t.radius.md,
+      padding: t.spacing.md,
+      gap: t.spacing.sm,
+      ...t.shadows.sm,
+    },
+    valueItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    valueText: { ...t.typography.body, color: t.colors.foreground, flex: 1 },
+    planList: { gap: t.spacing.sm },
+    subscriptionNote: { ...t.typography.caption, color: t.colors.subtle, lineHeight: 18 },
+    footer: {
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: t.spacing.md,
+      backgroundColor: t.colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: t.colors.borderLight,
+      gap: t.spacing.xs,
+    },
+    upgradeButton: {
+      backgroundColor: t.colors.primary,
+      borderRadius: t.radius.full,
+      height: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 6,
+    },
+    upgradeButtonText: { ...t.typography.body, color: t.colors.surface, fontWeight: '700' },
+    secondaryButton: { height: 40, alignItems: 'center', justifyContent: 'center' },
+    secondaryButtonText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '600' },
+    restoreButton: { height: 40, alignItems: 'center', justifyContent: 'center' },
+    restoreButtonText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700' },
+  });
 }

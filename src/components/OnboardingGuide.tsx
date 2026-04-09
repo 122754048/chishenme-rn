@@ -1,11 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  Modal,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
@@ -20,21 +14,19 @@ export function OnboardingGuide() {
     async function checkGuide() {
       try {
         const seen = await AsyncStorage.getItem(GUIDE_KEY);
-        if (seen !== 'true') {
-          setVisible(true);
-        }
+        if (seen !== 'true') setVisible(true);
       } catch {
-        // If read fails, don't show guide (safe default)
+        // Keep default hidden on storage failure.
       }
     }
-    checkGuide();
+    void checkGuide();
   }, []);
 
   const handleDismiss = async () => {
     try {
       await AsyncStorage.setItem(GUIDE_KEY, 'true');
     } catch {
-      // Ignore write failure
+      // Ignore write failure.
     }
     setVisible(false);
   };
@@ -42,44 +34,28 @@ export function OnboardingGuide() {
   if (!visible) return null;
 
   return (
-    <Modal
-      transparent
-      animationType="fade"
-      visible={visible}
-      onRequestClose={handleDismiss}
-      statusBarTranslucent
-    >
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={handleDismiss} statusBarTranslucent>
       <View style={styles.overlay}>
         <View style={styles.content}>
-          {/* Gesture hints */}
-          <Text style={styles.gestureText}>
-            👈 左滑跳过 / 右滑喜欢 👉
-          </Text>
-          <Text style={styles.gestureTextSub}>
-            ⬇️ 下滑查看详情
-          </Text>
+          <Text style={styles.gestureText}>左滑跳过，右滑想吃</Text>
+          <Text style={styles.gestureTextSub}>点开卡片就能看推荐理由、风险提示和备选方案</Text>
 
-          {/* Visual swipe indicator */}
           <View style={styles.swipeIndicator}>
-            <View style={styles.swipeArrowLeft}>
-              <Text style={styles.swipeArrowText}>✕</Text>
-              <Text style={styles.swipeLabel}>跳过</Text>
+            <View style={styles.swipeArrow}>
+              <Text style={styles.swipeArrowText}>左滑</Text>
+              <Text style={styles.swipeLabel}>先跳过</Text>
             </View>
             <View style={styles.cardPlaceholder}>
-              <Text style={styles.cardPlaceholderEmoji}>🍽️</Text>
+              <Text style={styles.cardPlaceholderText}>今晚吃什么</Text>
             </View>
-            <View style={styles.swipeArrowRight}>
-              <Text style={styles.swipeArrowText}>❤️</Text>
-              <Text style={styles.swipeLabel}>喜欢</Text>
+            <View style={styles.swipeArrow}>
+              <Text style={styles.swipeArrowText}>右滑</Text>
+              <Text style={styles.swipeLabel}>这个想吃</Text>
             </View>
           </View>
 
-          {/* Dismiss button */}
-          <Pressable
-            style={({ pressed }) => [styles.dismissBtn, pressed && styles.dismissBtnPressed]}
-            onPress={handleDismiss}
-          >
-            <Text style={styles.dismissBtnText}>知道了</Text>
+          <Pressable style={({ pressed }) => [styles.dismissBtn, pressed && styles.dismissBtnPressed]} onPress={handleDismiss}>
+            <Text style={styles.dismissBtnText}>开始推荐</Text>
           </Pressable>
         </View>
       </View>
@@ -105,31 +81,29 @@ function makeStyles(t: AppTheme) {
       fontWeight: '700',
       color: '#FFFFFF',
       textAlign: 'center',
-      letterSpacing: 1,
     },
     gestureTextSub: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: '600',
-      color: 'rgba(255, 255, 255, 0.8)',
+      color: 'rgba(255, 255, 255, 0.82)',
       textAlign: 'center',
+      lineHeight: 24,
       marginTop: -8,
     },
     swipeIndicator: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 24,
+      gap: 20,
       marginVertical: 16,
     },
-    swipeArrowLeft: {
+    swipeArrow: {
       alignItems: 'center',
-      gap: 4,
-    },
-    swipeArrowRight: {
-      alignItems: 'center',
-      gap: 4,
+      gap: 6,
     },
     swipeArrowText: {
-      fontSize: 32,
+      fontSize: 18,
+      fontWeight: '700',
+      color: '#FFFFFF',
     },
     swipeLabel: {
       fontSize: 14,
@@ -137,17 +111,22 @@ function makeStyles(t: AppTheme) {
       color: 'rgba(255, 255, 255, 0.7)',
     },
     cardPlaceholder: {
-      width: 80,
-      height: 100,
+      width: 98,
+      height: 118,
       borderRadius: 12,
-      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      backgroundColor: 'rgba(255, 255, 255, 0.14)',
       borderWidth: 2,
-      borderColor: 'rgba(255, 255, 255, 0.3)',
+      borderColor: 'rgba(255, 255, 255, 0.28)',
       alignItems: 'center',
       justifyContent: 'center',
+      paddingHorizontal: 12,
     },
-    cardPlaceholderEmoji: {
-      fontSize: 36,
+    cardPlaceholderText: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      textAlign: 'center',
+      lineHeight: 24,
     },
     dismissBtn: {
       backgroundColor: t.colors.primary,
@@ -164,7 +143,6 @@ function makeStyles(t: AppTheme) {
       fontSize: 16,
       fontWeight: '700',
       color: '#FFFFFF',
-      letterSpacing: 1,
     },
   });
 }

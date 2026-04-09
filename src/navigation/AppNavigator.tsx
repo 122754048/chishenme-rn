@@ -112,10 +112,9 @@ function MainTabs() {
 }
 
 function LoadingScreen() {
-  const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const scale = useSharedValue(1);
-  const opacity = useSharedValue(0.6);
+  const opacity = useSharedValue(0.65);
 
   useEffect(() => {
     scale.value = withRepeat(
@@ -129,12 +128,12 @@ function LoadingScreen() {
     opacity.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 700, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.6, { duration: 700, easing: Easing.inOut(Easing.ease) })
+        withTiming(0.65, { duration: 700, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       true
     );
-  }, []);
+  }, [opacity, scale]);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -144,10 +143,10 @@ function LoadingScreen() {
   return (
     <View style={styles.loading}>
       <Animated.View style={[styles.loadingIconWrap, iconStyle]}>
-        <Text style={styles.loadingIcon}>🍽️</Text>
+        <Text style={styles.loadingIcon}>CS</Text>
       </Animated.View>
       <Text style={styles.loadingTitle}>ChiShenMe</Text>
-      <Text style={styles.loadingSubtitle}>正在为你挑选美食…</Text>
+      <Text style={styles.loadingSubtitle}>正在整理更适合你的用餐选择</Text>
     </View>
   );
 }
@@ -169,18 +168,37 @@ export function AppNavigator() {
         }}
         initialRouteName={onboardingComplete ? 'MainTabs' : 'OnboardingCuisines'}
       >
-        {/* Onboarding — slide right */}
-        <Stack.Screen name="OnboardingCuisines" component={OnboardingCuisines} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
-        <Stack.Screen name="OnboardingRestrictions" component={OnboardingRestrictions} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
-        <Stack.Screen name="Upgrade" component={Upgrade} options={{ animation: 'slide_from_bottom', animationDuration: 350 }} />
-        <Stack.Screen name="Checkout" component={Checkout} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
-
-        {/* Main Tab — fade */}
+        <Stack.Screen
+          name="OnboardingCuisines"
+          component={OnboardingCuisines}
+          options={{ animation: 'slide_from_right', animationDuration: 300 }}
+        />
+        <Stack.Screen
+          name="OnboardingRestrictions"
+          component={OnboardingRestrictions}
+          options={{ animation: 'slide_from_right', animationDuration: 300 }}
+        />
+        <Stack.Screen
+          name="Upgrade"
+          component={Upgrade}
+          options={{ animation: 'slide_from_bottom', animationDuration: 350 }}
+        />
+        <Stack.Screen
+          name="Checkout"
+          component={Checkout}
+          options={{ animation: 'slide_from_right', animationDuration: 300 }}
+        />
         <Stack.Screen name="MainTabs" component={MainTabs} options={{ animation: 'fade' }} />
-
-        {/* Detail pages */}
-        <Stack.Screen name="Detail" component={Detail} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
-        <Stack.Screen name="History" component={History} options={{ animation: 'slide_from_right', animationDuration: 300 }} />
+        <Stack.Screen
+          name="Detail"
+          component={Detail}
+          options={{ animation: 'slide_from_right', animationDuration: 300 }}
+        />
+        <Stack.Screen
+          name="History"
+          component={History}
+          options={{ animation: 'slide_from_right', animationDuration: 300 }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -203,8 +221,19 @@ function makeStyles(t: AppTheme) {
       justifyContent: 'center',
       marginBottom: 16,
     },
-    loadingIcon: { fontSize: 40 },
-    loadingTitle: { ...t.typography.display, color: t.colors.primary, marginBottom: 8 },
-    loadingSubtitle: { ...t.typography.body, color: t.colors.subtle },
+    loadingIcon: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: t.colors.primary,
+    },
+    loadingTitle: {
+      ...t.typography.display,
+      color: t.colors.primary,
+      marginBottom: 8,
+    },
+    loadingSubtitle: {
+      ...t.typography.body,
+      color: t.colors.subtle,
+    },
   });
 }

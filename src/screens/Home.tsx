@@ -1,51 +1,57 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  useWindowDimensions,
-} from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
+  Extrapolation,
+  interpolate,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
   withTiming,
-  withSequence,
-  runOnJS,
-  interpolate,
-  Extrapolation,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { X, Heart, Star, MapPin, Compass, Search } from 'lucide-react-native';
+import { CheckCircle2, ChevronRight, Compass, Heart, Search, Sparkles, Star, X } from 'lucide-react-native';
 import type { RootStackParamList } from '../navigation/types';
 import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
-import { SWIPE_CARDS } from '../data/mockData';
-import type { SwipeCardData } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { OnboardingGuide } from '../components/OnboardingGuide';
-import { useApp } from '../context/AppContext';
 import { SearchOverlay } from '../components/SearchOverlay';
+import { useApp } from '../context/AppContext';
+import type { SwipeCardData } from '../data/mockData';
+import { getRecommendedDishes } from '../utils/recommendations';
 
 const SWIPE_THRESHOLD = 100;
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-/* ─── Swipe Card ─── */
-function SwipeCard({
+function inferMealTypeByHour() {
+  const hour = new Date().getHours();
+  if (hour < 10) return '早餐' as const;
+  if (hour < 15) return '午餐' as const;
+  if (hour < 18) return '下午茶' as const;
+  if (hour < 22) return '晚餐' as const;
+  return '夜宵' as const;
+}
+
+function DecisionCard({
   card,
+  reasons,
   onSwipe,
+  onOpenDetail,
   screenWidth,
   styles,
   enabled,
   cardHeight,
 }: {
   card: SwipeCardData;
+  reasons: string[];
   onSwipe: (dir: 'left' | 'right') => void;
+  onOpenDetail: () => void;
   screenWidth: number;
   styles: ReturnType<typeof makeStyles>;
   enabled: boolean;
@@ -58,14 +64,14 @@ function SwipeCard({
     .enabled(enabled)
     .onUpdate((event) => {
       translateX.value = event.translationX;
-      translateY.value = event.translationY * 0.4;
+      translateY.value = event.translationY * 0.2;
     })
     .onEnd((event) => {
       if (event.translationX > SWIPE_THRESHOLD || event.velocityX > 500) {
-        translateX.value = withTiming(screenWidth * 1.5, { duration: 300 });
+        translateX.value = withTiming(screenWidth * 1.5, { duration: 240 });
         runOnJS(onSwipe)('right');
       } else if (event.translationX < -SWIPE_THRESHOLD || event.velocityX < -500) {
-        translateX.value = withTiming(-screenWidth * 1.5, { duration: 300 });
+        translateX.value = withTiming(-screenWidth * 1.5, { duration: 240 });
         runOnJS(onSwipe)('left');
       } else {
         translateX.value = withSpring(0);
@@ -77,38 +83,31 @@ function SwipeCard({
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
-      { rotate: `${translateX.value / 20}deg` },
+      { rotate: `${translateX.value / 28}deg` },
     ],
   }));
 
-  const likeOpacity = useAnimatedStyle(() => ({
+  const positiveOpacity = useAnimatedStyle(() => ({
     opacity: interpolate(translateX.value, [0, 80], [0, 1], Extrapolation.CLAMP),
   }));
 
-  const nopeOpacity = useAnimatedStyle(() => ({
+  const negativeOpacity = useAnimatedStyle(() => ({
     opacity: interpolate(translateX.value, [-80, 0], [1, 0], Extrapolation.CLAMP),
   }));
 
   return (
     <GestureDetector gesture={panGesture}>
       <Animated.View style={[styles.card, { width: screenWidth - 32, height: cardHeight }, cardAnimStyle]}>
-        {/* LIKE / NOPE overlays */}
-        <Animated.View style={[styles.badgeLike, likeOpacity]}>
-          <Text style={styles.badgeLikeText}>喜欢</Text>
+        <Animated.View style={[styles.badgeLike, positiveOpacity]}>
+          <Text style={styles.badgeLikeText}>今天吃这个</Text>
         </Animated.View>
-        <Animated.View style={[styles.badgeNope, nopeOpacity]}>
-          <Text style={styles.badgeNopeText}>跳过</Text>
+        <Animated.View style={[styles.badgeNope, negativeOpacity]}>
+          <Text style={styles.badgeNopeText}>先看看别的</Text>
         </Animated.View>
 
-        {/* Full-height image with overlay info */}
-        <View style={styles.cardImage}>
+        <Pressable style={styles.cardImage} onPress={onOpenDetail}>
           <SkeletonImage src={card.image} alt={card.name} />
-          {/* Gradient overlay - bottom half */}
-          <View style={styles.cardGradientOverlay} />
-
-          {/* Info overlaid on image bottom */}
           <View style={styles.cardInfoOverlay}>
-            {/* Category pill + Rating */}
             <View style={styles.cardInfoTopRow}>
               <View style={styles.categoryPill}>
                 <Text style={styles.categoryPillText}>{card.category}</Text>
@@ -119,33 +118,47 @@ function SwipeCard({
               </View>
             </View>
 
-            {/* Dish Name */}
             <Text style={styles.cardName}>{card.name}</Text>
+            <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
 
-            {/* Distance + Price + PrepTime */}
             <View style={styles.cardMetaRow}>
-              <MapPin size={12} color="rgba(255,255,255,0.85)" />
-              <Text style={styles.cardMetaText}>{card.distance}</Text>
+              <Text style={styles.cardMetaText}>{card.cuisineLabel}</Text>
               <Text style={styles.cardMetaDot}>·</Text>
               <Text style={styles.cardMetaText}>{card.price}</Text>
               <Text style={styles.cardMetaDot}>·</Text>
               <Text style={styles.cardMetaText}>{card.prepTime}</Text>
             </View>
 
-            {/* Tags */}
+            <View style={styles.reasonPanel}>
+              <View style={styles.reasonHeader}>
+                <Sparkles size={14} color="#FFFFFF" strokeWidth={2} />
+                <Text style={styles.reasonTitle}>为什么现在推荐它</Text>
+              </View>
+              {reasons.map((reason) => (
+                <View key={reason} style={styles.reasonRow}>
+                  <CheckCircle2 size={12} color="#FFFFFF" strokeWidth={2.4} />
+                  <Text style={styles.reasonText}>{reason}</Text>
+                </View>
+              ))}
+            </View>
+
             <View style={styles.cardTagRow}>
-              {card.tags.map((tag) => (
+              {card.decisionTags.slice(0, 3).map((tag) => (
                 <Text key={tag} style={styles.cardTag}>{tag}</Text>
               ))}
             </View>
+
+            <Pressable style={styles.detailLink} onPress={onOpenDetail}>
+              <Text style={styles.detailLinkText}>查看完整决策理由</Text>
+              <ChevronRight size={14} color="#FFFFFF" strokeWidth={2} />
+            </Pressable>
           </View>
-        </View>
+        </Pressable>
       </Animated.View>
     </GestureDetector>
   );
 }
 
-/* ─── Animated Action Button ─── */
 function AnimatedActionBtn({
   onPress,
   children,
@@ -167,9 +180,9 @@ function AnimatedActionBtn({
   const handlePress = () => {
     if (disabled) return;
     scale.value = withSequence(
-      withSpring(0.85, { damping: 8 }),
-      withSpring(1.1, { damping: 6 }),
-      withSpring(1, { damping: 10 })
+      withSpring(0.88, { damping: 8 }),
+      withSpring(1.06, { damping: 7 }),
+      withSpring(1, { damping: 10 }),
     );
     onPress();
   };
@@ -190,14 +203,12 @@ function AnimatedActionBtn({
   );
 }
 
-/* Static styles for sub-component (avoids scope issues with makeStyles) */
 const actionBtnStyles = StyleSheet.create({
   wrapper: { alignItems: 'center', gap: 6 },
   label: { fontSize: 11, fontWeight: '500', color: '#9CA3AF', marginTop: 2 },
   disabled: { opacity: 0.45 },
 });
 
-/* ═══════════ Home Screen ═══════════ */
 export function Home() {
   const navigation = useNavigation<NavProp>();
   const theme = useThemeColors();
@@ -213,15 +224,30 @@ export function Home() {
   } = useApp();
   const [cardIndex, setCardIndex] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
+
   const isUnlimitedPlan = recommendationsLeft < 0;
   const quotaLocked = !isUnlimitedPlan && recommendationsLeft <= 0;
-  const cardHeight = Math.min(Math.max(screenHeight * 0.58, 420), 560);
+  const cardHeight = Math.min(Math.max(screenHeight * 0.62, 468), 620);
+  const preferredMealType = inferMealTypeByHour();
 
-  const handleSwipe = useCallback(
-    (direction: 'left' | 'right' = 'right') => {
-      if (quotaLocked) return;
-      const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
-      addToHistory({
+  const recommendations = useMemo(
+    () => getRecommendedDishes({ selectedCuisines, selectedRestrictions, preferredMealType }),
+    [selectedCuisines, selectedRestrictions, preferredMealType],
+  );
+
+  const currentRecommendation = recommendations[cardIndex % Math.max(recommendations.length, 1)];
+  const currentCard = currentRecommendation?.dish ?? null;
+  const reasons = currentRecommendation?.reasons ?? [];
+
+  const openDetail = useCallback(() => {
+    if (!currentCard) return;
+    navigation.navigate('Detail', { itemId: currentCard.id, title: currentCard.name, image: currentCard.image });
+  }, [currentCard, navigation]);
+
+  const handleDecision = useCallback(
+    (direction: 'left' | 'right') => {
+      if (quotaLocked || !currentCard) return;
+      void addToHistory({
         id: currentCard.id,
         title: currentCard.name,
         img: currentCard.image,
@@ -233,36 +259,22 @@ export function Home() {
       consumeRecommendation();
       setCardIndex((prev) => prev + 1);
     },
-    [cardIndex, addToHistory, consumeRecommendation, quotaLocked]
+    [addToHistory, consumeRecommendation, currentCard, quotaLocked],
   );
 
-  const handleFavorite = useCallback(() => {
-    if (quotaLocked) return;
-    const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
-    addToHistory({
-      id: currentCard.id,
-      title: currentCard.name,
-      img: currentCard.image,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      createdAt: Date.now(),
-      category: currentCard.category,
-      status: 'Liked',
-    });
-    toggleFavorite(currentCard.id);
-    consumeRecommendation();
-    setCardIndex((prev) => prev + 1);
-  }, [cardIndex, addToHistory, toggleFavorite, consumeRecommendation, quotaLocked]);
-
-  const currentCard = SWIPE_CARDS[cardIndex % SWIPE_CARDS.length];
+  const handleSave = useCallback(() => {
+    if (quotaLocked || !currentCard) return;
+    void toggleFavorite(currentCard.id);
+    handleDecision('right');
+  }, [currentCard, handleDecision, quotaLocked, toggleFavorite]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* ─── Minimal Top Bar ─── */}
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.brandText}>🍊 吃什么</Text>
+          <Text style={styles.brandText}>ChiShenMe</Text>
           <Text style={styles.recommendationsHint}>
-            {isUnlimitedPlan ? '今日推荐不限次' : `今日推荐剩余 ${recommendationsLeft} 次`}
+            {isUnlimitedPlan ? '无限次做出今天这顿饭的决定' : `今日还可做 ${recommendationsLeft} 次智能推荐决策`}
           </Text>
         </View>
         <View style={styles.topBarRight}>
@@ -270,7 +282,7 @@ export function Home() {
             style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
             onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
             accessibilityRole="button"
-            accessibilityLabel="发现更多美食"
+            accessibilityLabel="去发现更多选择"
             hitSlop={8}
           >
             <Compass size={20} color={theme.colors.foreground} strokeWidth={1.8} />
@@ -287,13 +299,31 @@ export function Home() {
         </View>
       </View>
 
+      <View style={styles.contextStrip}>
+        <Text style={styles.contextTitle}>现在更适合的决策方向</Text>
+        <View style={styles.contextChips}>
+          <View style={styles.contextChip}>
+            <Text style={styles.contextChipText}>{preferredMealType}</Text>
+          </View>
+          {selectedCuisines.length > 0 ? (
+            <View style={styles.contextChip}>
+              <Text style={styles.contextChipText}>已读懂你的口味偏好</Text>
+            </View>
+          ) : (
+            <Pressable style={styles.contextChip} onPress={() => navigation.navigate('OnboardingCuisines')}>
+              <Text style={styles.contextChipText}>先完善口味偏好</Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+
       {quotaLocked && (
         <View style={styles.limitBar}>
-          <Text style={styles.limitText}>今日免费推荐次数已用完，升级后可不限次探索</Text>
+          <Text style={styles.limitText}>基础版今日决策次数已用完。升级后可获得更精准的推荐解释、更多备选方案和不限次决策。</Text>
           <Pressable
             onPress={() => navigation.navigate('Upgrade')}
             accessibilityRole="button"
-            accessibilityLabel="升级会员，解锁不限次推荐"
+            accessibilityLabel="升级为更强的智能决策体验"
             hitSlop={8}
           >
             <Text style={styles.limitAction}>去升级</Text>
@@ -301,72 +331,73 @@ export function Home() {
         </View>
       )}
 
-      {!isUnlimitedPlan && recommendationsLeft <= 2 && selectedCuisines.length === 0 && selectedRestrictions.length === 0 && (
+      {!quotaLocked && selectedCuisines.length === 0 && selectedRestrictions.length === 0 && (
         <Pressable
           style={styles.profilePrompt}
           onPress={() => navigation.navigate('OnboardingCuisines')}
           accessibilityRole="button"
-          accessibilityLabel="完善口味偏好"
+          accessibilityLabel="完善口味偏好以提升命中率"
         >
-          <Text style={styles.profilePromptText}>完善口味偏好，可显著提升推荐命中率</Text>
+          <Text style={styles.profilePromptText}>先补齐口味和忌口，推荐会更像真正懂你的决策助手。</Text>
         </Pressable>
       )}
 
-      {/* ─── Full-screen Card Area ─── */}
       <View style={styles.cardContainer}>
-        {currentCard && (
-          <SwipeCard
+        {currentCard ? (
+          <DecisionCard
             key={`${currentCard.id}-${cardIndex}`}
             card={currentCard}
-            onSwipe={handleSwipe}
+            reasons={reasons}
+            onSwipe={handleDecision}
+            onOpenDetail={openDetail}
             screenWidth={screenWidth}
             styles={styles}
             enabled={!quotaLocked}
             cardHeight={cardHeight}
           />
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>还没有适合当前偏好的推荐</Text>
+            <Text style={styles.emptyBody}>调整一下口味偏好或探索更多分类，系统会重新帮你组织候选项。</Text>
+          </View>
         )}
       </View>
 
-      {/* ─── Action Buttons ─── */}
       <View style={styles.actionRow}>
         <AnimatedActionBtn
           style={[styles.actionBtn, styles.skipBtn]}
-          onPress={() => handleSwipe('left')}
-          label="跳过"
-          disabled={quotaLocked}
+          onPress={() => handleDecision('left')}
+          label="先跳过"
+          disabled={quotaLocked || !currentCard}
         >
-          <X size={26} color={theme.colors.muted} strokeWidth={2.5} />
+          <X size={24} color={theme.colors.muted} strokeWidth={2.5} />
         </AnimatedActionBtn>
 
         <AnimatedActionBtn
           style={[styles.actionBtn, styles.favoriteBtn]}
-          onPress={handleFavorite}
-          label="收藏"
-          disabled={quotaLocked}
+          onPress={handleSave}
+          label="存起来"
+          disabled={quotaLocked || !currentCard}
         >
-          <Star size={26} color={theme.colors.primary} strokeWidth={2} />
+          <Star size={24} color={theme.colors.primary} strokeWidth={2} />
         </AnimatedActionBtn>
 
         <AnimatedActionBtn
           style={[styles.actionBtn, styles.likeBtn]}
-          onPress={() => handleSwipe('right')}
-          label="喜欢"
-          disabled={quotaLocked}
+          onPress={() => handleDecision('right')}
+          label="今天吃这个"
+          disabled={quotaLocked || !currentCard}
         >
-          <Heart size={26} color="#EF4444" fill="#EF4444" strokeWidth={0} />
+          <Heart size={24} color="#EF4444" fill="#EF4444" strokeWidth={0} />
         </AnimatedActionBtn>
       </View>
 
-      {/* ─── First-use Onboarding Guide ─── */}
       <OnboardingGuide />
       <SearchOverlay
         visible={showSearch}
         onClose={() => setShowSearch(false)}
         onSearch={(query) => {
-          navigation.navigate('MainTabs', {
-            screen: 'Explore',
-            params: { initialQuery: query },
-          });
+          navigation.navigate('MainTabs', { screen: 'Explore', params: { initialQuery: query } });
           setShowSearch(false);
         }}
       />
@@ -374,19 +405,16 @@ export function Home() {
   );
 }
 
-/* ═══════════ Styles ═══════════ */
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: t.colors.background },
     pressed: { opacity: 0.85, transform: [{ scale: 0.97 }] },
-
-    /* ── Top Bar ── */
     topBar: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingHorizontal: t.spacing.md,
-      height: 48,
+      height: 56,
     },
     brandText: {
       fontSize: 22,
@@ -396,7 +424,7 @@ function makeStyles(t: AppTheme) {
     recommendationsHint: {
       ...t.typography.micro,
       color: t.colors.subtle,
-      marginTop: -2,
+      marginTop: 2,
     },
     topBarRight: {
       flexDirection: 'row',
@@ -410,6 +438,32 @@ function makeStyles(t: AppTheme) {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    contextStrip: {
+      paddingHorizontal: t.spacing.md,
+      marginBottom: t.spacing.xs,
+    },
+    contextTitle: {
+      ...t.typography.caption,
+      color: t.colors.subtle,
+      marginBottom: 8,
+      fontWeight: '600',
+    },
+    contextChips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    contextChip: {
+      backgroundColor: t.colors.borderLight,
+      borderRadius: t.radius.full,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    contextChipText: {
+      ...t.typography.caption,
+      color: t.colors.foreground,
+      fontWeight: '600',
+    },
     limitBar: {
       marginHorizontal: t.spacing.md,
       marginTop: t.spacing.xs,
@@ -417,13 +471,19 @@ function makeStyles(t: AppTheme) {
       backgroundColor: t.colors.warningLight,
       borderRadius: t.radius.md,
       paddingHorizontal: t.spacing.sm,
-      paddingVertical: t.spacing.xs,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      paddingVertical: t.spacing.sm,
+      gap: 8,
     },
-    limitText: { ...t.typography.caption, color: t.colors.foreground, flex: 1, marginRight: t.spacing.xs },
-    limitAction: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700' },
+    limitText: {
+      ...t.typography.caption,
+      color: t.colors.foreground,
+      lineHeight: 18,
+    },
+    limitAction: {
+      ...t.typography.caption,
+      color: t.colors.primary,
+      fontWeight: '700',
+    },
     profilePrompt: {
       marginHorizontal: t.spacing.md,
       marginTop: t.spacing.xs,
@@ -431,27 +491,26 @@ function makeStyles(t: AppTheme) {
       backgroundColor: t.colors.primaryLight,
       borderRadius: t.radius.md,
       paddingHorizontal: t.spacing.sm,
-      paddingVertical: t.spacing.xs,
+      paddingVertical: t.spacing.sm,
     },
-    profilePromptText: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '600' },
-
-    /* ── Card Container ── */
+    profilePromptText: {
+      ...t.typography.caption,
+      color: t.colors.primaryDark,
+      fontWeight: '600',
+      lineHeight: 18,
+    },
     cardContainer: {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: t.spacing.md,
     },
-
-    /* ── Card ── */
     card: {
       borderRadius: 16,
       overflow: 'hidden',
       backgroundColor: t.colors.surface,
       ...t.shadows.lg,
     },
-
-    /* LIKE / NOPE badges */
     badgeLike: {
       position: 'absolute',
       top: 24,
@@ -461,15 +520,14 @@ function makeStyles(t: AppTheme) {
       borderColor: '#4CAF50',
       backgroundColor: 'rgba(76,175,80,0.2)',
       borderRadius: t.radius.sm,
-      paddingHorizontal: 20,
+      paddingHorizontal: 16,
       paddingVertical: 8,
-      transform: [{ rotate: '-15deg' }],
+      transform: [{ rotate: '-12deg' }],
     },
     badgeLikeText: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: '800',
       color: '#4CAF50',
-      letterSpacing: 2,
     },
     badgeNope: {
       position: 'absolute',
@@ -480,35 +538,20 @@ function makeStyles(t: AppTheme) {
       borderColor: '#EF4444',
       backgroundColor: 'rgba(239,68,68,0.2)',
       borderRadius: t.radius.sm,
-      paddingHorizontal: 20,
+      paddingHorizontal: 16,
       paddingVertical: 8,
-      transform: [{ rotate: '15deg' }],
+      transform: [{ rotate: '12deg' }],
     },
     badgeNopeText: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: '800',
       color: '#EF4444',
-      letterSpacing: 2,
     },
-
-    /* ── Image area (full card) ── */
     cardImage: {
       width: '100%',
       height: '100%',
       position: 'relative',
     },
-
-    /* Gradient overlay placeholder */
-    cardGradientOverlay: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: '55%',
-      backgroundColor: 'transparent',
-    },
-
-    /* ── Info overlay on image ── */
     cardInfoOverlay: {
       position: 'absolute',
       bottom: 0,
@@ -516,17 +559,15 @@ function makeStyles(t: AppTheme) {
       right: 0,
       paddingHorizontal: 20,
       paddingBottom: 24,
-      paddingTop: 60,
-      backgroundColor: 'rgba(0,0,0,0.45)',
+      paddingTop: 76,
+      backgroundColor: 'rgba(0,0,0,0.48)',
     },
-
     cardInfoTopRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
       marginBottom: 8,
     },
-
     categoryPill: {
       backgroundColor: t.colors.primary,
       paddingHorizontal: 12,
@@ -538,7 +579,6 @@ function makeStyles(t: AppTheme) {
       fontWeight: '700',
       color: '#FFFFFF',
     },
-
     ratingBadge: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -553,47 +593,88 @@ function makeStyles(t: AppTheme) {
       fontWeight: '600',
       color: '#FFFFFF',
     },
-
     cardName: {
       fontSize: 24,
       fontWeight: '700',
       color: '#FFFFFF',
-      marginBottom: 6,
+      marginBottom: 4,
     },
-
+    cardSubtitle: {
+      ...t.typography.caption,
+      color: 'rgba(255,255,255,0.88)',
+      lineHeight: 18,
+      marginBottom: 8,
+    },
     cardMetaRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      marginBottom: 8,
+      marginBottom: 12,
     },
     cardMetaText: {
       fontSize: 13,
       fontWeight: '500',
-      color: 'rgba(255,255,255,0.85)',
+      color: 'rgba(255,255,255,0.9)',
     },
     cardMetaDot: {
       fontSize: 13,
       color: 'rgba(255,255,255,0.5)',
     },
-
+    reasonPanel: {
+      backgroundColor: 'rgba(255,255,255,0.14)',
+      borderRadius: t.radius.md,
+      padding: 12,
+      marginBottom: 12,
+      gap: 8,
+    },
+    reasonHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    reasonTitle: {
+      ...t.typography.caption,
+      color: '#FFFFFF',
+      fontWeight: '700',
+    },
+    reasonRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    reasonText: {
+      ...t.typography.caption,
+      color: 'rgba(255,255,255,0.92)',
+      flex: 1,
+      lineHeight: 18,
+    },
     cardTagRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 8,
+      marginBottom: 10,
     },
     cardTag: {
       fontSize: 12,
-      fontWeight: '500',
-      color: 'rgba(255,255,255,0.8)',
+      fontWeight: '600',
+      color: 'rgba(255,255,255,0.88)',
     },
-
-    /* ── Action Buttons ── */
+    detailLink: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      alignSelf: 'flex-start',
+    },
+    detailLinkText: {
+      ...t.typography.caption,
+      color: '#FFFFFF',
+      fontWeight: '700',
+    },
     actionRow: {
       flexDirection: 'row',
       justifyContent: 'center',
       alignItems: 'center',
-      gap: 32,
+      gap: 28,
       paddingVertical: 16,
       paddingBottom: 8,
     },
@@ -615,6 +696,24 @@ function makeStyles(t: AppTheme) {
     },
     likeBtn: {
       borderColor: '#EF4444',
+    },
+    emptyState: {
+      backgroundColor: t.colors.surface,
+      borderRadius: t.radius.lg,
+      padding: t.spacing.lg,
+      alignItems: 'center',
+      gap: 8,
+      ...t.shadows.sm,
+    },
+    emptyTitle: {
+      ...t.typography.h2,
+      color: t.colors.foreground,
+    },
+    emptyBody: {
+      ...t.typography.body,
+      color: t.colors.subtle,
+      textAlign: 'center',
+      lineHeight: 22,
     },
   });
 }

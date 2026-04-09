@@ -1,39 +1,23 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { Menu, User, Search, Star, Plus } from 'lucide-react-native';
-import type { RootStackParamList, MainTabParamList } from '../navigation/types';
+import { Compass, Search, Sparkles, User } from 'lucide-react-native';
+import type { MainTabParamList, RootStackParamList } from '../navigation/types';
 import { useThemedStyles, useThemeColors } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
-import { EXPLORE_CARDS, FAVORITES_DATA } from '../data/mockData';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { SearchOverlay } from '../components/SearchOverlay';
 import { useApp } from '../context/AppContext';
+import { getRecommendedDishes, getScenarioBuckets } from '../utils/recommendations';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type ExploreRouteProp = RouteProp<MainTabParamList, 'Explore'>;
 type ExploreTabNavProp = BottomTabNavigationProp<MainTabParamList, 'Explore'>;
 
-const CATEGORIES = ['推荐', '中餐', '日料'];
-
-const SEASONAL_ITEMS = [
-  {
-    id: 1,
-    title: '肉桂苹果挞',
-    subtitle: '温暖酥脆，甜蜜可口',
-    price: '¥9.00',
-    image: 'https://images.unsplash.com/photo-1620991565081-82743a5a499c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxibHVlYmVycnklMjBwYW5jYWtlc3xlbnwxfHx8fDE3NzQ2ODQxOTh8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-];
+const SCENARIOS = ['全部', '快速决定', '轻负担', '安慰感'] as const;
 
 export function Explore() {
   const theme = useThemeColors();
@@ -41,39 +25,20 @@ export function Explore() {
   const route = useRoute<ExploreRouteProp>();
   const navigation = useNavigation<NavProp>();
   const tabNavigation = useNavigation<ExploreTabNavProp>();
-  const [activeCategory, setActiveCategory] = useState(0);
+  const [scenario, setScenario] = useState<(typeof SCENARIOS)[number]>('全部');
   const [showSearch, setShowSearch] = useState(false);
   const initialQuery = route.params?.initialQuery ?? '';
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const { history, favorites } = useApp();
+  const { favorites, history, selectedCuisines, selectedRestrictions } = useApp();
 
-  const navigateToDetail = (item: { id: number; title: string; image: string }) => {
-    navigation.navigate('Detail', { itemId: item.id, title: item.title, image: item.image });
-  };
-
-  const activeCategoryName = CATEGORIES[activeCategory];
-  const visibleCards = EXPLORE_CARDS.filter((item) => {
-    const keyword = searchQuery.trim().toLowerCase();
-    const matchesSearch =
-      keyword.length === 0
-        || item.title.toLowerCase().includes(keyword)
-        || item.subtitle.toLowerCase().includes(keyword);
-    const matchesCategory = activeCategoryName === '推荐' || item.category === activeCategoryName;
-    return matchesSearch && matchesCategory;
-  });
-  const visibleSeasonal = SEASONAL_ITEMS.filter((item) => {
-    const keyword = searchQuery.trim().toLowerCase();
-    if (!keyword) return true;
-    return item.title.toLowerCase().includes(keyword) || item.subtitle.toLowerCase().includes(keyword);
-  });
-  const matchedHistory = history.filter((item) =>
-    item.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
-  ).slice(0, 3);
-  const matchedFavorites = FAVORITES_DATA
-    .filter((item) => favorites.includes(item.id))
-    .filter((item) => item.title.toLowerCase().includes(searchQuery.trim().toLowerCase()))
-    .slice(0, 3);
-  const isSearching = searchQuery.trim().length > 0;
+  const recommendations = useMemo(
+    () => getRecommendedDishes({ selectedCuisines, selectedRestrictions }),
+    [selectedCuisines, selectedRestrictions],
+  );
+  const scenarioBuckets = useMemo(
+    () => getScenarioBuckets({ selectedCuisines, selectedRestrictions }),
+    [selectedCuisines, selectedRestrictions],
+  );
 
   React.useEffect(() => {
     const nextQuery = route.params?.initialQuery;
@@ -83,194 +48,152 @@ export function Explore() {
     }
   }, [route.params?.initialQuery, tabNavigation]);
 
+  const visibleCards = useMemo(() => {
+    const keyword = searchQuery.trim().toLowerCase();
+    const source =
+      scenario === '快速决定'
+        ? scenarioBuckets.quick
+        : scenario === '轻负担'
+          ? scenarioBuckets.healthy
+          : scenario === '安慰感'
+            ? scenarioBuckets.comfort
+            : recommendations;
+
+    return source.filter(({ dish }) => {
+      if (keyword.length === 0) return true;
+      return [
+        dish.name,
+        dish.subtitle,
+        dish.cuisineLabel,
+        ...dish.decisionTags,
+        ...dish.healthTags,
+      ].some((part) => part.toLowerCase().includes(keyword));
+    });
+  }, [recommendations, scenario, scenarioBuckets, searchQuery]);
+
+  const matchedHistory = history
+    .filter((item) => item.title.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+    .slice(0, 3);
+  const matchedFavorites = recommendations
+    .filter(({ dish }) => favorites.includes(dish.id))
+    .filter(({ dish }) => dish.name.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+    .slice(0, 3);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav — Page mode */}
       <View style={styles.topNav}>
-        <Pressable
-          style={({ pressed }) => [styles.navBtn, pressed && styles.pressed]}
-          onPress={() => navigation.navigate('History')}
-        >
-          <Menu size={20} color={theme.colors.foreground} strokeWidth={1.8} />
-        </Pressable>
-        <Text style={styles.navTitle}>发现美食</Text>
-        <Pressable
-          style={({ pressed }) => [styles.navBtn, pressed && styles.pressed]}
-          onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}
-        >
+        <View>
+          <Text style={styles.navTitle}>探索更多可行选择</Text>
+          <Text style={styles.navSubtitle}>按场景而不是按随机图片来找吃的</Text>
+        </View>
+        <Pressable style={styles.navBtn} onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}>
           <User size={20} color={theme.colors.foreground} strokeWidth={1.8} />
         </Pressable>
       </View>
 
-      {/* Sticky Search + Categories */}
       <View style={styles.stickyBar}>
-        <Pressable
-          style={({ pressed }) => [styles.searchBar, pressed && { opacity: 0.85 }]}
-          onPress={() => setShowSearch(true)}
-        >
+        <Pressable style={styles.searchBar} onPress={() => setShowSearch(true)}>
           <Search size={16} color={theme.colors.subtle} strokeWidth={1.8} />
-          <Text style={styles.searchPlaceholder}>搜索美食或餐厅</Text>
+          <Text style={styles.searchPlaceholder}>{searchQuery || '按菜品、场景、口味、健康标签搜索'}</Text>
         </Pressable>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScroll}
-        >
-          {CATEGORIES.map((cat, idx) => (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+          {SCENARIOS.map((item) => (
             <Pressable
-              key={cat}
-              style={({ pressed }) => [
-                styles.categoryPill,
-                idx === activeCategory && styles.categoryPillActive,
-                pressed && { opacity: 0.85 },
-              ]}
-              onPress={() => setActiveCategory(idx)}
+              key={item}
+              style={[styles.categoryPill, scenario === item && styles.categoryPillActive]}
+              onPress={() => setScenario(item)}
             >
-              <Text
-                style={[
-                  styles.categoryPillText,
-                  idx === activeCategory && styles.categoryPillTextActive,
-                ]}
-              >
-                {cat}
-              </Text>
+              <Text style={[styles.categoryPillText, scenario === item && styles.categoryPillTextActive]}>{item}</Text>
             </Pressable>
           ))}
         </ScrollView>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Today's Picks */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>今日精选</Text>
-            <Pressable onPress={() => setShowSearch(true)}>
-              <Text style={styles.seeAllText}>查看全部</Text>
-            </Pressable>
+        <View style={styles.heroSection}>
+          <View style={styles.heroCard}>
+            <View style={styles.heroHeader}>
+              <Sparkles size={16} color={theme.colors.primary} strokeWidth={2} />
+              <Text style={styles.heroTitle}>系统会优先把这些候选放到前面</Text>
+            </View>
+            <Text style={styles.heroBody}>
+              {selectedCuisines.length > 0 || selectedRestrictions.length > 0
+                ? '已结合你的口味与忌口，优先显示更像“现在就能决定”的选项。'
+                : '你还没告诉系统太多偏好，所以这里先按大众友好、低后悔成本和当前时段组织内容。'}
+            </Text>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.picksScroll}
-          >
-            {visibleCards.length === 0 ? (
-              <View style={styles.emptySearchState}>
-                <Text style={styles.emptySearchTitle}>没有找到匹配结果</Text>
-                <Text style={styles.emptySearchBody}>试试更短的关键词，或切换分类。</Text>
-              </View>
-            ) : (
-              visibleCards.map((item) => (
-                <Pressable
-                  key={item.id}
-                  style={({ pressed }) => [styles.pickCard, pressed && { opacity: 0.85 }]}
-                  onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
-                >
-                  <View style={styles.pickImageWrap}>
-                    <SkeletonImage src={item.image} alt={item.title} />
-                    {item.badge && (
-                      <View style={styles.pickBadge}>
-                        <Text style={styles.pickBadgeText}>{item.badge}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.pickTitle}>{item.title}</Text>
-                  <View style={styles.pickMetaRow}>
-                    <Star size={10} color={theme.colors.star} fill={theme.colors.star} />
-                    <Text style={styles.pickMeta}>{item.rating} ({item.reviews}) · {item.subtitle}</Text>
-                  </View>
-                </Pressable>
-              ))
-            )}
-          </ScrollView>
         </View>
 
-        {isSearching && (
+        {searchQuery.trim().length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>搜索到的历史记录</Text>
+            <Text style={styles.sectionTitle}>与你搜索相关的历史选择</Text>
             {matchedHistory.length === 0 ? (
               <Text style={styles.searchSubtle}>暂无匹配历史</Text>
             ) : (
               matchedHistory.map((item) => (
-                <Pressable
-                  key={`history-${item.id}-${item.time}`}
-                  style={({ pressed }) => [styles.searchHistoryItem, pressed && { opacity: 0.85 }]}
-                  onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.img })}
-                >
-                  <Text style={styles.searchHistoryTitle}>{item.title}</Text>
-                  <Text style={styles.searchHistoryMeta}>{item.category} · {item.time}</Text>
-                </Pressable>
+                <View key={`${item.id}-${item.time}`} style={styles.inlineItem}>
+                  <Text style={styles.inlineItemTitle}>{item.title}</Text>
+                  <Text style={styles.inlineItemMeta}>{item.category} · {item.time}</Text>
+                </View>
               ))
             )}
           </View>
         )}
 
-        {isSearching && (
+        {searchQuery.trim().length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>搜索到的收藏内容</Text>
+            <Text style={styles.sectionTitle}>与你搜索相关的已收藏内容</Text>
             {matchedFavorites.length === 0 ? (
               <Text style={styles.searchSubtle}>暂无匹配收藏</Text>
             ) : (
-              matchedFavorites.map((item) => (
-                <Pressable
-                  key={`favorite-${item.id}`}
-                  style={({ pressed }) => [styles.searchHistoryItem, pressed && { opacity: 0.85 }]}
-                  onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
-                >
-                  <Text style={styles.searchHistoryTitle}>{item.title}</Text>
-                  <Text style={styles.searchHistoryMeta}>收藏夹内容</Text>
-                </Pressable>
+              matchedFavorites.map(({ dish }) => (
+                <View key={dish.id} style={styles.inlineItem}>
+                  <Text style={styles.inlineItemTitle}>{dish.name}</Text>
+                  <Text style={styles.inlineItemMeta}>{dish.cuisineLabel} · {dish.price}</Text>
+                </View>
               ))
             )}
           </View>
         )}
 
-        {/* Seasonal */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{isSearching ? '搜索到的时令推荐' : '时令推荐'}</Text>
-
-          <Pressable
-            style={({ pressed }) => [styles.seasonalHero, pressed && { opacity: 0.9 }]}
-            onPress={() => navigateToDetail({ id: 100, title: '枫糖烤南瓜', image: 'https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=1080' })}
-          >
-            <SkeletonImage
-              src="https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?w=1080"
-              alt="Autumn Special"
-            />
-            <View style={styles.seasonalHeroOverlay}>
-              <View style={styles.autumnBadge}>
-                <Text style={styles.autumnBadgeText}>秋季限定</Text>
-              </View>
-              <Text style={styles.seasonalHeroTitle}>枫糖烤南瓜</Text>
-              <Text style={styles.seasonalHeroSubtitle}>在每一口中感受季节的温暖</Text>
-            </View>
-          </Pressable>
-
-          {visibleSeasonal.map((item) => (
-            <Pressable
-              key={item.id}
-              style={({ pressed }) => [styles.listItem, pressed && { opacity: 0.85 }]}
-              onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
-            >
-              <View style={styles.listItemImage}>
-                <SkeletonImage src={item.image} alt={item.title} />
-              </View>
-              <View style={styles.listItemContent}>
-                <Text style={styles.listItemTitle}>{item.title}</Text>
-                <Text style={styles.listItemSubtitle}>{item.subtitle}</Text>
-              </View>
-              <View style={styles.listItemRight}>
-                <Text style={styles.listItemPrice}>{item.price}</Text>
-                <Pressable
-                  style={({ pressed }) => [styles.addBtn, pressed && { backgroundColor: theme.colors.primaryLight }]}
-                  onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
-                >
-                  <Plus size={16} color={theme.colors.primary} strokeWidth={2.5} />
-                </Pressable>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{scenario === '全部' ? '今天适合深入看的候选' : `${scenario}候选`}</Text>
+            <Pressable onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}>
+              <View style={styles.secondaryLink}>
+                <Compass size={14} color={theme.colors.primary} strokeWidth={2} />
+                <Text style={styles.secondaryLinkText}>回到首页决策</Text>
               </View>
             </Pressable>
-          ))}
-          {isSearching && visibleSeasonal.length === 0 && (
-            <Text style={styles.searchSubtle}>时令推荐暂无匹配结果</Text>
+          </View>
+
+          {visibleCards.length === 0 ? (
+            <View style={styles.emptySearchState}>
+              <Text style={styles.emptySearchTitle}>没有找到更合适的结果</Text>
+              <Text style={styles.emptySearchBody}>换个关键词，或者回到首页继续滑动推荐，系统会根据你的操作持续调整排序。</Text>
+            </View>
+          ) : (
+            visibleCards.map(({ dish, reasons }) => (
+              <Pressable
+                key={dish.id}
+                style={styles.decisionRow}
+                onPress={() => navigation.navigate('Detail', { itemId: dish.id, title: dish.name, image: dish.image })}
+              >
+                <View style={styles.decisionImage}>
+                  <SkeletonImage src={dish.image} alt={dish.name} />
+                </View>
+                <View style={styles.decisionContent}>
+                  <Text style={styles.decisionTitle}>{dish.name}</Text>
+                  <Text style={styles.decisionSubtitle}>{dish.subtitle}</Text>
+                  <View style={styles.reasonList}>
+                    {reasons.slice(0, 2).map((reason) => (
+                      <Text key={reason} style={styles.reasonItem}>• {reason}</Text>
+                    ))}
+                  </View>
+                  <Text style={styles.decisionMeta}>{dish.price} · {dish.prepTime} · {dish.cuisineLabel}</Text>
+                </View>
+              </Pressable>
+            ))
           )}
         </View>
 
@@ -291,140 +214,125 @@ export function Explore() {
 
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: t.colors.background },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.97 }] },
-  topNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: t.spacing.md,
-    height: t.topNavHeight,
-    backgroundColor: t.colors.surface,
-  },
-  navBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: t.radius.md },
-  navTitle: { ...t.typography.h2, color: t.colors.foreground },
-  stickyBar: {
-    backgroundColor: t.colors.surface,
-    paddingHorizontal: t.spacing.md,
-    paddingTop: t.spacing.xs,
-    paddingBottom: t.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: t.colors.borderLight,
-    gap: t.spacing.xs,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: t.colors.borderLight,
-    borderRadius: t.radius.md,
-    paddingHorizontal: t.spacing.sm,
-    height: 40,
-    gap: t.spacing.xs,
-  },
-  searchPlaceholder: { ...t.typography.body, color: t.colors.subtle },
-  categoryScroll: { flexDirection: 'row', gap: t.spacing.xs },
-  categoryPill: {
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: 6,
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.borderLight,
-  },
-  categoryPillActive: { backgroundColor: t.colors.primary },
-  categoryPillText: { ...t.typography.caption, fontWeight: '500', color: t.colors.muted },
-  categoryPillTextActive: { color: t.colors.surface },
-  scrollView: { flex: 1 },
-  section: { paddingHorizontal: t.spacing.md, paddingTop: t.spacing.lg },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: t.spacing.sm },
-  sectionTitle: { ...t.typography.h2, color: t.colors.foreground, marginBottom: t.spacing.sm },
-  seeAllText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '500' },
-  picksScroll: { paddingRight: t.spacing.md, gap: t.spacing.sm },
-  pickCard: { width: 200 },
-  pickImageWrap: { height: 140, borderRadius: t.radius.md, overflow: 'hidden', marginBottom: t.spacing.xs, position: 'relative' },
-  pickBadge: {
-    position: 'absolute',
-    top: t.spacing.xs,
-    right: t.spacing.xs,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    paddingHorizontal: t.spacing.xs,
-    paddingVertical: 3,
-    borderRadius: t.radius.sm,
-  },
-  pickBadgeText: { ...t.typography.micro, fontWeight: '700', color: t.colors.foreground },
-  pickTitle: { ...t.typography.body, fontWeight: '600', color: t.colors.foreground, marginBottom: 2 },
-  pickMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  pickMeta: { ...t.typography.micro, color: t.colors.subtle },
-  searchSubtle: { ...t.typography.caption, color: t.colors.subtle },
-  searchHistoryItem: {
-    backgroundColor: t.colors.surface,
-    borderRadius: t.radius.md,
-    padding: t.spacing.sm,
-    marginBottom: t.spacing.xs,
-    ...t.shadows.sm,
-  },
-  searchHistoryTitle: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700' },
-  searchHistoryMeta: { ...t.typography.micro, color: t.colors.subtle, marginTop: 2 },
-  emptySearchState: {
-    width: 220,
-    height: 140,
-    borderRadius: t.radius.md,
-    backgroundColor: t.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: t.spacing.sm,
-    ...t.shadows.sm,
-  },
-  emptySearchTitle: { ...t.typography.caption, fontWeight: '700', color: t.colors.foreground, marginBottom: 4, textAlign: 'center' },
-  emptySearchBody: { ...t.typography.micro, color: t.colors.subtle, textAlign: 'center' },
-  seasonalHero: {
-    height: 180,
-    borderRadius: t.radius.lg,
-    overflow: 'hidden',
-    marginBottom: t.spacing.sm,
-    position: 'relative',
-  },
-  seasonalHeroOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: t.spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  autumnBadge: {
-    backgroundColor: t.colors.warning,
-    paddingHorizontal: t.spacing.xs,
-    paddingVertical: 3,
-    borderRadius: t.radius.sm,
-    alignSelf: 'flex-start',
-    marginBottom: 6,
-  },
-  autumnBadgeText: { ...t.typography.micro, fontWeight: '700', color: t.colors.surface },
-  seasonalHeroTitle: { ...t.typography.h2, fontWeight: '700', color: t.colors.surface },
-  seasonalHeroSubtitle: { ...t.typography.caption, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
-  listItem: {
-    flexDirection: 'row',
-    backgroundColor: t.colors.surface,
-    borderRadius: t.radius.md,
-    padding: t.spacing.sm,
-    gap: t.spacing.sm,
-    marginBottom: t.spacing.xs,
-    alignItems: 'center',
-    ...t.shadows.sm,
-  },
-  listItemImage: { width: 56, height: 56, borderRadius: t.radius.sm, overflow: 'hidden' },
-  listItemContent: { flex: 1 },
-  listItemTitle: { ...t.typography.body, fontWeight: '700', color: t.colors.foreground },
-  listItemSubtitle: { ...t.typography.caption, color: t.colors.subtle, marginTop: 2 },
-  listItemRight: { alignItems: 'flex-end', justifyContent: 'space-between', height: 56 },
-  listItemPrice: { ...t.typography.body, fontWeight: '700', color: t.colors.primary },
-  addBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.borderLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bottomPadding: { height: t.spacing['2xl'] },
-});
+    container: { flex: 1, backgroundColor: t.colors.background },
+    topNav: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: t.spacing.md,
+      paddingTop: t.spacing.xs,
+      paddingBottom: t.spacing.sm,
+      backgroundColor: t.colors.surface,
+    },
+    navTitle: { ...t.typography.h2, color: t.colors.foreground },
+    navSubtitle: { ...t.typography.caption, color: t.colors.subtle, marginTop: 2 },
+    navBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: t.radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stickyBar: {
+      backgroundColor: t.colors.surface,
+      paddingHorizontal: t.spacing.md,
+      paddingBottom: t.spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: t.colors.borderLight,
+      gap: t.spacing.xs,
+    },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: t.colors.borderLight,
+      borderRadius: t.radius.md,
+      paddingHorizontal: t.spacing.sm,
+      height: 40,
+      gap: t.spacing.xs,
+    },
+    searchPlaceholder: { ...t.typography.body, color: searchPlaceholderColor(t) },
+    categoryScroll: { flexDirection: 'row', gap: t.spacing.xs },
+    categoryPill: {
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: 6,
+      borderRadius: t.radius.full,
+      backgroundColor: t.colors.borderLight,
+    },
+    categoryPillActive: { backgroundColor: t.colors.primary },
+    categoryPillText: { ...t.typography.caption, fontWeight: '500', color: t.colors.muted },
+    categoryPillTextActive: { color: t.colors.surface },
+    scrollView: { flex: 1 },
+    heroSection: {
+      paddingHorizontal: t.spacing.md,
+      paddingTop: t.spacing.lg,
+    },
+    heroCard: {
+      backgroundColor: t.colors.surface,
+      borderRadius: t.radius.md,
+      padding: t.spacing.md,
+      ...t.shadows.sm,
+    },
+    heroHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 8,
+    },
+    heroTitle: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700' },
+    heroBody: { ...t.typography.caption, color: t.colors.muted, lineHeight: 18 },
+    section: { paddingHorizontal: t.spacing.md, paddingTop: t.spacing.lg },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: t.spacing.sm,
+    },
+    sectionTitle: { ...t.typography.h2, color: t.colors.foreground },
+    secondaryLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    secondaryLinkText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700' },
+    searchSubtle: { ...t.typography.caption, color: t.colors.subtle },
+    inlineItem: {
+      backgroundColor: t.colors.surface,
+      borderRadius: t.radius.md,
+      padding: t.spacing.sm,
+      marginBottom: t.spacing.xs,
+      ...t.shadows.sm,
+    },
+    inlineItemTitle: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700' },
+    inlineItemMeta: { ...t.typography.micro, color: t.colors.subtle, marginTop: 2 },
+    decisionRow: {
+      flexDirection: 'row',
+      backgroundColor: t.colors.surface,
+      borderRadius: t.radius.md,
+      padding: t.spacing.sm,
+      gap: t.spacing.sm,
+      marginBottom: t.spacing.sm,
+      ...t.shadows.sm,
+    },
+    decisionImage: {
+      width: 88,
+      height: 88,
+      borderRadius: t.radius.sm,
+      overflow: 'hidden',
+    },
+    decisionContent: { flex: 1 },
+    decisionTitle: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700', marginBottom: 2 },
+    decisionSubtitle: { ...t.typography.caption, color: t.colors.muted, marginBottom: 6, lineHeight: 18 },
+    reasonList: { gap: 4, marginBottom: 6 },
+    reasonItem: { ...t.typography.micro, color: t.colors.primaryDark },
+    decisionMeta: { ...t.typography.micro, color: t.colors.subtle },
+    emptySearchState: {
+      borderRadius: t.radius.md,
+      backgroundColor: t.colors.surface,
+      padding: t.spacing.md,
+      ...t.shadows.sm,
+    },
+    emptySearchTitle: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700', marginBottom: 4 },
+    emptySearchBody: { ...t.typography.caption, color: t.colors.subtle, lineHeight: 18 },
+    bottomPadding: { height: t.spacing['2xl'] },
+  });
+}
+
+function searchPlaceholderColor(t: AppTheme) {
+  return t.colors.subtle;
 }

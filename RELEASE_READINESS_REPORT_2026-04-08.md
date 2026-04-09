@@ -46,6 +46,14 @@ The commercial monetization path now uses Apple IAP through RevenueCat on iOS. T
 - Added release gates that require `react-native-purchases`, RevenueCat env references, iOS IAP routing, restore purchase, account deletion, and a non-anonymous iOS bundle identifier.
 - Updated iOS bundle identifier to `com.chishenme.app`.
 - Updated backend README production notes and test command.
+- Rebuilt the recommendation data model around real decision inputs, including cuisine preferences, restrictions, meal timing, nutrition, risk hints, and user-facing recommendation reasons.
+- Removed the onboarding hard paywall so users reach their first useful recommendation before seeing the upgrade story.
+- Reworked Home into a ranked decision feed that explains why a dish fits right now instead of rotating fixed demo cards.
+- Reworked Detail into a decision assistant with recommendation reasons, compatibility notes, nutrition snapshot, and related alternatives rather than fake commerce framing.
+- Reworked Explore into a scenario-led decision browser with search tied to favorites/history, making the app feel like a decision tool instead of a static gallery.
+- Reframed Upgrade around paid outcomes, not quota alone, so Pro/Family read like genuine product capabilities.
+- Rebuilt Profile around a real decision-account narrative, removing fake demo identity content and keeping restore purchase, account deletion, and preference editing grounded in real user state.
+- Updated smoke-test gates to protect the new commercial-product flow from regressing back to demo behavior.
 
 ## Verification
 

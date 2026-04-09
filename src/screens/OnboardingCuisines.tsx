@@ -29,7 +29,7 @@ export function OnboardingCuisines() {
 
   const toggleSelect = (id: string) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
@@ -47,27 +47,33 @@ export function OnboardingCuisines() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <View style={{ width: 40 }} />
-        <Pressable onPress={handleSkip} accessibilityRole="button" accessibilityLabel="稍后完善口味偏好" hitSlop={8}>
+        <Pressable
+          onPress={handleSkip}
+          accessibilityRole="button"
+          accessibilityLabel="稍后完善口味偏好"
+          hitSlop={8}
+        >
           <Text style={styles.skipText}>稍后完善</Text>
         </Pressable>
       </View>
 
       <View style={styles.progressContainer}>
         <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressBar, { width: '33.3%' }]} />
+          <Animated.View style={[styles.progressBar, { width: '50%' }]} />
         </View>
-        <Text style={styles.stepLabel}>1/3</Text>
+        <Text style={styles.stepLabel}>1/2</Text>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>
           你喜欢什么{'\n'}菜系？
         </Text>
-        <Text style={styles.subtitle}>可以多选，帮你定制专属美食推荐。</Text>
+        <Text style={styles.subtitle}>可以多选，系统会先帮你缩短最不可能喜欢的范围。</Text>
 
         <View style={styles.cuisineGrid}>
           {CUISINES.map((item) => {
             const isSelected = selected.includes(item.id);
+
             return (
               <Pressable
                 key={item.id}
@@ -113,7 +119,7 @@ export function OnboardingCuisines() {
           />
           <View style={styles.bannerOverlay}>
             <Text style={styles.bannerText}>
-              定制你的口味偏好，{'\n'}每天为你推荐最合适的美食。
+              先把你的口味说清楚，{'\n'}首页推荐才会像真正懂你的决策助手。
             </Text>
           </View>
         </View>
@@ -121,12 +127,15 @@ export function OnboardingCuisines() {
 
       <View style={styles.footer}>
         <Pressable
-          style={({ pressed }) => [styles.nextButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+          style={({ pressed }) => [
+            styles.nextButton,
+            pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] },
+          ]}
           onPress={handleNext}
           accessibilityRole="button"
           accessibilityLabel="进入下一步，设置忌口"
         >
-          <Text style={styles.nextButtonText}>下一步</Text>
+          <Text style={styles.nextButtonText}>继续</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
       </View>
@@ -136,84 +145,95 @@ export function OnboardingCuisines() {
 
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: t.colors.background },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: t.spacing.xs,
-  },
-  skipText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: t.spacing.md,
-    marginBottom: t.spacing.lg,
-    gap: t.spacing.xs,
-  },
-  progressTrack: { flex: 1, height: 4, backgroundColor: t.colors.border, borderRadius: 2, overflow: 'hidden' },
-  progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
-  stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: 112 },
-  title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
-  subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
-  cuisineGrid: { gap: t.spacing.xs, marginBottom: t.spacing.lg },
-  cuisineCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: t.colors.surface,
-    borderRadius: t.radius.md,
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: t.spacing.sm,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    ...t.shadows.sm,
-  },
-  cuisineCardSelected: {
-    backgroundColor: t.colors.primaryLight,
-    borderColor: t.colors.primary,
-  },
-  cuisineLeft: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm },
-  cuisineIcon: { fontSize: 18 },
-  cuisineLabel: { ...t.typography.body, fontWeight: '500', color: t.colors.foreground },
-  cuisineLabelSelected: { color: t.colors.primaryDark, fontWeight: '600' },
-  checkmark: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
-  checkmarkFilled: {
-    width: 22,
-    height: 22,
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  banner: { borderRadius: t.radius.lg, overflow: 'hidden', height: 128 },
-  bannerImage: { width: '100%', height: '100%', position: 'absolute' },
-  bannerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'flex-end',
-    padding: t.spacing.md,
-  },
-  bannerText: { ...t.typography.caption, color: t.colors.surface, fontWeight: '500', lineHeight: 18 },
-  footer: {
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: t.spacing.md,
-    backgroundColor: t.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: t.colors.borderLight,
-  },
-  nextButton: {
-    backgroundColor: t.colors.primary,
-    borderRadius: t.radius.full,
-    paddingVertical: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  nextButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
-});
+    container: { flex: 1, backgroundColor: t.colors.background },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: t.spacing.xs,
+    },
+    skipText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
+    progressContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: t.spacing.md,
+      marginBottom: t.spacing.lg,
+      gap: t.spacing.xs,
+    },
+    progressTrack: {
+      flex: 1,
+      height: 4,
+      backgroundColor: t.colors.border,
+      borderRadius: 2,
+      overflow: 'hidden',
+    },
+    progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
+    stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
+    scrollView: { flex: 1 },
+    scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: 112 },
+    title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
+    subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
+    cuisineGrid: { gap: t.spacing.xs, marginBottom: t.spacing.lg },
+    cuisineCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: t.colors.surface,
+      borderRadius: t.radius.md,
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: t.spacing.sm,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+      ...t.shadows.sm,
+    },
+    cuisineCardSelected: {
+      backgroundColor: t.colors.primaryLight,
+      borderColor: t.colors.primary,
+    },
+    cuisineLeft: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm },
+    cuisineIcon: { fontSize: 18 },
+    cuisineLabel: { ...t.typography.body, fontWeight: '500', color: t.colors.foreground },
+    cuisineLabelSelected: { color: t.colors.primaryDark, fontWeight: '600' },
+    checkmark: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+    checkmarkFilled: {
+      width: 22,
+      height: 22,
+      borderRadius: t.radius.full,
+      backgroundColor: t.colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    banner: { borderRadius: t.radius.lg, overflow: 'hidden', height: 128 },
+    bannerImage: { width: '100%', height: '100%', position: 'absolute' },
+    bannerOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.35)',
+      justifyContent: 'flex-end',
+      padding: t.spacing.md,
+    },
+    bannerText: {
+      ...t.typography.caption,
+      color: t.colors.surface,
+      fontWeight: '500',
+      lineHeight: 18,
+    },
+    footer: {
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: t.spacing.md,
+      backgroundColor: t.colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: t.colors.borderLight,
+    },
+    nextButton: {
+      backgroundColor: t.colors.primary,
+      borderRadius: t.radius.full,
+      paddingVertical: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    nextButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
+  });
 }

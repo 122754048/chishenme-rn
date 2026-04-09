@@ -44,7 +44,6 @@ function RestrictionButton({
   );
 }
 
-// Static styles for RestrictionButton (color is constant across themes)
 const rbStyles = StyleSheet.create({
   restrictionBtn: {
     flexDirection: 'row',
@@ -73,20 +72,23 @@ export function OnboardingRestrictions() {
 
   const toggle = (id: string) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
   const handleNext = async () => {
     await setRestrictions(selected);
-    navigation.navigate('Upgrade');
+    await completeOnboarding();
+    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
   };
 
   const addCustomRestriction = () => {
     const trimmed = customInput.trim();
     if (!trimmed) return;
     const key = `custom:${trimmed}`;
-    if (!selected.includes(key)) setSelected((prev) => [...prev, key]);
+    if (!selected.includes(key)) {
+      setSelected((prev) => [...prev, key]);
+    }
     setCustomInput('');
   };
 
@@ -107,16 +109,21 @@ export function OnboardingRestrictions() {
         >
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Pressable onPress={handleSkip} accessibilityRole="button" accessibilityLabel="稍后完善忌口" hitSlop={8}>
+        <Pressable
+          onPress={handleSkip}
+          accessibilityRole="button"
+          accessibilityLabel="稍后完善忌口"
+          hitSlop={8}
+        >
           <Text style={styles.skipText}>稍后完善</Text>
         </Pressable>
       </View>
 
       <View style={styles.progressContainer}>
         <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressBar, { width: '66.6%' }]} />
+          <Animated.View style={[styles.progressBar, { width: '100%' }]} />
         </View>
-        <Text style={styles.stepLabel}>2/3</Text>
+        <Text style={styles.stepLabel}>2/2</Text>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -124,7 +131,7 @@ export function OnboardingRestrictions() {
           有什么{'\n'}忌口吗？
         </Text>
         <Text style={styles.subtitle}>
-          告诉我们你的饮食限制或想要避开的食材。
+          告诉我们你想避开的食材，首页推荐会先帮你绕开明显风险。
         </Text>
 
         <View style={styles.sectionCard}>
@@ -143,7 +150,7 @@ export function OnboardingRestrictions() {
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>口味与忌口</Text>
+          <Text style={styles.sectionTitle}>口味与敏感项</Text>
           <View style={styles.grid}>
             {FLAVORS.map((item) => (
               <RestrictionButton
@@ -161,10 +168,13 @@ export function OnboardingRestrictions() {
               accessibilityLabel={selected.includes('custom') ? '关闭自定义忌口输入' : '添加自定义忌口'}
             >
               <Plus size={14} color={theme.colors.subtle} strokeWidth={2} />
-              <Text style={styles.customBtnText}>{selected.includes('custom') ? '已添加自定义' : '自定义'}</Text>
+              <Text style={styles.customBtnText}>
+                {selected.includes('custom') ? '已添加自定义' : '自定义'}
+              </Text>
             </Pressable>
           </View>
-          {selected.includes('custom') && (
+
+          {selected.includes('custom') ? (
             <View style={styles.customComposer}>
               <TextInput
                 style={styles.customInput}
@@ -185,18 +195,21 @@ export function OnboardingRestrictions() {
                 <Text style={styles.customAddBtnText}>添加</Text>
               </Pressable>
             </View>
-          )}
-          {selected.filter((s) => s.startsWith('custom:')).map((tag) => (
-            <Pressable
-              key={tag}
-              style={styles.customTag}
-              onPress={() => toggle(tag)}
-              accessibilityRole="button"
-              accessibilityLabel={`移除自定义忌口 ${tag.replace('custom:', '')}`}
-            >
-              <Text style={styles.customTagText}>{tag.replace('custom:', '')} ×</Text>
-            </Pressable>
-          ))}
+          ) : null}
+
+          {selected
+            .filter((item) => item.startsWith('custom:'))
+            .map((tag) => (
+              <Pressable
+                key={tag}
+                style={styles.customTag}
+                onPress={() => toggle(tag)}
+                accessibilityRole="button"
+                accessibilityLabel={`移除自定义忌口 ${tag.replace('custom:', '')}`}
+              >
+                <Text style={styles.customTagText}>{tag.replace('custom:', '')} ×</Text>
+              </Pressable>
+            ))}
         </View>
 
         <View style={styles.infoBox}>
@@ -206,7 +219,7 @@ export function OnboardingRestrictions() {
           <View style={styles.infoContent}>
             <Text style={styles.infoTitle}>为什么要问这些？</Text>
             <Text style={styles.infoBody}>
-              我们会过滤掉含有这些食材的菜品，确保每一道推荐都安全又美味。
+              这一步不会拉长你的流程，但能明显减少“看起来不错，实际不适合”的无效推荐。
             </Text>
           </View>
         </View>
@@ -214,12 +227,15 @@ export function OnboardingRestrictions() {
 
       <View style={styles.footer}>
         <Pressable
-          style={({ pressed }) => [styles.nextButton, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+          style={({ pressed }) => [
+            styles.nextButton,
+            pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] },
+          ]}
           onPress={handleNext}
           accessibilityRole="button"
-          accessibilityLabel="进入下一步，选择升级方案"
+          accessibilityLabel="完成设置，开始进入首页"
         >
-          <Text style={styles.nextButtonText}>下一步</Text>
+          <Text style={styles.nextButtonText}>开始体验</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
       </View>
@@ -229,132 +245,126 @@ export function OnboardingRestrictions() {
 
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: t.colors.background },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: t.spacing.xs,
-  },
-  backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-  skipText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: t.spacing.md,
-    marginBottom: t.spacing.lg,
-    gap: t.spacing.xs,
-  },
-  progressTrack: { flex: 1, height: 4, backgroundColor: t.colors.border, borderRadius: 2, overflow: 'hidden' },
-  progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
-  stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: 112 },
-  title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
-  subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
-  sectionCard: {
-    backgroundColor: t.colors.surface,
-    borderRadius: t.radius.md,
-    padding: t.spacing.md,
-    marginBottom: t.spacing.md,
-    ...t.shadows.sm,
-  },
-  sectionTitle: { ...t.typography.micro, fontWeight: '700', color: t.colors.subtle, letterSpacing: 0.5, marginBottom: t.spacing.sm },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs },
-  restrictionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: t.spacing.sm,
-    borderRadius: t.radius.md,
-    borderWidth: 1.5,
-    borderColor: t.colors.border,
-    backgroundColor: t.colors.surface,
-  },
-  restrictionBtnSelected: {
-    backgroundColor: t.colors.primaryDark,
-    borderColor: t.colors.primaryDark,
-  },
-  restrictionIcon: { fontSize: 16 },
-  restrictionLabel: { ...t.typography.body, fontWeight: '500', color: t.colors.foreground },
-  restrictionLabelSelected: { color: t.colors.surface },
-  customBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: t.spacing.sm,
-    borderRadius: t.radius.md,
-    borderWidth: 1.5,
-    borderColor: t.colors.subtle,
-    borderStyle: 'dashed',
-    backgroundColor: t.colors.surface,
-  },
-  customBtnText: { ...t.typography.body, fontWeight: '500', color: t.colors.subtle },
-  customComposer: { flexDirection: 'row', gap: t.spacing.xs, marginTop: t.spacing.sm },
-  customInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: t.colors.border,
-    borderRadius: t.radius.md,
-    paddingHorizontal: t.spacing.sm,
-    paddingVertical: t.spacing.xs,
-    color: t.colors.foreground,
-    ...t.typography.body,
-  },
-  customAddBtn: {
-    backgroundColor: t.colors.primary,
-    borderRadius: t.radius.md,
-    paddingHorizontal: t.spacing.sm,
-    justifyContent: 'center',
-  },
-  customAddBtnText: { ...t.typography.caption, color: t.colors.surface, fontWeight: '700' },
-  customTag: {
-    marginTop: t.spacing.xs,
-    alignSelf: 'flex-start',
-    backgroundColor: t.colors.primaryLight,
-    borderRadius: t.radius.full,
-    paddingHorizontal: t.spacing.sm,
-    paddingVertical: 6,
-  },
-  customTagText: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '600' },
-  infoBox: {
-    flexDirection: 'row',
-    backgroundColor: t.colors.borderLight,
-    borderRadius: t.radius.md,
-    padding: t.spacing.sm,
-    gap: t.spacing.sm,
-    alignItems: 'flex-start',
-  },
-  infoIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  infoContent: { flex: 1 },
-  infoTitle: { ...t.typography.caption, fontWeight: '700', color: t.colors.foreground, marginBottom: 4 },
-  infoBody: { ...t.typography.caption, color: t.colors.muted, lineHeight: 18 },
-  footer: {
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: t.spacing.md,
-    backgroundColor: t.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: t.colors.borderLight,
-  },
-  nextButton: {
-    backgroundColor: t.colors.primary,
-    borderRadius: t.radius.full,
-    paddingVertical: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  nextButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
-});
+    container: { flex: 1, backgroundColor: t.colors.background },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: t.spacing.xs,
+    },
+    backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
+    skipText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '500' },
+    progressContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: t.spacing.md,
+      marginBottom: t.spacing.lg,
+      gap: t.spacing.xs,
+    },
+    progressTrack: {
+      flex: 1,
+      height: 4,
+      backgroundColor: t.colors.border,
+      borderRadius: 2,
+      overflow: 'hidden',
+    },
+    progressBar: { height: '100%', backgroundColor: t.colors.primary, borderRadius: 2 },
+    stepLabel: { ...t.typography.micro, fontWeight: '700', color: t.colors.primary },
+    scrollView: { flex: 1 },
+    scrollContent: { paddingHorizontal: t.spacing.md, paddingBottom: 112 },
+    title: { ...t.typography.display, color: t.colors.foreground, marginBottom: t.spacing.xs },
+    subtitle: { ...t.typography.body, color: t.colors.muted, marginBottom: t.spacing.lg },
+    sectionCard: {
+      backgroundColor: t.colors.surface,
+      borderRadius: t.radius.md,
+      padding: t.spacing.md,
+      marginBottom: t.spacing.md,
+      ...t.shadows.sm,
+    },
+    sectionTitle: {
+      ...t.typography.micro,
+      fontWeight: '700',
+      color: t.colors.subtle,
+      letterSpacing: 0.5,
+      marginBottom: t.spacing.sm,
+    },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs },
+    customBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: t.spacing.sm,
+      borderRadius: t.radius.md,
+      borderWidth: 1.5,
+      borderColor: t.colors.subtle,
+      borderStyle: 'dashed',
+      backgroundColor: t.colors.surface,
+    },
+    customBtnText: { ...t.typography.body, fontWeight: '500', color: t.colors.subtle },
+    customComposer: { flexDirection: 'row', gap: t.spacing.xs, marginTop: t.spacing.sm },
+    customInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+      borderRadius: t.radius.md,
+      paddingHorizontal: t.spacing.sm,
+      paddingVertical: t.spacing.xs,
+      color: t.colors.foreground,
+      ...t.typography.body,
+    },
+    customAddBtn: {
+      backgroundColor: t.colors.primary,
+      borderRadius: t.radius.md,
+      paddingHorizontal: t.spacing.sm,
+      justifyContent: 'center',
+    },
+    customAddBtnText: { ...t.typography.caption, color: t.colors.surface, fontWeight: '700' },
+    customTag: {
+      marginTop: t.spacing.xs,
+      alignSelf: 'flex-start',
+      backgroundColor: t.colors.primaryLight,
+      borderRadius: t.radius.full,
+      paddingHorizontal: t.spacing.sm,
+      paddingVertical: 6,
+    },
+    customTagText: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '600' },
+    infoBox: {
+      flexDirection: 'row',
+      backgroundColor: t.colors.borderLight,
+      borderRadius: t.radius.md,
+      padding: t.spacing.sm,
+      gap: t.spacing.sm,
+      alignItems: 'flex-start',
+    },
+    infoIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: t.radius.full,
+      backgroundColor: t.colors.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    infoContent: { flex: 1 },
+    infoTitle: { ...t.typography.caption, fontWeight: '700', color: t.colors.foreground, marginBottom: 4 },
+    infoBody: { ...t.typography.caption, color: t.colors.muted, lineHeight: 18 },
+    footer: {
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: t.spacing.md,
+      backgroundColor: t.colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: t.colors.borderLight,
+    },
+    nextButton: {
+      backgroundColor: t.colors.primary,
+      borderRadius: t.radius.full,
+      paddingVertical: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    nextButtonText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
+  });
 }
