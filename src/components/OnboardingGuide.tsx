@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { brand } from '../config/brand';
 import { useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 
@@ -16,9 +17,10 @@ export function OnboardingGuide() {
         const seen = await AsyncStorage.getItem(GUIDE_KEY);
         if (seen !== 'true') setVisible(true);
       } catch {
-        // Keep default hidden on storage failure.
+        // Ignore storage read failures.
       }
     }
+
     void checkGuide();
   }, []);
 
@@ -26,7 +28,7 @@ export function OnboardingGuide() {
     try {
       await AsyncStorage.setItem(GUIDE_KEY, 'true');
     } catch {
-      // Ignore write failure.
+      // Ignore storage write failures.
     }
     setVisible(false);
   };
@@ -37,25 +39,27 @@ export function OnboardingGuide() {
     <Modal transparent animationType="fade" visible={visible} onRequestClose={handleDismiss} statusBarTranslucent>
       <View style={styles.overlay}>
         <View style={styles.content}>
-          <Text style={styles.gestureText}>左滑跳过，右滑想吃</Text>
-          <Text style={styles.gestureTextSub}>点开卡片就能看推荐理由、风险提示和备选方案</Text>
+          <Text style={styles.gestureText}>Swipe left to pass. Swipe right to keep it.</Text>
+          <Text style={styles.gestureTextSub}>
+            Each card pairs one nearby restaurant with one signature dish, plus the reason it fits now.
+          </Text>
 
           <View style={styles.swipeIndicator}>
             <View style={styles.swipeArrow}>
-              <Text style={styles.swipeArrowText}>左滑</Text>
-              <Text style={styles.swipeLabel}>先跳过</Text>
+              <Text style={styles.swipeArrowText}>Left</Text>
+              <Text style={styles.swipeLabel}>Pass</Text>
             </View>
             <View style={styles.cardPlaceholder}>
-              <Text style={styles.cardPlaceholderText}>今晚吃什么</Text>
+              <Text style={styles.cardPlaceholderText}>Tonight&apos;s pick</Text>
             </View>
             <View style={styles.swipeArrow}>
-              <Text style={styles.swipeArrowText}>右滑</Text>
-              <Text style={styles.swipeLabel}>这个想吃</Text>
+              <Text style={styles.swipeArrowText}>Right</Text>
+              <Text style={styles.swipeLabel}>Pick it</Text>
             </View>
           </View>
 
           <Pressable style={({ pressed }) => [styles.dismissBtn, pressed && styles.dismissBtnPressed]} onPress={handleDismiss}>
-            <Text style={styles.dismissBtnText}>开始推荐</Text>
+            <Text style={styles.dismissBtnText}>Start with {brand.appName}</Text>
           </Pressable>
         </View>
       </View>
@@ -67,12 +71,13 @@ function makeStyles(t: AppTheme) {
   return StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      backgroundColor: 'rgba(0, 0, 0, 0.72)',
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: 32,
     },
     content: {
+      maxWidth: 320,
       alignItems: 'center',
       gap: 24,
     },
@@ -83,11 +88,11 @@ function makeStyles(t: AppTheme) {
       textAlign: 'center',
     },
     gestureTextSub: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: 'rgba(255, 255, 255, 0.82)',
+      fontSize: 15,
+      fontWeight: '500',
+      color: 'rgba(255,255,255,0.84)',
       textAlign: 'center',
-      lineHeight: 24,
+      lineHeight: 22,
       marginTop: -8,
     },
     swipeIndicator: {
@@ -108,36 +113,36 @@ function makeStyles(t: AppTheme) {
     swipeLabel: {
       fontSize: 14,
       fontWeight: '600',
-      color: 'rgba(255, 255, 255, 0.7)',
+      color: 'rgba(255,255,255,0.7)',
     },
     cardPlaceholder: {
-      width: 98,
-      height: 118,
+      width: 112,
+      height: 128,
       borderRadius: 12,
-      backgroundColor: 'rgba(255, 255, 255, 0.14)',
+      backgroundColor: 'rgba(255,255,255,0.14)',
       borderWidth: 2,
-      borderColor: 'rgba(255, 255, 255, 0.28)',
+      borderColor: 'rgba(255,255,255,0.28)',
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 12,
     },
     cardPlaceholderText: {
-      fontSize: 18,
+      fontSize: 17,
       fontWeight: '700',
       color: '#FFFFFF',
       textAlign: 'center',
-      lineHeight: 24,
+      lineHeight: 22,
     },
     dismissBtn: {
       backgroundColor: t.colors.primary,
-      paddingHorizontal: 48,
+      paddingHorizontal: 36,
       paddingVertical: 14,
       borderRadius: t.radius.full,
       marginTop: 8,
     },
     dismissBtnPressed: {
-      opacity: 0.85,
-      transform: [{ scale: 0.97 }],
+      opacity: 0.88,
+      transform: [{ scale: 0.98 }],
     },
     dismissBtnText: {
       fontSize: 16,

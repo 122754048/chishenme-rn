@@ -2,6 +2,32 @@ import { storage } from '../storage';
 
 type Plan = 'free' | 'pro' | 'family';
 type PaidPlan = 'pro' | 'family';
+type NearbySearchRequest =
+  | { kind: 'coordinates'; latitude: number; longitude: number; radiusMeters?: number }
+  | { kind: 'query'; query: string };
+
+export interface NearbyRestaurant {
+  id: string;
+  name: string;
+  address: string;
+  rating: number | null;
+  reviewCount: number | null;
+  distanceMeters: number | null;
+  priceLevel?: string | null;
+  openNow?: boolean | null;
+  primaryType?: string | null;
+  imageUrl?: string | null;
+  editorialSummary?: string | null;
+}
+
+export interface MenuScanItem {
+  name: string;
+  description?: string | null;
+  price?: string | null;
+  recommendation: 'best' | 'safe' | 'avoid';
+  reason: string;
+  caution?: string | null;
+}
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
 const BOOTSTRAP_PASSWORD = process.env.EXPO_PUBLIC_BACKEND_BOOTSTRAP_PASSWORD?.trim();
@@ -12,10 +38,11 @@ function isEnabled() {
 
 async function request<T>(path: string, init?: RequestInit, token?: string): Promise<T> {
   if (!API_BASE) throw new Error('Backend API URL is not configured');
+  const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData;
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
@@ -87,5 +114,25 @@ export const backendApi = {
 
   async deleteAccount(token: string): Promise<{ deleted: boolean }> {
     return request('/account/me', { method: 'DELETE' }, token);
+  },
+
+  async searchNearbyRestaurants(
+    token: string,
+    payload: NearbySearchRequest
+  ): Promise<{ restaurants: NearbyRestaurant[]; source: 'google_places' | 'fallback' }> {
+    return request('/discovery/nearby-restaurants', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }, token);
+  },
+
+  async scanMenu(
+    token: string,
+    formData: FormData
+  ): Promise<{ items: MenuScanItem[]; source: 'ai' | 'fallback'; note?: string | null }> {
+    return request('/discovery/menu-scan', {
+      method: 'POST',
+      body: formData,
+    }, token);
   },
 };

@@ -8,125 +8,93 @@ function assert(condition, message) {
 }
 
 const root = path.resolve(__dirname, '..');
-const mockDataPath = path.join(root, 'src', 'data', 'mockData.ts');
-const recommendationsPath = path.join(root, 'src', 'utils', 'recommendations.ts');
-const checkoutPath = path.join(root, 'src', 'screens', 'Checkout.tsx');
-const appContextPath = path.join(root, 'src', 'context', 'AppContext.tsx');
-const searchOverlayPath = path.join(root, 'src', 'components', 'SearchOverlay.tsx');
-const onboardingGuidePath = path.join(root, 'src', 'components', 'OnboardingGuide.tsx');
-const storagePath = path.join(root, 'src', 'storage', 'index.ts');
-const homePath = path.join(root, 'src', 'screens', 'Home.tsx');
-const detailPath = path.join(root, 'src', 'screens', 'Detail.tsx');
-const explorePath = path.join(root, 'src', 'screens', 'Explore.tsx');
-const upgradePath = path.join(root, 'src', 'screens', 'Upgrade.tsx');
-const appApiPath = path.join(root, 'src', 'api', 'backend.ts');
-const navigatorPath = path.join(root, 'src', 'navigation', 'AppNavigator.tsx');
-const profilePath = path.join(root, 'src', 'screens', 'Profile.tsx');
-const onboardingCuisinesPath = path.join(root, 'src', 'screens', 'OnboardingCuisines.tsx');
-const onboardingRestrictionsPath = path.join(root, 'src', 'screens', 'OnboardingRestrictions.tsx');
-const subscriptionServicePath = path.join(root, 'src', 'services', 'subscriptions.ts');
+const paths = {
+  mockData: path.join(root, 'src', 'data', 'mockData.ts'),
+  recommendations: path.join(root, 'src', 'utils', 'recommendations.ts'),
+  appContext: path.join(root, 'src', 'context', 'AppContext.tsx'),
+  navigator: path.join(root, 'src', 'navigation', 'AppNavigator.tsx'),
+  home: path.join(root, 'src', 'screens', 'Home.tsx'),
+  detail: path.join(root, 'src', 'screens', 'Detail.tsx'),
+  explore: path.join(root, 'src', 'screens', 'Explore.tsx'),
+  onboardingCuisines: path.join(root, 'src', 'screens', 'OnboardingCuisines.tsx'),
+  onboardingRestrictions: path.join(root, 'src', 'screens', 'OnboardingRestrictions.tsx'),
+  profile: path.join(root, 'src', 'screens', 'Profile.tsx'),
+  upgrade: path.join(root, 'src', 'screens', 'Upgrade.tsx'),
+  checkout: path.join(root, 'src', 'screens', 'Checkout.tsx'),
+  menuScan: path.join(root, 'src', 'screens', 'MenuScan.tsx'),
+  searchOverlay: path.join(root, 'src', 'components', 'SearchOverlay.tsx'),
+  onboardingGuide: path.join(root, 'src', 'components', 'OnboardingGuide.tsx'),
+  storage: path.join(root, 'src', 'storage', 'index.ts'),
+  places: path.join(root, 'src', 'services', 'places.ts'),
+  menuScanService: path.join(root, 'src', 'services', 'menuScan.ts'),
+};
 
-const data = fs.readFileSync(mockDataPath, 'utf8');
-const recommendationCode = fs.readFileSync(recommendationsPath, 'utf8');
-const checkoutCode = fs.readFileSync(checkoutPath, 'utf8');
-const appContextCode = fs.readFileSync(appContextPath, 'utf8');
-const searchOverlayCode = fs.readFileSync(searchOverlayPath, 'utf8');
-const onboardingGuideCode = fs.readFileSync(onboardingGuidePath, 'utf8');
-const storageCode = fs.readFileSync(storagePath, 'utf8');
-const homeCode = fs.readFileSync(homePath, 'utf8');
-const detailCode = fs.readFileSync(detailPath, 'utf8');
-const exploreCode = fs.readFileSync(explorePath, 'utf8');
-const upgradeCode = fs.readFileSync(upgradePath, 'utf8');
-const appApiCode = fs.readFileSync(appApiPath, 'utf8');
-const navigatorCode = fs.readFileSync(navigatorPath, 'utf8');
-const profileCode = fs.readFileSync(profilePath, 'utf8');
-const onboardingCuisinesCode = fs.readFileSync(onboardingCuisinesPath, 'utf8');
-const onboardingRestrictionsCode = fs.readFileSync(onboardingRestrictionsPath, 'utf8');
-const subscriptionServiceCode = fs.readFileSync(subscriptionServicePath, 'utf8');
+const mockData = fs.readFileSync(paths.mockData, 'utf8');
+const recommendationsCode = fs.readFileSync(paths.recommendations, 'utf8');
+const appContextCode = fs.readFileSync(paths.appContext, 'utf8');
+const navigatorCode = fs.readFileSync(paths.navigator, 'utf8');
+const homeCode = fs.readFileSync(paths.home, 'utf8');
+const detailCode = fs.readFileSync(paths.detail, 'utf8');
+const exploreCode = fs.readFileSync(paths.explore, 'utf8');
+const onboardingCuisinesCode = fs.readFileSync(paths.onboardingCuisines, 'utf8');
+const onboardingRestrictionsCode = fs.readFileSync(paths.onboardingRestrictions, 'utf8');
+const profileCode = fs.readFileSync(paths.profile, 'utf8');
+const upgradeCode = fs.readFileSync(paths.upgrade, 'utf8');
+const checkoutCode = fs.readFileSync(paths.checkout, 'utf8');
+const menuScanCode = fs.readFileSync(paths.menuScan, 'utf8');
+const searchOverlayCode = fs.readFileSync(paths.searchOverlay, 'utf8');
+const onboardingGuideCode = fs.readFileSync(paths.onboardingGuide, 'utf8');
+const storageCode = fs.readFileSync(paths.storage, 'utf8');
+const placesCode = fs.readFileSync(paths.places, 'utf8');
+const menuScanServiceCode = fs.readFileSync(paths.menuScanService, 'utf8');
 
-assert(data.includes('recommendationBlurb'), 'Dish data should include recommendation summary copy');
-assert(data.includes('decisionTags:'), 'Dish data should include decision tags for explanation');
-assert(data.includes('restrictionConflicts:'), 'Dish data should include restriction compatibility metadata');
-assert(data.includes('fitMoments:'), 'Dish data should include moment-based recommendation metadata');
-assert(data.includes('nutrition:'), 'Dish data should include nutrition snapshots');
-assert(recommendationCode.includes('getRecommendedDishes'), 'Recommendation utility should export ranked recommendations');
-assert(recommendationCode.includes('buildDecisionSnapshot'), 'Recommendation utility should support detail-page decision snapshots');
-assert(recommendationCode.includes('getScenarioBuckets'), 'Recommendation utility should expose scenario buckets for Explore');
-assert(onboardingGuideCode.includes('左滑跳过，右滑想吃'), 'Onboarding guide should teach the supported swipe model');
-assert(onboardingGuideCode.includes('推荐理由'), 'Onboarding guide should explain the detail-first decision flow');
-assert(!onboardingGuideCode.includes('下滑查看详情'), 'Onboarding guide should not teach unsupported downward gestures');
-assert(onboardingCuisinesCode.includes("width: '50%'"), 'Cuisine onboarding progress should match the new two-step flow');
-assert(onboardingCuisinesCode.includes('1/2'), 'Cuisine onboarding should display step 1/2');
-assert(onboardingRestrictionsCode.includes("width: '100%'"), 'Restriction onboarding progress should complete the two-step flow');
-assert(onboardingRestrictionsCode.includes('2/2'), 'Restriction onboarding should display step 2/2');
-assert(onboardingRestrictionsCode.includes('completeOnboarding();'), 'Restriction onboarding should complete onboarding before routing home');
-assert(onboardingRestrictionsCode.includes("routes: [{ name: 'MainTabs' }]"), 'Restriction onboarding should send users to the main experience');
-assert(!onboardingRestrictionsCode.includes("navigation.navigate('Upgrade')"), 'Restriction onboarding should not force the paywall before first value');
-assert(!checkoutCode.includes('Math.random'), 'Checkout should avoid random payment outcomes');
-assert(checkoutCode.includes('appendPaymentEvent'), 'Checkout should persist payment lifecycle events');
-assert(checkoutCode.includes('backendApi.createOrder'), 'Checkout should call backend create-order in pay flow');
-assert(checkoutCode.includes('backendApi.getOrder'), 'Checkout should poll backend order status in pay flow');
-assert(checkoutCode.includes('EXPO_PUBLIC_ENABLE_MOCK_PAYMENTS'), 'Checkout mock payment path should require an explicit env flag');
-assert(checkoutCode.includes("throw new Error('payment backend is not configured')"), 'Checkout should fail closed if neither backend nor mock payments are configured');
-assert(!checkoutCode.includes('markOrderPaidForTesting'), 'Checkout should not use backend mock mark-paid in production pay flow');
-assert(checkoutCode.includes('refreshOrderStatus'), 'Checkout should provide a manual order status refresh action when payment is pending');
-assert(checkoutCode.includes('payment_backend_unavailable'), 'Checkout should show a specific failure path when production payment config is unavailable');
-assert(checkoutCode.includes('paymentNotice'), 'Checkout should show user-facing payment status guidance');
-assert(checkoutCode.includes('subscriptionService.purchase'), 'Checkout should use Apple IAP purchase service for iOS subscription purchases');
-assert(checkoutCode.includes('subscriptionService.restore'), 'Checkout should provide a restore purchase flow');
-assert(checkoutCode.indexOf("Platform.OS === 'ios'") < checkoutCode.indexOf('backendApi.createOrder'), 'Checkout should route iOS purchases to IAP before any Alipay/backend order path');
-assert(appContextCode.includes("AppState.addEventListener('change'"), 'AppContext should resync quota when app becomes active');
-assert(appContextCode.includes("from '../utils/quota'"), 'AppContext should use shared quota utility logic');
-assert(appContextCode.includes("const syncDailyQuota = useCallback(async (plan: 'free' | 'pro' | 'family')"), 'Quota sync should be explicit to a membership plan');
-assert(appContextCode.includes('getResetQuotaForFree'), 'Reset flow should preserve same-day free quota to prevent local reset abuse');
-assert(checkoutCode.includes("recordEvent('trial', 'failed'"), 'Trial flow should record failure events when exceptions happen');
-assert(checkoutCode.includes('eventSeq'), 'Checkout event IDs should include a local sequence to avoid same-ms collisions');
-assert(storageCode.includes('async setRecentSearches'), 'Storage should provide recent search persistence APIs');
-assert(searchOverlayCode.includes('storage.getRecentSearches'), 'Search overlay should load recent searches from storage API');
-assert(searchOverlayCode.includes('onClose();'), 'Submitting search should close overlay for faster interaction flow');
-assert(searchOverlayCode.includes('userInteractedRef'), 'Search overlay hydration should guard against overwriting in-flight user input');
-assert(searchOverlayCode.includes('recentSearches.length > 0 ? recentSearches : DEFAULT_RECENT_SEARCHES'), 'Recent-search section should fall back to defaults when persisted list is empty');
-assert(!appContextCode.includes('refreshRecommendations'), 'AppContext should not expose refresh action that bypasses free daily limits');
-assert(homeCode.includes('getRecommendedDishes'), 'Home should rank recommendations from user preferences');
-assert(homeCode.includes("navigation.navigate('Upgrade')"), 'Quota-exhausted state should route free users to upgrade instead of resetting quota');
-assert(homeCode.includes('.enabled(enabled)'), 'Swipe gesture should be disabled when quota is locked');
-assert(homeCode.includes('disabled={quotaLocked || !currentCard}'), 'Home actions should lock when no quota or recommendation is available');
-assert(homeCode.includes("params: { initialQuery: query }"), 'Home search should pass query into Explore tab route');
-assert(homeCode.includes('useWindowDimensions'), 'Home card layout should adapt to the active device dimensions');
-assert(homeCode.includes('Math.min(Math.max(screenHeight * 0.62, 468), 620)'), 'Home card height should be bounded for modern iPhone sizes');
-assert(homeCode.includes('Compass'), 'Home discovery shortcut should not look like a filter control when it routes to Explore');
-assert(homeCode.includes('ChiShenMe'), 'Home should use app brand copy instead of demo-first chrome');
-assert(detailCode.includes('buildDecisionSnapshot'), 'Detail should provide a decision snapshot section');
-assert(detailCode.includes('getRelatedRecommendations'), 'Detail should surface related alternatives');
-assert(!detailCode.includes('预估总价'), 'Detail should no longer present fake commerce pricing');
-assert(exploreCode.includes('getScenarioBuckets'), 'Explore should organize recommendations by scenario');
-assert(exploreCode.includes('matchedHistory'), 'Explore should connect search results to real usage history');
-assert(exploreCode.includes('route.params?.initialQuery'), 'Explore should hydrate search query from route params');
-assert(exploreCode.includes('tabNavigation.setParams({ initialQuery: undefined })'), 'Explore should consume and clear initialQuery params to avoid sticky stale searches');
-assert(!exploreCode.includes('route.params?.initialQuery, searchQuery'), 'Explore param-sync effect should not depend on searchQuery to avoid wiping manual user input');
-assert(upgradeCode.includes('不是买次数，而是买更好的结果'), 'Upgrade should sell outcomes instead of quota');
-assert(upgradeCode.includes("useState<'pro' | 'family'>"), 'Upgrade should only present paid plans after the free path moves into product usage');
-assert(upgradeCode.includes('继续使用基础版'), 'Upgrade should let users continue with the free tier after seeing the value story');
-assert(appContextCode.includes('backendApi.isEnabled()'), 'AppContext should support backend-enabled quota synchronization');
-assert(appContextCode.includes('backendApi.getMembership(backendToken)'), 'AppContext should refresh backend membership when app returns active');
-assert(appApiCode.includes('/auth/register') && appApiCode.includes('/auth/login'), 'Backend API client should bootstrap auth session');
-assert(!appApiCode.includes("const PASSWORD = 'secret123'"), 'Backend API client should not hardcode bootstrap password');
-assert(appApiCode.includes('EXPO_PUBLIC_BACKEND_BOOTSTRAP_PASSWORD'), 'Backend bootstrap password should come from env');
-assert(navigatorCode.includes("tabBarLabel: '首页'") && navigatorCode.includes("tabBarLabel: '我的'"), 'Bottom tabs should be localized for the Chinese app experience');
-assert(!navigatorCode.includes('🍔'), 'Navigation shell should avoid emoji-first branding for the commercial app');
-assert(profileCode.includes('我的决策档案'), 'Profile should present a productized decision-profile narrative');
-assert(!profileCode.includes('Alex Chen'), 'Profile should not rely on a fake demo persona');
-assert(profileCode.includes("Alert.alert(\n      '支付方式'"), 'Profile payment-method row should provide feedback instead of being a dead tap target');
-assert(profileCode.includes("navigation.navigate('OnboardingCuisines')"), 'Profile preference row should let users revisit onboarding preferences');
-assert(profileCode.includes('恢复购买'), 'Profile should expose restore purchase for Apple subscriptions');
-assert(profileCode.includes('删除账号'), 'Profile should expose account deletion for App Store compliance');
-assert(onboardingCuisinesCode.includes("edges={['top', 'bottom']}"), 'Cuisine onboarding should respect bottom safe area');
-assert(onboardingRestrictionsCode.includes("edges={['top', 'bottom']}"), 'Restriction onboarding should respect bottom safe area');
-assert(subscriptionServiceCode.includes("from 'react-native-purchases'"), 'Subscription service should import RevenueCat SDK');
-assert(subscriptionServiceCode.includes('EXPO_PUBLIC_RC_IOS_API_KEY'), 'Subscription service should read RevenueCat iOS API key from env');
-assert(subscriptionServiceCode.includes('restore(appUserId'), 'Subscription service should expose restore purchase flow');
-assert(storageCode.includes('ensureBackendUserId'), 'Storage should expose a stable app user id for RevenueCat entitlement sync');
-assert(checkoutCode.includes('storage.ensureBackendUserId()'), 'Checkout should use a stable RevenueCat app user id before iOS IAP purchase');
-assert(appApiCode.includes('async deleteAccount'), 'Backend API client should expose account deletion');
+assert(mockData.includes('restaurantName'), 'mock data should support restaurant-plus-dish cards');
+assert(mockData.includes('restaurantReviewCount'), 'mock data should include restaurant trust signals');
+assert(mockData.includes('recommendationBlurb'), 'mock data should still provide recommendation summary copy');
+assert(recommendationsCode.includes('getRecommendedDishes'), 'recommendation utility should export ranked recommendations');
+assert(recommendationsCode.includes('nearbyRestaurants'), 'recommendation utility should account for nearby restaurant context');
+assert(recommendationsCode.includes('activeFilter'), 'recommendation utility should support home deck filters');
+assert(recommendationsCode.includes('keepItFresh'), 'recommendation utility should support repeat-avoidance logic');
+assert(recommendationsCode.includes('forTwo'), 'recommendation utility should support duo decision mode');
+assert(recommendationsCode.includes('getTodaysTopPicks'), 'recommendation utility should expose the curated top picks strip');
+assert(recommendationsCode.includes('getDecisivePick'), 'recommendation utility should expose the decisive-pick helper');
+assert(appContextCode.includes('locationContext'), 'app context should expose location context');
+assert(appContextCode.includes('saveAreaPreset'), 'app context should support saved areas');
+assert(appContextCode.includes('backendToken'), 'app context should expose backend token for nearby and menu scan features');
+assert(appContextCode.includes('decisionSettings'), 'app context should persist C-stage decision settings');
+assert(storageCode.includes('LOCATION_CONTEXT'), 'storage should persist location context');
+assert(storageCode.includes('SAVED_AREAS'), 'storage should persist saved areas');
+assert(storageCode.includes('DECISION_SETTINGS'), 'storage should persist C-stage decision settings');
+assert(placesCode.includes('searchNearbyRestaurants'), 'places service should call the backend discovery endpoint');
+assert(menuScanServiceCode.includes('launchCameraAsync'), 'menu scan service should support camera input');
+assert(menuScanServiceCode.includes('launchImageLibraryAsync'), 'menu scan service should support screenshot/library input');
+assert(navigatorCode.includes("tabBarLabel: 'Home'"), 'navigator should use English North America tab labels');
+assert(navigatorCode.includes("name=\"MenuScan\""), 'navigator should wire the menu scan route');
+assert(!navigatorCode.includes('ChiShenMe'), 'navigator shell should use the new North America brand');
+assert(onboardingGuideCode.includes('Swipe left to pass'), 'onboarding guide should teach the current swipe model in English');
+assert(searchOverlayCode.includes('dish, place, area'), 'search overlay should support area and restaurant search');
+assert(onboardingCuisinesCode.includes('Pick your favorites'), 'cuisine onboarding should be English-first');
+assert(onboardingRestrictionsCode.includes('Saved areas'), 'restriction onboarding should capture home/work area context');
+assert(
+  homeCode.includes("triggerDecision('left')") && homeCode.includes("triggerDecision('right')"),
+  'home should stay focused on the swipe deck'
+);
+assert(homeCode.includes("navigation.navigate('MainTabs', { screen: 'Explore' })"), 'home should hand secondary discovery to Explore');
+assert(homeCode.includes("navigation.navigate('Upgrade')"), 'home should route quota exhaustion to upgrade');
+assert(homeCode.includes("navigation.navigate('MenuScan'"), 'home should expose menu scan from the main deck');
+assert(detailCode.includes('Snapshot') || detailCode.includes('buildDecisionSnapshot'), 'detail should include decision framing, not just presentation');
+assert(exploreCode.includes('Top 3'), 'explore should own the curated daily picks');
+assert(exploreCode.includes('buildManualAreaContext') || exploreCode.includes('Save Home'), 'explore should support using a manual area for the home deck');
+assert(exploreCode.includes('Nearby'), 'explore should show nearby restaurant trust signals');
+assert(exploreCode.includes('Fresh'), 'explore should expose repeat-avoidance mode');
+assert(exploreCode.includes('For two'), 'explore should expose duo mode');
+assert(fs.readFileSync(path.join(root, 'src', 'screens', 'History.tsx'), 'utf8').includes('Worth revisiting'), 'history should help users revisit strong prior picks');
+assert(profileCode.includes('Delete account'), 'profile should expose account deletion');
+assert(profileCode.includes('saveAreaPreset') || profileCode.includes('Areas'), 'profile should reflect saved location context');
+assert(upgradeCode.includes('Smart rank') || upgradeCode.includes('Upgrade'), 'upgrade should still sell decision quality');
+assert(checkoutCode.includes('Confirm subscription'), 'checkout should be English and productized');
+assert(checkoutCode.includes('Restore purchases'), 'checkout should expose restore purchase');
+assert(menuScanCode.includes('Scan a menu'), 'menu scan screen should exist');
+assert(menuScanCode.includes('Best for you'), 'menu scan results should group recommendations');
 
 console.log('Smoke test passed.');

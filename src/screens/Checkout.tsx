@@ -1,20 +1,22 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
-import { Linking } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, ShieldCheck } from 'lucide-react-native';
-import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors } from '../theme';
-import type { AppTheme } from '../theme/useTheme';
-import { useApp } from '../context/AppContext';
-import { storage } from '../storage';
+import { ArrowLeft, CheckCircle2, ScanSearch, ShieldCheck, Sparkles } from 'lucide-react-native';
 import { backendApi } from '../api/backend';
+import { SkeletonImage } from '../components/SkeletonImage';
+import { useApp } from '../context/AppContext';
+import { SWIPE_CARDS } from '../data/mockData';
+import type { RootStackParamList } from '../navigation/types';
 import { subscriptionService } from '../services/subscriptions';
+import { storage } from '../storage';
+import { useThemeColors, useThemedStyles } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type CheckoutRouteProp = RouteProp<RootStackParamList, 'Checkout'>;
+
 const ENABLE_MOCK_PAYMENTS = process.env.EXPO_PUBLIC_ENABLE_MOCK_PAYMENTS === 'true';
 
 export function Checkout() {
@@ -29,7 +31,12 @@ export function Checkout() {
   const eventSeq = React.useRef(0);
 
   const plan = route.params?.plan ?? 'pro';
-  const planText = plan === 'family' ? '家庭版 ¥19.9/月' : 'Pro 版 ¥9.9/月';
+  const planText = plan === 'family' ? 'Family / $19.99 month' : 'Pro / $9.99 month';
+  const planBenefits =
+    plan === 'family'
+      ? ['Shared picks stay in sync', 'Full menu scan recommendations', 'Better tie-breakers for groups']
+      : ['Sharper ranking for tonight', 'Full menu scan recommendations', 'More room to save the good calls'];
+  const heroImage = plan === 'family' ? SWIPE_CARDS[4].image : SWIPE_CARDS[0].image;
   const isBusy = processing === 'pay' || processing === 'trial';
 
   const getSubscriptionUserId = async () => {
@@ -58,7 +65,7 @@ export function Checkout() {
   const completeMembership = async () => {
     await setMembershipPlan(plan);
     await completeOnboarding();
-    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+    navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home', params: { justUnlocked: plan } } }] });
   };
 
   const finishPaidMembership = async (token: string, fallbackPlan: 'pro' | 'family') => {
@@ -66,7 +73,7 @@ export function Checkout() {
     const effectivePlan = membership?.plan === 'pro' || membership?.plan === 'family' ? membership.plan : fallbackPlan;
     await setMembershipPlan(effectivePlan);
     await completeOnboarding();
-    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+    navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home', params: { justUnlocked: effectivePlan } } }] });
   };
 
   const pollOrderUntilSettled = async (token: string, orderNo: string) => {
@@ -93,9 +100,10 @@ export function Checkout() {
         const revenueCatUserId = await getSubscriptionUserId();
         const result = await subscriptionService.purchase(plan, revenueCatUserId ?? undefined);
         await recordEvent('pay', 'success');
-        await setMembershipPlan(result.plan === 'free' ? plan : result.plan);
+        const resolvedPlan = result.plan === 'free' ? plan : result.plan;
+        await setMembershipPlan(resolvedPlan);
         await completeOnboarding();
-        navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+        navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home', params: { justUnlocked: resolvedPlan } } }] });
         return;
       } else if (backendApi.isEnabled()) {
         const token = await backendApi.ensureToken();
@@ -105,7 +113,7 @@ export function Checkout() {
         const created = await backendApi.createOrder(token, plan);
         setLastOrderNo(created.order_no);
         await Linking.openURL(created.pay_url).catch(() => {
-          // Some simulators/devices cannot open external URLs; keep checkout flow alive.
+          // Simulators and preview devices can fail to open the external payment URL.
         });
         const status = await pollOrderUntilSettled(token, created.order_no);
         if (status === 'paid') {
@@ -114,7 +122,7 @@ export function Checkout() {
           return;
         }
         if (status === 'pending') {
-          setPaymentNotice('订单已创建，请在支付宝完成付款后回到本页刷新状态。');
+          setPaymentNotice('Your order is created. Finish payment, then come back here and refresh the status.');
           setProcessing('pending');
           return;
         }
@@ -132,17 +140,19 @@ export function Checkout() {
       const backendUnavailable = message.includes('not configured') || message.includes('auth token');
       const iapUnavailable = message.includes('ios iap is not configured');
       const orderFailed = message.includes('order status is failed');
-      const reason = backendUnavailable || iapUnavailable
-        ? 'payment_backend_unavailable'
-        : orderFailed
-          ? 'order_failed'
-          : 'payment_failed';
+      const reason =
+        backendUnavailable || iapUnavailable
+          ? 'payment_backend_unavailable'
+          : orderFailed
+            ? 'order_failed'
+            : 'payment_failed';
+
       setPaymentNotice(
         backendUnavailable || iapUnavailable
-          ? 'iOS 内购暂未配置完成，请稍后再试，或先返回选择免费版继续使用。'
+          ? 'Apple subscription services are not configured for this build yet. You can keep using Free and finish setup later.'
           : orderFailed
-            ? '订单未能完成，请重新发起支付。'
-            : '支付暂未完成，请重试或返回选择免费版继续使用。'
+            ? 'The order could not be completed. Please try again.'
+            : 'Payment did not finish. Try again or stay on the free plan for now.'
       );
       await recordEvent('pay', 'failed', reason);
       setProcessing('failed');
@@ -163,14 +173,14 @@ export function Checkout() {
         return;
       }
       if (status === 'pending') {
-        setPaymentNotice('还没有收到支付成功通知，请确认支付宝付款完成后再刷新。');
+        setPaymentNotice('We still have not received a completed payment notification yet. Please refresh again in a moment.');
         setProcessing('pending');
         return;
       }
       throw new Error(`order status is ${status}`);
     } catch (error) {
       console.warn('Refresh order status failed:', error);
-      setPaymentNotice('暂时无法刷新订单状态，请稍后重试。');
+      setPaymentNotice('We could not refresh the order status right now. Please try again in a moment.');
       setProcessing('failed');
     }
   };
@@ -179,7 +189,7 @@ export function Checkout() {
     if (isBusy) return;
     if (!ENABLE_MOCK_PAYMENTS) {
       await recordEvent('trial', 'failed', 'trial_not_enabled');
-      setPaymentNotice('当前版本未开启试用，请返回选择免费版或使用正式支付。');
+      setPaymentNotice('Trial mode is not enabled for this build. Keep using Free or use the real subscription flow.');
       setProcessing('failed');
       return;
     }
@@ -211,102 +221,101 @@ export function Checkout() {
       }
       await setMembershipPlan(result.plan);
       await completeOnboarding();
-      navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+      navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home', params: { justUnlocked: result.plan } } }] });
     } catch (error) {
       console.warn('Restore purchase failed:', error);
-      setPaymentNotice(error instanceof Error ? error.message : '恢复购买失败，请稍后重试。');
+      setPaymentNotice(error instanceof Error ? error.message : 'Restore failed. Please try again in a moment.');
       setProcessing('failed');
     }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <View style={styles.grabber} />
       <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
-          accessibilityRole="button"
-          accessibilityLabel="返回方案选择"
-          hitSlop={8}
-        >
+        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={8}>
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Text style={styles.headerTitle}>确认支付</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle}>Confirm subscription</Text>
+        <View style={styles.backBtn} />
       </View>
 
-      <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <ShieldCheck size={18} color={theme.colors.success} strokeWidth={2} />
-          <Text style={styles.cardTitle}>已选择方案</Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.planBlock}>
+          <View style={styles.planHeroImage}>
+            <SkeletonImage src={heroImage} alt={planText} />
+          </View>
+          <View style={styles.planBadge}>
+            <ShieldCheck size={16} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.cardTitle}>Plan</Text>
+          </View>
+          <Text style={styles.planText}>{planText}</Text>
+          <View style={styles.statusPill}>
+            <Text style={styles.statusText}>
+              {processing === 'trial'
+                ? 'Starting preview'
+                : processing === 'pay'
+                  ? 'Processing'
+                  : processing === 'pending'
+                    ? 'Pending'
+                    : processing === 'failed'
+                      ? 'Try again'
+                      : 'Apple billing'}
+            </Text>
+          </View>
+          {paymentNotice ? <Text style={styles.noticeText}>{paymentNotice}</Text> : null}
         </View>
-        <Text style={styles.planText}>{planText}</Text>
-        <Text style={styles.bodyText}>
-          {processing === 'trial'
-            ? '正在开通试用…'
-            : processing === 'pay'
-              ? '正在处理支付…'
-              : processing === 'pending'
-                ? paymentNotice ?? '订单处理中，请完成支付后点击“我已完成支付，刷新状态”。'
-              : processing === 'failed'
-                ? paymentNotice ?? '支付暂未完成，请重试或返回选择免费版继续使用。'
-                : '支持随时取消，付款后立即生效。'}
-        </Text>
-      </View>
+
+        <View style={styles.resultBlock}>
+          <Text style={styles.resultTitle}>What changes today</Text>
+          <View style={styles.resultList}>
+            {planBenefits.map((benefit) => (
+              <View key={benefit} style={styles.resultRow}>
+                <CheckCircle2 size={15} color={theme.colors.primary} strokeWidth={2.4} />
+                <Text style={styles.resultText}>{benefit}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.benefitGrid}>
+          <View style={styles.benefitTile}>
+            <Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.benefitText}>Fewer repeats</Text>
+          </View>
+          <View style={styles.benefitTile}>
+            <ScanSearch size={18} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.benefitText}>Menu picks</Text>
+          </View>
+          <View style={styles.benefitTile}>
+            <CheckCircle2 size={18} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.benefitText}>Stronger filters</Text>
+          </View>
+        </View>
+      </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable
-          style={({ pressed }) => [styles.payBtn, pressed && { opacity: 0.9 }, isBusy && styles.btnDisabled]}
-          onPress={handlePay}
-          disabled={isBusy}
-          accessibilityRole="button"
-          accessibilityLabel={`立即支付 ${planText}`}
-          accessibilityState={{ disabled: isBusy }}
-        >
-          <Text style={styles.payText}>{processing === 'pay' ? '处理中…' : '立即支付'}</Text>
+        <Pressable style={({ pressed }) => [styles.payBtn, pressed && styles.payBtnPressed, isBusy && styles.btnDisabled]} onPress={handlePay} disabled={isBusy} accessibilityRole="button" accessibilityLabel={`Pay for ${planText}`} accessibilityState={{ disabled: isBusy }}>
+          <Text style={styles.payText}>{processing === 'pay' ? 'Processing...' : 'Subscribe'}</Text>
         </Pressable>
-        {ENABLE_MOCK_PAYMENTS && (
-          <Pressable
-            style={({ pressed }) => [styles.trialBtn, pressed && { opacity: 0.8 }, isBusy && styles.btnDisabled]}
-            onPress={handleTrial}
-            disabled={isBusy}
-            accessibilityRole="button"
-            accessibilityLabel="先试用 7 天"
-            accessibilityState={{ disabled: isBusy }}
-          >
-            <Text style={styles.trialText}>先试用 7 天</Text>
+        {ENABLE_MOCK_PAYMENTS ? (
+          <Pressable style={({ pressed }) => [styles.trialBtn, pressed && styles.pressedChrome, isBusy && styles.btnDisabled]} onPress={handleTrial} disabled={isBusy} accessibilityRole="button" accessibilityLabel="Start a trial" accessibilityState={{ disabled: isBusy }}>
+            <Text style={styles.trialText}>Start trial</Text>
           </Pressable>
-        )}
-        {processing === 'failed' && (
-          <Pressable
-            style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}
-            onPress={handlePay}
-            accessibilityRole="button"
-            accessibilityLabel="重试支付"
-          >
-            <Text style={styles.retryText}>重试支付</Text>
+        ) : null}
+        {processing === 'failed' ? (
+          <Pressable style={({ pressed }) => [styles.retryBtn, pressed && styles.pressedChrome]} onPress={handlePay} accessibilityRole="button" accessibilityLabel="Retry payment">
+            <Text style={styles.retryText}>Retry payment</Text>
           </Pressable>
-        )}
-        <Pressable
-          style={({ pressed }) => [styles.restoreBtn, pressed && { opacity: 0.8 }, isBusy && styles.btnDisabled]}
-          onPress={handleRestore}
-          disabled={isBusy}
-          accessibilityRole="button"
-          accessibilityLabel="恢复购买"
-          accessibilityState={{ disabled: isBusy }}
-        >
-          <Text style={styles.restoreText}>恢复购买</Text>
+        ) : null}
+        <Pressable style={({ pressed }) => [styles.restoreBtn, pressed && styles.pressedChrome, isBusy && styles.btnDisabled]} onPress={handleRestore} disabled={isBusy} accessibilityRole="button" accessibilityLabel="Restore purchases" accessibilityState={{ disabled: isBusy }}>
+          <Text style={styles.restoreText}>Restore</Text>
         </Pressable>
-        {processing === 'pending' && (
-          <Pressable
-            style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.8 }]}
-            onPress={refreshOrderStatus}
-            accessibilityRole="button"
-            accessibilityLabel="我已完成支付，刷新状态"
-          >
-            <Text style={styles.retryText}>我已完成支付，刷新状态</Text>
+        {processing === 'pending' ? (
+          <Pressable style={({ pressed }) => [styles.retryBtn, pressed && styles.pressedChrome]} onPress={refreshOrderStatus} accessibilityRole="button" accessibilityLabel="Refresh payment status">
+            <Text style={styles.retryText}>Refresh status</Text>
           </Pressable>
-        )}
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -315,62 +324,58 @@ export function Checkout() {
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: t.colors.background },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: t.spacing.md,
-      height: t.topNavHeight,
-      backgroundColor: t.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: t.colors.borderLight,
+    pressedChrome: { opacity: t.interaction.chipPressedOpacity },
+    payBtnPressed: { opacity: t.interaction.pressedOpacity, transform: [{ scale: t.interaction.pressedScale }] },
+    grabber: {
+      alignSelf: 'center',
+      width: 40,
+      height: 5,
+      borderRadius: t.radius.full,
+      backgroundColor: t.colors.border,
+      marginTop: t.spacing.xs,
+      marginBottom: t.spacing.xs,
     },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.sm },
     backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
     headerTitle: { ...t.typography.h2, color: t.colors.foreground },
-    card: {
-      margin: t.spacing.md,
-      backgroundColor: t.colors.surface,
-      borderRadius: t.radius.md,
-      padding: t.spacing.md,
-      ...t.shadows.md,
+    content: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg, gap: t.spacing.lg },
+    planBlock: {
+      paddingTop: t.spacing.sm,
+      gap: t.spacing.sm,
+      backgroundColor: t.colors.surfaceElevated,
+      borderRadius: t.surface.cardRadius,
+      paddingHorizontal: t.surface.insetCardPadding,
+      paddingBottom: t.surface.insetCardPadding,
     },
-    cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: t.spacing.xs },
+    planHeroImage: { height: 132, borderRadius: t.radius.md, overflow: 'hidden', marginBottom: 4 },
+    planBadge: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     cardTitle: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '700' },
     planText: { ...t.typography.h1, color: t.colors.foreground, marginBottom: 6 },
-    bodyText: { ...t.typography.body, color: t.colors.muted },
-    footer: { marginTop: 'auto', padding: t.spacing.md, gap: t.spacing.xs },
-    payBtn: {
-      backgroundColor: t.colors.primary,
-      height: 48,
-      borderRadius: t.radius.full,
-      alignItems: 'center',
-      justifyContent: 'center',
+    statusPill: { alignSelf: 'flex-start', minHeight: 34, borderRadius: 17, backgroundColor: t.colors.surface, paddingHorizontal: 12, justifyContent: 'center' },
+    statusText: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '700' },
+    noticeText: { ...t.typography.caption, color: t.colors.subtle, lineHeight: 18 },
+    resultBlock: {
+      backgroundColor: t.colors.primaryLight,
+      borderRadius: t.surface.cardRadius,
+      padding: t.surface.insetCardPadding,
+      gap: t.spacing.sm,
     },
+    resultTitle: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700' },
+    resultList: { gap: 8 },
+    resultRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    resultText: { ...t.typography.caption, color: t.colors.foreground, flex: 1 },
+    benefitGrid: { flexDirection: 'row', gap: t.spacing.sm },
+    benefitTile: { flex: 1, minHeight: 84, borderRadius: t.surface.cardRadius, backgroundColor: t.colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', gap: 8 },
+    benefitText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
+    footer: { paddingHorizontal: t.spacing.md, paddingTop: t.spacing.sm, paddingBottom: t.spacing.md, borderTopWidth: 1, borderTopColor: t.colors.borderLight, backgroundColor: 'rgba(255,253,252,0.98)', gap: t.spacing.xs },
+    payBtn: { backgroundColor: t.colors.primary, height: 48, borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center' },
     payText: { ...t.typography.body, color: t.colors.surface, fontWeight: '700' },
-    trialBtn: {
-      backgroundColor: t.colors.surface,
-      borderWidth: 1,
-      borderColor: t.colors.border,
-      height: 44,
-      borderRadius: t.radius.full,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+    trialBtn: { backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border, height: 44, borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center' },
     trialText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '600' },
-    retryBtn: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: 40,
-    },
-    btnDisabled: {
-      opacity: 0.6,
-    },
+    retryBtn: { alignItems: 'center', justifyContent: 'center', height: 40 },
+    btnDisabled: { opacity: 0.6 },
     retryText: { ...t.typography.caption, color: t.colors.error, fontWeight: '700' },
-    restoreBtn: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: 40,
-    },
+    restoreBtn: { alignItems: 'center', justifyContent: 'center', height: 40 },
     restoreText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700' },
   });
 }

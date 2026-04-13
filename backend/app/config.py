@@ -25,6 +25,8 @@ class Settings:
     revenuecat_entitlement_id: str = os.getenv('REVENUECAT_ENTITLEMENT_ID', 'premium')
     revenuecat_pro_product_id: str = os.getenv('REVENUECAT_PRO_PRODUCT_ID', 'chishenme.pro.monthly')
     revenuecat_family_product_id: str = os.getenv('REVENUECAT_FAMILY_PRODUCT_ID', 'chishenme.family.monthly')
+    google_places_api_key: str = os.getenv('GOOGLE_PLACES_API_KEY', '')
+    openai_api_key: str = os.getenv('OPENAI_API_KEY', '')
 
     def assert_runtime_safe(self) -> None:
         if self.env.lower() not in {'prod', 'production'}:
@@ -36,6 +38,8 @@ class Settings:
             'REVENUECAT_WEBHOOK_SECRET': self.revenuecat_webhook_secret,
             'REVENUECAT_PRO_PRODUCT_ID': self.revenuecat_pro_product_id,
             'REVENUECAT_FAMILY_PRODUCT_ID': self.revenuecat_family_product_id,
+            'GOOGLE_PLACES_API_KEY': self.google_places_api_key,
+            'OPENAI_API_KEY': self.openai_api_key,
         }
         placeholders = {
             'your-alipay-app-id',

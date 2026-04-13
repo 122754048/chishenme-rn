@@ -12,6 +12,10 @@ const KEYS = {
   PAYMENT_EVENTS: '@chishenme/payment_events',
   BACKEND_TOKEN: '@chishenme/backend_token',
   BACKEND_USER_ID: '@chishenme/backend_user_id',
+  LOCATION_CONTEXT: '@chishenme/location_context',
+  SAVED_AREAS: '@chishenme/saved_areas',
+  DECISION_SETTINGS: '@chishenme/decision_settings',
+  DEVELOPER_MEMBERSHIP_OVERRIDE: '@chishenme/developer_membership_override',
 };
 
 export interface PaymentEvent {
@@ -22,6 +26,45 @@ export interface PaymentEvent {
   createdAt: number;
   reason?: string;
 }
+
+export interface StoredLocationContext {
+  mode: 'live' | 'manual';
+  label: string;
+  updatedAt: number;
+  latitude?: number;
+  longitude?: number;
+  query?: string;
+}
+
+export interface SavedAreas {
+  home?: {
+    label: string;
+    query: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  work?: {
+    label: string;
+    query: string;
+    latitude?: number;
+    longitude?: number;
+  };
+}
+
+export interface DecisionSettings {
+  keepItFresh: boolean;
+  forTwo: boolean;
+}
+
+export interface DeveloperMembershipOverride {
+  plan: 'pro' | 'family';
+  expiresAt: number;
+}
+
+const DEFAULT_DECISION_SETTINGS: DecisionSettings = {
+  keepItFresh: false,
+  forTwo: false,
+};
 
 export const storage = {
   async setOnboardingComplete(value: boolean): Promise<void> {
@@ -181,6 +224,110 @@ export const storage = {
     } catch (error) {
       console.warn('Failed to read membership plan:', error);
       return 'free';
+    }
+  },
+
+  async setDeveloperMembershipOverride(override: DeveloperMembershipOverride): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.DEVELOPER_MEMBERSHIP_OVERRIDE, JSON.stringify(override));
+    } catch (error) {
+      console.warn('Failed to save developer membership override:', error);
+    }
+  },
+
+  async getDeveloperMembershipOverride(): Promise<DeveloperMembershipOverride | null> {
+    try {
+      const val = await AsyncStorage.getItem(KEYS.DEVELOPER_MEMBERSHIP_OVERRIDE);
+      if (!val) return null;
+      const parsed = JSON.parse(val);
+      if ((parsed?.plan === 'pro' || parsed?.plan === 'family') && typeof parsed?.expiresAt === 'number') {
+        return parsed;
+      }
+      return null;
+    } catch (error) {
+      console.warn('Failed to read developer membership override:', error);
+      return null;
+    }
+  },
+
+  async clearDeveloperMembershipOverride(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(KEYS.DEVELOPER_MEMBERSHIP_OVERRIDE);
+    } catch (error) {
+      console.warn('Failed to clear developer membership override:', error);
+    }
+  },
+
+  async setLocationContext(context: StoredLocationContext | null): Promise<void> {
+    try {
+      if (!context) {
+        await AsyncStorage.removeItem(KEYS.LOCATION_CONTEXT);
+        return;
+      }
+      await AsyncStorage.setItem(KEYS.LOCATION_CONTEXT, JSON.stringify(context));
+    } catch (error) {
+      console.warn('Failed to save location context:', error);
+    }
+  },
+
+  async getLocationContext(): Promise<StoredLocationContext | null> {
+    try {
+      const val = await AsyncStorage.getItem(KEYS.LOCATION_CONTEXT);
+      if (!val) return null;
+      const parsed = JSON.parse(val);
+      if (
+        (parsed?.mode === 'live' || parsed?.mode === 'manual') &&
+        typeof parsed?.label === 'string' &&
+        typeof parsed?.updatedAt === 'number'
+      ) {
+        return parsed;
+      }
+      return null;
+    } catch (error) {
+      console.warn('Failed to read location context:', error);
+      return null;
+    }
+  },
+
+  async setSavedAreas(savedAreas: SavedAreas): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.SAVED_AREAS, JSON.stringify(savedAreas));
+    } catch (error) {
+      console.warn('Failed to save areas:', error);
+    }
+  },
+
+  async getSavedAreas(): Promise<SavedAreas> {
+    try {
+      const val = await AsyncStorage.getItem(KEYS.SAVED_AREAS);
+      const parsed = val ? JSON.parse(val) : {};
+      return typeof parsed === 'object' && parsed ? parsed : {};
+    } catch (error) {
+      console.warn('Failed to read saved areas:', error);
+      return {};
+    }
+  },
+
+  async setDecisionSettings(settings: DecisionSettings): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.DECISION_SETTINGS, JSON.stringify(settings));
+    } catch (error) {
+      console.warn('Failed to save decision settings:', error);
+    }
+  },
+
+  async getDecisionSettings(): Promise<DecisionSettings> {
+    try {
+      const val = await AsyncStorage.getItem(KEYS.DECISION_SETTINGS);
+      if (!val) return DEFAULT_DECISION_SETTINGS;
+      const parsed = JSON.parse(val);
+      return {
+        keepItFresh: parsed?.keepItFresh === true,
+        forTwo: parsed?.forTwo === true,
+      };
+    } catch (error) {
+      console.warn('Failed to read decision settings:', error);
+      return DEFAULT_DECISION_SETTINGS;
     }
   },
 

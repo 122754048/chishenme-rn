@@ -1,178 +1,100 @@
-import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  FlatList,
-} from 'react-native';
+import React, { useMemo } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSequence,
-  withSpring,
-} from 'react-native-reanimated';
-import { MoreHorizontal, Heart, Star, UtensilsCrossed } from 'lucide-react-native';
-import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors } from '../theme';
-import type { AppTheme } from '../theme/useTheme';
-import { FAVORITES_DATA } from '../data/mockData';
+import { Heart, MoreHorizontal, Star, UtensilsCrossed } from 'lucide-react-native';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
+import { FAVORITES_DATA } from '../data/mockData';
+import type { RootStackParamList } from '../navigation/types';
+import { useThemeColors, useThemedStyles } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
-
-const CATEGORIES = ['全部', '川菜', '日料', '甜品', '西餐'];
-
-function AnimatedHeartButton({ isFavorite, onToggle, themeColors }: { isFavorite: boolean; onToggle: () => void; themeColors: AppTheme }) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePress = () => {
-    scale.value = withSequence(
-      withSpring(1.4, { damping: 4, stiffness: 300 }),
-      withSpring(1, { damping: 8, stiffness: 200 })
-    );
-    onToggle();
-  };
-
-  return (
-    <Pressable onPress={handlePress} style={heartBtnStyle}>
-      <Animated.View style={animStyle}>
-        <Heart
-          size={14}
-          color={isFavorite ? themeColors.colors.error : themeColors.colors.subtle}
-          fill={isFavorite ? themeColors.colors.error : 'transparent'}
-          strokeWidth={2}
-        />
-      </Animated.View>
-    </Pressable>
-  );
-}
-
-const heartBtnStyle = {
-  position: 'absolute' as const,
-  top: 8,
-  right: 8,
-  width: 32,
-  height: 32,
-  borderRadius: 16,
-  backgroundColor: 'rgba(255,255,255,0.92)',
-  alignItems: 'center' as const,
-  justifyContent: 'center' as const,
-};
 
 export function Favorites() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
-  const [activeCategory, setActiveCategory] = useState('全部');
   const { favorites, toggleFavorite } = useApp();
 
-  const displayData = useMemo(() => {
-    return FAVORITES_DATA.filter((item) => favorites.includes(item.id));
-  }, [favorites]);
-
-  const filtered =
-    activeCategory === '全部'
-      ? displayData
-      : displayData.filter((f) => f.category === activeCategory);
-
-  const navigateToDetail = (item: { id: number; title: string; image: string }) => {
-    navigation.navigate('Detail', { itemId: item.id, title: item.title, image: item.image });
-  };
+  const displayData = useMemo(() => FAVORITES_DATA.filter((item) => favorites.includes(item.id)), [favorites]);
+  const featuredPick = displayData[0] ?? null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Top Nav — Page mode */}
       <View style={styles.topNav}>
-        <View style={{ width: 40 }} />
-        <Text style={styles.navTitle}>我的收藏</Text>
-        <Pressable
-          style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.7 }]}
-          onPress={() => navigation.navigate('History')}
-        >
+        <View style={styles.navSpacer} />
+        <Text style={styles.navTitle}>Saved</Text>
+        <Pressable style={({ pressed }) => [styles.moreBtn, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('History')} accessibilityRole="button" accessibilityLabel="Open decision history">
           <MoreHorizontal size={20} color={theme.colors.muted} strokeWidth={1.8} />
         </Pressable>
       </View>
 
-      {/* Category Tabs */}
-      <View style={styles.tabBar}>
-        <FlatList
-          horizontal
-          data={CATEGORIES}
-          keyExtractor={(item) => item}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabList}
-          renderItem={({ item }) => (
-            <Pressable
-              style={({ pressed }) => [
-                styles.tabPill,
-                activeCategory === item && styles.tabPillActive,
-                pressed && { opacity: 0.85 },
-              ]}
-              onPress={() => setActiveCategory(item)}
-            >
-              <Text
-                style={[
-                  styles.tabPillText,
-                  activeCategory === item && styles.tabPillTextActive,
-                ]}
-              >
-                {item}
-              </Text>
-            </Pressable>
-          )}
-        />
-      </View>
-
-      {filtered.length === 0 ? (
+      {displayData.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
             <UtensilsCrossed size={36} color={theme.colors.primary} strokeWidth={1.5} />
           </View>
-          <Text style={styles.emptyTitle}>还没有收藏哦</Text>
-          <Text style={styles.emptyBody}>
-            去发现好吃的，把喜欢的菜品收藏起来吧。
-          </Text>
-          <Pressable
-            style={({ pressed }) => [styles.exploreBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
-            onPress={() => navigation.navigate('MainTabs')}
-          >
-            <Text style={styles.exploreBtnText}>去发现美食</Text>
+          <Text style={styles.emptyTitle}>Nothing saved yet</Text>
+          <Text style={styles.emptyBody}>Save a few strong options for later.</Text>
+          <Pressable style={({ pressed }) => [styles.exploreBtn, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}>
+            <Text style={styles.exploreBtnText}>Back to Home</Text>
           </Pressable>
         </View>
       ) : (
         <FlatList
-          data={filtered}
+          data={displayData}
           keyExtractor={(item) => String(item.id)}
           numColumns={2}
           contentContainerStyle={styles.gridContent}
           columnWrapperStyle={styles.gridRow}
+          ListHeaderComponent={
+            featuredPick ? (
+              <View style={styles.headerStack}>
+                <View style={styles.summaryCard}>
+                  <Text style={styles.summaryEyebrow}>Saved for later</Text>
+                  <Text style={styles.summaryTitle}>{displayData.length} strong picks ready</Text>
+                  <View style={styles.summaryActions}>
+                    <Pressable style={({ pressed }) => [styles.summaryAction, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('Detail', { itemId: featuredPick.id, title: featuredPick.title, image: featuredPick.image })}>
+                      <Text style={styles.summaryActionText}>Try tonight</Text>
+                    </Pressable>
+                    <Pressable style={({ pressed }) => [styles.summaryAction, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('History')}>
+                      <Text style={styles.summaryActionText}>History</Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                <Pressable style={({ pressed }) => [styles.featuredCard, pressed && styles.pressedCard]} onPress={() => navigation.navigate('Detail', { itemId: featuredPick.id, title: featuredPick.title, image: featuredPick.image })}>
+                  <View style={styles.featuredImage}>
+                    <SkeletonImage src={featuredPick.image} alt={featuredPick.title} />
+                  </View>
+                  <View style={styles.featuredCopy}>
+                    <Text style={styles.featuredEyebrow}>Tonight's easiest yes</Text>
+                    <Text style={styles.featuredTitle}>{featuredPick.title}</Text>
+                    <Text style={styles.featuredMeta}>{featuredPick.restaurantName} / {featuredPick.rating.toFixed(1)}</Text>
+                  </View>
+                </Pressable>
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
-            <Pressable
-              style={({ pressed }) => [styles.gridItem, pressed && { opacity: 0.85 }]}
-              onPress={() => navigateToDetail({ id: item.id, title: item.title, image: item.image })}
-            >
+            <Pressable style={({ pressed }) => [styles.gridItem, pressed && styles.pressedCard]} onPress={() => navigation.navigate('Detail', { itemId: item.id, title: item.title, image: item.image })}>
               <View style={styles.gridImageWrap}>
                 <SkeletonImage src={item.image} alt={item.title} />
-                <AnimatedHeartButton
-                  isFavorite={favorites.includes(item.id)}
-                  onToggle={() => toggleFavorite(item.id)}
-                  themeColors={theme}
-                />
+                <Pressable style={({ pressed }) => [styles.heartBtn, pressed && styles.pressedChrome]} onPress={() => toggleFavorite(item.id)} accessibilityRole="button" accessibilityLabel="Remove from saved">
+                  <Heart size={14} color={theme.colors.error} fill={theme.colors.error} strokeWidth={2} />
+                </Pressable>
               </View>
               <Text style={styles.gridItemTitle} numberOfLines={2}>
                 {item.title}
               </Text>
               <View style={styles.gridItemMeta}>
                 <Star size={10} color={theme.colors.star} fill={theme.colors.star} />
-                <Text style={styles.gridItemRating}>{item.rating} ({item.reviews})</Text>
+                <Text style={styles.gridItemRating}>{item.rating}</Text>
+                <Text style={styles.gridItemDot}>/</Text>
+                <Text style={styles.gridItemRating} numberOfLines={1}>{item.restaurantName}</Text>
               </View>
             </Pressable>
           )}
@@ -184,97 +106,58 @@ export function Favorites() {
 
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: t.colors.background },
-  topNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: t.spacing.md,
-    height: t.topNavHeight,
-    backgroundColor: t.colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: t.colors.borderLight,
-  },
-  navTitle: { ...t.typography.h2, color: t.colors.foreground },
-  moreBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
-  tabBar: {
-    backgroundColor: t.colors.surface,
-    paddingVertical: t.spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: t.colors.borderLight,
-  },
-  tabList: { paddingHorizontal: t.spacing.md, gap: t.spacing.xs },
-  tabPill: {
-    paddingHorizontal: t.spacing.md,
-    paddingVertical: 6,
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.borderLight,
-  },
-  tabPillActive: { backgroundColor: t.colors.primary },
-  tabPillText: { ...t.typography.caption, fontWeight: '500', color: t.colors.muted },
-  tabPillTextActive: { color: t.colors.surface },
-  gridContent: { padding: t.spacing.md, gap: t.spacing.sm },
-  gridRow: { justifyContent: 'space-between' },
-  gridItem: { width: '48%', marginBottom: t.spacing.md },
-  gridImageWrap: {
-    height: 150,
-    borderRadius: t.radius.md,
-    overflow: 'hidden',
-    marginBottom: t.spacing.xs,
-    position: 'relative',
-  },
-  heartBtn: {
-    position: 'absolute',
-    top: t.spacing.xs,
-    right: t.spacing.xs,
-    width: 32,
-    height: 32,
-    borderRadius: t.radius.full,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gridItemTitle: {
-    ...t.typography.body,
-    fontWeight: '600',
-    color: t.colors.foreground,
-    marginBottom: 4,
-  },
-  gridItemMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  gridItemRating: { ...t.typography.caption, color: t.colors.subtle },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: t.spacing.xl,
-  },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: t.radius.full,
-    backgroundColor: t.colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: t.spacing.md,
-  },
-  emptyTitle: {
-    ...t.typography.h1,
-    color: t.colors.foreground,
-    marginBottom: t.spacing.xs,
-    textAlign: 'center',
-  },
-  emptyBody: {
-    ...t.typography.body,
-    color: t.colors.subtle,
-    textAlign: 'center',
-    marginBottom: t.spacing.lg,
-  },
-  exploreBtn: {
-    backgroundColor: t.colors.primary,
-    paddingHorizontal: t.spacing.lg,
-    paddingVertical: t.spacing.sm,
-    borderRadius: t.radius.full,
-  },
-  exploreBtnText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
-});
+    container: { flex: 1, backgroundColor: t.colors.surface },
+    pressedCard: { opacity: t.interaction.pressedOpacity, transform: [{ scale: t.interaction.pressedScale }] },
+    pressedChrome: { opacity: t.interaction.chipPressedOpacity },
+    topNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: t.spacing.md, height: t.topNavHeight, backgroundColor: t.colors.surface },
+    navSpacer: { width: 40 },
+    navTitle: { ...t.typography.h2, color: t.colors.foreground },
+    moreBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
+    gridContent: { padding: t.spacing.md, gap: t.spacing.sm },
+    headerStack: { gap: t.spacing.md, marginBottom: t.spacing.sm },
+    summaryCard: {
+      backgroundColor: t.colors.primaryLight,
+      borderRadius: t.surface.cardRadius,
+      padding: t.spacing.md,
+      gap: t.spacing.sm,
+    },
+    summaryEyebrow: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '700' },
+    summaryTitle: { ...t.typography.h1, color: t.colors.foreground },
+    summaryActions: { flexDirection: 'row', gap: t.spacing.sm },
+    summaryAction: {
+      minHeight: 36,
+      borderRadius: t.radius.full,
+      paddingHorizontal: 14,
+      justifyContent: 'center',
+      backgroundColor: 'rgba(255,255,255,0.78)',
+    },
+    summaryActionText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
+    featuredCard: {
+      flexDirection: 'row',
+      gap: t.spacing.sm,
+      alignItems: 'center',
+      backgroundColor: t.colors.surfaceElevated,
+      borderRadius: t.surface.cardRadius,
+      padding: t.surface.insetCardPadding,
+    },
+    featuredImage: { width: 88, height: 88, borderRadius: t.radius.md, overflow: 'hidden' },
+    featuredCopy: { flex: 1, gap: 3 },
+    featuredEyebrow: { ...t.typography.micro, color: t.colors.primaryDark, fontWeight: '700' },
+    featuredTitle: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700' },
+    featuredMeta: { ...t.typography.caption, color: t.colors.subtle },
+    gridRow: { justifyContent: 'space-between' },
+    gridItem: { width: '48%', marginBottom: t.spacing.md, backgroundColor: t.colors.surface, borderRadius: t.surface.cardRadius, padding: t.spacing.xs, minHeight: 232, ...t.shadows.sm },
+    gridImageWrap: { height: 156, borderRadius: t.radius.md, overflow: 'hidden', marginBottom: t.spacing.sm, position: 'relative' },
+    heartBtn: { position: 'absolute', top: t.spacing.xs, right: t.spacing.xs, width: 32, height: 32, borderRadius: t.radius.full, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center' },
+    gridItemTitle: { ...t.typography.body, fontWeight: '700', color: t.colors.foreground, marginBottom: 6, minHeight: 42 },
+    gridItemMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingBottom: 2 },
+    gridItemRating: { ...t.typography.caption, color: t.colors.subtle, flexShrink: 1 },
+    gridItemDot: { ...t.typography.caption, color: t.colors.subtle },
+    emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: t.spacing.xl },
+    emptyIcon: { width: 80, height: 80, borderRadius: t.radius.full, backgroundColor: t.colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: t.spacing.md },
+    emptyTitle: { ...t.typography.h1, color: t.colors.foreground, marginBottom: t.spacing.xs, textAlign: 'center' },
+    emptyBody: { ...t.typography.caption, color: t.colors.subtle, textAlign: 'center', marginBottom: t.spacing.lg },
+    exploreBtn: { backgroundColor: t.colors.primary, paddingHorizontal: t.spacing.lg, paddingVertical: t.spacing.sm, borderRadius: t.radius.full },
+    exploreBtnText: { ...t.typography.body, fontWeight: '700', color: t.colors.surface },
+  });
 }

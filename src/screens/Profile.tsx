@@ -1,174 +1,54 @@
-import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  Alert,
-} from 'react-native';
+import React from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  Bell,
-  ChevronRight,
-  ClipboardList,
-  CreditCard,
-  Heart,
-  HelpCircle,
-  LogOut,
-  Settings,
-  ShieldAlert,
-  Sparkles,
-  Users,
-} from 'lucide-react-native';
-import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors } from '../theme';
-import type { AppTheme } from '../theme/useTheme';
-import { useApp } from '../context/AppContext';
+import { Bell, Compass, CreditCard, Heart, HelpCircle, History as HistoryIcon, LogOut, MapPin, ShieldAlert, Sparkles } from 'lucide-react-native';
+import { SkeletonImage } from '../components/SkeletonImage';
 import { backendApi } from '../api/backend';
-import { storage } from '../storage';
+import { brand } from '../config/brand';
+import { useApp } from '../context/AppContext';
+import { SWIPE_CARDS } from '../data/mockData';
+import type { RootStackParamList } from '../navigation/types';
 import { subscriptionService } from '../services/subscriptions';
+import { storage } from '../storage';
+import { useThemeColors, useThemedStyles } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface MenuRowProps {
+function ActionTile({
+  icon,
+  label,
+  value,
+  onPress,
+  styles,
+}: {
   icon: React.ReactNode;
-  iconBg: string;
   label: string;
   value?: string;
   onPress?: () => void;
-}
-
-interface SummaryCardProps {
-  eyebrow: string;
-  value: string;
-  description: string;
-}
-
-const rowStyles = StyleSheet.create({
-  menuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    gap: 12,
-  },
-  menuIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuLabel: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 22,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  menuRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  menuValue: {
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  menuRowDisabled: { opacity: 0.55 },
-});
-
-function MenuRow({ icon, iconBg, label, value, onPress }: MenuRowProps) {
+  styles: ReturnType<typeof makeStyles>;
+}) {
   const disabled = !onPress;
-
   return (
     <Pressable
-      style={({ pressed }) => [
-        rowStyles.menuRow,
-        disabled && rowStyles.menuRowDisabled,
-        pressed && !disabled && { backgroundColor: '#F9FAFB' },
-      ]}
+      style={({ pressed }) => [styles.tile, disabled && styles.tileDisabled, pressed && !disabled && styles.pressedChrome]}
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityLabel={value ? `${label}，${value}` : label}
+      accessibilityLabel={value ? `${label}, ${value}` : label}
       accessibilityState={{ disabled }}
     >
-      <View style={[rowStyles.menuIconWrap, { backgroundColor: iconBg }]}>{icon}</View>
-      <Text style={rowStyles.menuLabel}>{label}</Text>
-      <View style={rowStyles.menuRight}>
-        {value ? <Text style={rowStyles.menuValue}>{value}</Text> : null}
-        {!disabled ? <ChevronRight size={16} color="#9CA3AF" strokeWidth={1.5} /> : null}
-      </View>
+      <View style={styles.tileIcon}>{icon}</View>
+      <Text style={styles.tileLabel}>{label}</Text>
+      {value ? (
+        <Text style={styles.tileValue} numberOfLines={1}>
+          {value}
+        </Text>
+      ) : null}
     </Pressable>
   );
-}
-
-const summaryStyles = StyleSheet.create({
-  card: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  eyebrow: {
-    fontSize: 11,
-    lineHeight: 16,
-    fontWeight: '700',
-    color: '#9CA3AF',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-  },
-  value: {
-    fontSize: 20,
-    lineHeight: 28,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  description: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: '#6B7280',
-  },
-});
-
-function SummaryCard({ eyebrow, value, description }: SummaryCardProps) {
-  return (
-    <View style={summaryStyles.card}>
-      <Text style={summaryStyles.eyebrow}>{eyebrow}</Text>
-      <Text style={summaryStyles.value}>{value}</Text>
-      <Text style={summaryStyles.description}>{description}</Text>
-    </View>
-  );
-}
-
-function getPlanTitle(plan: 'free' | 'pro' | 'family') {
-  if (plan === 'pro') return 'Pro 会员';
-  if (plan === 'family') return 'Family 会员';
-  return '基础版';
-}
-
-function getPlanDescription(plan: 'free' | 'pro' | 'family') {
-  if (plan === 'pro') {
-    return '更深的推荐解释、更多备选方案，以及更细的筛选维度。';
-  }
-  if (plan === 'family') {
-    return '更适合情侣和家庭一起做决定，减少多人晚餐讨论成本。';
-  }
-  return '先用基础版验证口味命中，再决定是否升级更强的决策能力。';
 }
 
 export function Profile() {
@@ -181,82 +61,65 @@ export function Profile() {
     membershipPlan,
     recommendationsLeft,
     resetApp,
+    savedAreas,
     selectedCuisines,
     selectedRestrictions,
     setMembershipPlan,
   } = useApp();
 
-  const planTitle = getPlanTitle(membershipPlan);
-  const planDescription = getPlanDescription(membershipPlan);
-  const tasteCount = selectedCuisines.length + selectedRestrictions.length;
-  const latestDecision = history[0];
-  const decisionSummary = useMemo(() => {
-    if (!latestDecision) {
-      return '还没有留下决策记录，今天先做一次不纠结的选择。';
-    }
-    return `${latestDecision.title} · ${latestDecision.time}`;
-  }, [latestDecision]);
-
-  const remainingDecisionText =
-    recommendationsLeft < 0 ? '不限次数' : `今日还剩 ${recommendationsLeft} 次`;
-  const preferenceValue = tasteCount > 0 ? `已配置 ${tasteCount} 项` : '去完善';
-  const familyValue = membershipPlan === 'family' ? '已开启' : '更适合多人一起吃饭';
+  const planTitle = membershipPlan === 'family' ? 'Family' : membershipPlan === 'pro' ? 'Pro' : 'Free';
+  const preferenceValue = selectedCuisines.length + selectedRestrictions.length > 0 ? `${selectedCuisines.length + selectedRestrictions.length}` : '0';
+  const areaValue = savedAreas.home?.query || savedAreas.work?.query ? [savedAreas.home?.query, savedAreas.work?.query].filter(Boolean).join(' / ') : 'Add';
+  const previewImages = SWIPE_CARDS.filter((card) => favorites.includes(card.id)).slice(0, 3);
+  const planSummary =
+    membershipPlan === 'family'
+      ? 'Shared picks and stronger group decisions are active.'
+      : membershipPlan === 'pro'
+        ? 'Smarter saves and stronger ranking are active.'
+        : 'Keep your best three calls today, then upgrade when you want more.';
 
   const showPaymentInfo = () => {
-    Alert.alert(
-      '支付方式',
-      'iOS 会员订阅通过 Apple ID 内购完成。购买、续订和取消都以 Apple 订阅设置为准，App 内会同步权益状态。'
-    );
+    Alert.alert('Billing', 'Managed in Apple subscriptions.');
   };
 
   const showFeedbackInfo = () => {
-    Alert.alert(
-      '帮助与反馈',
-      '当前仓库已经预留商业上线所需的支持入口和账号删除能力。正式上架前，还需要在 App Store Connect 配置支持 URL 和隐私政策 URL。'
-    );
+    Alert.alert('Launch notes', 'Support URL, privacy URL, and App Store setup still need final production values.');
   };
 
   const handleRestorePurchase = async () => {
     try {
       const revenueCatUserId = await storage.ensureBackendUserId();
-      const result = await subscriptionService.restore(revenueCatUserId ?? undefined);
+      const result = await subscriptionService.restore(revenueCatUserId);
       if (result.plan !== 'free') {
         await setMembershipPlan(result.plan);
       }
-      Alert.alert('恢复购买', result.message);
+      Alert.alert('Restore purchases', result.message);
     } catch (error) {
-      Alert.alert(
-        '恢复购买',
-        error instanceof Error ? error.message : '恢复购买失败，请稍后再试。'
-      );
+      Alert.alert('Restore purchases', error instanceof Error ? error.message : 'Please try again in a moment.');
     }
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      '删除账号',
-      '删除后会清空本机资料、偏好、收藏、历史记录和会员缓存。此操作不会自动取消 Apple ID 订阅，如需停止续费，请前往 Apple ID 订阅设置取消。',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '确认删除',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const token = backendApi.isEnabled() ? await backendApi.ensureToken() : null;
-              if (token) {
-                await backendApi.deleteAccount(token);
-              }
-            } catch (error) {
-              console.warn('Backend account deletion failed:', error);
-            } finally {
-              await resetApp();
-              navigation.reset({ index: 0, routes: [{ name: 'OnboardingCuisines' }] });
+    Alert.alert('Delete account', 'Clears local data. Apple subscription stays active until cancelled in Apple settings.', [
+      { text: 'Keep', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = backendApi.isEnabled() ? await backendApi.ensureToken() : null;
+            if (token) {
+              await backendApi.deleteAccount(token);
             }
-          },
+          } catch (error) {
+            console.warn('Backend account deletion failed:', error);
+          } finally {
+            await resetApp();
+            navigation.reset({ index: 0, routes: [{ name: 'OnboardingCuisines' }] });
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleResetExperience = async () => {
@@ -267,170 +130,81 @@ export function Profile() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.topNav}>
-        <Text style={styles.logo}>ChiShenMe</Text>
+        <Text style={styles.logo}>{brand.appName}</Text>
         <Pressable
-          style={({ pressed }) => [styles.bellBtn, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [styles.iconBtn, pressed && styles.pressedChrome]}
           onPress={() => navigation.navigate('History')}
           accessibilityRole="button"
-          accessibilityLabel="查看决策记录"
+          accessibilityLabel="Open history"
           hitSlop={8}
         >
           <Bell size={20} color={theme.colors.foreground} strokeWidth={1.8} />
         </Pressable>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
-          <View style={styles.heroHeader}>
-            <View style={styles.heroAvatar}>
-              <Text style={styles.heroAvatarText}>CS</Text>
+          <Text style={styles.heroPlan}>{planTitle}</Text>
+          <Text style={styles.heroBody}>{planSummary}</Text>
+          <View style={styles.heroStats}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{recommendationsLeft < 0 ? 'Open' : recommendationsLeft}</Text>
+              <Text style={styles.statLabel}>Picks</Text>
             </View>
-            <View style={styles.heroCopy}>
-              <Text style={styles.heroTitle}>我的决策档案</Text>
-              <Text style={styles.heroSubtitle}>{decisionSummary}</Text>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{favorites.length}</Text>
+              <Text style={styles.statLabel}>Saved</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{history.length}</Text>
+              <Text style={styles.statLabel}>History</Text>
             </View>
           </View>
+          {previewImages.length > 0 ? (
+            <View style={styles.previewStrip}>
+              {previewImages.map((item) => (
+                <View key={item.id} style={styles.previewThumb}>
+                  <SkeletonImage src={item.image} alt={item.name} />
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
 
-          <View style={styles.planBadge}>
-            <Sparkles size={14} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.planBadgeText}>{planTitle}</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Your setup</Text>
+          <View style={styles.grid}>
+            <ActionTile icon={<Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />} label="Taste" value={preferenceValue} onPress={() => navigation.navigate('OnboardingCuisines')} styles={styles} />
+            <ActionTile icon={<MapPin size={18} color={theme.colors.primary} strokeWidth={2} />} label="Areas" value={areaValue} onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })} styles={styles} />
           </View>
-
-          <Text style={styles.heroBody}>{planDescription}</Text>
         </View>
 
-        <View style={styles.summaryRow}>
-          <SummaryCard
-            eyebrow="今日状态"
-            value={remainingDecisionText}
-            description="帮助你判断今天还需不需要升级到更强的决策能力。"
-          />
-          <SummaryCard
-            eyebrow="偏好完整度"
-            value={tasteCount > 0 ? `${tasteCount} 项` : '待完善'}
-            description="口味和忌口越完整，首页推荐越像真正懂你的选择。"
-          />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Your library</Text>
+          <View style={styles.grid}>
+            <ActionTile icon={<Heart size={18} color={theme.colors.primary} strokeWidth={2} />} label="Saved" value={`${favorites.length}`} onPress={() => navigation.navigate('MainTabs', { screen: 'Favorites' })} styles={styles} />
+            <ActionTile icon={<HistoryIcon size={18} color={theme.colors.primary} strokeWidth={2} />} label="History" value={`${history.length}`} onPress={() => navigation.navigate('History')} styles={styles} />
+            <ActionTile icon={<Compass size={18} color={theme.colors.primary} strokeWidth={2} />} label="Explore" onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })} styles={styles} />
+          </View>
         </View>
 
-        <View style={styles.summaryRow}>
-          <SummaryCard
-            eyebrow="已收藏"
-            value={`${favorites.length} 道`}
-            description="把犹豫过但还没决定的菜先存起来，留给更合适的时机。"
-          />
-          <SummaryCard
-            eyebrow="已做决定"
-            value={`${history.length} 次`}
-            description="记录真实选择，逐步训练出更符合你习惯的推荐。"
-          />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Membership</Text>
+          <View style={styles.grid}>
+            <ActionTile icon={<CreditCard size={18} color={theme.colors.primary} strokeWidth={2} />} label="Plan" value={planTitle} onPress={() => navigation.navigate('Upgrade')} styles={styles} />
+            <ActionTile icon={<Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />} label="Restore" value="Apple" onPress={handleRestorePurchase} styles={styles} />
+            <ActionTile icon={<HelpCircle size={18} color={theme.colors.subtle} strokeWidth={2} />} label="Billing" value="Apple" onPress={showPaymentInfo} styles={styles} />
+          </View>
         </View>
 
-        <View style={styles.membershipCards}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.membershipCard,
-              styles.membershipPrimary,
-              pressed && { opacity: 0.92 },
-            ]}
-            onPress={() => navigation.navigate('Upgrade')}
-            accessibilityRole="button"
-            accessibilityLabel={`当前方案，${planTitle}，管理订阅权益`}
-          >
-            <Text style={styles.membershipEyebrow}>会员权益</Text>
-            <Text style={styles.membershipTitle}>{planTitle}</Text>
-            <Text style={styles.membershipBody}>{planDescription}</Text>
-            <View style={styles.membershipAction}>
-              <Text style={styles.membershipActionText}>管理订阅</Text>
-            </View>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.membershipCard,
-              styles.membershipSecondary,
-              pressed && { opacity: 0.92 },
-            ]}
-            onPress={() => navigation.navigate('Upgrade')}
-            accessibilityRole="button"
-            accessibilityLabel={`多人决策，${familyValue}`}
-          >
-            <View style={styles.familyHeader}>
-              <Users size={16} color={theme.colors.brandWarmDark} strokeWidth={2} />
-              <Text style={styles.familyTitle}>多人一起吃，也能更快定下来</Text>
-            </View>
-            <Text style={styles.familyBody}>
-              Family 更适合情侣、室友和家庭，把多人口味融合成更容易达成一致的结果。
-            </Text>
-            <Text style={styles.familyFoot}>{familyValue}</Text>
-          </Pressable>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          <View style={styles.grid}>
+            <ActionTile icon={<HelpCircle size={18} color={theme.colors.subtle} strokeWidth={2} />} label="Notes" onPress={showFeedbackInfo} styles={styles} />
+            <ActionTile icon={<ShieldAlert size={18} color={theme.colors.error} strokeWidth={2} />} label="Delete" value="Local" onPress={handleDeleteAccount} styles={styles} />
+            <ActionTile icon={<LogOut size={18} color={theme.colors.subtle} strokeWidth={2} />} label="Reset" onPress={handleResetExperience} styles={styles} />
+          </View>
         </View>
-
-        <View style={styles.menuCard}>
-          <MenuRow
-            icon={<Heart size={15} color={theme.colors.error} strokeWidth={2} />}
-            iconBg={theme.colors.errorLight}
-            label="收藏夹"
-            value={`${favorites.length} 道`}
-            onPress={() => navigation.navigate('MainTabs', { screen: 'Favorites' })}
-          />
-          <MenuRow
-            icon={<ClipboardList size={15} color={theme.colors.blue} strokeWidth={2} />}
-            iconBg="#F0F5FF"
-            label="决策记录"
-            value={history.length > 0 ? `${history.length} 条` : '去积累'}
-            onPress={() => navigation.navigate('History')}
-          />
-          <MenuRow
-            icon={<Settings size={15} color={theme.colors.muted} strokeWidth={2} />}
-            iconBg={theme.colors.borderLight}
-            label="口味档案"
-            value={preferenceValue}
-            onPress={() => navigation.navigate('OnboardingCuisines')}
-          />
-        </View>
-
-        <View style={styles.menuCard}>
-          <MenuRow
-            icon={<CreditCard size={15} color={theme.colors.primary} strokeWidth={2} />}
-            iconBg={theme.colors.primaryLight}
-            label="支付方式"
-            value="Apple IAP"
-            onPress={showPaymentInfo}
-          />
-          <MenuRow
-            icon={<Sparkles size={15} color={theme.colors.primary} strokeWidth={2} />}
-            iconBg={theme.colors.primaryLight}
-            label="恢复购买"
-            value="Apple ID"
-            onPress={handleRestorePurchase}
-          />
-          <MenuRow
-            icon={<HelpCircle size={15} color={theme.colors.warning} strokeWidth={2} />}
-            iconBg={theme.colors.warningLight}
-            label="帮助与反馈"
-            value="上线前支持项"
-            onPress={showFeedbackInfo}
-          />
-        </View>
-
-        <View style={styles.menuCard}>
-          <MenuRow
-            icon={<ShieldAlert size={15} color={theme.colors.error} strokeWidth={2} />}
-            iconBg={theme.colors.errorLight}
-            label="删除账号"
-            value="不可撤销"
-            onPress={handleDeleteAccount}
-          />
-          <MenuRow
-            icon={<LogOut size={15} color={theme.colors.subtle} strokeWidth={2} />}
-            iconBg={theme.colors.borderLight}
-            label="重新开始体验"
-            value="清空本地记录"
-            onPress={handleResetExperience}
-          />
-        </View>
-
-        <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -438,7 +212,7 @@ export function Profile() {
 
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: t.colors.background },
+    container: { flex: 1, backgroundColor: t.colors.surface },
     topNav: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -446,156 +220,50 @@ function makeStyles(t: AppTheme) {
       paddingHorizontal: t.spacing.md,
       height: t.topNavHeight,
       backgroundColor: t.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: t.colors.borderLight,
     },
     logo: { ...t.typography.h1, color: t.colors.foreground },
-    bellBtn: {
-      width: 40,
-      height: 40,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    scrollView: { flex: 1 },
-    heroCard: {
-      backgroundColor: t.colors.surface,
-      borderRadius: t.radius.lg,
-      marginHorizontal: t.spacing.md,
-      marginTop: t.spacing.md,
-      padding: t.spacing.lg,
-      ...t.shadows.md,
-    },
-    heroHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: t.spacing.sm,
-      marginBottom: t.spacing.sm,
-    },
-    heroAvatar: {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
-      backgroundColor: t.colors.primaryLight,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    heroAvatarText: {
-      ...t.typography.h2,
-      color: t.colors.primaryDark,
-      fontWeight: '800',
-    },
-    heroCopy: { flex: 1 },
-    heroTitle: {
-      ...t.typography.h1,
-      color: t.colors.foreground,
-      marginBottom: 2,
-    },
-    heroSubtitle: {
-      ...t.typography.caption,
-      color: t.colors.subtle,
-    },
-    planBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      alignSelf: 'flex-start',
-      backgroundColor: t.colors.primaryLight,
-      borderRadius: t.radius.full,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      marginBottom: t.spacing.sm,
-    },
-    planBadgeText: {
-      ...t.typography.caption,
-      color: t.colors.primaryDark,
-      fontWeight: '700',
-    },
-    heroBody: {
-      ...t.typography.body,
-      color: t.colors.muted,
-      lineHeight: 22,
-    },
-    summaryRow: {
-      flexDirection: 'row',
-      gap: t.spacing.sm,
-      marginHorizontal: t.spacing.md,
-      marginTop: t.spacing.sm,
-    },
-    membershipCards: {
-      paddingHorizontal: t.spacing.md,
-      gap: t.spacing.sm,
-      marginTop: t.spacing.md,
-      marginBottom: t.spacing.sm,
-    },
-    membershipCard: {
-      borderRadius: t.radius.lg,
-      padding: t.spacing.md,
-      overflow: 'hidden',
-    },
-    membershipPrimary: { backgroundColor: t.colors.primary },
-    membershipSecondary: { backgroundColor: t.colors.brandWarm },
-    membershipEyebrow: {
-      ...t.typography.micro,
-      color: 'rgba(255,255,255,0.72)',
-      marginBottom: 4,
-      fontWeight: '700',
-      letterSpacing: 0.3,
-    },
-    membershipTitle: {
-      ...t.typography.h1,
-      color: t.colors.surface,
-      marginBottom: 6,
-    },
-    membershipBody: {
-      ...t.typography.caption,
-      color: 'rgba(255,255,255,0.88)',
-      lineHeight: 18,
-      marginBottom: t.spacing.sm,
-      paddingRight: 36,
-    },
-    membershipAction: {
-      backgroundColor: t.colors.surface,
-      paddingHorizontal: t.spacing.md,
-      paddingVertical: 6,
-      borderRadius: t.radius.full,
-      alignSelf: 'flex-start',
-    },
-    membershipActionText: {
-      ...t.typography.caption,
-      color: t.colors.primary,
-      fontWeight: '700',
-    },
-    familyHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginBottom: 8,
-    },
-    familyTitle: {
-      ...t.typography.body,
-      color: t.colors.brandWarmDark,
-      fontWeight: '700',
+    iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+    scrollView: { flex: 1, backgroundColor: t.colors.background },
+    scrollContent: { padding: t.spacing.md, paddingBottom: 112, gap: t.spacing.md },
+    heroCard: { backgroundColor: t.colors.primaryLight, borderRadius: t.surface.cardRadius, padding: t.spacing.lg },
+    heroPlan: { ...t.typography.display, color: t.colors.foreground },
+    heroBody: { ...t.typography.caption, color: t.colors.primaryDark, marginTop: 4 },
+    heroStats: { flexDirection: 'row', gap: t.spacing.sm, marginTop: t.spacing.md },
+    statCard: {
       flex: 1,
+      minHeight: 76,
+      borderRadius: t.radius.md,
+      backgroundColor: t.colors.surfaceElevated,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
     },
-    familyBody: {
-      ...t.typography.caption,
-      color: 'rgba(0,0,0,0.68)',
-      lineHeight: 18,
-      marginBottom: t.spacing.sm,
+    statValue: { ...t.typography.h1, color: t.colors.foreground },
+    statLabel: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '600' },
+    previewStrip: { flexDirection: 'row', gap: t.spacing.xs, marginTop: t.spacing.md },
+    previewThumb: { flex: 1, height: 74, borderRadius: t.radius.md, overflow: 'hidden' },
+    section: { gap: t.spacing.sm },
+    sectionTitle: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '700' },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm },
+    tile: {
+      width: '48%',
+      minHeight: 108,
+      borderRadius: t.surface.cardRadius,
+      backgroundColor: t.colors.surfaceElevated,
+      padding: 14,
+      gap: 10,
     },
-    familyFoot: {
-      ...t.typography.caption,
-      color: t.colors.brandWarmDark,
-      fontWeight: '700',
+    tileDisabled: { opacity: 0.5 },
+    tileIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: t.colors.primaryLight,
     },
-    menuCard: {
-      backgroundColor: t.colors.surface,
-      marginHorizontal: t.spacing.md,
-      borderRadius: t.radius.lg,
-      marginBottom: t.spacing.sm,
-      overflow: 'hidden',
-      ...t.shadows.sm,
-    },
-    bottomPadding: { height: t.spacing.lg },
+    tileLabel: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700' },
+    tileValue: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '600' },
+    pressedChrome: { opacity: t.interaction.chipPressedOpacity, transform: [{ scale: t.interaction.pressedScale }] },
   });
 }

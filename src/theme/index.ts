@@ -2,47 +2,43 @@ import { useColorScheme } from 'react-native';
 
 export const lightTheme = {
   colors: {
-    // Brand
-    primary: '#FF6B35',
-    primaryDark: '#E85D2C',
-    primaryLight: '#FFF0E8',
+    primary: '#C9673C',
+    primaryDark: '#A9542D',
+    primaryLight: '#F8ECE5',
 
-    // Accent
-    accent: '#2EC4B6',
-    accentLight: '#E8FAF8',
+    accent: '#6E867D',
+    accentLight: '#EEF4F0',
 
-    // Semantic
-    success: '#4CAF50',
-    successLight: '#E8F5E9',
-    warning: '#F2994A',
-    warningLight: '#FFF3E0',
-    error: '#EF4444',
-    errorLight: '#FEE2E2',
+    success: '#7C9D87',
+    successLight: '#EEF5F0',
+    warning: '#C99658',
+    warningLight: '#F8F0E4',
+    error: '#C96D60',
+    errorLight: '#F8EBE8',
 
-    // Neutral
-    background: '#FAFAF8',
+    background: '#FAF6F2',
     surface: '#FFFFFF',
-    foreground: '#111827',
-    muted: '#6B7280',
-    subtle: '#9CA3AF',
-    border: '#E5E7EB',
-    borderLight: '#F3F4F6',
+    surfaceMuted: '#F6F0EB',
+    surfaceElevated: '#FFFDFC',
+    foreground: '#1F1915',
+    muted: '#6F6259',
+    subtle: '#9B8E84',
+    border: '#E6DBD3',
+    borderLight: '#EEE5DF',
 
-    // Special
-    star: '#F2994A',
-    premium: '#FFD700',
+    star: '#D1A04A',
+    premium: '#E5B86D',
 
-    // Legacy aliases
-    brand: '#FF6B35',
-    brandDark: '#E85D2C',
-    brandLight: '#FFF0E8',
-    brandAccent: '#F2994A',
-    brandAccentLight: '#FFF3E0',
-    brandWarm: '#E69A5A',
+    brand: '#C9673C',
+    brandDark: '#A9542D',
+    brandLight: '#F8ECE5',
+    brandAccent: '#DCA24A',
+    brandAccentLight: '#FFF4E2',
+    brandWarm: '#E8C19E',
     brandWarmDark: '#8A5A2B',
     white: '#FFFFFF',
-    red: '#EF4444',
-    blue: '#3B82F6',
+    red: '#D65947',
+    blue: '#667FA4',
   },
 
   spacing: {
@@ -57,42 +53,57 @@ export const lightTheme = {
 
   radius: {
     sm: 8,
-    md: 12,
-    lg: 16,
+    md: 14,
+    lg: 18,
     full: 9999,
+  },
+
+  interaction: {
+    pressedOpacity: 0.9,
+    pressedScale: 0.985,
+    chipPressedOpacity: 0.82,
+  },
+
+  surface: {
+    controlHeight: 40,
+    compactChipHeight: 32,
+    cardRadius: 20,
+    insetCardPadding: 16,
+    actionButtonSize: 60,
+    listCardMinHeight: 88,
   },
 
   shadows: {
     sm: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
+      shadowOpacity: 0.025,
       shadowRadius: 3,
-      elevation: 2,
+      elevation: 1,
     },
     md: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 8,
-      elevation: 4,
+      shadowOpacity: 0.045,
+      shadowRadius: 10,
+      elevation: 2,
     },
     lg: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.15,
+      shadowOpacity: 0.06,
       shadowRadius: 16,
-      elevation: 8,
+      elevation: 4,
     },
   },
 
   typography: {
-    display: { fontSize: 26, lineHeight: 34, fontWeight: '800' as const },
-    h1: { fontSize: 20, lineHeight: 28, fontWeight: '700' as const },
-    h2: { fontSize: 16, lineHeight: 24, fontWeight: '600' as const },
-    body: { fontSize: 14, lineHeight: 22, fontWeight: '400' as const },
-    caption: { fontSize: 12, lineHeight: 18, fontWeight: '500' as const },
-    micro: { fontSize: 10, lineHeight: 14, fontWeight: '600' as const },
+    display: { fontSize: 32, lineHeight: 40, fontWeight: '800' as const },
+    h1: { fontSize: 22, lineHeight: 30, fontWeight: '700' as const },
+    h2: { fontSize: 18, lineHeight: 26, fontWeight: '700' as const },
+    body: { fontSize: 16, lineHeight: 24, fontWeight: '400' as const },
+    caption: { fontSize: 14, lineHeight: 20, fontWeight: '500' as const },
+    micro: { fontSize: 12, lineHeight: 17, fontWeight: '600' as const },
   },
 
   topNavHeight: 56,
@@ -103,44 +114,43 @@ export const darkTheme = {
   ...lightTheme,
   colors: {
     ...lightTheme.colors,
-    // Dark mode adjustments
-    background: '#0F0F0F',
-    surface: '#1A1A1A',
-    foreground: '#F9FAFB',
-    muted: '#9CA3AF',
-    subtle: '#6B7280',
-    border: '#2A2A2A',
-    borderLight: '#1F1F1F',
-
-    // Adjusted for dark mode contrast
-    primaryLight: 'rgba(255, 107, 53, 0.15)',
-    successLight: 'rgba(76, 175, 80, 0.15)',
-    warningLight: 'rgba(242, 153, 74, 0.15)',
-    errorLight: 'rgba(239, 68, 68, 0.15)',
-    accentLight: 'rgba(46, 196, 182, 0.15)',
-    brandAccentLight: 'rgba(242, 153, 74, 0.15)',
+    background: '#141211',
+    surface: '#1D1A18',
+    surfaceMuted: '#1A1715',
+    surfaceElevated: '#24201D',
+    foreground: '#FAF6F2',
+    muted: '#B6A99D',
+    subtle: '#8F8177',
+    border: '#332D29',
+    borderLight: '#241F1D',
+    primaryLight: 'rgba(201, 103, 60, 0.18)',
+    successLight: 'rgba(114, 180, 125, 0.18)',
+    warningLight: 'rgba(220, 162, 74, 0.18)',
+    errorLight: 'rgba(214, 89, 71, 0.18)',
+    accentLight: 'rgba(77, 139, 122, 0.18)',
+    brandAccentLight: 'rgba(220, 162, 74, 0.18)',
   },
   shadows: {
     sm: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.2,
+      shadowOpacity: 0.18,
       shadowRadius: 4,
-      elevation: 3,
+      elevation: 2,
     },
     md: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.22,
       shadowRadius: 10,
-      elevation: 6,
+      elevation: 4,
     },
     lg: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.4,
-      shadowRadius: 20,
-      elevation: 10,
+      shadowOpacity: 0.28,
+      shadowRadius: 16,
+      elevation: 6,
     },
   },
 };
@@ -156,6 +166,4 @@ export function useTheme() {
 }
 
 export { useThemedStyles, useThemeColors } from './useTheme';
-
-// Export default theme for backward compatibility
 export const theme = lightTheme;

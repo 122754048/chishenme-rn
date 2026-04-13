@@ -1,18 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { Search, X, Clock, TrendingUp } from 'lucide-react-native';
-import { useThemedStyles, useThemeColors } from '../theme';
-import type { AppTheme } from '../theme/useTheme';
+import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Clock3, Search, TrendingUp, X } from 'lucide-react-native';
 import { storage } from '../storage';
+import { useThemeColors, useThemedStyles } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 
 interface SearchOverlayProps {
   visible: boolean;
@@ -20,8 +12,41 @@ interface SearchOverlayProps {
   onSearch?: (query: string) => void;
 }
 
-const DEFAULT_RECENT_SEARCHES = ['三文鱼碗', '拉面', '附近的披萨'];
-const TRENDING_TAGS = ['健康沙拉', '四川火锅', '抹茶拿铁', '夏威夷拌饭', '早茶点心', '韩式烤肉'];
+const DEFAULT_RECENT_SEARCHES = ['ramen', 'healthy lunch', 'West Village', 'Thai'];
+const TRENDING_TAGS = ['budget lunch', 'comfort dinner', 'late-night noodles', 'healthy bowls', 'dessert'];
+
+function QuickGroup({
+  icon,
+  items,
+  onSelect,
+  styles,
+}: {
+  icon: React.ReactNode;
+  items: string[];
+  onSelect: (term: string) => void;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  return (
+    <View style={styles.quickGroup}>
+      <View style={styles.quickGroupHeader}>
+        <View style={styles.quickGroupIcon}>{icon}</View>
+      </View>
+      <View style={styles.chipGrid}>
+        {items.map((term) => (
+          <Pressable
+            key={term}
+            style={({ pressed }) => [styles.inlineChip, pressed && styles.pressedChip]}
+            onPress={() => onSelect(term)}
+            accessibilityRole="button"
+            accessibilityLabel={`Search ${term}`}
+          >
+            <Text style={styles.inlineChipText}>{term}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps) {
   const theme = useThemeColors();
@@ -29,7 +54,7 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
   const [query, setQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const userInteractedRef = React.useRef(false);
+  const userInteractedRef = useRef(false);
 
   useEffect(() => {
     async function loadRecentSearches() {
@@ -44,190 +69,174 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
         setHydrated(true);
       }
     }
-    loadRecentSearches();
+
+    void loadRecentSearches();
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
     void storage.setRecentSearches(recentSearches);
-  }, [recentSearches, hydrated]);
+  }, [hydrated, recentSearches]);
 
-  const handleSubmit = () => {
-    const trimmed = query.trim();
-    if (trimmed.length > 0) {
-      userInteractedRef.current = true;
-      onSearch?.(trimmed);
-      setRecentSearches((prev) => [trimmed, ...prev.filter((s) => s !== trimmed)].slice(0, 10));
-      onClose();
-    }
-  };
+  const handleSubmit = (term?: string) => {
+    const trimmed = (term ?? query).trim();
+    if (!trimmed) return;
 
-  const handleClearRecent = () => {
     userInteractedRef.current = true;
-    setRecentSearches([]);
+    onSearch?.(trimmed);
+    setRecentSearches((prev) => [trimmed, ...prev.filter((item) => item !== trimmed)].slice(0, 10));
+    onClose();
   };
+
+  const quickTerms = recentSearches.length > 0 ? recentSearches : DEFAULT_RECENT_SEARCHES;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.header}>
-          <View style={styles.searchBar}>
-            <Search size={16} color={theme.colors.subtle} strokeWidth={1.8} />
-            <TextInput
-              style={styles.input}
-              placeholder="搜索美食或餐厅"
-              placeholderTextColor={theme.colors.subtle}
-              value={query}
-              onChangeText={setQuery}
-              autoFocus
-              returnKeyType="search"
-              onSubmitEditing={handleSubmit}
-              accessibilityLabel="搜索美食或餐厅"
-            />
-            {query.length > 0 && (
-              <Pressable
-                onPress={() => setQuery('')}
-                style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.5 }]}
-                accessibilityRole="button"
-                accessibilityLabel="清空搜索内容"
-                hitSlop={8}
-              >
-                <X size={14} color={theme.colors.subtle} strokeWidth={2} />
-              </Pressable>
-            )}
-          </View>
-          <Pressable
-            onPress={onClose}
-            style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]}
-            accessibilityRole="button"
-            accessibilityLabel="关闭搜索"
-            hitSlop={8}
-          >
-            <Text style={styles.cancelText}>取消</Text>
-          </Pressable>
-        </View>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.grabber} />
 
-        <View style={styles.content}>
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>最近搜索</Text>
-              <Pressable onPress={handleClearRecent} accessibilityRole="button" accessibilityLabel="清除最近搜索" hitSlop={8}>
-                <Text style={styles.clearAll}>清除</Text>
-              </Pressable>
-            </View>
-            {(recentSearches.length > 0 ? recentSearches : DEFAULT_RECENT_SEARCHES).map((term) => (
-              <Pressable
-                key={term}
-                style={({ pressed }) => [styles.recentItem, pressed && { backgroundColor: theme.colors.borderLight }]}
-                onPress={() => {
-                  userInteractedRef.current = true;
-                  setQuery(term);
-                  setRecentSearches((prev) => [term, ...prev.filter((s) => s !== term)].slice(0, 10));
-                  onSearch?.(term);
-                  onClose();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={`搜索 ${term}`}
-              >
-                <Clock size={14} color={theme.colors.subtle} strokeWidth={1.8} />
-                <Text style={styles.recentText}>{term}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.trendingHeader}>
-                <TrendingUp size={14} color={theme.colors.primary} strokeWidth={2} />
-                <Text style={styles.sectionTitle}>热门搜索</Text>
-              </View>
-            </View>
-            <View style={styles.tagContainer}>
-              {TRENDING_TAGS.map((tag) => (
-                <Pressable
-                  key={tag}
-                  style={({ pressed }) => [styles.tag, pressed && { backgroundColor: theme.colors.border }]}
-                  onPress={() => {
-                    userInteractedRef.current = true;
-                    setQuery(tag);
-                    setRecentSearches((prev) => [tag, ...prev.filter((s) => s !== tag)].slice(0, 10));
-                    onSearch?.(tag);
-                    onClose();
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`搜索 ${tag}`}
-                >
-                  <Text style={styles.tagText}>{tag}</Text>
+          <View style={styles.header}>
+            <View style={styles.searchBar}>
+              <Search size={16} color={theme.colors.subtle} strokeWidth={1.8} />
+              <TextInput
+                style={styles.input}
+                placeholder="dish, place, area"
+                placeholderTextColor={theme.colors.subtle}
+                value={query}
+                onChangeText={setQuery}
+                autoFocus
+                returnKeyType="search"
+                onSubmitEditing={() => handleSubmit()}
+                accessibilityLabel="Search a dish, restaurant, or area"
+              />
+              {query.length > 0 ? (
+                <Pressable onPress={() => setQuery('')} style={({ pressed }) => [styles.iconBtn, pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={8}>
+                  <X size={14} color={theme.colors.subtle} strokeWidth={2} />
                 </Pressable>
-              ))}
+              ) : null}
             </View>
+            <Pressable onPress={onClose} style={({ pressed }) => [styles.closeBtn, pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel="Close search" hitSlop={8}>
+              <X size={18} color={theme.colors.foreground} strokeWidth={2} />
+            </Pressable>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+
+          <View style={styles.content}>
+            {query.trim().length > 0 ? (
+              <Pressable style={({ pressed }) => [styles.submitCard, pressed && styles.pressedChip]} onPress={() => handleSubmit()}>
+                <View>
+                  <Text style={styles.submitLabel}>Search now</Text>
+                  <Text style={styles.submitValue} numberOfLines={1}>
+                    {query.trim()}
+                  </Text>
+                </View>
+                <Search size={18} color={theme.colors.primary} strokeWidth={2} />
+              </Pressable>
+            ) : null}
+
+            <View style={styles.groupHeader}>
+              <Text style={styles.groupHeaderText}>Recent</Text>
+            </View>
+            <QuickGroup
+              icon={<Clock3 size={14} color={theme.colors.subtle} strokeWidth={2} />}
+              items={quickTerms}
+              onSelect={handleSubmit}
+              styles={styles}
+            />
+            <View style={styles.groupHeader}>
+              <Text style={styles.groupHeaderText}>Trending</Text>
+            </View>
+            <QuickGroup
+              icon={<TrendingUp size={14} color={theme.colors.primary} strokeWidth={2} />}
+              items={TRENDING_TAGS}
+              onSelect={handleSubmit}
+              styles={styles}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Modal>
   );
 }
 
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: t.colors.surface },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: t.spacing.md,
-    paddingTop: t.spacing.sm,
-    paddingBottom: t.spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: t.colors.borderLight,
-    gap: t.spacing.sm,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: t.colors.borderLight,
-    borderRadius: t.radius.md,
-    paddingHorizontal: t.spacing.sm,
-    height: 40,
-    gap: t.spacing.xs,
-  },
-  input: { flex: 1, ...t.typography.body, color: t.colors.foreground },
-  iconBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  cancelBtn: { paddingHorizontal: 4 },
-  cancelText: { ...t.typography.body, color: t.colors.primary, fontWeight: '500' },
-  content: { flex: 1, paddingHorizontal: t.spacing.md, paddingTop: t.spacing.md },
-  section: { marginBottom: t.spacing.lg },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: t.spacing.xs,
-  },
-  sectionTitle: {
-    ...t.typography.micro,
-    fontWeight: '700',
-    color: t.colors.subtle,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  clearAll: { ...t.typography.caption, color: t.colors.primary, fontWeight: '500' },
-  trendingHeader: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  recentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: t.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: t.colors.borderLight,
-    gap: t.spacing.sm,
-  },
-  recentText: { ...t.typography.body, color: t.colors.foreground },
-  tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs, marginTop: 4 },
-  tag: {
-    backgroundColor: t.colors.borderLight,
-    paddingHorizontal: t.spacing.sm,
-    paddingVertical: 6,
-    borderRadius: t.radius.full,
-  },
-  tagText: { ...t.typography.body, color: t.colors.foreground, fontWeight: '500' },
-});
+    safeArea: { flex: 1, backgroundColor: t.colors.surface },
+    container: { flex: 1, backgroundColor: t.colors.surface },
+    pressedChrome: { opacity: t.interaction.chipPressedOpacity },
+    pressedChip: { opacity: t.interaction.chipPressedOpacity, backgroundColor: t.colors.border },
+    grabber: {
+      alignSelf: 'center',
+      width: 40,
+      height: 5,
+      borderRadius: t.radius.full,
+      backgroundColor: t.colors.border,
+      marginTop: t.spacing.xs,
+      marginBottom: t.spacing.sm,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: t.spacing.sm,
+      paddingHorizontal: t.spacing.md,
+      paddingBottom: t.spacing.sm,
+    },
+    searchBar: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: t.colors.background,
+      borderRadius: t.surface.cardRadius,
+      paddingHorizontal: t.spacing.sm,
+      height: t.surface.controlHeight,
+      gap: t.spacing.xs,
+      borderWidth: 1,
+      borderColor: t.colors.borderLight,
+    },
+    input: { flex: 1, ...t.typography.body, color: t.colors.foreground },
+    iconBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+    closeBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.background },
+    content: { flex: 1, paddingHorizontal: t.spacing.md, gap: t.spacing.md },
+    submitCard: {
+      minHeight: 64,
+      borderRadius: t.surface.cardRadius,
+      backgroundColor: t.colors.primaryLight,
+      paddingHorizontal: t.spacing.md,
+      paddingVertical: t.spacing.sm,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    submitLabel: { ...t.typography.micro, color: t.colors.primaryDark, fontWeight: '700' },
+    submitValue: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700', marginTop: 2 },
+    groupHeader: { paddingTop: 6 },
+    groupHeaderText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '700' },
+    quickGroup: {
+      backgroundColor: t.colors.surfaceElevated,
+      borderRadius: t.surface.cardRadius,
+      padding: t.surface.insetCardPadding,
+      gap: t.spacing.sm,
+    },
+    quickGroupHeader: { flexDirection: 'row', alignItems: 'center' },
+    quickGroupIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: t.colors.background,
+    },
+    chipGrid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs },
+    inlineChip: {
+      backgroundColor: t.colors.background,
+      minHeight: t.surface.compactChipHeight,
+      paddingHorizontal: t.spacing.sm,
+      paddingVertical: 6,
+      borderRadius: t.radius.full,
+      borderWidth: 1,
+      borderColor: t.colors.borderLight,
+      justifyContent: 'center',
+    },
+    inlineChipText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '600' },
+  });
 }

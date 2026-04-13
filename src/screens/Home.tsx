@@ -1,189 +1,324 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated as NativeAnimated, PanResponder, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
-  Extrapolation,
-  interpolate,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CheckCircle2, ChevronRight, Compass, Heart, Search, Sparkles, Star, X } from 'lucide-react-native';
-import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors } from '../theme';
-import type { AppTheme } from '../theme/useTheme';
-import { SkeletonImage } from '../components/SkeletonImage';
-import { OnboardingGuide } from '../components/OnboardingGuide';
-import { SearchOverlay } from '../components/SearchOverlay';
+import { CheckCircle2, Compass, Crown, Heart, MapPin, ScanSearch, Sparkles, Star, X } from 'lucide-react-native';
+import { brand } from '../config/brand';
 import { useApp } from '../context/AppContext';
-import type { SwipeCardData } from '../data/mockData';
+import type { MealType, SwipeCardData } from '../data/mockData';
+import type { MainTabParamList, RootStackParamList } from '../navigation/types';
+import { fetchNearbyRestaurants } from '../services/places';
+import { SkeletonImage } from '../components/SkeletonImage';
+import { useThemeColors, useThemedStyles } from '../theme';
+import type { AppTheme } from '../theme/useTheme';
 import { getRecommendedDishes } from '../utils/recommendations';
+import { formatDistanceMiles, getBestEffortLocationContext } from '../utils/location';
 
 const SWIPE_THRESHOLD = 100;
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
+type HomeRouteProp = RouteProp<MainTabParamList, 'Home'>;
+type HomeTabNavProp = BottomTabNavigationProp<MainTabParamList, 'Home'>;
 
-function inferMealTypeByHour() {
+function inferMealTypeByHour(): MealType {
   const hour = new Date().getHours();
-  if (hour < 10) return '早餐' as const;
-  if (hour < 15) return '午餐' as const;
-  if (hour < 18) return '下午茶' as const;
-  if (hour < 22) return '晚餐' as const;
-  return '夜宵' as const;
+  if (hour < 10) return 'Breakfast';
+  if (hour < 15) return 'Lunch';
+  if (hour < 18) return 'Snack';
+  if (hour < 22) return 'Dinner';
+  return 'Late Night';
 }
 
 function DecisionCard({
   card,
   reasons,
+  rating,
+  distanceLabel,
   onSwipe,
+  onSwipeStart,
   onOpenDetail,
+  onGestureStateChange,
+  onBlockedSwipeAttempt,
   screenWidth,
   styles,
   enabled,
   cardHeight,
+  swipeRequest,
+  canCommitSwipe,
 }: {
   card: SwipeCardData;
   reasons: string[];
+  rating: string;
+  distanceLabel: string;
   onSwipe: (dir: 'left' | 'right') => void;
+  onSwipeStart: () => void;
   onOpenDetail: () => void;
+  onGestureStateChange: (dragging: boolean) => void;
+  onBlockedSwipeAttempt: () => void;
   screenWidth: number;
   styles: ReturnType<typeof makeStyles>;
   enabled: boolean;
   cardHeight: number;
+  swipeRequest: { direction: 'left' | 'right'; key: number } | null;
+  canCommitSwipe: boolean;
 }) {
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
+  const pan = useRef(new NativeAnimated.ValueXY()).current;
+  const gestureStartAt = useRef(0);
 
-  const panGesture = Gesture.Pan()
-    .enabled(enabled)
-    .onUpdate((event) => {
-      translateX.value = event.translationX;
-      translateY.value = event.translationY * 0.2;
-    })
-    .onEnd((event) => {
-      if (event.translationX > SWIPE_THRESHOLD || event.velocityX > 500) {
-        translateX.value = withTiming(screenWidth * 1.5, { duration: 240 });
-        runOnJS(onSwipe)('right');
-      } else if (event.translationX < -SWIPE_THRESHOLD || event.velocityX < -500) {
-        translateX.value = withTiming(-screenWidth * 1.5, { duration: 240 });
-        runOnJS(onSwipe)('left');
-      } else {
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
-      }
+  const resetCard = useCallback((onComplete?: () => void) => {
+    NativeAnimated.spring(pan, {
+      toValue: { x: 0, y: 0 },
+      useNativeDriver: true,
+      speed: 16,
+      bounciness: 8,
+    }).start(() => {
+      onGestureStateChange(false);
+      onComplete?.();
     });
+  }, [onGestureStateChange, pan]);
 
-  const cardAnimStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      { rotate: `${translateX.value / 28}deg` },
-    ],
-  }));
+  const animateOut = useCallback(
+    (direction: 'left' | 'right') => {
+      onSwipeStart();
+      NativeAnimated.timing(pan, {
+        toValue: { x: direction === 'right' ? screenWidth * 1.2 : -screenWidth * 1.2, y: 0 },
+        duration: 230,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        onGestureStateChange(false);
+        if (finished) {
+          pan.setValue({ x: 0, y: 0 });
+          onSwipe(direction);
+        }
+      });
+    },
+    [onGestureStateChange, onSwipe, onSwipeStart, pan, screenWidth]
+  );
 
-  const positiveOpacity = useAnimatedStyle(() => ({
-    opacity: interpolate(translateX.value, [0, 80], [0, 1], Extrapolation.CLAMP),
-  }));
+  useEffect(() => {
+    if (!swipeRequest || !enabled) return;
+    animateOut(swipeRequest.direction);
+  }, [animateOut, enabled, swipeRequest]);
 
-  const negativeOpacity = useAnimatedStyle(() => ({
-    opacity: interpolate(translateX.value, [-80, 0], [1, 0], Extrapolation.CLAMP),
-  }));
+  const rotate = pan.x.interpolate({
+    inputRange: [-screenWidth, 0, screenWidth],
+    outputRange: ['-10deg', '0deg', '10deg'],
+    extrapolate: 'clamp',
+  });
+
+  const positiveOpacity = pan.x.interpolate({
+    inputRange: [0, 90],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  const negativeOpacity = pan.x.interpolate({
+    inputRange: [-90, 0],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onStartShouldSetPanResponderCapture: () => false,
+        onMoveShouldSetPanResponder: (_evt, gestureState) =>
+          enabled && Math.abs(gestureState.dx) > 8 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.15,
+        onMoveShouldSetPanResponderCapture: (_evt, gestureState) =>
+          enabled && Math.abs(gestureState.dx) > 8 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.15,
+        onPanResponderGrant: () => {
+          gestureStartAt.current = Date.now();
+          onGestureStateChange(true);
+        },
+        onPanResponderMove: (_evt, gestureState) => {
+          pan.setValue({ x: gestureState.dx, y: gestureState.dy * 0.12 });
+        },
+        onPanResponderRelease: (_evt, gestureState) => {
+          const gestureDuration = Date.now() - gestureStartAt.current;
+          const isTapLike = Math.abs(gestureState.dx) < 8 && Math.abs(gestureState.dy) < 8 && gestureDuration < 220;
+
+          if (isTapLike) {
+            resetCard(onOpenDetail);
+            return;
+          }
+
+          if (gestureState.dx > SWIPE_THRESHOLD || gestureState.vx > 0.5) {
+            if (!canCommitSwipe) {
+              resetCard(onBlockedSwipeAttempt);
+              return;
+            }
+            animateOut('right');
+            return;
+          }
+
+          if (gestureState.dx < -SWIPE_THRESHOLD || gestureState.vx < -0.5) {
+            if (!canCommitSwipe) {
+              resetCard(onBlockedSwipeAttempt);
+              return;
+            }
+            animateOut('left');
+            return;
+          }
+
+          resetCard();
+        },
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderTerminate: () => resetCard(),
+      }),
+    [animateOut, canCommitSwipe, enabled, onBlockedSwipeAttempt, onGestureStateChange, onOpenDetail, pan, resetCard]
+  );
 
   return (
-    <GestureDetector gesture={panGesture}>
-      <Animated.View style={[styles.card, { width: screenWidth - 32, height: cardHeight }, cardAnimStyle]}>
-        <Animated.View style={[styles.badgeLike, positiveOpacity]}>
-          <Text style={styles.badgeLikeText}>今天吃这个</Text>
-        </Animated.View>
-        <Animated.View style={[styles.badgeNope, negativeOpacity]}>
-          <Text style={styles.badgeNopeText}>先看看别的</Text>
-        </Animated.View>
+    <View style={styles.activeCardShell}>
+      <NativeAnimated.View
+        {...panResponder.panHandlers}
+        style={[
+          styles.card,
+          styles.activeCard,
+          {
+            width: screenWidth - 32,
+            height: cardHeight,
+            transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate }],
+          },
+        ]}
+      >
+        <NativeAnimated.View style={[styles.badgeLike, { opacity: positiveOpacity }]}>
+          <Text style={styles.badgeLikeText}>Save</Text>
+        </NativeAnimated.View>
+        <NativeAnimated.View style={[styles.badgeNope, { opacity: negativeOpacity }]}>
+          <Text style={styles.badgeNopeText}>Skip</Text>
+        </NativeAnimated.View>
 
-        <Pressable style={styles.cardImage} onPress={onOpenDetail}>
-          <SkeletonImage src={card.image} alt={card.name} />
-          <View style={styles.cardInfoOverlay}>
-            <View style={styles.cardInfoTopRow}>
-              <View style={styles.categoryPill}>
-                <Text style={styles.categoryPillText}>{card.category}</Text>
-              </View>
-              <View style={styles.ratingBadge}>
-                <Star size={12} color="#FFD700" fill="#FFD700" />
-                <Text style={styles.ratingText}>{card.rating}</Text>
-              </View>
-            </View>
-
-            <Text style={styles.cardName}>{card.name}</Text>
-            <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
-
-            <View style={styles.cardMetaRow}>
-              <Text style={styles.cardMetaText}>{card.cuisineLabel}</Text>
-              <Text style={styles.cardMetaDot}>·</Text>
-              <Text style={styles.cardMetaText}>{card.price}</Text>
-              <Text style={styles.cardMetaDot}>·</Text>
-              <Text style={styles.cardMetaText}>{card.prepTime}</Text>
-            </View>
-
-            <View style={styles.reasonPanel}>
-              <View style={styles.reasonHeader}>
-                <Sparkles size={14} color="#FFFFFF" strokeWidth={2} />
-                <Text style={styles.reasonTitle}>为什么现在推荐它</Text>
-              </View>
-              {reasons.map((reason) => (
-                <View key={reason} style={styles.reasonRow}>
-                  <CheckCircle2 size={12} color="#FFFFFF" strokeWidth={2.4} />
-                  <Text style={styles.reasonText}>{reason}</Text>
+        <Pressable
+          onPress={onOpenDetail}
+          style={styles.cardTapTarget}
+          accessibilityRole="button"
+          accessibilityLabel={`Open details for ${card.name}`}
+        >
+          <View style={styles.cardImage}>
+            <SkeletonImage src={card.image} alt={card.name} />
+            <View style={styles.cardInfoOverlay}>
+              <View style={styles.cardInfoTopRow}>
+                <View style={styles.inlinePill}>
+                  <Text style={styles.inlinePillText} numberOfLines={1}>
+                    {card.restaurantName}
+                  </Text>
                 </View>
-              ))}
-            </View>
+                <View style={styles.ratingBadge}>
+                  <Star size={12} color="#F5B74F" fill="#F5B74F" />
+                  <Text style={styles.ratingText}>{rating}</Text>
+                </View>
+              </View>
 
-            <View style={styles.cardTagRow}>
-              {card.decisionTags.slice(0, 3).map((tag) => (
-                <Text key={tag} style={styles.cardTag}>{tag}</Text>
-              ))}
-            </View>
+              <Text style={styles.cardName}>{card.name}</Text>
 
-            <Pressable style={styles.detailLink} onPress={onOpenDetail}>
-              <Text style={styles.detailLinkText}>查看完整决策理由</Text>
-              <ChevronRight size={14} color="#FFFFFF" strokeWidth={2} />
-            </Pressable>
+              {reasons[0] ? (
+                <Text style={styles.cardSupportText} numberOfLines={1}>
+                  {reasons[0]}
+                </Text>
+              ) : null}
+
+              <View style={styles.cardMetaRow}>
+                <Text style={styles.cardMetaText}>{distanceLabel}</Text>
+                <Text style={styles.cardMetaDot}>/</Text>
+                <Text style={styles.cardMetaText}>{card.prepTime}</Text>
+              </View>
+            </View>
           </View>
         </Pressable>
-      </Animated.View>
-    </GestureDetector>
+      </NativeAnimated.View>
+    </View>
+  );
+}
+
+function PreviewDeckCard({
+  card,
+  rating,
+  distanceLabel,
+  screenWidth,
+  cardHeight,
+  styles,
+  depth,
+}: {
+  card: SwipeCardData;
+  rating: string;
+  distanceLabel: string;
+  screenWidth: number;
+  cardHeight: number;
+  styles: ReturnType<typeof makeStyles>;
+  depth: number;
+}) {
+  const topOffset = depth === 1 ? 12 : 24;
+  const scale = depth === 1 ? 0.975 : 0.95;
+
+  return (
+    <View
+      pointerEvents="none"
+      style={[
+        styles.previewCardShell,
+        {
+          top: topOffset,
+          width: screenWidth - 32,
+          height: cardHeight,
+          transform: [{ scale }],
+          zIndex: depth === 1 ? 1 : 0,
+        },
+      ]}
+    >
+      <View style={styles.previewCard}>
+        <View style={styles.cardImage}>
+          <SkeletonImage src={card.image} alt={card.name} />
+          <View style={styles.previewOverlay} />
+          <View style={styles.previewCardInfo}>
+            <View style={styles.previewTopRow}>
+              <Text style={styles.previewRestaurant} numberOfLines={1}>
+                {card.restaurantName}
+              </Text>
+              <View style={styles.previewRatingBadge}>
+                <Star size={11} color="#F5B74F" fill="#F5B74F" />
+                <Text style={styles.previewRatingText}>{rating}</Text>
+              </View>
+            </View>
+            <Text style={styles.previewName} numberOfLines={1}>
+              {card.name}
+            </Text>
+            <Text style={styles.previewMeta} numberOfLines={1}>
+              {distanceLabel} / {card.prepTime}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }
 
 function AnimatedActionBtn({
   onPress,
   children,
-  style,
-  label,
   disabled,
+  accessibilityLabel,
 }: {
   onPress: () => void;
   children: React.ReactNode;
-  style?: object;
-  label?: string;
   disabled?: boolean;
+  accessibilityLabel: string;
 }) {
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const handlePress = () => {
     if (disabled) return;
-    scale.value = withSequence(
-      withSpring(0.88, { damping: 8 }),
-      withSpring(1.06, { damping: 7 }),
-      withSpring(1, { damping: 10 }),
-    );
+    scale.value = withSequence(withTiming(0.96, { duration: 70 }), withSpring(1, { damping: 14, stiffness: 220 }));
     onPress();
   };
 
@@ -193,364 +328,581 @@ function AnimatedActionBtn({
       style={actionBtnStyles.wrapper}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled: Boolean(disabled) }}
       hitSlop={8}
     >
-      <Animated.View style={[style, animStyle, disabled && actionBtnStyles.disabled]}>{children}</Animated.View>
-      {label ? <Text style={actionBtnStyles.label}>{label}</Text> : null}
+      <Animated.View style={[animStyle, disabled && actionBtnStyles.disabled]}>{children}</Animated.View>
     </Pressable>
   );
 }
 
 const actionBtnStyles = StyleSheet.create({
-  wrapper: { alignItems: 'center', gap: 6 },
-  label: { fontSize: 11, fontWeight: '500', color: '#9CA3AF', marginTop: 2 },
+  wrapper: { alignItems: 'center', justifyContent: 'center' },
   disabled: { opacity: 0.45 },
 });
 
 export function Home() {
   const navigation = useNavigation<NavProp>();
+  const tabNavigation = useNavigation<HomeTabNavProp>();
+  const route = useRoute<HomeRouteProp>();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const {
     addToHistory,
-    toggleFavorite,
-    recommendationsLeft,
+    backendToken,
     consumeRecommendation,
+    history,
+    isFavorite,
+    locationContext,
+    membershipPlan,
+    recommendationsLeft,
     selectedCuisines,
     selectedRestrictions,
+    setLocationSelection,
+    toggleFavorite,
   } = useApp();
-  const [cardIndex, setCardIndex] = useState(0);
-  const [showSearch, setShowSearch] = useState(false);
+
+  const [swipeRequest, setSwipeRequest] = useState<{ direction: 'left' | 'right'; key: number } | null>(null);
+  const [isResolvingDecision, setIsResolvingDecision] = useState(false);
+  const [isCardDragging, setIsCardDragging] = useState(false);
+  const [unlockNoticePlan, setUnlockNoticePlan] = useState<'pro' | 'family' | null>(route.params?.justUnlocked ?? null);
+  const [nearbyRestaurants, setNearbyRestaurants] = useState<Awaited<ReturnType<typeof fetchNearbyRestaurants>>['restaurants']>([]);
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const developerTapCountRef = useRef(0);
+  const developerTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isUnlimitedPlan = recommendationsLeft < 0;
   const quotaLocked = !isUnlimitedPlan && recommendationsLeft <= 0;
-  const cardHeight = Math.min(Math.max(screenHeight * 0.62, 468), 620);
+  const canCommitSwipe = membershipPlan !== 'free' || !quotaLocked;
+  const cardHeight = Math.min(Math.max(screenHeight * 0.56, 440), 620);
   const preferredMealType = inferMealTypeByHour();
 
+  useEffect(() => {
+    return () => {
+      if (developerTapTimerRef.current) {
+        clearTimeout(developerTapTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const unlocked = route.params?.justUnlocked;
+    if (!unlocked) return;
+    setUnlockNoticePlan(unlocked);
+    tabNavigation.setParams({ justUnlocked: undefined });
+  }, [route.params?.justUnlocked, tabNavigation]);
+
+  useEffect(() => {
+    if (locationContext) return;
+    void getBestEffortLocationContext()
+      .then((context) => {
+        if (context) {
+          return setLocationSelection(context);
+        }
+        return undefined;
+      })
+      .catch((error) => {
+        console.warn('Failed to resolve best-effort location:', error);
+      });
+  }, [locationContext, setLocationSelection]);
+
+  useEffect(() => {
+    if (!backendToken || !locationContext) {
+      setNearbyRestaurants([]);
+      return;
+    }
+
+    let active = true;
+    setIsDiscovering(true);
+
+    const input =
+      locationContext.mode === 'live'
+        ? { latitude: locationContext.latitude, longitude: locationContext.longitude, radiusMeters: 2200 }
+        : { query: locationContext.query ?? locationContext.label };
+
+    void fetchNearbyRestaurants(backendToken, input)
+      .then((result) => {
+        if (!active) return;
+        setNearbyRestaurants(result.restaurants);
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.warn('Failed to fetch nearby restaurants:', error);
+        setNearbyRestaurants([]);
+      })
+      .finally(() => {
+        if (active) setIsDiscovering(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [backendToken, locationContext]);
+
   const recommendations = useMemo(
-    () => getRecommendedDishes({ selectedCuisines, selectedRestrictions, preferredMealType }),
-    [selectedCuisines, selectedRestrictions, preferredMealType],
+    () =>
+      getRecommendedDishes({
+        selectedCuisines,
+        selectedRestrictions,
+        preferredMealType,
+        nearbyRestaurants,
+        history,
+      }),
+    [history, nearbyRestaurants, preferredMealType, selectedCuisines, selectedRestrictions]
   );
 
-  const currentRecommendation = recommendations[cardIndex % Math.max(recommendations.length, 1)];
+  const currentRecommendation = recommendations[0] ?? null;
   const currentCard = currentRecommendation?.dish ?? null;
+  const currentNearby = currentRecommendation?.nearbyRestaurant ?? null;
+  const nextRecommendations = recommendations.slice(1, 3);
   const reasons = currentRecommendation?.reasons ?? [];
+  const distanceLabel = formatDistanceMiles(currentNearby?.distanceMeters ?? currentCard?.distanceMeters) ?? currentCard?.distance ?? 'Nearby';
+  const rating = currentNearby?.rating?.toFixed(1) ?? currentCard?.restaurantRating.toFixed(1) ?? '--';
+  const locationLabel = locationContext?.label ?? 'Current area';
 
   const openDetail = useCallback(() => {
     if (!currentCard) return;
     navigation.navigate('Detail', { itemId: currentCard.id, title: currentCard.name, image: currentCard.image });
   }, [currentCard, navigation]);
 
+  const beginSwipeDecision = useCallback(() => {
+    setIsResolvingDecision(true);
+  }, []);
+
   const handleDecision = useCallback(
-    (direction: 'left' | 'right') => {
-      if (quotaLocked || !currentCard) return;
-      void addToHistory({
-        id: currentCard.id,
-        title: currentCard.name,
-        img: currentCard.image,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        createdAt: Date.now(),
-        category: currentCard.category,
-        status: direction === 'right' ? 'Liked' : 'Skipped',
-      });
-      consumeRecommendation();
-      setCardIndex((prev) => prev + 1);
+    async (direction: 'left' | 'right') => {
+      if (!currentCard || !currentRecommendation) return;
+
+      try {
+        if (direction === 'right' && !isFavorite(currentCard.id)) {
+          await toggleFavorite(currentCard.id);
+        }
+
+        await addToHistory({
+          id: currentCard.id,
+          title: currentCard.name,
+          img: currentCard.image,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          createdAt: Date.now(),
+          category: currentCard.restaurantName,
+          status: direction === 'right' ? 'Liked' : 'Skipped',
+        });
+
+        if (direction === 'right') {
+          consumeRecommendation();
+        }
+      } finally {
+        setSwipeRequest(null);
+        setIsResolvingDecision(false);
+        setIsCardDragging(false);
+      }
     },
-    [addToHistory, consumeRecommendation, currentCard, quotaLocked],
+    [addToHistory, consumeRecommendation, currentCard, currentRecommendation, isFavorite, toggleFavorite]
   );
 
-  const handleSave = useCallback(() => {
-    if (quotaLocked || !currentCard) return;
-    void toggleFavorite(currentCard.id);
-    handleDecision('right');
-  }, [currentCard, handleDecision, quotaLocked, toggleFavorite]);
+  const handleBlockedSwipeAttempt = useCallback(() => {
+    setIsCardDragging(false);
+    navigation.navigate('Upgrade');
+  }, [navigation]);
+
+  const triggerDecision = useCallback(
+    (direction: 'left' | 'right') => {
+      if (!currentCard || isResolvingDecision) return;
+      if (!canCommitSwipe) {
+        navigation.navigate('Upgrade');
+        return;
+      }
+      setIsResolvingDecision(true);
+      setSwipeRequest({ direction, key: Date.now() });
+    },
+    [canCommitSwipe, currentCard, isResolvingDecision, navigation]
+  );
+
+  const handleBrandTap = useCallback(() => {
+    developerTapCountRef.current += 1;
+
+    if (developerTapTimerRef.current) {
+      clearTimeout(developerTapTimerRef.current);
+    }
+
+    developerTapTimerRef.current = setTimeout(() => {
+      developerTapCountRef.current = 0;
+      developerTapTimerRef.current = null;
+    }, 1200);
+
+    if (developerTapCountRef.current >= 6) {
+      developerTapCountRef.current = 0;
+      if (developerTapTimerRef.current) {
+        clearTimeout(developerTapTimerRef.current);
+        developerTapTimerRef.current = null;
+      }
+      navigation.navigate('DeveloperMode');
+    }
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.topBar}>
-        <View>
-          <Text style={styles.brandText}>ChiShenMe</Text>
-          <Text style={styles.recommendationsHint}>
-            {isUnlimitedPlan ? '无限次做出今天这顿饭的决定' : `今日还可做 ${recommendationsLeft} 次智能推荐决策`}
-          </Text>
-        </View>
-        <View style={styles.topBarRight}>
-          <Pressable
-            style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
-            onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
-            accessibilityRole="button"
-            accessibilityLabel="去发现更多选择"
-            hitSlop={8}
-          >
-            <Compass size={20} color={theme.colors.foreground} strokeWidth={1.8} />
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressed]}
-            onPress={() => setShowSearch(true)}
-            accessibilityRole="button"
-            accessibilityLabel="搜索美食或餐厅"
-            hitSlop={8}
-          >
-            <Search size={20} color={theme.colors.foreground} strokeWidth={1.8} />
-          </Pressable>
-        </View>
+        <Pressable
+          onPress={handleBrandTap}
+          accessibilityRole="button"
+          accessibilityLabel={`${brand.appName} hidden menu`}
+          hitSlop={8}
+        >
+          <Text style={styles.brandText}>{brand.appName}</Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressedChip]}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
+          accessibilityRole="button"
+          accessibilityLabel="Open explore"
+          hitSlop={8}
+        >
+          <Compass size={20} color={theme.colors.foreground} strokeWidth={1.8} />
+        </Pressable>
       </View>
 
-      <View style={styles.contextStrip}>
-        <Text style={styles.contextTitle}>现在更适合的决策方向</Text>
-        <View style={styles.contextChips}>
-          <View style={styles.contextChip}>
-            <Text style={styles.contextChipText}>{preferredMealType}</Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        scrollEnabled={!isCardDragging}
+      >
+      <View style={styles.stage}>
+        <View style={styles.utilityRow}>
+          <Pressable
+            style={({ pressed }) => [styles.areaPill, pressed && styles.pressedChip]}
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
+            accessibilityRole="button"
+            accessibilityLabel="Choose area"
+          >
+            <MapPin size={14} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.areaPillText} numberOfLines={1}>
+              {locationLabel}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.scanAction, pressed && styles.pressedChip]}
+            onPress={() =>
+              navigation.navigate('MenuScan', {
+                restaurantId: currentCard?.restaurantId,
+                restaurantName: currentCard?.restaurantName,
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Scan a menu"
+          >
+            <View style={styles.scanActionIcon}>
+              <ScanSearch size={16} color={theme.colors.primary} strokeWidth={2} />
+            </View>
+            <Text style={styles.scanActionText}>Scan menu</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.statusRow}>
+          <View style={[styles.statusPill, membershipPlan !== 'free' && styles.statusPillPremium]}>
+            {membershipPlan === 'free' ? (
+              <Sparkles size={14} color={theme.colors.primary} strokeWidth={2} />
+            ) : (
+              <Crown size={14} color={theme.colors.primaryDark} strokeWidth={2} />
+            )}
+            <Text style={[styles.statusPillText, membershipPlan !== 'free' && styles.statusPillTextPremium]}>
+              {membershipPlan === 'free'
+                ? `${Math.max(recommendationsLeft, 0)} smart saves left`
+                : unlockNoticePlan === 'family'
+                  ? 'Family unlocked'
+                  : unlockNoticePlan === 'pro'
+                    ? 'Pro unlocked'
+                    : `${membershipPlan === 'family' ? 'Family' : 'Pro'} active`}
+            </Text>
           </View>
-          {selectedCuisines.length > 0 ? (
-            <View style={styles.contextChip}>
-              <Text style={styles.contextChipText}>已读懂你的口味偏好</Text>
+          {unlockNoticePlan ? (
+            <Pressable
+              style={({ pressed }) => [styles.dismissNoticeBtn, pressed && styles.pressedChip]}
+              onPress={() => setUnlockNoticePlan(null)}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss premium notice"
+            >
+              <X size={14} color={theme.colors.subtle} strokeWidth={2} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        {unlockNoticePlan ? (
+          <View style={styles.unlockCard}>
+            <View style={styles.unlockIcon}>
+              <CheckCircle2 size={18} color={theme.colors.primary} strokeWidth={2} />
+            </View>
+            <View style={styles.unlockCopy}>
+              <Text style={styles.unlockTitle}>{unlockNoticePlan === 'family' ? 'Family is live' : 'Pro is live'}</Text>
+              <Text style={styles.unlockBody}>
+                {unlockNoticePlan === 'family'
+                  ? 'Shared picks, stronger ranking, and full menu scan are ready now.'
+                  : 'Smarter saves, stronger ranking, and full menu scan are ready now.'}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        <View style={styles.cardContainer}>
+          {currentCard ? (
+            <View style={[styles.deckStage, { height: cardHeight + 28 }]}>
+              {nextRecommendations
+                .slice()
+                .reverse()
+                .map((recommendation, reverseIndex) => {
+                  const depth = nextRecommendations.length - reverseIndex;
+                  const previewCard = recommendation.dish;
+                  const previewNearby = recommendation.nearbyRestaurant ?? null;
+                  const previewDistance =
+                    formatDistanceMiles(previewNearby?.distanceMeters ?? previewCard.distanceMeters) ?? previewCard.distance ?? 'Nearby';
+                  const previewRating = previewNearby?.rating?.toFixed(1) ?? previewCard.restaurantRating.toFixed(1) ?? '--';
+
+                  return (
+                    <PreviewDeckCard
+                      key={`preview-${previewCard.id}`}
+                      card={previewCard}
+                      rating={previewRating}
+                      distanceLabel={previewDistance}
+                      screenWidth={screenWidth}
+                      cardHeight={cardHeight}
+                      styles={styles}
+                      depth={depth}
+                    />
+                  );
+                })}
+
+              <DecisionCard
+                key={currentCard.id}
+                card={currentCard}
+                reasons={reasons.length > 0 ? reasons : [currentCard.recommendationBlurb]}
+                rating={rating}
+                distanceLabel={distanceLabel}
+                onSwipe={handleDecision}
+                onSwipeStart={beginSwipeDecision}
+                onOpenDetail={openDetail}
+                onGestureStateChange={setIsCardDragging}
+                onBlockedSwipeAttempt={handleBlockedSwipeAttempt}
+                screenWidth={screenWidth}
+                styles={styles}
+                enabled={!isResolvingDecision}
+                cardHeight={cardHeight}
+                swipeRequest={swipeRequest}
+                canCommitSwipe={canCommitSwipe}
+              />
             </View>
           ) : (
-            <Pressable style={styles.contextChip} onPress={() => navigation.navigate('OnboardingCuisines')}>
-              <Text style={styles.contextChipText}>先完善口味偏好</Text>
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>Nothing strong right now</Text>
+              <Pressable style={styles.emptyButton} onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}>
+                <Text style={styles.emptyButtonText}>Explore</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.bottomDock}>
+        <View style={styles.actionRow}>
+            <AnimatedActionBtn onPress={() => triggerDecision('left')} disabled={!currentCard || isResolvingDecision} accessibilityLabel="Skip this pick for today">
+              <View style={[styles.actionBtn, styles.skipBtn]}>
+                <X size={30} color={theme.colors.muted} strokeWidth={2.5} />
+              </View>
+            </AnimatedActionBtn>
+
+            <AnimatedActionBtn onPress={() => triggerDecision('right')} disabled={!currentCard || isResolvingDecision} accessibilityLabel="Save this pick">
+              <View style={[styles.actionBtn, styles.likeBtn]}>
+                <Heart size={30} color="#D65947" fill="#D65947" strokeWidth={0} />
+              </View>
+            </AnimatedActionBtn>
+          </View>
+
+          {quotaLocked ? (
+            <Pressable
+              style={({ pressed }) => [styles.upgradePill, pressed && styles.pressedChip]}
+              onPress={() => navigation.navigate('Upgrade')}
+              accessibilityRole="button"
+              accessibilityLabel="Upgrade for more picks"
+            >
+              <Text style={styles.upgradePillText}>Upgrade for more picks</Text>
             </Pressable>
+          ) : (
+            <View style={styles.swipeHint}>
+              <Compass size={16} color={theme.colors.subtle} strokeWidth={1.9} />
+              <Text style={styles.swipeHintText}>
+                {isDiscovering ? 'Refreshing nearby' : canCommitSwipe ? 'Left to skip, right to save' : 'Swipe to preview, upgrade to act'}
+              </Text>
+            </View>
           )}
         </View>
       </View>
-
-      {quotaLocked && (
-        <View style={styles.limitBar}>
-          <Text style={styles.limitText}>基础版今日决策次数已用完。升级后可获得更精准的推荐解释、更多备选方案和不限次决策。</Text>
-          <Pressable
-            onPress={() => navigation.navigate('Upgrade')}
-            accessibilityRole="button"
-            accessibilityLabel="升级为更强的智能决策体验"
-            hitSlop={8}
-          >
-            <Text style={styles.limitAction}>去升级</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {!quotaLocked && selectedCuisines.length === 0 && selectedRestrictions.length === 0 && (
-        <Pressable
-          style={styles.profilePrompt}
-          onPress={() => navigation.navigate('OnboardingCuisines')}
-          accessibilityRole="button"
-          accessibilityLabel="完善口味偏好以提升命中率"
-        >
-          <Text style={styles.profilePromptText}>先补齐口味和忌口，推荐会更像真正懂你的决策助手。</Text>
-        </Pressable>
-      )}
-
-      <View style={styles.cardContainer}>
-        {currentCard ? (
-          <DecisionCard
-            key={`${currentCard.id}-${cardIndex}`}
-            card={currentCard}
-            reasons={reasons}
-            onSwipe={handleDecision}
-            onOpenDetail={openDetail}
-            screenWidth={screenWidth}
-            styles={styles}
-            enabled={!quotaLocked}
-            cardHeight={cardHeight}
-          />
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>还没有适合当前偏好的推荐</Text>
-            <Text style={styles.emptyBody}>调整一下口味偏好或探索更多分类，系统会重新帮你组织候选项。</Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.actionRow}>
-        <AnimatedActionBtn
-          style={[styles.actionBtn, styles.skipBtn]}
-          onPress={() => handleDecision('left')}
-          label="先跳过"
-          disabled={quotaLocked || !currentCard}
-        >
-          <X size={24} color={theme.colors.muted} strokeWidth={2.5} />
-        </AnimatedActionBtn>
-
-        <AnimatedActionBtn
-          style={[styles.actionBtn, styles.favoriteBtn]}
-          onPress={handleSave}
-          label="存起来"
-          disabled={quotaLocked || !currentCard}
-        >
-          <Star size={24} color={theme.colors.primary} strokeWidth={2} />
-        </AnimatedActionBtn>
-
-        <AnimatedActionBtn
-          style={[styles.actionBtn, styles.likeBtn]}
-          onPress={() => handleDecision('right')}
-          label="今天吃这个"
-          disabled={quotaLocked || !currentCard}
-        >
-          <Heart size={24} color="#EF4444" fill="#EF4444" strokeWidth={0} />
-        </AnimatedActionBtn>
-      </View>
-
-      <OnboardingGuide />
-      <SearchOverlay
-        visible={showSearch}
-        onClose={() => setShowSearch(false)}
-        onSearch={(query) => {
-          navigation.navigate('MainTabs', { screen: 'Explore', params: { initialQuery: query } });
-          setShowSearch(false);
-        }}
-      />
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: t.colors.background },
-    pressed: { opacity: 0.85, transform: [{ scale: 0.97 }] },
+    container: { flex: 1, backgroundColor: t.colors.surface },
+    pressedChip: { opacity: t.interaction.chipPressedOpacity },
+    scrollView: { flex: 1, backgroundColor: t.colors.background },
+    scrollContent: { flexGrow: 1, paddingBottom: 112 },
     topBar: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingHorizontal: t.spacing.md,
-      height: 56,
+      height: t.topNavHeight,
+      backgroundColor: t.colors.surface,
     },
-    brandText: {
-      fontSize: 22,
-      fontWeight: '800',
-      color: t.colors.primary,
-    },
-    recommendationsHint: {
-      ...t.typography.micro,
-      color: t.colors.subtle,
-      marginTop: 2,
-    },
-    topBarRight: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    },
-    topBarIconBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: t.radius.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    contextStrip: {
-      paddingHorizontal: t.spacing.md,
-      marginBottom: t.spacing.xs,
-    },
-    contextTitle: {
-      ...t.typography.caption,
-      color: t.colors.subtle,
-      marginBottom: 8,
-      fontWeight: '600',
-    },
-    contextChips: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-    contextChip: {
-      backgroundColor: t.colors.borderLight,
-      borderRadius: t.radius.full,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-    },
-    contextChipText: {
-      ...t.typography.caption,
-      color: t.colors.foreground,
-      fontWeight: '600',
-    },
-    limitBar: {
-      marginHorizontal: t.spacing.md,
-      marginTop: t.spacing.xs,
-      marginBottom: t.spacing.xs,
-      backgroundColor: t.colors.warningLight,
-      borderRadius: t.radius.md,
-      paddingHorizontal: t.spacing.sm,
-      paddingVertical: t.spacing.sm,
-      gap: 8,
-    },
-    limitText: {
-      ...t.typography.caption,
-      color: t.colors.foreground,
-      lineHeight: 18,
-    },
-    limitAction: {
-      ...t.typography.caption,
-      color: t.colors.primary,
-      fontWeight: '700',
-    },
-    profilePrompt: {
-      marginHorizontal: t.spacing.md,
-      marginTop: t.spacing.xs,
-      marginBottom: t.spacing.xs,
-      backgroundColor: t.colors.primaryLight,
-      borderRadius: t.radius.md,
-      paddingHorizontal: t.spacing.sm,
-      paddingVertical: t.spacing.sm,
-    },
-    profilePromptText: {
-      ...t.typography.caption,
-      color: t.colors.primaryDark,
-      fontWeight: '600',
-      lineHeight: 18,
-    },
-    cardContainer: {
+    brandText: { fontSize: 24, fontWeight: '800', color: t.colors.foreground },
+    topBarIconBtn: { width: 40, height: 40, borderRadius: t.radius.md, alignItems: 'center', justifyContent: 'center' },
+    stage: { flex: 1, paddingHorizontal: t.spacing.md, paddingTop: t.spacing.sm, backgroundColor: t.colors.background },
+    utilityRow: { flexDirection: 'row', gap: 10, marginBottom: t.spacing.md },
+    areaPill: {
       flex: 1,
+      minHeight: 44,
+      borderRadius: 22,
+      backgroundColor: t.colors.surface,
+      paddingHorizontal: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      borderWidth: 1,
+      borderColor: t.colors.borderLight,
+    },
+    areaPillText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700', flex: 1 },
+    scanAction: {
+      minWidth: 132,
+      minHeight: 44,
+      borderRadius: 22,
+      backgroundColor: t.colors.primaryLight,
+      paddingHorizontal: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      borderWidth: 1,
+      borderColor: 'rgba(201,103,60,0.18)',
+    },
+    scanActionIcon: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: 'rgba(255,255,255,0.55)',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: t.spacing.md,
     },
-    card: {
-      borderRadius: 16,
+    scanActionText: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '700' },
+    statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: t.spacing.sm },
+    statusPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      minHeight: 34,
+      borderRadius: t.radius.full,
+      backgroundColor: t.colors.surface,
+      borderWidth: 1,
+      borderColor: t.colors.borderLight,
+      paddingHorizontal: 12,
+    },
+    statusPillPremium: { backgroundColor: t.colors.primaryLight, borderColor: 'rgba(201,103,60,0.18)' },
+    statusPillText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
+    statusPillTextPremium: { color: t.colors.primaryDark },
+    dismissNoticeBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: t.colors.surface,
+      borderWidth: 1,
+      borderColor: t.colors.borderLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    unlockCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: t.colors.primaryLight,
+      borderRadius: t.surface.cardRadius,
+      padding: t.surface.insetCardPadding,
+      marginBottom: t.spacing.md,
+    },
+    unlockIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255,255,255,0.72)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    unlockCopy: { flex: 1, gap: 2 },
+    unlockTitle: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700' },
+    unlockBody: { ...t.typography.caption, color: t.colors.primaryDark },
+    cardContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: t.spacing.md },
+    deckStage: {
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      position: 'relative',
+    },
+    activeCardShell: {
+      position: 'absolute',
+      top: 0,
+      zIndex: 3,
+    },
+    cardTapTarget: {
+      flex: 1,
+    },
+    previewCardShell: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: 0.94,
+    },
+    previewCard: {
+      width: '100%',
+      height: '100%',
+      borderRadius: t.surface.cardRadius,
       overflow: 'hidden',
       backgroundColor: t.colors.surface,
-      ...t.shadows.lg,
+      ...t.shadows.sm,
     },
+    card: { borderRadius: t.surface.cardRadius, overflow: 'hidden', backgroundColor: t.colors.surface, ...t.shadows.md },
+    activeCard: { zIndex: 3 },
     badgeLike: {
       position: 'absolute',
       top: 24,
       left: 20,
       zIndex: 10,
-      borderWidth: 3,
-      borderColor: '#4CAF50',
-      backgroundColor: 'rgba(76,175,80,0.2)',
+      borderWidth: 2,
+      borderColor: '#72B47D',
+      backgroundColor: 'rgba(114,180,125,0.22)',
       borderRadius: t.radius.sm,
-      paddingHorizontal: 16,
+      paddingHorizontal: 14,
       paddingVertical: 8,
-      transform: [{ rotate: '-12deg' }],
+      transform: [{ rotate: '-10deg' }],
     },
-    badgeLikeText: {
-      fontSize: 18,
-      fontWeight: '800',
-      color: '#4CAF50',
-    },
+    badgeLikeText: { fontSize: 16, fontWeight: '800', color: '#72B47D' },
     badgeNope: {
       position: 'absolute',
       top: 24,
       right: 20,
       zIndex: 10,
-      borderWidth: 3,
-      borderColor: '#EF4444',
-      backgroundColor: 'rgba(239,68,68,0.2)',
+      borderWidth: 2,
+      borderColor: '#D65947',
+      backgroundColor: 'rgba(214,89,71,0.22)',
       borderRadius: t.radius.sm,
-      paddingHorizontal: 16,
+      paddingHorizontal: 14,
       paddingVertical: 8,
-      transform: [{ rotate: '12deg' }],
+      transform: [{ rotate: '10deg' }],
     },
-    badgeNopeText: {
-      fontSize: 18,
-      fontWeight: '800',
-      color: '#EF4444',
-    },
-    cardImage: {
-      width: '100%',
-      height: '100%',
-      position: 'relative',
+    badgeNopeText: { fontSize: 16, fontWeight: '800', color: '#D65947' },
+    cardImage: { width: '100%', height: '100%', position: 'relative' },
+    previewOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(17, 12, 9, 0.22)',
     },
     cardInfoOverlay: {
       position: 'absolute',
@@ -559,161 +911,107 @@ function makeStyles(t: AppTheme) {
       right: 0,
       paddingHorizontal: 20,
       paddingBottom: 24,
-      paddingTop: 76,
-      backgroundColor: 'rgba(0,0,0,0.48)',
+      paddingTop: 72,
+      backgroundColor: 'rgba(17, 12, 9, 0.42)',
     },
-    cardInfoTopRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginBottom: 8,
-    },
-    categoryPill: {
-      backgroundColor: t.colors.primary,
+    cardInfoTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+    inlinePill: {
+      backgroundColor: 'rgba(255,255,255,0.16)',
       paddingHorizontal: 12,
-      paddingVertical: 4,
+      paddingVertical: 5,
       borderRadius: t.radius.full,
+      maxWidth: '74%',
     },
-    categoryPillText: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: '#FFFFFF',
-    },
+    inlinePillText: { ...t.typography.caption, fontWeight: '700', color: '#FFFFFF' },
     ratingBadge: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      backgroundColor: 'rgba(255,255,255,0.2)',
+      backgroundColor: 'rgba(255,255,255,0.16)',
       paddingHorizontal: 8,
-      paddingVertical: 4,
+      paddingVertical: 5,
       borderRadius: t.radius.full,
     },
-    ratingText: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: '#FFFFFF',
-    },
-    cardName: {
-      fontSize: 24,
-      fontWeight: '700',
-      color: '#FFFFFF',
-      marginBottom: 4,
-    },
-    cardSubtitle: {
-      ...t.typography.caption,
-      color: 'rgba(255,255,255,0.88)',
-      lineHeight: 18,
-      marginBottom: 8,
-    },
-    cardMetaRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      marginBottom: 12,
-    },
-    cardMetaText: {
-      fontSize: 13,
-      fontWeight: '500',
-      color: 'rgba(255,255,255,0.9)',
-    },
-    cardMetaDot: {
-      fontSize: 13,
-      color: 'rgba(255,255,255,0.5)',
-    },
-    reasonPanel: {
-      backgroundColor: 'rgba(255,255,255,0.14)',
-      borderRadius: t.radius.md,
-      padding: 12,
-      marginBottom: 12,
-      gap: 8,
-    },
-    reasonHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
+    ratingText: { ...t.typography.caption, fontWeight: '700', color: '#FFFFFF' },
+    cardName: { fontSize: 30, lineHeight: 36, fontWeight: '800', color: '#FFFFFF', marginBottom: 6 },
+    cardSupportText: { ...t.typography.caption, color: 'rgba(255,255,255,0.9)', marginBottom: 12 },
+    cardMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    cardMetaText: { ...t.typography.caption, fontWeight: '600', color: 'rgba(255,255,255,0.88)' },
+    cardMetaDot: { fontSize: 13, color: 'rgba(255,255,255,0.42)' },
+    previewCardInfo: {
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      bottom: 16,
       gap: 6,
     },
-    reasonTitle: {
-      ...t.typography.caption,
-      color: '#FFFFFF',
-      fontWeight: '700',
-    },
-    reasonRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    reasonText: {
-      ...t.typography.caption,
-      color: 'rgba(255,255,255,0.92)',
-      flex: 1,
-      lineHeight: 18,
-    },
-    cardTagRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-      marginBottom: 10,
-    },
-    cardTag: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: 'rgba(255,255,255,0.88)',
-    },
-    detailLink: {
+    previewTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    previewRestaurant: { ...t.typography.caption, color: '#FFFFFF', fontWeight: '700', flex: 1 },
+    previewRatingBadge: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      alignSelf: 'flex-start',
+      backgroundColor: 'rgba(255,255,255,0.16)',
+      borderRadius: t.radius.full,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
     },
-    detailLinkText: {
-      ...t.typography.caption,
-      color: '#FFFFFF',
-      fontWeight: '700',
-    },
-    actionRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: 28,
-      paddingVertical: 16,
-      paddingBottom: 8,
-    },
+    previewRatingText: { ...t.typography.micro, color: '#FFFFFF', fontWeight: '700' },
+    previewName: { fontSize: 22, lineHeight: 26, color: '#FFFFFF', fontWeight: '800' },
+    previewMeta: { ...t.typography.caption, color: 'rgba(255,255,255,0.82)', fontWeight: '600' },
+    bottomDock: { paddingTop: t.spacing.md, paddingBottom: 20, backgroundColor: t.colors.background, gap: 12 },
+    actionRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 28 },
     actionBtn: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
+      width: 76,
+      height: 76,
+      borderRadius: 38,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: t.colors.surface,
-      borderWidth: 2,
-      ...t.shadows.md,
+      borderWidth: 1.5,
+      ...t.shadows.sm,
     },
-    skipBtn: {
-      borderColor: t.colors.border,
-    },
-    favoriteBtn: {
-      borderColor: t.colors.primary,
-    },
-    likeBtn: {
-      borderColor: '#EF4444',
-    },
-    emptyState: {
+    skipBtn: { borderColor: t.colors.border },
+    likeBtn: { borderColor: '#D65947' },
+    swipeHint: {
+      minHeight: 44,
+      borderRadius: 22,
       backgroundColor: t.colors.surface,
-      borderRadius: t.radius.lg,
+      borderWidth: 1,
+      borderColor: t.colors.borderLight,
+      paddingHorizontal: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    swipeHintText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '700' },
+    upgradePill: {
+      minHeight: 44,
+      borderRadius: 22,
+      backgroundColor: t.colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    upgradePillText: { ...t.typography.caption, color: '#FFFFFF', fontWeight: '700' },
+    emptyState: {
+      width: '100%',
+      backgroundColor: t.colors.surface,
+      borderRadius: t.surface.cardRadius,
       padding: t.spacing.lg,
       alignItems: 'center',
       gap: 8,
-      ...t.shadows.sm,
+      borderWidth: 1,
+      borderColor: t.colors.borderLight,
     },
-    emptyTitle: {
-      ...t.typography.h2,
-      color: t.colors.foreground,
+    emptyTitle: { ...t.typography.h2, color: t.colors.foreground },
+    emptyButton: {
+      backgroundColor: t.colors.primary,
+      borderRadius: t.radius.full,
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      marginTop: 8,
     },
-    emptyBody: {
-      ...t.typography.body,
-      color: t.colors.subtle,
-      textAlign: 'center',
-      lineHeight: 22,
-    },
+    emptyButtonText: { ...t.typography.caption, color: t.colors.surface, fontWeight: '700' },
   });
 }

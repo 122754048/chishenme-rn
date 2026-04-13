@@ -1,116 +1,74 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, ArrowRight, Check, Shield, Sparkles, Users } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, Check, Compass, ScanSearch, Shield, Users } from 'lucide-react-native';
+import { SkeletonImage } from '../components/SkeletonImage';
 import type { RootStackParamList } from '../navigation/types';
-import { useThemedStyles, useThemeColors } from '../theme';
+import { SWIPE_CARDS } from '../data/mockData';
+import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-function ValuePlanCard({
+function PlanCard({
+  icon,
   title,
-  subtitle,
   price,
-  badge,
+  support,
   selected,
   features,
-  icon,
   onPress,
+  badge,
+  preview,
+  styles,
+  theme,
 }: {
+  icon: React.ReactNode;
   title: string;
-  subtitle: string;
   price: string;
-  badge?: string;
+  support: string;
   selected: boolean;
   features: string[];
-  icon: React.ReactNode;
   onPress: () => void;
+  badge?: string;
+  preview: string;
+  styles: ReturnType<typeof makeStyles>;
+  theme: AppTheme;
 }) {
   return (
-    <Pressable style={({ pressed }) => [valueStyles.card, selected && valueStyles.cardSelected, pressed && { opacity: 0.92 }]} onPress={onPress}>
-      {badge ? (
-        <View style={valueStyles.badge}>
-          <Text style={valueStyles.badgeText}>{badge}</Text>
-        </View>
-      ) : null}
-      <View style={valueStyles.header}>
-        <View style={valueStyles.iconWrap}>{icon}</View>
-        <View style={valueStyles.titleWrap}>
-          <Text style={valueStyles.title}>{title}</Text>
-          <Text style={valueStyles.subtitle}>{subtitle}</Text>
-        </View>
-        <Text style={valueStyles.price}>{price}</Text>
+    <Pressable
+      style={({ pressed }) => [styles.planCard, selected && styles.planCardSelected, pressed && styles.pressedCard]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${title} ${price}`}
+    >
+      <View style={styles.planPreview}>
+        <SkeletonImage src={preview} alt={title} />
       </View>
-      <View style={valueStyles.features}>
+      {badge ? <Text style={styles.planBadge}>{badge}</Text> : null}
+      <View style={styles.planHeader}>
+        <View style={styles.planTitleWrap}>
+          <View style={styles.planIcon}>{icon}</View>
+          <View>
+            <Text style={styles.planTitle}>{title}</Text>
+            <Text style={styles.planSupport}>{support}</Text>
+          </View>
+        </View>
+        <Text style={styles.planPrice}>{price}</Text>
+      </View>
+      <View style={styles.planFeatureList}>
         {features.map((feature) => (
-          <View key={feature} style={valueStyles.featureRow}>
-            <Check size={14} color="#FF6B35" strokeWidth={2.5} />
-            <Text style={valueStyles.featureText}>{feature}</Text>
+          <View key={feature} style={styles.planFeatureRow}>
+            <Check size={13} color={theme.colors.primary} strokeWidth={2.5} />
+            <Text style={styles.planFeatureText}>{feature}</Text>
           </View>
         ))}
       </View>
     </Pressable>
   );
 }
-
-const valueStyles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: '#F3F4F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardSelected: {
-    borderColor: '#FF6B35',
-    backgroundColor: '#FFF4EE',
-  },
-  badge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: '#FF6B35',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderTopRightRadius: 16,
-    borderBottomLeftRadius: 10,
-  },
-  badgeText: {
-    fontSize: 10,
-    lineHeight: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFF0E8',
-  },
-  titleWrap: { flex: 1 },
-  title: { fontSize: 18, lineHeight: 26, fontWeight: '700', color: '#111827' },
-  subtitle: { fontSize: 12, lineHeight: 18, color: '#6B7280', marginTop: 2 },
-  price: { fontSize: 18, lineHeight: 26, fontWeight: '700', color: '#111827' },
-  features: { gap: 8 },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  featureText: { fontSize: 13, lineHeight: 18, color: '#374151', flex: 1 },
-});
 
 export function Upgrade() {
   const theme = useThemeColors();
@@ -119,85 +77,96 @@ export function Upgrade() {
   const [selectedPlan, setSelectedPlan] = useState<'pro' | 'family'>('pro');
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.grabber} />
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel="Go back">
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Text style={styles.headerTitle}>升级你的决策能力</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle}>Upgrade</Text>
+        <View style={styles.backBtn} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroCard}>
-          <Text style={styles.heroEyebrow}>不是买次数，而是买更好的结果</Text>
-          <Text style={styles.heroTitle}>少纠结，少试错，更快决定今天吃什么</Text>
-          <Text style={styles.heroBody}>
-            升级后你会得到更强的推荐解释、更多备选方案、更细的筛选维度，以及适合多人用餐的协同决策能力。
-          </Text>
+          <Text style={styles.heroEyebrow}>Upgrade your daily decision flow</Text>
+          <View style={styles.heroImage}>
+            <SkeletonImage src={SWIPE_CARDS[3].image} alt="Upgrade preview" />
+          </View>
+          <Text style={styles.heroTitle}>Spend less time second-guessing dinner.</Text>
+          <View style={styles.heroPoints}>
+            <View style={styles.heroPoint}>
+              <Text style={styles.heroPointValue}>3x</Text>
+              <Text style={styles.heroPointLabel}>faster saves</Text>
+            </View>
+            <View style={styles.heroPoint}>
+              <Text style={styles.heroPointValue}>Full</Text>
+              <Text style={styles.heroPointLabel}>menu help</Text>
+            </View>
+            <View style={styles.heroPoint}>
+              <Text style={styles.heroPointValue}>Less</Text>
+              <Text style={styles.heroPointLabel}>repeat noise</Text>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.valueStrip}>
-          <View style={styles.valueItem}>
-            <Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.valueText}>为什么推荐你一眼能懂</Text>
+        <View style={styles.freeBaseline}>
+          <Text style={styles.freeBaselineLabel}>Free</Text>
+          <Text style={styles.freeBaselineText}>Browse freely, then keep up to 3 good calls each day.</Text>
+        </View>
+
+        <View style={styles.benefitRow}>
+          <View style={styles.benefitTile}>
+            <Compass size={18} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.benefitLabel}>Better picks</Text>
           </View>
-          <View style={styles.valueItem}>
+          <View style={styles.benefitTile}>
+            <ScanSearch size={18} color={theme.colors.primary} strokeWidth={2} />
+            <Text style={styles.benefitLabel}>Menu help</Text>
+          </View>
+          <View style={styles.benefitTile}>
             <Shield size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.valueText}>忌口和健康风险看得更清楚</Text>
+            <Text style={styles.benefitLabel}>Fewer misses</Text>
           </View>
-          <View style={styles.valueItem}>
+          <View style={styles.benefitTile}>
             <Users size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.valueText}>多人吃饭也能更快达成一致</Text>
+            <Text style={styles.benefitLabel}>Shared picks</Text>
           </View>
         </View>
 
         <View style={styles.planList}>
-          <ValuePlanCard
+          <PlanCard
+            icon={<Compass size={18} color={theme.colors.primary} strokeWidth={2} />}
             title="Pro"
-            subtitle="给自己一个更快、更准的决策助手"
-            price="¥9.9/月"
-            badge="最适合日常使用"
+            price="$9.99"
+            support="Best for solo daily use"
+            badge="Popular"
             selected={selectedPlan === 'pro'}
-            icon={<Sparkles size={18} color="#FF6B35" strokeWidth={2.2} />}
-            features={[
-              '不限次查看更精准的推荐解释',
-              '解锁更多备选方案与对比理由',
-              '按场景、预算、口味更细地筛选',
-            ]}
+            features={['Sharper ranking for tonight', 'Full menu scan picks', 'Keep more good calls ready']}
+            preview={SWIPE_CARDS[0].image}
             onPress={() => setSelectedPlan('pro')}
+            styles={styles}
+            theme={theme}
           />
-
-          <ValuePlanCard
+          <PlanCard
+            icon={<Users size={18} color={theme.colors.primary} strokeWidth={2} />}
             title="Family"
-            subtitle="把晚餐分歧，变成可以协商的结果"
-            price="¥19.9/月"
+            price="$19.99"
+            support="Best for shared decisions"
             selected={selectedPlan === 'family'}
-            icon={<Users size={18} color="#FF6B35" strokeWidth={2.2} />}
-            features={[
-              '融合多人偏好，减少家庭晚餐分歧',
-              '共享收藏和已做过的决策',
-              '更适合情侣、室友和家庭共用',
-            ]}
+            features={['Everything in Pro', 'Shared picks for two or more', 'Less friction when everyone votes differently']}
+            preview={SWIPE_CARDS[4].image}
             onPress={() => setSelectedPlan('family')}
+            styles={styles}
+            theme={theme}
           />
         </View>
-
-        <Text style={styles.subscriptionNote}>
-          订阅通过 Apple ID 自动续订，可随时在 Apple ID 的订阅设置中取消。已购买用户可在下一步恢复购买。
-        </Text>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={styles.upgradeButton} onPress={() => navigation.navigate('Checkout', { plan: selectedPlan })}>
-          <Text style={styles.upgradeButtonText}>{selectedPlan === 'family' ? '继续升级 Family' : '继续升级 Pro'}</Text>
+        <Pressable style={({ pressed }) => [styles.upgradeButton, pressed && styles.pressedCard]} onPress={() => navigation.navigate('Checkout', { plan: selectedPlan })}>
+          <Text style={styles.upgradeButtonText}>{selectedPlan === 'family' ? 'Continue with Family' : 'Continue with Pro'}</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
-        </Pressable>
-        <Pressable style={styles.secondaryButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.secondaryButtonText}>继续使用基础版</Text>
-        </Pressable>
-        <Pressable style={styles.restoreButton} onPress={() => navigation.navigate('Checkout', { plan: selectedPlan })}>
-          <Text style={styles.restoreButtonText}>已订阅？恢复购买</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -207,65 +176,77 @@ export function Upgrade() {
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: t.colors.background },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: t.spacing.md,
-      height: t.topNavHeight,
-      backgroundColor: t.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: t.colors.borderLight,
-    },
+    grabber: { alignSelf: 'center', width: 38, height: 5, borderRadius: 999, backgroundColor: t.colors.border, marginTop: 10, marginBottom: 8 },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: t.spacing.md, height: t.topNavHeight, backgroundColor: t.colors.surface, borderBottomWidth: 1, borderBottomColor: t.colors.borderLight },
     backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
     headerTitle: { ...t.typography.h2, color: t.colors.foreground },
     scrollView: { flex: 1 },
     scrollContent: { padding: t.spacing.md, paddingBottom: 120, gap: t.spacing.md },
     heroCard: {
-      backgroundColor: t.colors.surface,
-      borderRadius: t.radius.lg,
+      backgroundColor: t.colors.primaryLight,
+      borderRadius: t.surface.cardRadius,
       padding: t.spacing.lg,
-      ...t.shadows.md,
-    },
-    heroEyebrow: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700', marginBottom: 6 },
-    heroTitle: { ...t.typography.display, color: t.colors.foreground, marginBottom: 8 },
-    heroBody: { ...t.typography.body, color: t.colors.muted, lineHeight: 22 },
-    valueStrip: {
-      backgroundColor: t.colors.surface,
-      borderRadius: t.radius.md,
-      padding: t.spacing.md,
-      gap: t.spacing.sm,
-      ...t.shadows.sm,
-    },
-    valueItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
       gap: 10,
     },
-    valueText: { ...t.typography.body, color: t.colors.foreground, flex: 1 },
-    planList: { gap: t.spacing.sm },
-    subscriptionNote: { ...t.typography.caption, color: t.colors.subtle, lineHeight: 18 },
-    footer: {
-      paddingHorizontal: t.spacing.md,
-      paddingVertical: t.spacing.md,
-      backgroundColor: t.colors.surface,
-      borderTopWidth: 1,
-      borderTopColor: t.colors.borderLight,
-      gap: t.spacing.xs,
+    heroEyebrow: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '700' },
+    heroImage: { height: 150, borderRadius: t.radius.md, overflow: 'hidden', marginTop: 2 },
+    heroTitle: { ...t.typography.h1, color: t.colors.foreground },
+    heroPoints: { flexDirection: 'row', gap: t.spacing.xs },
+    heroPoint: {
+      flex: 1,
+      minHeight: 64,
+      borderRadius: t.radius.md,
+      backgroundColor: t.colors.surfaceElevated,
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 2,
     },
-    upgradeButton: {
-      backgroundColor: t.colors.primary,
-      borderRadius: t.radius.full,
-      height: 48,
+    heroPointValue: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
+    heroPointLabel: { ...t.typography.micro, color: t.colors.subtle },
+    freeBaseline: {
+      backgroundColor: t.colors.surfaceMuted,
+      borderRadius: t.surface.cardRadius,
+      padding: t.surface.insetCardPadding,
+      gap: 4,
+    },
+    freeBaselineLabel: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '700' },
+    freeBaselineText: { ...t.typography.body, color: t.colors.foreground },
+    benefitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm },
+    benefitTile: {
+      width: '48%',
+      minHeight: 82,
+      borderRadius: t.surface.cardRadius,
+      backgroundColor: t.colors.surfaceElevated,
       alignItems: 'center',
       justifyContent: 'center',
-      flexDirection: 'row',
-      gap: 6,
+      gap: 8,
     },
+    benefitLabel: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
+    planList: { gap: t.spacing.sm },
+    planCard: { backgroundColor: t.colors.surface, borderRadius: t.surface.cardRadius, padding: 16, gap: 12, ...t.shadows.sm },
+    planCardSelected: { backgroundColor: t.colors.primaryLight },
+    planPreview: { height: 112, borderRadius: t.radius.md, overflow: 'hidden' },
+    planBadge: { ...t.typography.micro, color: t.colors.primaryDark, fontWeight: '700' },
+    planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    planTitleWrap: { flexDirection: 'row', gap: 10, alignItems: 'center', flex: 1 },
+    planIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: t.colors.surfaceElevated,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    planTitle: { ...t.typography.h2, color: t.colors.foreground },
+    planSupport: { ...t.typography.micro, color: t.colors.subtle, marginTop: 2 },
+    planPrice: { ...t.typography.h2, color: t.colors.foreground },
+    planFeatureList: { gap: 8 },
+    planFeatureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    planFeatureText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '600' },
+    footer: { paddingHorizontal: t.spacing.md, paddingVertical: t.spacing.md, backgroundColor: 'rgba(255,253,252,0.98)', borderTopWidth: 1, borderTopColor: t.colors.borderLight },
+    upgradeButton: { backgroundColor: t.colors.primary, borderRadius: t.radius.full, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
     upgradeButtonText: { ...t.typography.body, color: t.colors.surface, fontWeight: '700' },
-    secondaryButton: { height: 40, alignItems: 'center', justifyContent: 'center' },
-    secondaryButtonText: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '600' },
-    restoreButton: { height: 40, alignItems: 'center', justifyContent: 'center' },
-    restoreButtonText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700' },
+    pressedCard: { opacity: t.interaction.pressedOpacity, transform: [{ scale: t.interaction.pressedScale }] },
+    pressedChrome: { opacity: t.interaction.chipPressedOpacity, transform: [{ scale: t.interaction.pressedScale }] },
   });
 }

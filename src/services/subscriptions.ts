@@ -1,9 +1,5 @@
 import { Platform } from 'react-native';
-import Purchases, {
-  PURCHASE_TYPE,
-  type CustomerInfo,
-  type PurchasesStoreProduct,
-} from 'react-native-purchases';
+import Purchases, { PURCHASE_TYPE, type CustomerInfo, type PurchasesStoreProduct } from 'react-native-purchases';
 
 export type MembershipPlan = 'free' | 'pro' | 'family';
 export type PaidMembershipPlan = Exclude<MembershipPlan, 'free'>;
@@ -15,8 +11,8 @@ export interface PurchaseResult {
 
 const IOS_API_KEY = process.env.EXPO_PUBLIC_RC_IOS_API_KEY?.trim();
 const ENTITLEMENT_ID = process.env.EXPO_PUBLIC_RC_ENTITLEMENT_ID?.trim() || 'premium';
-const PRO_PRODUCT_ID = process.env.EXPO_PUBLIC_RC_PRO_PRODUCT_ID?.trim() || 'chishenme.pro.monthly';
-const FAMILY_PRODUCT_ID = process.env.EXPO_PUBLIC_RC_FAMILY_PRODUCT_ID?.trim() || 'chishenme.family.monthly';
+const PRO_PRODUCT_ID = process.env.EXPO_PUBLIC_RC_PRO_PRODUCT_ID?.trim() || 'teller.pro.monthly';
+const FAMILY_PRODUCT_ID = process.env.EXPO_PUBLIC_RC_FAMILY_PRODUCT_ID?.trim() || 'teller.family.monthly';
 
 let configured = false;
 let configuredUserId: string | undefined;
@@ -57,7 +53,7 @@ async function configure(appUserId?: string) {
 
 async function requireConfigured(appUserId?: string) {
   if (!isIapAvailable()) {
-    throw new Error('当前 iOS 内购尚未配置，请稍后再试。');
+    throw new Error('Apple In-App Purchase is not configured yet for this build.');
   }
   await configure(appUserId);
 }
@@ -67,20 +63,20 @@ async function findProduct(plan: PaidMembershipPlan): Promise<PurchasesStoreProd
   const products = await Purchases.getProducts([productId], PURCHASE_TYPE.SUBS);
   const product = products.find((item) => item.identifier === productId);
   if (!product) {
-    throw new Error('订阅商品暂不可用，请确认 App Store Connect 与 RevenueCat 配置。');
+    throw new Error('The subscription product is not available yet. Check App Store Connect and RevenueCat configuration.');
   }
   return product;
 }
 
 function normalizePurchaseError(error: unknown): Error {
-  const anyError = error as { userCancelled?: boolean; message?: string; code?: string } | null;
+  const anyError = error as { userCancelled?: boolean; message?: string } | null;
   if (anyError?.userCancelled) {
-    return new Error('已取消购买，会员状态未发生变化。');
+    return new Error('Purchase canceled. Your membership did not change.');
   }
   if (anyError?.message) {
     return new Error(anyError.message);
   }
-  return new Error('内购暂未完成，请稍后重试。');
+  return new Error('The purchase could not be completed right now. Please try again in a moment.');
 }
 
 export const subscriptionService = {
@@ -107,9 +103,9 @@ export const subscriptionService = {
       const { customerInfo } = await Purchases.purchaseStoreProduct(product);
       const resolvedPlan = planFromCustomerInfo(customerInfo);
       if (resolvedPlan === 'free') {
-        throw new Error('购买完成但尚未检测到有效会员权益，请点击恢复购买或稍后重试。');
+        throw new Error('Purchase finished, but we could not confirm an active entitlement yet. Try Restore Purchases in a moment.');
       }
-      return { plan: resolvedPlan, message: '订阅已开通，会员权益已生效。' };
+      return { plan: resolvedPlan, message: 'Subscription active. Your premium access is now live.' };
     } catch (error) {
       throw normalizePurchaseError(error);
     }
@@ -121,9 +117,9 @@ export const subscriptionService = {
       const customerInfo = await Purchases.restorePurchases();
       const plan = planFromCustomerInfo(customerInfo);
       if (plan === 'free') {
-        return { plan, message: '未找到可恢复的有效订阅。' };
+        return { plan, message: 'No active purchases were found to restore.' };
       }
-      return { plan, message: '已恢复购买，会员权益已生效。' };
+      return { plan, message: 'Purchases restored. Your membership is active again.' };
     } catch (error) {
       throw normalizePurchaseError(error);
     }

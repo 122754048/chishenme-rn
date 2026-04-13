@@ -27,6 +27,8 @@ class BackendApiTest(unittest.TestCase):
         settings.revenuecat_entitlement_id = 'premium'
         settings.revenuecat_pro_product_id = 'chishenme.pro.monthly'
         settings.revenuecat_family_product_id = 'chishenme.family.monthly'
+        settings.google_places_api_key = ''
+        settings.openai_api_key = ''
 
     def setUp(self):
         self.db_path = os.path.join(tempfile.gettempdir(), f'chishenme-test-{uuid4().hex}.db')
@@ -278,6 +280,37 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(login.status_code, 401)
         membership = self.client.get('/membership/me', headers=self.headers)
         self.assertEqual(membership.status_code, 401)
+
+    def test_nearby_restaurants_fallback_without_google_key(self):
+        response = self.client.post(
+            '/discovery/nearby-restaurants',
+            headers=self.headers,
+            json={'kind': 'query', 'query': 'SoHo, New York'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body['source'], 'fallback')
+        self.assertGreaterEqual(len(body['restaurants']), 1)
+        self.assertIn('name', body['restaurants'][0])
+
+    def test_menu_scan_fallback_without_openai_key(self):
+        response = self.client.post(
+            '/discovery/menu-scan',
+            headers=self.headers,
+            files={'file': ('menu.jpg', b'fake-image-bytes', 'image/jpeg')},
+            data={
+                'cuisines': '["JapaneseKorean"]',
+                'restrictions': '["dairy"]',
+                'restaurant_name': 'Paper Lantern',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body['source'], 'fallback')
+        self.assertGreaterEqual(len(body['items']), 1)
+        self.assertIn(body['items'][0]['recommendation'], {'best', 'safe', 'avoid'})
 
 
 if __name__ == '__main__':

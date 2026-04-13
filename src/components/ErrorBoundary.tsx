@@ -1,5 +1,6 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { TriangleAlert } from 'lucide-react-native';
 import { theme } from '../theme';
 
 interface Props {
@@ -34,19 +35,12 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <View style={styles.container}>
           <View style={styles.iconWrap}>
-            <Text style={styles.icon}>😵</Text>
+            <TriangleAlert size={32} color={theme.colors.error} strokeWidth={2} />
           </View>
-          <Text style={styles.title}>页面暂时出错了</Text>
-          <Text style={styles.message}>
-            {this.state.error?.message || '请稍后重试，或返回上一页重新操作。'}
-          </Text>
-          <Pressable
-            style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
-            onPress={this.handleRetry}
-            accessibilityRole="button"
-            accessibilityLabel="重试"
-          >
-            <Text style={styles.retryText}>重试</Text>
+          <Text style={styles.title}>Something went wrong</Text>
+          <Text style={styles.message}>{this.state.error?.message || 'Please try again in a moment.'}</Text>
+          <Pressable style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]} onPress={this.handleRetry} accessibilityRole="button" accessibilityLabel="Retry">
+            <Text style={styles.retryText}>Retry</Text>
           </Pressable>
         </View>
       );
@@ -71,9 +65,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing.md,
-  },
-  icon: {
-    fontSize: 36,
   },
   title: {
     ...theme.typography.h1,

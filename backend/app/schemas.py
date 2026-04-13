@@ -78,3 +78,45 @@ class AuthRequest(BaseModel):
 class AuthResponse(BaseModel):
     access_token: str
     token_type: Literal['bearer'] = 'bearer'
+
+
+class NearbyRestaurantsRequest(BaseModel):
+    kind: Literal['coordinates', 'query']
+    latitude: float | None = None
+    longitude: float | None = None
+    radius_meters: int | None = Field(default=2400, alias='radiusMeters')
+    query: str | None = None
+
+
+class NearbyRestaurant(BaseModel):
+    id: str
+    name: str
+    address: str
+    rating: float | None = None
+    review_count: int | None = Field(default=None, alias='reviewCount')
+    distance_meters: int | None = Field(default=None, alias='distanceMeters')
+    price_level: str | None = Field(default=None, alias='priceLevel')
+    open_now: bool | None = Field(default=None, alias='openNow')
+    primary_type: str | None = Field(default=None, alias='primaryType')
+    image_url: str | None = Field(default=None, alias='imageUrl')
+    editorial_summary: str | None = Field(default=None, alias='editorialSummary')
+
+
+class NearbyRestaurantsResponse(BaseModel):
+    restaurants: list[NearbyRestaurant]
+    source: Literal['google_places', 'fallback']
+
+
+class MenuScanItem(BaseModel):
+    name: str
+    description: str | None = None
+    price: str | None = None
+    recommendation: Literal['best', 'safe', 'avoid']
+    reason: str
+    caution: str | None = None
+
+
+class MenuScanResponse(BaseModel):
+    items: list[MenuScanItem]
+    source: Literal['ai', 'fallback']
+    note: str | None = None

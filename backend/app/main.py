@@ -1,7 +1,7 @@
 import json
 from datetime import UTC, datetime
 from decimal import Decimal
-from fastapi import FastAPI, HTTPException, Header, Depends, Request
+from fastapi import FastAPI, HTTPException, Header, Depends, Request, UploadFile, File, Form
 from pydantic import ValidationError
 
 from .config import settings
@@ -19,9 +19,13 @@ from .schemas import (
     AuthRequest,
     AuthResponse,
     AccountDeletionResponse,
+    NearbyRestaurantsRequest,
+    NearbyRestaurantsResponse,
+    MenuScanResponse,
 )
 from .security import hash_password, verify_password, create_access_token, decode_access_token
 from .services.alipay import verify_alipay_rsa2_signature
+from .services.discovery import search_nearby_restaurants, scan_menu_image
 
 app = FastAPI(title=settings.app_name)
 
@@ -189,6 +193,41 @@ def quota_today(user_id: str = Depends(_current_user)) -> QuotaResponse:
     with tx() as conn:
         q = _quota_for_user(conn, user_id)
     return QuotaResponse(**q)
+
+
+@app.post('/discovery/nearby-restaurants', response_model=NearbyRestaurantsResponse)
+async def nearby_restaurants(
+    payload: NearbyRestaurantsRequest,
+    _: str = Depends(_current_user),
+) -> NearbyRestaurantsResponse:
+    restaurants, source = await search_nearby_restaurants(payload, settings.google_places_api_key)
+    return NearbyRestaurantsResponse(restaurants=restaurants, source=source)
+
+
+@app.post('/discovery/menu-scan', response_model=MenuScanResponse)
+async def menu_scan(
+    file: UploadFile = File(...),
+    cuisines: str = Form(default='[]'),
+    restrictions: str = Form(default='[]'),
+    restaurant_name: str | None = Form(default=None),
+    _: str = Depends(_current_user),
+) -> MenuScanResponse:
+    try:
+        cuisine_list = json.loads(cuisines)
+        restriction_list = json.loads(restrictions)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail='invalid menu scan payload') from exc
+
+    file_bytes = await file.read()
+    items, source, note = await scan_menu_image(
+        file_bytes=file_bytes,
+        filename=file.filename or 'menu.jpg',
+        cuisines=[item for item in cuisine_list if isinstance(item, str)],
+        restrictions=[item for item in restriction_list if isinstance(item, str)],
+        restaurant_name=restaurant_name,
+        openai_api_key=settings.openai_api_key,
+    )
+    return MenuScanResponse(items=items, source=source, note=note)
 
 
 @app.post('/quota/consume', response_model=QuotaConsumeResponse)
