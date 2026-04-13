@@ -1,22 +1,56 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEYS = {
-  ONBOARDING_COMPLETE: '@chishenme/onboarding_complete',
-  SELECTED_CUISINES: '@chishenme/selected_cuisines',
-  SELECTED_RESTRICTIONS: '@chishenme/selected_restrictions',
-  FAVORITES: '@chishenme/favorites',
-  HISTORY: '@chishenme/history',
-  MEMBERSHIP_PLAN: '@chishenme/membership_plan',
-  RECENT_SEARCHES: '@chishenme/recent_searches',
-  RECOMMENDATION_QUOTA: '@chishenme/recommendation_quota',
-  PAYMENT_EVENTS: '@chishenme/payment_events',
-  BACKEND_TOKEN: '@chishenme/backend_token',
-  BACKEND_USER_ID: '@chishenme/backend_user_id',
-  LOCATION_CONTEXT: '@chishenme/location_context',
-  SAVED_AREAS: '@chishenme/saved_areas',
-  DECISION_SETTINGS: '@chishenme/decision_settings',
-  DEVELOPER_MEMBERSHIP_OVERRIDE: '@chishenme/developer_membership_override',
+  ONBOARDING_COMPLETE: '@teller/onboarding_complete',
+  SELECTED_CUISINES: '@teller/selected_cuisines',
+  SELECTED_RESTRICTIONS: '@teller/selected_restrictions',
+  FAVORITES: '@teller/favorites',
+  HISTORY: '@teller/history',
+  MEMBERSHIP_PLAN: '@teller/membership_plan',
+  RECENT_SEARCHES: '@teller/recent_searches',
+  RECOMMENDATION_QUOTA: '@teller/recommendation_quota',
+  PAYMENT_EVENTS: '@teller/payment_events',
+  BACKEND_TOKEN: '@teller/backend_token',
+  BACKEND_USER_ID: '@teller/backend_user_id',
+  LOCATION_CONTEXT: '@teller/location_context',
+  SAVED_AREAS: '@teller/saved_areas',
+  DECISION_SETTINGS: '@teller/decision_settings',
+  DEVELOPER_MEMBERSHIP_OVERRIDE: '@teller/developer_membership_override',
 };
+
+const LEGACY_PREFIX = '@chishenme/';
+const CURRENT_PREFIX = '@teller/';
+let _migrated = false;
+
+/** Migrate data from legacy @chishenme/ keys to @teller/ keys (one-time). */
+async function migrateFromLegacyKeys(): Promise<void> {
+  if (_migrated) return;
+  _migrated = true;
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const legacyKeys = allKeys.filter((k) => k.startsWith(LEGACY_PREFIX));
+    if (legacyKeys.length === 0) return;
+
+    const pairs = await AsyncStorage.multiGet(legacyKeys);
+    const writes: Array<[string, string]> = [];
+    for (const [oldKey, value] of pairs) {
+      if (value == null) continue;
+      const newKey = CURRENT_PREFIX + oldKey.slice(LEGACY_PREFIX.length);
+      writes.push([newKey, value]);
+    }
+    if (writes.length > 0) {
+      await AsyncStorage.multiSet(writes);
+      await AsyncStorage.multiRemove(legacyKeys);
+    }
+  } catch (error) {
+    console.warn('Storage migration from legacy keys failed:', error);
+  }
+}
+
+/** Must be called once at app startup before any storage reads. */
+export async function ensureStorageMigrated(): Promise<void> {
+  await migrateFromLegacyKeys();
+}
 
 export interface PaymentEvent {
   id: string;

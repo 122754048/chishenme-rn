@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState, typ
 import { AppState as RNAppState } from 'react-native';
 import { backendApi } from '../api/backend';
 import { subscriptionService } from '../services/subscriptions';
-import { storage, type DecisionSettings, type SavedAreas } from '../storage';
+import { ensureStorageMigrated, storage, type DecisionSettings, type SavedAreas } from '../storage';
 import { DAILY_FREE_QUOTA, consumeQuota, getQuotaForToday, getResetQuotaForFree } from '../utils/quota';
 import type { LocationContext, SavedAreaContext, SavedAreaKey } from '../utils/location';
 
@@ -114,6 +114,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function load() {
       try {
+        // Migrate legacy @chishenme/ storage keys before any reads
+        await ensureStorageMigrated();
+
         const [oc, cuisines, restrictions, favs, hist, plan, storedLocation, storedAreas, storedDecisionSettings] = await Promise.all([
           storage.getOnboardingComplete(),
           storage.getSelectedCuisines(),

@@ -5,7 +5,8 @@ import { brand } from '../config/brand';
 import { useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 
-const GUIDE_KEY = '@chishenme/has_seen_guide';
+const GUIDE_KEY = '@teller/has_seen_guide';
+const LEGACY_GUIDE_KEY = '@chishenme/has_seen_guide';
 
 export function OnboardingGuide() {
   const [visible, setVisible] = useState(false);
@@ -14,6 +15,12 @@ export function OnboardingGuide() {
   useEffect(() => {
     async function checkGuide() {
       try {
+        // Migrate legacy key if present
+        const legacySeen = await AsyncStorage.getItem(LEGACY_GUIDE_KEY);
+        if (legacySeen === 'true') {
+          await AsyncStorage.setItem(GUIDE_KEY, 'true');
+          await AsyncStorage.removeItem(LEGACY_GUIDE_KEY);
+        }
         const seen = await AsyncStorage.getItem(GUIDE_KEY);
         if (seen !== 'true') setVisible(true);
       } catch {

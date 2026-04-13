@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
@@ -15,6 +16,7 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 export default function App() {
+  const colorScheme = useColorScheme();
   const [fontsLoaded] = useFonts({
     Nunito_400Regular,
     Nunito_500Medium,
@@ -31,7 +33,7 @@ export default function App() {
       <ErrorBoundary>
         <SafeAreaProvider>
           <AppProvider>
-            <StatusBar style="dark" />
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
             <AppNavigator />
           </AppProvider>
         </SafeAreaProvider>

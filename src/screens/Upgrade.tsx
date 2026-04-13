@@ -243,7 +243,7 @@ function makeStyles(t: AppTheme) {
     planFeatureList: { gap: 8 },
     planFeatureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     planFeatureText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '600' },
-    footer: { paddingHorizontal: t.spacing.md, paddingVertical: t.spacing.md, backgroundColor: 'rgba(255,253,252,0.98)', borderTopWidth: 1, borderTopColor: t.colors.borderLight },
+    footer: { paddingHorizontal: t.spacing.md, paddingVertical: t.spacing.md, backgroundColor: t.colors.surface, borderTopWidth: 1, borderTopColor: t.colors.borderLight },
     upgradeButton: { backgroundColor: t.colors.primary, borderRadius: t.radius.full, height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
     upgradeButtonText: { ...t.typography.body, color: t.colors.surface, fontWeight: '700' },
     pressedCard: { opacity: t.interaction.pressedOpacity, transform: [{ scale: t.interaction.pressedScale }] },

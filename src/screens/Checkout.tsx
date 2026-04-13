@@ -367,7 +367,7 @@ function makeStyles(t: AppTheme) {
     benefitGrid: { flexDirection: 'row', gap: t.spacing.sm },
     benefitTile: { flex: 1, minHeight: 84, borderRadius: t.surface.cardRadius, backgroundColor: t.colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', gap: 8 },
     benefitText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
-    footer: { paddingHorizontal: t.spacing.md, paddingTop: t.spacing.sm, paddingBottom: t.spacing.md, borderTopWidth: 1, borderTopColor: t.colors.borderLight, backgroundColor: 'rgba(255,253,252,0.98)', gap: t.spacing.xs },
+    footer: { paddingHorizontal: t.spacing.md, paddingTop: t.spacing.sm, paddingBottom: t.spacing.md, borderTopWidth: 1, borderTopColor: t.colors.borderLight, backgroundColor: t.colors.surface, gap: t.spacing.xs },
     payBtn: { backgroundColor: t.colors.primary, height: 48, borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center' },
     payText: { ...t.typography.body, color: t.colors.surface, fontWeight: '700' },
     trialBtn: { backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border, height: 44, borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center' },

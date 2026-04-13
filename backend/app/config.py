@@ -23,8 +23,8 @@ class Settings:
     alipay_public_key: str = os.getenv('ALIPAY_PUBLIC_KEY', 'replace-with-alipay-public-key')
     revenuecat_webhook_secret: str = os.getenv('REVENUECAT_WEBHOOK_SECRET', '')
     revenuecat_entitlement_id: str = os.getenv('REVENUECAT_ENTITLEMENT_ID', 'premium')
-    revenuecat_pro_product_id: str = os.getenv('REVENUECAT_PRO_PRODUCT_ID', 'chishenme.pro.monthly')
-    revenuecat_family_product_id: str = os.getenv('REVENUECAT_FAMILY_PRODUCT_ID', 'chishenme.family.monthly')
+    revenuecat_pro_product_id: str = os.getenv('REVENUECAT_PRO_PRODUCT_ID', 'teller.pro.monthly')
+    revenuecat_family_product_id: str = os.getenv('REVENUECAT_FAMILY_PRODUCT_ID', 'teller.family.monthly')
     google_places_api_key: str = os.getenv('GOOGLE_PLACES_API_KEY', '')
     openai_api_key: str = os.getenv('OPENAI_API_KEY', '')
 
@@ -45,8 +45,8 @@ class Settings:
             'your-alipay-app-id',
             'replace-in-prod',
             'replace-with-alipay-public-key',
-            'chishenme.pro.monthly',
-            'chishenme.family.monthly',
+            'teller.pro.monthly',
+            'teller.family.monthly',
         }
         missing = [name for name, value in unsafe_pairs.items() if (not value) or (value in placeholders)]
         if missing:

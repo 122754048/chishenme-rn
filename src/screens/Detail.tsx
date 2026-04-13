@@ -318,7 +318,7 @@ function makeStyles(t: AppTheme) {
     relatedTitle: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700', marginBottom: 2 },
     relatedMeta: { ...t.typography.caption, color: t.colors.subtle },
     bottomPadding: { height: 120 },
-    actionBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,253,252,0.98)', borderTopWidth: 1, borderTopColor: t.colors.borderLight, paddingHorizontal: t.spacing.md, paddingTop: t.spacing.sm, paddingBottom: 8, gap: t.spacing.sm },
+    actionBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: t.colors.surface, borderTopWidth: 1, borderTopColor: t.colors.borderLight, paddingHorizontal: t.spacing.md, paddingTop: t.spacing.sm, paddingBottom: 8, gap: t.spacing.sm },
     actionLabel: { ...t.typography.micro, color: t.colors.subtle },
     actionSummary: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
     actionButtons: { flexDirection: 'row', gap: t.spacing.xs },
