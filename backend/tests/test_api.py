@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
-from app.main import app
+from app.main import app, limiter
 from app.config import settings
 from app.db import init_db
 from app.services.alipay import build_alipay_sign_content
@@ -34,6 +34,7 @@ class BackendApiTest(unittest.TestCase):
         self.db_path = os.path.join(tempfile.gettempdir(), f'chishenme-test-{uuid4().hex}.db')
         settings.db_path = self.db_path
         init_db()
+        limiter.reset()
         self.client = TestClient(app)
 
         reg = self.client.post('/auth/register', json={'user_id': 'u_123', 'password': 'secret123'})

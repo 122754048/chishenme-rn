@@ -5,3 +5,5 @@ python-jose[cryptography]==3.5.0
 cryptography==44.0.2
 httpx==0.28.1
 python-multipart==0.0.20
+slowapi==0.1.10
+limits>=3.0

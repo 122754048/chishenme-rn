@@ -1,8 +1,15 @@
 import json
-from datetime import UTC, datetime
+import os
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from fastapi import FastAPI, HTTPException, Header, Depends, Request, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from starlette.responses import PlainTextResponse
 
 from .config import settings
 from .db import init_db, tx, utc_now_iso
@@ -27,13 +34,27 @@ from .security import hash_password, verify_password, create_access_token, decod
 from .services.alipay import verify_alipay_rsa2_signature
 from .services.discovery import search_nearby_restaurants, scan_menu_image
 
-app = FastAPI(title=settings.app_name)
+limiter = Limiter(key_func=get_remote_address)
 
 
-@app.on_event('startup')
-def on_startup() -> None:
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     settings.assert_runtime_safe()
     init_db()
+    yield
+
+
+app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def _today() -> str:
@@ -134,7 +155,8 @@ def health() -> dict:
 
 
 @app.post('/auth/register', response_model=AuthResponse)
-def register(payload: AuthRequest) -> AuthResponse:
+@limiter.limit("5/minute")
+def register(request: Request, payload: AuthRequest) -> AuthResponse:
     with tx() as conn:
         existed = conn.execute('SELECT 1 FROM users WHERE user_id = ?', (payload.user_id,)).fetchone()
         if existed:
@@ -153,7 +175,8 @@ def register(payload: AuthRequest) -> AuthResponse:
 
 
 @app.post('/auth/login', response_model=AuthResponse)
-def login(payload: AuthRequest) -> AuthResponse:
+@limiter.limit("10/minute")
+def login(request: Request, payload: AuthRequest) -> AuthResponse:
     with tx() as conn:
         row = conn.execute('SELECT password_hash FROM users WHERE user_id = ?', (payload.user_id,)).fetchone()
         if not row or not verify_password(payload.password, row['password_hash']):
@@ -164,9 +187,9 @@ def login(payload: AuthRequest) -> AuthResponse:
 @app.get('/plans', response_model=list[Plan])
 def plans() -> list[Plan]:
     return [
-        Plan(key='free', title='免费版', monthly_price_cny=0),
+        Plan(key='free', title='\u514d\u8d39\u7248', monthly_price_cny=0),
         Plan(key='pro', title='Pro', monthly_price_cny=9.9),
-        Plan(key='family', title='家庭版', monthly_price_cny=19.9),
+        Plan(key='family', title='\u5bb6\u5ead\u7248', monthly_price_cny=19.9),
     ]
 
 
@@ -325,6 +348,15 @@ async def alipay_notify(request: Request) -> dict:
         raise HTTPException(status_code=400, detail='unsupported alipay sign type')
     if not verify_alipay_rsa2_signature(notify_params, settings.alipay_public_key):
         raise HTTPException(status_code=401, detail='invalid notify signature')
+
+    gmt_payment_str = notify_params.get("gmt_payment", "")
+    if gmt_payment_str:
+        try:
+            payment_time = datetime.strptime(gmt_payment_str, "%Y-%m-%d %H:%M:%S")
+            if datetime.utcnow() - payment_time > timedelta(hours=24):
+                return PlainTextResponse("fail")
+        except ValueError:
+            pass
 
     if payload.trade_status not in {'TRADE_SUCCESS', 'TRADE_FINISHED'}:
         return {'ok': True, 'ignored': True}
