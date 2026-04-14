@@ -64,7 +64,7 @@ export function SearchOverlay({ visible, onClose, onSearch }: SearchOverlayProps
           setRecentSearches(saved);
         }
       } catch (error) {
-        console.warn('Failed to read recent searches:', error);
+        console.warn('[Teller]', 'Failed to read recent searches:', error);
       } finally {
         setHydrated(true);
       }

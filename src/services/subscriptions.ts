@@ -91,7 +91,7 @@ export const subscriptionService = {
       const customerInfo = await Purchases.getCustomerInfo();
       return planFromCustomerInfo(customerInfo);
     } catch (error) {
-      console.warn('Failed to sync RevenueCat customer info:', error);
+      console.warn('[Teller]', 'Failed to sync RevenueCat customer info:', error);
       return null;
     }
   },

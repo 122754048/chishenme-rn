@@ -168,7 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMembershipPlanState(resolvedPlan);
         await syncDailyQuota(resolvedPlan);
       } catch (error) {
-        console.warn('Failed to load app data:', error);
+        console.warn('[Teller]', 'Failed to load app data:', error);
       } finally {
         setIsLoading(false);
       }
@@ -215,7 +215,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMembershipPlanState(resolvedPlan);
         await syncDailyQuota(resolvedPlan);
       })().catch((error) => {
-        console.warn('Failed to sync active app membership/quota:', error);
+        console.warn('[Teller]', 'Failed to sync active app membership/quota:', error);
       });
     });
 
@@ -266,7 +266,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           void storage.setRecommendationQuota({ date: result.date, left: result.left });
         })
         .catch((error) => {
-          console.warn('Failed to consume quota from backend:', error);
+          console.warn('[Teller]', 'Failed to consume quota from backend:', error);
         });
       return;
     }

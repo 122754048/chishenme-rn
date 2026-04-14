@@ -135,7 +135,7 @@ export function Checkout() {
       }
       throw new Error('payment backend is not configured');
     } catch (error) {
-      console.warn('Payment flow failed:', error);
+      console.warn('[Teller]', 'Payment flow failed:', error);
       const message = error instanceof Error ? error.message : '';
       const backendUnavailable = message.includes('not configured') || message.includes('auth token');
       const iapUnavailable = message.includes('ios iap is not configured');
@@ -179,7 +179,7 @@ export function Checkout() {
       }
       throw new Error(`order status is ${status}`);
     } catch (error) {
-      console.warn('Refresh order status failed:', error);
+      console.warn('[Teller]', 'Refresh order status failed:', error);
       setPaymentNotice('We could not refresh the order status right now. Please try again in a moment.');
       setProcessing('failed');
     }
@@ -201,7 +201,7 @@ export function Checkout() {
       await recordEvent('trial', 'success');
       await completeMembership();
     } catch (error) {
-      console.warn('Trial flow failed:', error);
+      console.warn('[Teller]', 'Trial flow failed:', error);
       await recordEvent('trial', 'failed', 'mock_trial_error');
       setProcessing('failed');
     }
@@ -223,7 +223,7 @@ export function Checkout() {
       await completeOnboarding();
       navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home', params: { justUnlocked: result.plan } } }] });
     } catch (error) {
-      console.warn('Restore purchase failed:', error);
+      console.warn('[Teller]', 'Restore purchase failed:', error);
       setPaymentNotice(error instanceof Error ? error.message : 'Restore failed. Please try again in a moment.');
       setProcessing('failed');
     }

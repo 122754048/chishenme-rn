@@ -404,7 +404,7 @@ export function Home() {
         return undefined;
       })
       .catch((error) => {
-        console.warn('Failed to resolve best-effort location:', error);
+        console.warn('[Teller]', 'Failed to resolve best-effort location:', error);
       });
   }, [locationContext, setLocationSelection]);
 
@@ -429,7 +429,7 @@ export function Home() {
       })
       .catch((error) => {
         if (!active) return;
-        console.warn('Failed to fetch nearby restaurants:', error);
+        console.warn('[Teller]', 'Failed to fetch nearby restaurants:', error);
         setNearbyRestaurants([]);
       })
       .finally(() => {

@@ -183,7 +183,7 @@ export function AppNavigator() {
           options={{ animation: 'slide_from_right' }}
         />
         <Stack.Screen name="Upgrade" component={Upgrade} options={{ animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="DeveloperMode" component={DeveloperMode} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        {__DEV__ && <Stack.Screen name="DeveloperMode" component={DeveloperMode} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />}
         <Stack.Screen name="Checkout" component={Checkout} options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="MainTabs" component={MainTabs} options={{ animation: 'fade' }} />
         <Stack.Screen name="Detail" component={Detail} options={{ animation: 'fade_from_bottom', fullScreenGestureEnabled: true }} />

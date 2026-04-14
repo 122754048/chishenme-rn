@@ -43,7 +43,7 @@ async function migrateFromLegacyKeys(): Promise<void> {
       await AsyncStorage.multiRemove(legacyKeys);
     }
   } catch (error) {
-    console.warn('Storage migration from legacy keys failed:', error);
+    console.warn('[Teller]', 'Storage migration from legacy keys failed:', error);
   }
 }
 
@@ -105,7 +105,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.ONBOARDING_COMPLETE, JSON.stringify(value));
     } catch (error) {
-      console.warn('Failed to save onboarding status:', error);
+      console.warn('[Teller]', 'Failed to save onboarding status:', error);
     }
   },
 
@@ -115,7 +115,7 @@ export const storage = {
       if (val === null) return false;
       return JSON.parse(val) === true;
     } catch (error) {
-      console.warn('Failed to read onboarding status:', error);
+      console.warn('[Teller]', 'Failed to read onboarding status:', error);
       return false;
     }
   },
@@ -124,7 +124,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.SELECTED_CUISINES, JSON.stringify(cuisines));
     } catch (error) {
-      console.warn('Failed to save cuisines:', error);
+      console.warn('[Teller]', 'Failed to save cuisines:', error);
     }
   },
 
@@ -133,7 +133,7 @@ export const storage = {
       const val = await AsyncStorage.getItem(KEYS.SELECTED_CUISINES);
       return val ? JSON.parse(val) : [];
     } catch (error) {
-      console.warn('Failed to read cuisines:', error);
+      console.warn('[Teller]', 'Failed to read cuisines:', error);
       return [];
     }
   },
@@ -142,7 +142,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.SELECTED_RESTRICTIONS, JSON.stringify(restrictions));
     } catch (error) {
-      console.warn('Failed to save restrictions:', error);
+      console.warn('[Teller]', 'Failed to save restrictions:', error);
     }
   },
 
@@ -151,7 +151,7 @@ export const storage = {
       const val = await AsyncStorage.getItem(KEYS.SELECTED_RESTRICTIONS);
       return val ? JSON.parse(val) : [];
     } catch (error) {
-      console.warn('Failed to read restrictions:', error);
+      console.warn('[Teller]', 'Failed to read restrictions:', error);
       return [];
     }
   },
@@ -160,7 +160,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.FAVORITES, JSON.stringify(favorites));
     } catch (error) {
-      console.warn('Failed to save favorites:', error);
+      console.warn('[Teller]', 'Failed to save favorites:', error);
     }
   },
 
@@ -169,7 +169,7 @@ export const storage = {
       const val = await AsyncStorage.getItem(KEYS.FAVORITES);
       return val ? JSON.parse(val) : [];
     } catch (error) {
-      console.warn('Failed to read favorites:', error);
+      console.warn('[Teller]', 'Failed to read favorites:', error);
       return [];
     }
   },
@@ -188,7 +188,7 @@ export const storage = {
       const updated = [item, ...existing].slice(0, 50); // keep last 50
       await AsyncStorage.setItem(KEYS.HISTORY, JSON.stringify(updated));
     } catch (error) {
-      console.warn('Failed to save history:', error);
+      console.warn('[Teller]', 'Failed to save history:', error);
     }
   },
 
@@ -207,7 +207,7 @@ export const storage = {
       const val = await AsyncStorage.getItem(KEYS.HISTORY);
       return val ? JSON.parse(val) : [];
     } catch (error) {
-      console.warn('Failed to read history:', error);
+      console.warn('[Teller]', 'Failed to read history:', error);
       return [];
     }
   },
@@ -216,7 +216,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.MEMBERSHIP_PLAN, plan);
     } catch (error) {
-      console.warn('Failed to save membership plan:', error);
+      console.warn('[Teller]', 'Failed to save membership plan:', error);
     }
   },
 
@@ -229,7 +229,7 @@ export const storage = {
         .slice(0, 10);
       await AsyncStorage.setItem(KEYS.RECENT_SEARCHES, JSON.stringify(normalized));
     } catch (error) {
-      console.warn('Failed to save recent searches:', error);
+      console.warn('[Teller]', 'Failed to save recent searches:', error);
     }
   },
 
@@ -245,7 +245,7 @@ export const storage = {
         .filter((item, index, arr) => arr.indexOf(item) === index)
         .slice(0, 10);
     } catch (error) {
-      console.warn('Failed to read recent searches:', error);
+      console.warn('[Teller]', 'Failed to read recent searches:', error);
       return [];
     }
   },
@@ -256,7 +256,7 @@ export const storage = {
       if (val === 'free' || val === 'pro' || val === 'family') return val;
       return 'free';
     } catch (error) {
-      console.warn('Failed to read membership plan:', error);
+      console.warn('[Teller]', 'Failed to read membership plan:', error);
       return 'free';
     }
   },
@@ -265,7 +265,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.DEVELOPER_MEMBERSHIP_OVERRIDE, JSON.stringify(override));
     } catch (error) {
-      console.warn('Failed to save developer membership override:', error);
+      console.warn('[Teller]', 'Failed to save developer membership override:', error);
     }
   },
 
@@ -279,7 +279,7 @@ export const storage = {
       }
       return null;
     } catch (error) {
-      console.warn('Failed to read developer membership override:', error);
+      console.warn('[Teller]', 'Failed to read developer membership override:', error);
       return null;
     }
   },
@@ -288,7 +288,7 @@ export const storage = {
     try {
       await AsyncStorage.removeItem(KEYS.DEVELOPER_MEMBERSHIP_OVERRIDE);
     } catch (error) {
-      console.warn('Failed to clear developer membership override:', error);
+      console.warn('[Teller]', 'Failed to clear developer membership override:', error);
     }
   },
 
@@ -300,7 +300,7 @@ export const storage = {
       }
       await AsyncStorage.setItem(KEYS.LOCATION_CONTEXT, JSON.stringify(context));
     } catch (error) {
-      console.warn('Failed to save location context:', error);
+      console.warn('[Teller]', 'Failed to save location context:', error);
     }
   },
 
@@ -318,7 +318,7 @@ export const storage = {
       }
       return null;
     } catch (error) {
-      console.warn('Failed to read location context:', error);
+      console.warn('[Teller]', 'Failed to read location context:', error);
       return null;
     }
   },
@@ -327,7 +327,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.SAVED_AREAS, JSON.stringify(savedAreas));
     } catch (error) {
-      console.warn('Failed to save areas:', error);
+      console.warn('[Teller]', 'Failed to save areas:', error);
     }
   },
 
@@ -337,7 +337,7 @@ export const storage = {
       const parsed = val ? JSON.parse(val) : {};
       return typeof parsed === 'object' && parsed ? parsed : {};
     } catch (error) {
-      console.warn('Failed to read saved areas:', error);
+      console.warn('[Teller]', 'Failed to read saved areas:', error);
       return {};
     }
   },
@@ -346,7 +346,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.DECISION_SETTINGS, JSON.stringify(settings));
     } catch (error) {
-      console.warn('Failed to save decision settings:', error);
+      console.warn('[Teller]', 'Failed to save decision settings:', error);
     }
   },
 
@@ -360,7 +360,7 @@ export const storage = {
         forTwo: parsed?.forTwo === true,
       };
     } catch (error) {
-      console.warn('Failed to read decision settings:', error);
+      console.warn('[Teller]', 'Failed to read decision settings:', error);
       return DEFAULT_DECISION_SETTINGS;
     }
   },
@@ -369,7 +369,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.RECOMMENDATION_QUOTA, JSON.stringify(payload));
     } catch (error) {
-      console.warn('Failed to save recommendation quota:', error);
+      console.warn('[Teller]', 'Failed to save recommendation quota:', error);
     }
   },
 
@@ -383,7 +383,7 @@ export const storage = {
       }
       return null;
     } catch (error) {
-      console.warn('Failed to read recommendation quota:', error);
+      console.warn('[Teller]', 'Failed to read recommendation quota:', error);
       return null;
     }
   },
@@ -394,7 +394,7 @@ export const storage = {
       const updated = [event, ...existing].slice(0, 30);
       await AsyncStorage.setItem(KEYS.PAYMENT_EVENTS, JSON.stringify(updated));
     } catch (error) {
-      console.warn('Failed to save payment event:', error);
+      console.warn('[Teller]', 'Failed to save payment event:', error);
     }
   },
 
@@ -406,7 +406,7 @@ export const storage = {
       if (!Array.isArray(parsed)) return [];
       return parsed;
     } catch (error) {
-      console.warn('Failed to read payment events:', error);
+      console.warn('[Teller]', 'Failed to read payment events:', error);
       return [];
     }
   },
@@ -415,7 +415,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.BACKEND_TOKEN, token);
     } catch (error) {
-      console.warn('Failed to save backend token:', error);
+      console.warn('[Teller]', 'Failed to save backend token:', error);
     }
   },
 
@@ -423,7 +423,7 @@ export const storage = {
     try {
       return await AsyncStorage.getItem(KEYS.BACKEND_TOKEN);
     } catch (error) {
-      console.warn('Failed to read backend token:', error);
+      console.warn('[Teller]', 'Failed to read backend token:', error);
       return null;
     }
   },
@@ -432,7 +432,7 @@ export const storage = {
     try {
       await AsyncStorage.setItem(KEYS.BACKEND_USER_ID, userId);
     } catch (error) {
-      console.warn('Failed to save backend user id:', error);
+      console.warn('[Teller]', 'Failed to save backend user id:', error);
     }
   },
 
@@ -440,7 +440,7 @@ export const storage = {
     try {
       return await AsyncStorage.getItem(KEYS.BACKEND_USER_ID);
     } catch (error) {
-      console.warn('Failed to read backend user id:', error);
+      console.warn('[Teller]', 'Failed to read backend user id:', error);
       return null;
     }
   },
@@ -457,7 +457,7 @@ export const storage = {
     try {
       await AsyncStorage.multiRemove(Object.values(KEYS));
     } catch (error) {
-      console.warn('Failed to clear app data:', error);
+      console.warn('[Teller]', 'Failed to clear app data:', error);
     }
   },
 };

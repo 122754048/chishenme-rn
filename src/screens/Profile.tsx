@@ -112,7 +112,7 @@ export function Profile() {
               await backendApi.deleteAccount(token);
             }
           } catch (error) {
-            console.warn('Backend account deletion failed:', error);
+            console.warn('[Teller]', 'Backend account deletion failed:', error);
           } finally {
             await resetApp();
             navigation.reset({ index: 0, routes: [{ name: 'OnboardingCuisines' }] });

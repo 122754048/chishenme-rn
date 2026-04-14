@@ -140,7 +140,7 @@ export function Explore() {
       })
       .catch((error) => {
         if (!active) return;
-        console.warn('Failed to fetch nearby restaurants for Explore:', error);
+        console.warn('[Teller]', 'Failed to fetch nearby restaurants for Explore:', error);
         setNearbyRestaurants([]);
       })
       .finally(() => {
