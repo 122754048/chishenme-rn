@@ -600,7 +600,7 @@ function makeStyles(t: AppTheme) {
     },
     iconToggleActive: { backgroundColor: t.colors.primary, borderColor: t.colors.primary },
     iconToggleGlyph: { width: 28, height: 28, borderRadius: 14, backgroundColor: t.colors.background, alignItems: 'center', justifyContent: 'center' },
-    iconToggleGlyphActive: { backgroundColor: 'rgba(255,255,255,0.16)' },
+    iconToggleGlyphActive: { backgroundColor: t.overlay.glassInline },
     iconToggleLabel: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
     iconToggleLabelActive: { color: '#FFFFFF' },
     filterRow: { gap: 8, paddingHorizontal: t.spacing.md, paddingTop: t.spacing.md },
@@ -669,7 +669,7 @@ function makeStyles(t: AppTheme) {
       flex: 1,
       justifyContent: 'flex-end',
       padding: t.spacing.md,
-      backgroundColor: 'rgba(20, 15, 12, 0.24)',
+      backgroundColor: t.overlay.featuredCard,
     },
     featuredNearbyMetaRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
     featuredNearbyBadge: {
@@ -703,7 +703,7 @@ function makeStyles(t: AppTheme) {
       flex: 1,
       justifyContent: 'flex-end',
       padding: t.spacing.md,
-      backgroundColor: 'rgba(20, 15, 12, 0.26)',
+      backgroundColor: t.overlay.visualCard,
     },
     visualMetaRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
     visualMetaBadge: {
