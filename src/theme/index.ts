@@ -62,6 +62,15 @@ export const lightTheme = {
     pressedOpacity: 0.9,
     pressedScale: 0.985,
     chipPressedOpacity: 0.82,
+    // Disabled state
+    disabledOpacity: 0.42,
+    // Focus ring (Expo Web / accessibility)
+    focusRingColor: '#C9673C',
+    focusRingWidth: 2,
+    // Spring animation parameters
+    springDamping: 14,
+    springStiffness: 220,
+    pressAnimDuration: 70,
   },
 
   surface: {
@@ -71,6 +80,36 @@ export const lightTheme = {
     insetCardPadding: 16,
     actionButtonSize: 60,
     listCardMinHeight: 88,
+    // Interaction surface states
+    pressed: '#F2EBE4',
+    disabled: '#F0EBE6',
+    focus: '#FAF6F2',
+  },
+
+  overlay: {
+    // Image scrims — card bottom info overlays
+    cardInfoGradient: 'rgba(17, 12, 9, 0.42)',    // Home main card info area (deeper)
+    cardPreview: 'rgba(17, 12, 9, 0.22)',          // Home preview deck card (lighter)
+    heroDetail: 'rgba(16, 12, 10, 0.36)',          // Detail screen hero
+    featuredCard: 'rgba(20, 15, 12, 0.24)',        // Explore featured nearby card
+    visualCard: 'rgba(20, 15, 12, 0.26)',          // Explore restaurant visual card
+    fitCard: 'rgba(20, 15, 12, 0.30)',             // Explore fit visual card
+    // Glass morphism — light translucent surfaces (icons, buttons on images)
+    glassLight: 'rgba(255, 255, 255, 0.92)',       // navCircle, heartBtn
+    glassMedium: 'rgba(255, 255, 255, 0.78)',      // unlockIcon, summaryStat, summaryAction
+    glassMuted: 'rgba(255, 255, 255, 0.55)',       // scanActionIcon
+    glassInline: 'rgba(255, 255, 255, 0.16)',      // inlinePill, ratingBadge on cards
+    // Scrim — behind modals / bottom sheets
+    scrim: 'rgba(0, 0, 0, 0.42)',                  // modal/sheet backdrop
+    scrimLight: 'rgba(0, 0, 0, 0.24)',             // lightweight scrim
+    // Backdrop — non-image translucent surfaces
+    backdropSurface: 'rgba(255, 255, 255, 0.94)', // SearchOverlay background
+    // Text on images
+    textOnImage: '#FFFFFF',
+    textOnImageSecondary: 'rgba(255, 255, 255, 0.88)',
+    textOnImageMeta: 'rgba(255, 255, 255, 0.70)',
+    // Brand border
+    primaryBorder: 'rgba(201, 103, 60, 0.18)',
   },
 
   shadows: {
@@ -130,27 +169,59 @@ export const darkTheme = {
     accentLight: 'rgba(77, 139, 122, 0.18)',
     brandAccentLight: 'rgba(220, 162, 74, 0.18)',
   },
+  surface: {
+    ...lightTheme.surface,
+    pressed: '#2A2420',
+    disabled: '#231F1C',
+    focus: '#1D1A18',
+  },
+  overlay: {
+    ...lightTheme.overlay,
+    // Dark mode image scrims are slightly heavier to compensate for reduced image contrast
+    cardInfoGradient: 'rgba(17, 12, 9, 0.55)',
+    cardPreview: 'rgba(17, 12, 9, 0.28)',
+    heroDetail: 'rgba(10, 8, 6, 0.48)',
+    featuredCard: 'rgba(10, 8, 6, 0.32)',
+    visualCard: 'rgba(10, 8, 6, 0.34)',
+    fitCard: 'rgba(10, 8, 6, 0.40)',
+    // Dark glass — replace white glass with dark-tinted surfaces
+    glassLight: 'rgba(36, 32, 29, 0.92)',
+    glassMedium: 'rgba(36, 32, 29, 0.78)',
+    glassMuted: 'rgba(36, 32, 29, 0.55)',
+    glassInline: 'rgba(255, 255, 255, 0.14)',  // keep bright — used on images
+    // Deeper scrims in dark mode
+    scrim: 'rgba(0, 0, 0, 0.62)',
+    scrimLight: 'rgba(0, 0, 0, 0.38)',
+    backdropSurface: 'rgba(20, 18, 17, 0.96)',
+  },
   shadows: {
+    // Dark mode: use stronger opacity + subtle glow border (black shadows are invisible on dark bg)
     sm: {
-      shadowColor: '#000',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.18,
+      shadowOpacity: 0.32,
       shadowRadius: 4,
       elevation: 2,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.06)',
     },
     md: {
-      shadowColor: '#000',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.22,
-      shadowRadius: 10,
+      shadowOpacity: 0.38,
+      shadowRadius: 12,
       elevation: 4,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.08)',
     },
     lg: {
-      shadowColor: '#000',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.28,
-      shadowRadius: 16,
+      shadowOpacity: 0.45,
+      shadowRadius: 20,
       elevation: 6,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.10)',
     },
   },
 };
