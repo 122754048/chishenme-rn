@@ -1,11 +1,46 @@
+/**
+ * Checkout.tsx  (redesigned)
+ *
+ * Layout:
+ *  Grabber → Header → ScrollView[
+ *    CheckoutHero (220pt)
+ *    PricingComparison (monthly vs annual)
+ *    BenefitList (3 rows)
+ *    TrustSignals (testimonial + stats + guarantee)
+ *    Feature Grid (3 tiles)
+ *    PendingOrderCard? / FailedOrderCard?
+ *  ] → StickyFooter[
+ *    Primary CTA (54pt, plan-aware)
+ *    Switch-plan text link
+ *    Legal row (Restore · Terms · Privacy)
+ *  ]
+ */
+
 import React from 'react';
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, CheckCircle2, ScanSearch, ShieldCheck, Sparkles } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ScanSearch,
+  Sparkles,
+} from 'lucide-react-native';
 import { backendApi } from '../api/backend';
-import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
 import { SWIPE_CARDS } from '../data/mockData';
 import type { RootStackParamList } from '../navigation/types';
@@ -13,11 +48,50 @@ import { subscriptionService } from '../services/subscriptions';
 import { storage } from '../storage';
 import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
+import {
+  BenefitList,
+  CheckoutHero,
+  FailedOrderCard,
+  PendingOrderCard,
+  PricingComparison,
+  TrustSignals,
+  type PricingPlan,
+} from './Checkout.components';
+
+// ─────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────
+
+const ENABLE_MOCK_PAYMENTS =
+  process.env.EXPO_PUBLIC_ENABLE_MOCK_PAYMENTS === 'true';
+
+// CTA label helpers
+function ctaLabel(plan: PricingPlan): string {
+  return plan === 'annual' ? 'Start Annual Plan' : 'Start Monthly Plan';
+}
+
+function ctaSubtext(plan: PricingPlan): string {
+  return plan === 'annual' ? '$39.99 / year · $0.11/day' : '$4.99 / month';
+}
+
+function switchPlanLabel(plan: PricingPlan): string {
+  return plan === 'annual'
+    ? 'Just want monthly? $4.99/mo'
+    : 'Get annual and save 33%';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type CheckoutRouteProp = RouteProp<RootStackParamList, 'Checkout'>;
 
-const ENABLE_MOCK_PAYMENTS = process.env.EXPO_PUBLIC_ENABLE_MOCK_PAYMENTS === 'true';
+type ProcessingState = 'idle' | 'pay' | 'trial' | 'pending' | 'failed';
+
+// ─────────────────────────────────────────────────────────────────
+// Checkout screen
+// ─────────────────────────────────────────────────────────────────
 
 export function Checkout() {
   const theme = useThemeColors();
@@ -25,36 +99,47 @@ export function Checkout() {
   const navigation = useNavigation<NavProp>();
   const route = useRoute<CheckoutRouteProp>();
   const { completeOnboarding, setMembershipPlan } = useApp();
-  const [processing, setProcessing] = React.useState<'idle' | 'pay' | 'trial' | 'pending' | 'failed'>('idle');
+
+  // ── State ──────────────────────────────────────────────────────
+  const [processing, setProcessing] = React.useState<ProcessingState>('idle');
   const [paymentNotice, setPaymentNotice] = React.useState<string | null>(null);
   const [lastOrderNo, setLastOrderNo] = React.useState<string | null>(null);
+
+  /**
+   * selectedPlan drives both the PricingComparison UI and the CTA label.
+   * Default: 'annual' (best conversion, per design spec).
+   */
+  const [selectedPlan, setSelectedPlan] =
+    React.useState<PricingPlan>('annual');
+
   const eventSeq = React.useRef(0);
 
-  const plan = route.params?.plan ?? 'pro';
-  const planText = plan === 'family' ? 'Family / $19.99 month' : 'Pro / $9.99 month';
-  const planBenefits =
-    plan === 'family'
-      ? ['Shared picks stay in sync', 'Full menu scan recommendations', 'Better tie-breakers for groups']
-      : ['Sharper ranking for tonight', 'Full menu scan recommendations', 'More room to save the good calls'];
-  const heroImage = plan === 'family' ? SWIPE_CARDS[4].image : SWIPE_CARDS[0].image;
+  // ── Derived ───────────────────────────────────────────────────
+  const membershipPlan = route.params?.plan ?? 'pro';
+  const heroImage =
+    membershipPlan === 'family' ? SWIPE_CARDS[4].image : SWIPE_CARDS[0].image;
   const isBusy = processing === 'pay' || processing === 'trial';
+
+  // ── Helpers ───────────────────────────────────────────────────
 
   const getSubscriptionUserId = async () => {
     const userId = await storage.ensureBackendUserId();
     if (backendApi.isEnabled()) {
       const token = await backendApi.ensureToken();
-      if (!token) {
-        throw new Error('backend auth token not available');
-      }
+      if (!token) throw new Error('backend auth token not available');
     }
     return userId;
   };
 
-  const recordEvent = async (flow: 'pay' | 'trial', status: 'processing' | 'success' | 'failed', reason?: string) => {
+  const recordEvent = async (
+    flow: 'pay' | 'trial',
+    status: 'processing' | 'success' | 'failed',
+    reason?: string
+  ) => {
     eventSeq.current += 1;
     await storage.appendPaymentEvent({
       id: `${Date.now()}-${flow}-${eventSeq.current}`,
-      plan,
+      plan: membershipPlan,
       flow,
       status,
       createdAt: Date.now(),
@@ -63,20 +148,53 @@ export function Checkout() {
   };
 
   const completeMembership = async () => {
-    await setMembershipPlan(plan);
+    await setMembershipPlan(membershipPlan);
     await completeOnboarding();
-    navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home', params: { justUnlocked: plan } } }] });
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: 'MainTabs',
+          params: {
+            screen: 'Home',
+            params: { justUnlocked: membershipPlan },
+          },
+        },
+      ],
+    });
   };
 
-  const finishPaidMembership = async (token: string, fallbackPlan: 'pro' | 'family') => {
-    const membership = await backendApi.getMembership(token).catch(() => null);
-    const effectivePlan = membership?.plan === 'pro' || membership?.plan === 'family' ? membership.plan : fallbackPlan;
+  const finishPaidMembership = async (
+    token: string,
+    fallbackPlan: 'pro' | 'family'
+  ) => {
+    const membership = await backendApi
+      .getMembership(token)
+      .catch(() => null);
+    const effectivePlan =
+      membership?.plan === 'pro' || membership?.plan === 'family'
+        ? membership.plan
+        : fallbackPlan;
     await setMembershipPlan(effectivePlan);
     await completeOnboarding();
-    navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home', params: { justUnlocked: effectivePlan } } }] });
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: 'MainTabs',
+          params: {
+            screen: 'Home',
+            params: { justUnlocked: effectivePlan },
+          },
+        },
+      ],
+    });
   };
 
-  const pollOrderUntilSettled = async (token: string, orderNo: string) => {
+  const pollOrderUntilSettled = async (
+    token: string,
+    orderNo: string
+  ): Promise<'paid' | 'failed' | 'pending'> => {
     for (let attempt = 0; attempt < 20; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const order = await backendApi.getOrder(token, orderNo);
@@ -85,6 +203,8 @@ export function Checkout() {
     }
     return 'pending';
   };
+
+  // ── Payment handlers ──────────────────────────────────────────
 
   const handlePay = async () => {
     if (isBusy) return;
@@ -98,46 +218,66 @@ export function Checkout() {
           throw new Error('ios iap is not configured');
         }
         const revenueCatUserId = await getSubscriptionUserId();
-        const result = await subscriptionService.purchase(plan, revenueCatUserId ?? undefined);
+        const result = await subscriptionService.purchase(
+          membershipPlan,
+          revenueCatUserId ?? undefined
+        );
         await recordEvent('pay', 'success');
-        const resolvedPlan = result.plan === 'free' ? plan : result.plan;
+        const resolvedPlan =
+          result.plan === 'free' ? membershipPlan : result.plan;
         await setMembershipPlan(resolvedPlan);
         await completeOnboarding();
-        navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home', params: { justUnlocked: resolvedPlan } } }] });
-        return;
-      } else if (backendApi.isEnabled()) {
-        const token = await backendApi.ensureToken();
-        if (!token) {
-          throw new Error('backend auth token not available');
-        }
-        const created = await backendApi.createOrder(token, plan);
-        setLastOrderNo(created.order_no);
-        await Linking.openURL(created.pay_url).catch(() => {
-          // Simulators and preview devices can fail to open the external payment URL.
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'MainTabs',
+              params: {
+                screen: 'Home',
+                params: { justUnlocked: resolvedPlan },
+              },
+            },
+          ],
         });
+        return;
+      }
+
+      if (backendApi.isEnabled()) {
+        const token = await backendApi.ensureToken();
+        if (!token) throw new Error('backend auth token not available');
+        const created = await backendApi.createOrder(token, membershipPlan);
+        setLastOrderNo(created.order_no);
+        await Linking.openURL(created.pay_url).catch(() => {});
         const status = await pollOrderUntilSettled(token, created.order_no);
         if (status === 'paid') {
           await recordEvent('pay', 'success');
-          await finishPaidMembership(token, plan);
+          await finishPaidMembership(token, membershipPlan);
           return;
         }
         if (status === 'pending') {
-          setPaymentNotice('Your order is created. Finish payment, then come back here and refresh the status.');
+          setPaymentNotice(
+            'Your order is created. Finish payment, then come back here and refresh the status.'
+          );
           setProcessing('pending');
           return;
         }
         throw new Error(`order status is ${status}`);
-      } else if (ENABLE_MOCK_PAYMENTS) {
+      }
+
+      if (ENABLE_MOCK_PAYMENTS) {
         await new Promise((resolve) => setTimeout(resolve, 600));
         await recordEvent('pay', 'success');
         await completeMembership();
         return;
       }
+
       throw new Error('payment backend is not configured');
     } catch (error) {
       console.warn('Payment flow failed:', error);
       const message = error instanceof Error ? error.message : '';
-      const backendUnavailable = message.includes('not configured') || message.includes('auth token');
+      const backendUnavailable =
+        message.includes('not configured') ||
+        message.includes('auth token');
       const iapUnavailable = message.includes('ios iap is not configured');
       const orderFailed = message.includes('order status is failed');
       const reason =
@@ -169,18 +309,22 @@ export function Checkout() {
       const status = await pollOrderUntilSettled(token, lastOrderNo);
       if (status === 'paid') {
         await recordEvent('pay', 'success');
-        await finishPaidMembership(token, plan);
+        await finishPaidMembership(token, membershipPlan);
         return;
       }
       if (status === 'pending') {
-        setPaymentNotice('We still have not received a completed payment notification yet. Please refresh again in a moment.');
+        setPaymentNotice(
+          'We still have not received a completed payment notification yet. Please refresh again in a moment.'
+        );
         setProcessing('pending');
         return;
       }
       throw new Error(`order status is ${status}`);
     } catch (error) {
       console.warn('Refresh order status failed:', error);
-      setPaymentNotice('We could not refresh the order status right now. Please try again in a moment.');
+      setPaymentNotice(
+        'We could not refresh the order status right now. Please try again in a moment.'
+      );
       setProcessing('failed');
     }
   };
@@ -189,7 +333,9 @@ export function Checkout() {
     if (isBusy) return;
     if (!ENABLE_MOCK_PAYMENTS) {
       await recordEvent('trial', 'failed', 'trial_not_enabled');
-      setPaymentNotice('Trial mode is not enabled for this build. Keep using Free or use the real subscription flow.');
+      setPaymentNotice(
+        'Trial mode is not enabled for this build. Keep using Free or use the real subscription flow.'
+      );
       setProcessing('failed');
       return;
     }
@@ -213,7 +359,9 @@ export function Checkout() {
       setProcessing('pay');
       setPaymentNotice(null);
       const revenueCatUserId = await getSubscriptionUserId();
-      const result = await subscriptionService.restore(revenueCatUserId ?? undefined);
+      const result = await subscriptionService.restore(
+        revenueCatUserId ?? undefined
+      );
       if (result.plan === 'free') {
         setPaymentNotice(result.message);
         setProcessing('failed');
@@ -221,63 +369,79 @@ export function Checkout() {
       }
       await setMembershipPlan(result.plan);
       await completeOnboarding();
-      navigation.reset({ index: 0, routes: [{ name: 'MainTabs', params: { screen: 'Home', params: { justUnlocked: result.plan } } }] });
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'MainTabs',
+            params: {
+              screen: 'Home',
+              params: { justUnlocked: result.plan },
+            },
+          },
+        ],
+      });
     } catch (error) {
       console.warn('Restore purchase failed:', error);
-      setPaymentNotice(error instanceof Error ? error.message : 'Restore failed. Please try again in a moment.');
+      setPaymentNotice(
+        error instanceof Error
+          ? error.message
+          : 'Restore failed. Please try again in a moment.'
+      );
       setProcessing('failed');
     }
   };
 
+  const handleTogglePlan = () => {
+    setSelectedPlan((prev) => (prev === 'annual' ? 'monthly' : 'annual'));
+  };
+
+  // ── Render ────────────────────────────────────────────────────
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Grabber */}
       <View style={styles.grabber} />
+
+      {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={8}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={({ pressed }) => [
+            styles.backBtn,
+            pressed && styles.pressedChrome,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={8}
+        >
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Text style={styles.headerTitle}>Confirm subscription</Text>
+        <Text style={styles.headerTitle}>Upgrade to Pro</Text>
         <View style={styles.backBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.planBlock}>
-          <View style={styles.planHeroImage}>
-            <SkeletonImage src={heroImage} alt={planText} />
-          </View>
-          <View style={styles.planBadge}>
-            <ShieldCheck size={16} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.cardTitle}>Plan</Text>
-          </View>
-          <Text style={styles.planText}>{planText}</Text>
-          <View style={styles.statusPill}>
-            <Text style={styles.statusText}>
-              {processing === 'trial'
-                ? 'Starting preview'
-                : processing === 'pay'
-                  ? 'Processing'
-                  : processing === 'pending'
-                    ? 'Pending'
-                    : processing === 'failed'
-                      ? 'Try again'
-                      : 'Apple billing'}
-            </Text>
-          </View>
-          {paymentNotice ? <Text style={styles.noticeText}>{paymentNotice}</Text> : null}
-        </View>
+      {/* Scrollable content */}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 1 · Hero – 220pt */}
+        <CheckoutHero plan={membershipPlan} heroImage={heroImage} />
 
-        <View style={styles.resultBlock}>
-          <Text style={styles.resultTitle}>What changes today</Text>
-          <View style={styles.resultList}>
-            {planBenefits.map((benefit) => (
-              <View key={benefit} style={styles.resultRow}>
-                <CheckCircle2 size={15} color={theme.colors.primary} strokeWidth={2.4} />
-                <Text style={styles.resultText}>{benefit}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
+        {/* 2 · Price comparison – monthly vs annual */}
+        <PricingComparison
+          selectedPlan={selectedPlan}
+          onSelectPlan={setSelectedPlan}
+        />
 
+        {/* 3 · Benefit list – emotional / quantified */}
+        <BenefitList plan={membershipPlan} />
+
+        {/* 4 · Social proof + trust signals */}
+        <TrustSignals />
+
+        {/* 5 · Feature grid – 3 tiles */}
         <View style={styles.benefitGrid}>
           <View style={styles.benefitTile}>
             <Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />
@@ -292,40 +456,109 @@ export function Checkout() {
             <Text style={styles.benefitText}>Stronger filters</Text>
           </View>
         </View>
+
+        {/* 6 · Inline status cards (pending / failed) */}
+        {processing === 'pending' && paymentNotice ? (
+          <PendingOrderCard
+            message={paymentNotice}
+            onRefresh={refreshOrderStatus}
+            refreshing={isBusy}
+          />
+        ) : null}
+
+        {processing === 'failed' && paymentNotice ? (
+          <FailedOrderCard message={paymentNotice} onRetry={handlePay} />
+        ) : null}
+
+        {/* Trial (mock-only) */}
+        {ENABLE_MOCK_PAYMENTS ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.trialBtn,
+              pressed && styles.pressedChrome,
+              isBusy && styles.btnDisabled,
+            ]}
+            onPress={handleTrial}
+            disabled={isBusy}
+            accessibilityRole="button"
+            accessibilityLabel="Start a trial"
+            accessibilityState={{ disabled: isBusy }}
+          >
+            <Text style={styles.trialText}>Start trial (mock)</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
+      {/* Sticky footer */}
       <View style={styles.footer}>
-        <Pressable style={({ pressed }) => [styles.payBtn, pressed && styles.payBtnPressed, isBusy && styles.btnDisabled]} onPress={handlePay} disabled={isBusy} accessibilityRole="button" accessibilityLabel={`Pay for ${planText}`} accessibilityState={{ disabled: isBusy }}>
-          <Text style={styles.payText}>{processing === 'pay' ? 'Processing...' : 'Subscribe'}</Text>
+        {/* Primary CTA */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.payBtn,
+            pressed && styles.payBtnPressed,
+            isBusy && styles.btnDisabled,
+          ]}
+          onPress={handlePay}
+          disabled={isBusy}
+          accessibilityRole="button"
+          accessibilityLabel={ctaLabel(selectedPlan)}
+          accessibilityState={{ disabled: isBusy }}
+        >
+          {processing === 'pay' ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <View style={styles.payBtnInner}>
+              <Text style={styles.payText}>{ctaLabel(selectedPlan)}</Text>
+              <Text style={styles.paySubtext}>{ctaSubtext(selectedPlan)}</Text>
+            </View>
+          )}
         </Pressable>
-        {ENABLE_MOCK_PAYMENTS ? (
-          <Pressable style={({ pressed }) => [styles.trialBtn, pressed && styles.pressedChrome, isBusy && styles.btnDisabled]} onPress={handleTrial} disabled={isBusy} accessibilityRole="button" accessibilityLabel="Start a trial" accessibilityState={{ disabled: isBusy }}>
-            <Text style={styles.trialText}>Start trial</Text>
-          </Pressable>
-        ) : null}
-        {processing === 'failed' ? (
-          <Pressable style={({ pressed }) => [styles.retryBtn, pressed && styles.pressedChrome]} onPress={handlePay} accessibilityRole="button" accessibilityLabel="Retry payment">
-            <Text style={styles.retryText}>Retry payment</Text>
-          </Pressable>
-        ) : null}
-        <Pressable style={({ pressed }) => [styles.restoreBtn, pressed && styles.pressedChrome, isBusy && styles.btnDisabled]} onPress={handleRestore} disabled={isBusy} accessibilityRole="button" accessibilityLabel="Restore purchases" accessibilityState={{ disabled: isBusy }}>
-          <Text style={styles.restoreText}>Restore</Text>
+
+        {/* Switch plan text link */}
+        <Pressable
+          onPress={handleTogglePlan}
+          style={styles.switchPlanBtn}
+          accessibilityRole="button"
+          accessibilityLabel={switchPlanLabel(selectedPlan)}
+        >
+          <Text style={styles.switchPlanText}>
+            {switchPlanLabel(selectedPlan)}
+          </Text>
         </Pressable>
-        {processing === 'pending' ? (
-          <Pressable style={({ pressed }) => [styles.retryBtn, pressed && styles.pressedChrome]} onPress={refreshOrderStatus} accessibilityRole="button" accessibilityLabel="Refresh payment status">
-            <Text style={styles.retryText}>Refresh status</Text>
+
+        {/* Legal + Restore row */}
+        <View style={styles.legalRow}>
+          <Pressable
+            onPress={handleRestore}
+            disabled={isBusy}
+            accessibilityRole="button"
+            accessibilityLabel="Restore purchases"
+          >
+            <Text style={styles.legalText}>Restore purchase</Text>
           </Pressable>
-        ) : null}
+          <Text style={styles.legalDot}>·</Text>
+          <Text style={styles.legalText}>Terms</Text>
+          <Text style={styles.legalDot}>·</Text>
+          <Text style={styles.legalText}>Privacy</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Styles
+// ─────────────────────────────────────────────────────────────────
+
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: t.colors.background },
-    pressedChrome: { opacity: t.interaction.chipPressedOpacity },
-    payBtnPressed: { opacity: t.interaction.pressedOpacity, transform: [{ scale: t.interaction.pressedScale }] },
+    // ── Layout ─────────────────────────────────────────────────
+    container: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
+
+    // ── Grabber ────────────────────────────────────────────────
     grabber: {
       alignSelf: 'center',
       width: 40,
@@ -335,47 +568,143 @@ function makeStyles(t: AppTheme) {
       marginTop: t.spacing.xs,
       marginBottom: t.spacing.xs,
     },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.sm },
-    backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
-    headerTitle: { ...t.typography.h2, color: t.colors.foreground },
-    content: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg, gap: t.spacing.lg },
-    planBlock: {
-      paddingTop: t.spacing.sm,
-      gap: t.spacing.sm,
-      backgroundColor: t.colors.surfaceElevated,
-      borderRadius: t.surface.cardRadius,
-      paddingHorizontal: t.surface.insetCardPadding,
-      paddingBottom: t.surface.insetCardPadding,
+
+    // ── Header ─────────────────────────────────────────────────
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: t.spacing.md,
+      paddingBottom: t.spacing.sm,
     },
-    planHeroImage: { height: 132, borderRadius: t.radius.md, overflow: 'hidden', marginBottom: 4 },
-    planBadge: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cardTitle: { ...t.typography.caption, color: t.colors.subtle, fontWeight: '700' },
-    planText: { ...t.typography.h1, color: t.colors.foreground, marginBottom: 6 },
-    statusPill: { alignSelf: 'flex-start', minHeight: 34, borderRadius: 17, backgroundColor: t.colors.surface, paddingHorizontal: 12, justifyContent: 'center' },
-    statusText: { ...t.typography.caption, color: t.colors.primaryDark, fontWeight: '700' },
-    noticeText: { ...t.typography.caption, color: t.colors.subtle, lineHeight: 18 },
-    resultBlock: {
-      backgroundColor: t.colors.primaryLight,
-      borderRadius: t.surface.cardRadius,
-      padding: t.surface.insetCardPadding,
-      gap: t.spacing.sm,
+    backBtn: {
+      width: 40,
+      height: 40,
+      alignItems: 'flex-start',
+      justifyContent: 'center',
     },
-    resultTitle: { ...t.typography.body, color: t.colors.foreground, fontWeight: '700' },
-    resultList: { gap: 8 },
-    resultRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    resultText: { ...t.typography.caption, color: t.colors.foreground, flex: 1 },
-    benefitGrid: { flexDirection: 'row', gap: t.spacing.sm },
-    benefitTile: { flex: 1, minHeight: 84, borderRadius: t.surface.cardRadius, backgroundColor: t.colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', gap: 8 },
-    benefitText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
-    footer: { paddingHorizontal: t.spacing.md, paddingTop: t.spacing.sm, paddingBottom: t.spacing.md, borderTopWidth: 1, borderTopColor: t.colors.borderLight, backgroundColor: t.colors.surface, gap: t.spacing.xs },
-    payBtn: { backgroundColor: t.colors.primary, height: 48, borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center' },
-    payText: { ...t.typography.body, color: t.colors.surface, fontWeight: '700' },
-    trialBtn: { backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border, height: 44, borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center' },
-    trialText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '600' },
-    retryBtn: { alignItems: 'center', justifyContent: 'center', height: 40 },
-    btnDisabled: { opacity: 0.6 },
-    retryText: { ...t.typography.caption, color: t.colors.error, fontWeight: '700' },
-    restoreBtn: { alignItems: 'center', justifyContent: 'center', height: 40 },
-    restoreText: { ...t.typography.caption, color: t.colors.primary, fontWeight: '700' },
+    headerTitle: {
+      ...t.typography.h2,
+      color: t.colors.foreground,
+    },
+
+    // ── Content ────────────────────────────────────────────────
+    content: {
+      paddingHorizontal: t.spacing.md,
+      paddingBottom: t.spacing.lg,
+      // no global gap — subcomponents manage their own bottom margins
+    },
+
+    // ── Feature grid ───────────────────────────────────────────
+    benefitGrid: {
+      flexDirection: 'row',
+      gap: t.spacing.sm,
+      marginBottom: t.spacing.md,
+    },
+    benefitTile: {
+      flex: 1,
+      minHeight: 84,
+      borderRadius: t.surface.cardRadius,
+      backgroundColor: t.colors.surfaceMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    benefitText: {
+      ...t.typography.caption,
+      color: t.colors.foreground,
+      fontWeight: '700',
+    },
+
+    // ── Trial button (mock only) ────────────────────────────────
+    trialBtn: {
+      backgroundColor: t.colors.surface,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+      height: 44,
+      borderRadius: t.radius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: t.spacing.md,
+    },
+    trialText: {
+      ...t.typography.caption,
+      color: t.colors.foreground,
+      fontWeight: '600',
+    },
+
+    // ── Footer ─────────────────────────────────────────────────
+    footer: {
+      paddingHorizontal: t.spacing.md,
+      paddingTop: t.spacing.md,
+      paddingBottom: t.spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: t.colors.borderLight,
+      backgroundColor: t.colors.surface,
+      gap: t.spacing.xs,
+    },
+
+    // Primary CTA
+    payBtn: {
+      backgroundColor: t.colors.primary,
+      height: 54,
+      borderRadius: t.radius.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    payBtnInner: {
+      alignItems: 'center',
+      gap: 2,
+    },
+    payText: {
+      fontSize: 17,
+      color: '#FFFFFF',
+      fontWeight: '700',
+    },
+    paySubtext: {
+      fontSize: 12,
+      color: 'rgba(255,255,255,0.82)',
+      fontWeight: '500',
+    },
+
+    // Switch plan link
+    switchPlanBtn: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 36,
+    },
+    switchPlanText: {
+      fontSize: 14,
+      color: t.colors.primaryDark,
+      fontWeight: '600',
+    },
+
+    // Legal row
+    legalRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 8,
+      alignItems: 'center',
+    },
+    legalText: {
+      fontSize: 12,
+      color: t.colors.subtle,
+    },
+    legalDot: {
+      fontSize: 12,
+      color: t.colors.borderLight,
+    },
+
+    // ── Interaction ────────────────────────────────────────────
+    pressedChrome: {
+      opacity: t.interaction.chipPressedOpacity,
+    },
+    payBtnPressed: {
+      opacity: t.interaction.pressedOpacity,
+      transform: [{ scale: t.interaction.pressedScale }],
+    },
+    btnDisabled: {
+      opacity: 0.42,
+    },
   });
 }
