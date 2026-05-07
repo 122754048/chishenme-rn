@@ -22,6 +22,9 @@ import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { getRecommendedDishes } from '../utils/recommendations';
 import { formatDistanceMiles, getBestEffortLocationContext } from '../utils/location';
+import { useToast } from '../components/ToastProvider';
+import { EmptyState } from '../components/EmptyState';
+import { haptics } from '../utils/haptics';
 
 const SWIPE_THRESHOLD = 100;
 
@@ -154,18 +157,22 @@ function DecisionCard({
 
           if (gestureState.dx > SWIPE_THRESHOLD || gestureState.vx > 0.5) {
             if (!canCommitSwipe) {
+              haptics.warning();
               resetCard(onBlockedSwipeAttempt);
               return;
             }
+            haptics.success();
             animateOut('right');
             return;
           }
 
           if (gestureState.dx < -SWIPE_THRESHOLD || gestureState.vx < -0.5) {
             if (!canCommitSwipe) {
+              haptics.warning();
               resetCard(onBlockedSwipeAttempt);
               return;
             }
+            haptics.impact('light');
             animateOut('left');
             return;
           }
@@ -363,6 +370,7 @@ export function Home() {
     setLocationSelection,
     toggleFavorite,
   } = useApp();
+  const { showToast } = useToast();
 
   const [swipeRequest, setSwipeRequest] = useState<{ direction: 'left' | 'right'; key: number } | null>(null);
   const [isResolvingDecision, setIsResolvingDecision] = useState(false);
@@ -504,8 +512,17 @@ export function Home() {
 
   const handleBlockedSwipeAttempt = useCallback(() => {
     setIsCardDragging(false);
-    navigation.navigate('Upgrade');
-  }, [navigation]);
+    showToast({
+      type: 'warning',
+      title: "You've used today's free picks.",
+      body: 'Upgrade to Pro for unlimited daily picks.',
+      duration: 3500,
+      action: {
+        label: 'Upgrade',
+        onPress: () => navigation.navigate('Upgrade'),
+      },
+    });
+  }, [navigation, showToast]);
 
   const triggerDecision = useCallback(
     (direction: 'left' | 'right') => {
@@ -695,12 +712,11 @@ export function Home() {
               />
             </View>
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Nothing strong right now</Text>
-              <Pressable style={styles.emptyButton} onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}>
-                <Text style={styles.emptyButtonText}>Explore</Text>
-              </Pressable>
-            </View>
+            <EmptyState
+              scenario="home-empty"
+              language="en"
+              onCta={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
+            />
           )}
         </View>
 

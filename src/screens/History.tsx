@@ -9,6 +9,7 @@ import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
 import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
+import { EmptyState } from '../components/EmptyState';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
