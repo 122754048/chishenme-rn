@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-chishenme}
+      POSTGRES_USER: ${POSTGRES_USER:-chishenme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-chishenme} -d $${POSTGRES_DB:-chishenme}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # Restrict external access — only the api service needs to reach it
+    expose:
+      - "5432"
+
+  # ── FastAPI backend ─────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend          # build context is the backend/ directory
+      dockerfile: Dockerfile      # backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      # ── App settings ───────────────────────────────────────────────────────
+      APP_ENV: ${APP_ENV:-production}
+      APP_NAME: ${APP_NAME:-chishenme-backend}
+
+      # ── Database ───────────────────────────────────────────────────────────
+      # app/db.py auto-detects: if DATABASE_URL starts with postgres://, use PG.
+      # Otherwise falls back to SQLite at DB_PATH.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-chishenme}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-chishenme}
+      # Legacy SQLite path (ignored when DATABASE_URL is set to postgres://)
+      DB_PATH: /data/chishenme.db
+
+      # ── Auth / JWT ─────────────────────────────────────────────────────────
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ALGO: ${JWT_ALGO:-HS256}
+      JWT_EXP_MINUTES: ${JWT_EXP_MINUTES:-43200}
+
+      # ── Quotas ─────────────────────────────────────────────────────────────
+      FREE_DAILY_QUOTA: ${FREE_DAILY_QUOTA:-3}
+
+      # ── Alipay ─────────────────────────────────────────────────────────────
+      ALIPAY_APP_ID: ${ALIPAY_APP_ID:-}
+      ALIPAY_PUBLIC_KEY: ${ALIPAY_PUBLIC_KEY:-}
+
+      # ── RevenueCat ─────────────────────────────────────────────────────────
+      REVENUECAT_WEBHOOK_SECRET: ${REVENUECAT_WEBHOOK_SECRET:-}
+      REVENUECAT_ENTITLEMENT_ID: ${REVENUECAT_ENTITLEMENT_ID:-premium}
+      REVENUECAT_PRO_PRODUCT_ID: ${REVENUECAT_PRO_PRODUCT_ID:-}
+      REVENUECAT_FAMILY_PRODUCT_ID: ${REVENUECAT_FAMILY_PRODUCT_ID:-}
+
+      # ── External APIs ──────────────────────────────────────────────────────
+      GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+
+    volumes:
+      # Mount SQLite data dir (fallback / dev only)
+      - sqlite_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  postgres_data:
+  sqlite_data:

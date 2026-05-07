@@ -1,0 +1,148 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    branches: [master, main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+jobs:
+  # ── Lint ────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install lint tools
+        run: pip install ruff
+
+      - name: Run ruff
+        run: ruff check app/ tests/
+
+  # ── Test ────────────────────────────────────────────────────────────────────
+  test:
+    name: Test (SQLite, Python 3.12)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      # Tests use SQLite by default (DATABASE_URL not set)
+      APP_ENV: test
+      JWT_SECRET: ci-test-secret-not-for-prod
+      FREE_DAILY_QUOTA: "3"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-asyncio httpx
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+  # ── Test with PostgreSQL ─────────────────────────────────────────────────────
+  test-postgres:
+    name: Test (PostgreSQL 16)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: chishenme_test
+          POSTGRES_USER: chishenme
+          POSTGRES_PASSWORD: testpassword
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://chishenme:testpassword@localhost:5432/chishenme_test
+      APP_ENV: test
+      JWT_SECRET: ci-test-secret-not-for-prod
+      FREE_DAILY_QUOTA: "3"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest pytest-asyncio httpx
+
+      - name: Run Alembic migrations
+        run: alembic upgrade head
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+  # ── Build Docker image ──────────────────────────────────────────────────────
+  build-image:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false          # set to true and add registry credentials to deploy
+          tags: chishenme-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Optional: check image size
+      - name: Check image size
+        run: |
+          SIZE=$(docker image inspect chishenme-backend:${{ github.sha }} \
+            --format='{{.Size}}' 2>/dev/null || echo "0")
+          SIZE_MB=$((SIZE / 1024 / 1024))
+          echo "Image size: ${SIZE_MB} MB"
+          if [ "${SIZE_MB}" -gt 300 ]; then
+            echo "❌ Image exceeds 300MB limit (${SIZE_MB} MB)"
+            exit 1
+          fi
+          echo "✅ Image size OK (${SIZE_MB} MB)"
