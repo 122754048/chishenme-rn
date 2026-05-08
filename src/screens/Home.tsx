@@ -22,6 +22,9 @@ import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { getRecommendedDishes } from '../utils/recommendations';
 import { formatDistanceMiles, getBestEffortLocationContext } from '../utils/location';
+import { useToast } from '../components/ToastProvider';
+import { EmptyState } from '../components/EmptyState';
+import { haptics } from '../utils/haptics';
 
 const SWIPE_THRESHOLD = 100;
 
@@ -154,18 +157,22 @@ function DecisionCard({
 
           if (gestureState.dx > SWIPE_THRESHOLD || gestureState.vx > 0.5) {
             if (!canCommitSwipe) {
+              haptics.warning();
               resetCard(onBlockedSwipeAttempt);
               return;
             }
+            haptics.success();
             animateOut('right');
             return;
           }
 
           if (gestureState.dx < -SWIPE_THRESHOLD || gestureState.vx < -0.5) {
             if (!canCommitSwipe) {
+              haptics.warning();
               resetCard(onBlockedSwipeAttempt);
               return;
             }
+            haptics.impact('light');
             animateOut('left');
             return;
           }
@@ -363,6 +370,7 @@ export function Home() {
     setLocationSelection,
     toggleFavorite,
   } = useApp();
+  const { showToast } = useToast();
 
   const [swipeRequest, setSwipeRequest] = useState<{ direction: 'left' | 'right'; key: number } | null>(null);
   const [isResolvingDecision, setIsResolvingDecision] = useState(false);
@@ -504,8 +512,17 @@ export function Home() {
 
   const handleBlockedSwipeAttempt = useCallback(() => {
     setIsCardDragging(false);
-    navigation.navigate('Upgrade');
-  }, [navigation]);
+    showToast({
+      type: 'warning',
+      title: "You've used today's free picks.",
+      body: 'Upgrade to Pro for unlimited daily picks.',
+      duration: 3500,
+      action: {
+        label: 'Upgrade',
+        onPress: () => navigation.navigate('Upgrade'),
+      },
+    });
+  }, [navigation, showToast]);
 
   const triggerDecision = useCallback(
     (direction: 'left' | 'right') => {
@@ -695,12 +712,11 @@ export function Home() {
               />
             </View>
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Nothing strong right now</Text>
-              <Pressable style={styles.emptyButton} onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}>
-                <Text style={styles.emptyButtonText}>Explore</Text>
-              </Pressable>
-            </View>
+            <EmptyState
+              scenario="home-empty"
+              language="en"
+              onCta={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
+            />
           )}
         </View>
 
@@ -784,13 +800,13 @@ function makeStyles(t: AppTheme) {
       alignItems: 'center',
       gap: 10,
       borderWidth: 1,
-      borderColor: 'rgba(201,103,60,0.18)',
+      borderColor: t.overlay.primaryBorder,
     },
     scanActionIcon: {
       width: 26,
       height: 26,
       borderRadius: 13,
-      backgroundColor: 'rgba(255,255,255,0.55)',
+      backgroundColor: t.overlay.glassMuted,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -807,7 +823,7 @@ function makeStyles(t: AppTheme) {
       borderColor: t.colors.borderLight,
       paddingHorizontal: 12,
     },
-    statusPillPremium: { backgroundColor: t.colors.primaryLight, borderColor: 'rgba(201,103,60,0.18)' },
+    statusPillPremium: { backgroundColor: t.colors.primaryLight, borderColor: t.overlay.primaryBorder },
     statusPillText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
     statusPillTextPremium: { color: t.colors.primaryDark },
     dismissNoticeBtn: {
@@ -833,7 +849,7 @@ function makeStyles(t: AppTheme) {
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: 'rgba(255,255,255,0.72)',
+      backgroundColor: t.overlay.glassMedium,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -902,7 +918,7 @@ function makeStyles(t: AppTheme) {
     cardImage: { width: '100%', height: '100%', position: 'relative' },
     previewOverlay: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(17, 12, 9, 0.22)',
+      backgroundColor: t.overlay.cardPreview,
     },
     cardInfoOverlay: {
       position: 'absolute',
@@ -912,11 +928,11 @@ function makeStyles(t: AppTheme) {
       paddingHorizontal: 20,
       paddingBottom: 24,
       paddingTop: 72,
-      backgroundColor: 'rgba(17, 12, 9, 0.42)',
+      backgroundColor: t.overlay.cardInfoGradient,
     },
     cardInfoTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
     inlinePill: {
-      backgroundColor: 'rgba(255,255,255,0.16)',
+      backgroundColor: t.overlay.glassInline,
       paddingHorizontal: 12,
       paddingVertical: 5,
       borderRadius: t.radius.full,
@@ -927,7 +943,7 @@ function makeStyles(t: AppTheme) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      backgroundColor: 'rgba(255,255,255,0.16)',
+      backgroundColor: t.overlay.glassInline,
       paddingHorizontal: 8,
       paddingVertical: 5,
       borderRadius: t.radius.full,
@@ -951,7 +967,7 @@ function makeStyles(t: AppTheme) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      backgroundColor: 'rgba(255,255,255,0.16)',
+      backgroundColor: t.overlay.glassInline,
       borderRadius: t.radius.full,
       paddingHorizontal: 8,
       paddingVertical: 4,
@@ -972,7 +988,7 @@ function makeStyles(t: AppTheme) {
       ...t.shadows.sm,
     },
     skipBtn: { borderColor: t.colors.border },
-    likeBtn: { borderColor: '#D65947' },
+    likeBtn: { borderColor: t.colors.red },
     swipeHint: {
       minHeight: 44,
       borderRadius: 22,

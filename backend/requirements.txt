@@ -5,3 +5,4 @@ python-jose[cryptography]==3.5.0
 cryptography==44.0.2
 httpx==0.28.1
 python-multipart==0.0.20
+psycopg2-binary==2.9.9

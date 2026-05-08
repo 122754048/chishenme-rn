@@ -10,6 +10,8 @@ import { FAVORITES_DATA } from '../data/mockData';
 import type { RootStackParamList } from '../navigation/types';
 import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
+import { EmptyState } from '../components/EmptyState';
+import { haptics } from '../utils/haptics';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 

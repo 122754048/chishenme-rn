@@ -1,0 +1,62 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Python cache
+__pycache__
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+.venv
+venv
+env
+.env
+*.egg-info
+dist
+build
+
+# Test artifacts
+.pytest_cache
+.coverage
+htmlcov
+.tox
+pytest.ini
+setup.cfg
+
+# SQLite database files (mount via volume instead)
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE / editor
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Docker files themselves (not needed inside image)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+*.md
+docs/
+
+# CI / CD
+.github
+.circleci
+.travis.yml
+
+# Alembic (migrations run outside container or as init step)
+alembic/versions/

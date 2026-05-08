@@ -14,6 +14,7 @@ import {
 import { AppProvider } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { ToastProvider } from './src/components/ToastProvider';
 
 export default function App() {
   const colorScheme = useColorScheme();
@@ -33,8 +34,11 @@ export default function App() {
       <ErrorBoundary>
         <SafeAreaProvider>
           <AppProvider>
-            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-            <AppNavigator />
+            {/* ToastProvider wraps NavigationContainer so any screen can call useToast() */}
+            <ToastProvider>
+              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+              <AppNavigator />
+            </ToastProvider>
           </AppProvider>
         </SafeAreaProvider>
       </ErrorBoundary>
