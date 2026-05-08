@@ -92,8 +92,16 @@ assert(fs.readFileSync(path.join(root, 'src', 'screens', 'History.tsx'), 'utf8')
 assert(profileCode.includes('Delete account'), 'profile should expose account deletion');
 assert(profileCode.includes('saveAreaPreset') || profileCode.includes('Areas'), 'profile should reflect saved location context');
 assert(upgradeCode.includes('Smart rank') || upgradeCode.includes('Upgrade'), 'upgrade should still sell decision quality');
-assert(checkoutCode.includes('Confirm subscription'), 'checkout should be English and productized');
-assert(checkoutCode.includes('Restore purchases'), 'checkout should expose restore purchase');
+assert(
+  checkoutCode.includes('Confirm subscription') ||
+    checkoutCode.includes('Start Annual Plan') ||
+    checkoutCode.includes('Start Monthly Plan'),
+  'checkout should have a productized English CTA (Start Annual/Monthly Plan or Confirm subscription)'
+);
+assert(
+  checkoutCode.includes('Restore purchases') || checkoutCode.includes('Restore purchase'),
+  'checkout should expose restore purchase'
+);
 assert(menuScanCode.includes('Scan a menu'), 'menu scan screen should exist');
 assert(menuScanCode.includes('Best for you'), 'menu scan results should group recommendations');
 

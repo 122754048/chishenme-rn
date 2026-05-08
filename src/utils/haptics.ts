@@ -154,6 +154,20 @@ export const haptics = {
   heavy(): void {
     safeImpact(Haptics.ImpactFeedbackStyle.Heavy);
   },
+
+  /**
+   * 通用 impact — 可通过字符串指定强度
+   * 用于泛化调用：haptics.impact('light' | 'medium' | 'heavy')
+   */
+  impact(kind: 'light' | 'medium' | 'heavy' = 'light'): void {
+    const style =
+      kind === 'heavy'
+        ? Haptics.ImpactFeedbackStyle.Heavy
+        : kind === 'medium'
+          ? Haptics.ImpactFeedbackStyle.Medium
+          : Haptics.ImpactFeedbackStyle.Light;
+    safeImpact(style);
+  },
 } as const;
 
 // ─────────────────────────────────────────────

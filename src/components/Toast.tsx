@@ -150,7 +150,7 @@ function ToastItem({ toast, onHide }: ToastItemProps) {
     };
   }, [dismiss, opacity, toast.duration, toast.type, translateY]);
 
-  const typeStyle = styles[`toast_${toast.type}` as keyof typeof styles];
+  const typeStyle = styles[`toast_${toast.type}` as `toast_${ToastType}`] as import('react-native').ViewStyle;
 
   return (
     <Animated.View
