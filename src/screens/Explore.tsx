@@ -16,7 +16,6 @@ import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { buildManualAreaContext, formatDistanceMiles } from '../utils/location';
 import { getRecommendedDishes, getTodaysTopPicks } from '../utils/recommendations';
-import { EmptyState } from '../components/EmptyState';
 import { haptics } from '../utils/haptics';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;

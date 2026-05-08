@@ -125,12 +125,7 @@ export function History() {
         ) : null}
 
         {groupedHistory.length === 0 ? (
-          <View style={styles.endState}>
-            <View style={styles.endIcon}>
-              <ClipboardList size={24} color={theme.colors.subtle} strokeWidth={1.5} />
-            </View>
-            <Text style={styles.endText}>Your recent decisions will show up here.</Text>
-          </View>
+          <EmptyState scenario="history-empty" language="en" />
         ) : (
           groupedHistory.map((group) => (
             <View key={group.group} style={styles.group}>
