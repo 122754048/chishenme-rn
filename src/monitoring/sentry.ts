@@ -63,10 +63,26 @@ export function setSentryUser(userId: string | null): void {
   else Sentry.setUser(null);
 }
 
-export function addBreadcrumb(message: string, data?: Record<string, unknown>): void {
+type BreadcrumbInput =
+  | string
+  | {
+      message?: string;
+      category?: string;
+      level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
+      data?: Record<string, unknown>;
+    };
+
+export function addBreadcrumb(input: BreadcrumbInput, data?: Record<string, unknown>): void {
+  // Two call shapes:
+  //   addBreadcrumb('user clicked X', { id })                  — legacy
+  //   addBreadcrumb({ category: 'navigation', message: ... })  — typed
+  const crumb =
+    typeof input === 'string'
+      ? { message: input, data, level: 'info' as const }
+      : { level: 'info' as const, ...input };
   if (!enabled) {
-    if (__DEV__) console.log('[breadcrumb]', message, data);
+    if (__DEV__) console.log('[breadcrumb]', crumb.category ?? '-', crumb.message ?? '', crumb.data ?? '');
     return;
   }
-  Sentry.addBreadcrumb({ message, data, level: 'info' });
+  Sentry.addBreadcrumb(crumb);
 }

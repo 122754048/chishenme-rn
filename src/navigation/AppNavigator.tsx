@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useRef } from 'react';
+import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Heart, Home as HomeIcon, Search, User } from 'lucide-react-native';
@@ -31,6 +31,7 @@ import { Upgrade } from '../screens/Upgrade';
 import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import type { MainTabParamList, RootStackParamList } from './types';
+import { createNavigationStateTracker } from '../monitoring';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -161,13 +162,28 @@ function LoadingScreen() {
 
 export function AppNavigator() {
   const { onboardingComplete, isLoading } = useApp();
+  const navRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+  // Memo-stable so React Navigation doesn't think the listener identity changed
+  // every render and re-attach. createNavigationStateTracker returns a closure
+  // bound to navRef — fine to recreate, but a ref keeps it stable across renders.
+  const onStateChangeRef = useRef<((state: any) => void) | null>(null);
+  if (onStateChangeRef.current === null) {
+    onStateChangeRef.current = createNavigationStateTracker<RootStackParamList>(navRef);
+  }
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navRef}
+      onReady={() => {
+        // Fire the initial screen_viewed once the tree is mounted.
+        onStateChangeRef.current?.(navRef.current?.getRootState());
+      }}
+      onStateChange={onStateChangeRef.current}
+    >
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
