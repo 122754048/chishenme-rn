@@ -1,0 +1,123 @@
+{
+  "common": {
+    "appName": "Teller",
+    "tagline": "Find a better pick, faster.",
+    "back": "Back",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "done": "Done",
+    "save": "Save",
+    "skip": "Skip",
+    "retry": "Retry",
+    "next": "Next",
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "errorBody": "Please try again in a moment.",
+    "ok": "OK"
+  },
+  "tabs": {
+    "home": "Home",
+    "explore": "Explore",
+    "favorites": "Saved",
+    "history": "History",
+    "profile": "Profile"
+  },
+  "onboarding": {
+    "cuisines": {
+      "title": "What do you crave?",
+      "subtitle": "Pick a few favorites — you can change these anytime.",
+      "cta": "Continue",
+      "skip": "Skip for now"
+    },
+    "restrictions": {
+      "title": "Anything to avoid?",
+      "subtitle": "We'll filter these out.",
+      "cta": "Start deciding",
+      "skip": "Skip for now",
+      "backA11y": "Back to cuisine preferences",
+      "heroEyebrow": "Finish your defaults",
+      "statFilters": "Filters",
+      "statAreas": "Areas",
+      "sectionCommon": "Common restrictions",
+      "sectionCustom": "Add your own",
+      "customPlaceholder": "For example: shellfish or cilantro",
+      "customAddA11y": "Add custom restriction",
+      "customRemoveA11y": "Remove {{name}}",
+      "sectionAreas": "Saved areas",
+      "areaHomePlaceholder": "Home area or neighborhood",
+      "areaWorkPlaceholder": "Work area or neighborhood",
+      "areaHomeLabel": "Home",
+      "areaWorkLabel": "Work"
+    }
+  },
+  "home": {
+    "title": "What's the move today?",
+    "quotaRemaining_one": "{{count}} pick left today",
+    "quotaRemaining_other": "{{count}} picks left today",
+    "quotaExhausted": "You're out of free picks for today.",
+    "quotaUpgradeCta": "Get unlimited",
+    "actionsLike": "Save",
+    "actionsPass": "Pass",
+    "emptyTitle": "Nothing to recommend right now",
+    "emptyBody": "Pull to refresh or check your preferences."
+  },
+  "explore": {
+    "nearbyTitle": "Near you",
+    "fitsTitle": "Fits your taste",
+    "searchPlaceholder": "Search dishes, cuisines, or vibes"
+  },
+  "favorites": {
+    "title": "Saved",
+    "emptyTitle": "Nothing saved yet",
+    "emptyBody": "Save a few strong options for later.",
+    "emptyCta": "Back to Home"
+  },
+  "history": {
+    "title": "History",
+    "emptyTitle": "No decisions yet",
+    "emptyBody": "Your recent decisions will show up here."
+  },
+  "profile": {
+    "title": "Profile",
+    "language": "Language",
+    "subscription": "Subscription",
+    "subscriptionFree": "Free",
+    "subscriptionPro": "Teller Pro",
+    "subscriptionFamily": "Teller Family",
+    "manageSubscription": "Manage subscription",
+    "signOut": "Sign out",
+    "deleteAccount": "Delete account",
+    "support": "Support",
+    "privacy": "Privacy policy",
+    "terms": "Terms of service"
+  },
+  "upgrade": {
+    "heroTitle": "Decide faster. Eat better.",
+    "heroSubtitle": "Unlimited picks, smarter recommendations, and more.",
+    "annual": "Annual",
+    "monthly": "Monthly",
+    "bestValue": "BEST VALUE",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "savingsLabel": "Save {{percent}}%",
+    "ctaAnnual": "Start Annual Plan",
+    "ctaMonthly": "Start Monthly Plan",
+    "trustNoCommitment": "Cancel anytime",
+    "trustEncrypted": "End-to-end encrypted",
+    "trustNoAds": "No ads, ever",
+    "termsNotice": "By continuing you agree to our terms and privacy policy."
+  },
+  "checkout": {
+    "title": "Confirm your plan",
+    "ctaConfirm": "Start Annual Plan",
+    "ctaConfirmMonthly": "Start Monthly Plan",
+    "footerNote": "Auto-renews. Cancel anytime in App Store settings."
+  },
+  "errors": {
+    "network": "Connection lost. Check your network.",
+    "locationDenied": "We need location to recommend nearby spots.",
+    "quota": "Daily limit reached. Upgrade for unlimited.",
+    "unknown": "Something went wrong. Please try again."
+  }
+}

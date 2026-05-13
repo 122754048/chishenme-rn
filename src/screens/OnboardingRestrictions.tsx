@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowLeft, ArrowRight, Plus } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
 import { FLAVORS, MEATS, SWIPE_CARDS } from '../data/mockData';
@@ -11,6 +12,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
 import { buildManualAreaContext } from '../utils/location';
+import { track, EventName } from '../monitoring';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -62,6 +64,7 @@ const restrictionStyles = StyleSheet.create({
 });
 
 export function OnboardingRestrictions() {
+  const { t } = useTranslation();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
@@ -89,10 +92,10 @@ export function OnboardingRestrictions() {
     await setRestrictions(selected);
 
     if (homeArea.trim()) {
-      await saveAreaPreset('home', { label: 'Home', query: homeArea.trim() });
+      await saveAreaPreset('home', { label: t('onboarding.restrictions.areaHomeLabel'), query: homeArea.trim() });
     }
     if (workArea.trim()) {
-      await saveAreaPreset('work', { label: 'Work', query: workArea.trim() });
+      await saveAreaPreset('work', { label: t('onboarding.restrictions.areaWorkLabel'), query: workArea.trim() });
     }
 
     const nextArea = homeArea.trim() || workArea.trim();
@@ -100,11 +103,13 @@ export function OnboardingRestrictions() {
       await setLocationSelection(buildManualAreaContext(nextArea));
     }
 
+    track(EventName.OnboardingCompleted, { restrictionCount: selected.length, hasArea: Boolean(nextArea) });
     await completeOnboarding();
     navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
   };
 
   const handleSkip = async () => {
+    track(EventName.OnboardingCompleted, { skipped: true });
     await completeOnboarding();
     navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
   };
@@ -116,13 +121,13 @@ export function OnboardingRestrictions() {
           onPress={() => navigation.goBack()}
           style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]}
           accessibilityRole="button"
-          accessibilityLabel="Back to cuisine preferences"
+          accessibilityLabel={t('onboarding.restrictions.backA11y')}
           hitSlop={8}
         >
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Pressable onPress={handleSkip} style={({ pressed }) => [pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel="Skip for now" hitSlop={8}>
-          <Text style={styles.skipText}>Skip for now</Text>
+        <Pressable onPress={handleSkip} style={({ pressed }) => [pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel={t('onboarding.restrictions.skip')} hitSlop={8}>
+          <Text style={styles.skipText}>{t('onboarding.restrictions.skip')}</Text>
         </Pressable>
       </View>
 
@@ -135,32 +140,32 @@ export function OnboardingRestrictions() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroCard}>
-          <Text style={styles.heroEyebrow}>Finish your defaults</Text>
+          <Text style={styles.heroEyebrow}>{t('onboarding.restrictions.heroEyebrow')}</Text>
           <View style={styles.heroStrip}>
             <View style={styles.heroThumb}>
-              <SkeletonImage src={SWIPE_CARDS[0].image} alt="Preference preview" />
+              <SkeletonImage src={SWIPE_CARDS[0].image} alt="" />
             </View>
             <View style={styles.heroThumb}>
-              <SkeletonImage src={SWIPE_CARDS[3].image} alt="Preference preview" />
+              <SkeletonImage src={SWIPE_CARDS[3].image} alt="" />
             </View>
           </View>
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
               <Text style={styles.heroStatValue}>{selected.length}</Text>
-              <Text style={styles.heroStatLabel}>Filters</Text>
+              <Text style={styles.heroStatLabel}>{t('onboarding.restrictions.statFilters')}</Text>
             </View>
             <View style={styles.heroStat}>
               <Text style={styles.heroStatValue}>{homeArea.trim() || workArea.trim() ? '1' : '0'}</Text>
-              <Text style={styles.heroStatLabel}>Areas</Text>
+              <Text style={styles.heroStatLabel}>{t('onboarding.restrictions.statAreas')}</Text>
             </View>
           </View>
         </View>
 
-        <Text style={styles.title}>Anything you avoid?</Text>
-        <Text style={styles.subtitle}>We will filter these out.</Text>
+        <Text style={styles.title}>{t('onboarding.restrictions.title')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.restrictions.subtitle')}</Text>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Common restrictions</Text>
+          <Text style={styles.sectionTitle}>{t('onboarding.restrictions.sectionCommon')}</Text>
           <View style={styles.grid}>
             {[...MEATS, ...FLAVORS].map((item) => (
               <RestrictionButton key={item.id} label={item.label} isSelected={selected.includes(item.id)} onPress={() => toggle(item.id)} theme={theme} />
@@ -169,23 +174,23 @@ export function OnboardingRestrictions() {
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Add your own</Text>
+          <Text style={styles.sectionTitle}>{t('onboarding.restrictions.sectionCustom')}</Text>
           <View style={styles.customComposer}>
             <TextInput
               style={styles.customInput}
-              placeholder="For example: shellfish or cilantro"
+              placeholder={t('onboarding.restrictions.customPlaceholder')}
               placeholderTextColor={theme.colors.subtle}
               value={customInput}
               onChangeText={setCustomInput}
               onSubmitEditing={addCustomRestriction}
               returnKeyType="done"
-              accessibilityLabel="Add a custom dietary restriction"
+              accessibilityLabel={t('onboarding.restrictions.customAddA11y')}
             />
             <Pressable
               style={({ pressed }) => [styles.customAddBtn, pressed && styles.pressedCard]}
               onPress={addCustomRestriction}
               accessibilityRole="button"
-              accessibilityLabel="Add custom restriction"
+              accessibilityLabel={t('onboarding.restrictions.customAddA11y')}
             >
               <Plus size={14} color={theme.colors.surface} strokeWidth={2} />
             </Pressable>
@@ -197,38 +202,38 @@ export function OnboardingRestrictions() {
                 style={({ pressed }) => [styles.customTag, pressed && styles.pressedChrome]}
                 onPress={() => toggle(tag)}
                 accessibilityRole="button"
-                accessibilityLabel={`Remove ${tag.replace('custom:', '')}`}
+                accessibilityLabel={t('onboarding.restrictions.customRemoveA11y', { name: tag.replace('custom:', '') })}
               >
-                <Text style={styles.customTagText}>{tag.replace('custom:', '')} x</Text>
+                <Text style={styles.customTagText}>{tag.replace('custom:', '')} ×</Text>
               </Pressable>
             ))}
           </View>
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Saved areas</Text>
+          <Text style={styles.sectionTitle}>{t('onboarding.restrictions.sectionAreas')}</Text>
           <TextInput
             style={styles.areaInput}
-            placeholder="Home area or neighborhood"
+            placeholder={t('onboarding.restrictions.areaHomePlaceholder')}
             placeholderTextColor={theme.colors.subtle}
             value={homeArea}
             onChangeText={setHomeArea}
-            accessibilityLabel="Home area"
+            accessibilityLabel={t('onboarding.restrictions.areaHomeLabel')}
           />
           <TextInput
             style={styles.areaInput}
-            placeholder="Work area or neighborhood"
+            placeholder={t('onboarding.restrictions.areaWorkPlaceholder')}
             placeholderTextColor={theme.colors.subtle}
             value={workArea}
             onChangeText={setWorkArea}
-            accessibilityLabel="Work area"
+            accessibilityLabel={t('onboarding.restrictions.areaWorkLabel')}
           />
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={({ pressed }) => [styles.nextButton, pressed && styles.pressedCard]} onPress={finish} accessibilityRole="button" accessibilityLabel="Finish setup and open the app">
-          <Text style={styles.nextButtonText}>Start deciding</Text>
+        <Pressable style={({ pressed }) => [styles.nextButton, pressed && styles.pressedCard]} onPress={finish} accessibilityRole="button" accessibilityLabel={t('onboarding.restrictions.cta')}>
+          <Text style={styles.nextButtonText}>{t('onboarding.restrictions.cta')}</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
       </View>

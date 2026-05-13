@@ -1,0 +1,123 @@
+{
+  "common": {
+    "appName": "Teller",
+    "tagline": "Encuentra una mejor opción, más rápido.",
+    "back": "Atrás",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "continue": "Continuar",
+    "done": "Listo",
+    "save": "Guardar",
+    "skip": "Omitir",
+    "retry": "Reintentar",
+    "next": "Siguiente",
+    "loading": "Cargando…",
+    "error": "Algo salió mal",
+    "errorBody": "Inténtalo de nuevo en un momento.",
+    "ok": "OK"
+  },
+  "tabs": {
+    "home": "Inicio",
+    "explore": "Explorar",
+    "favorites": "Guardado",
+    "history": "Historial",
+    "profile": "Perfil"
+  },
+  "onboarding": {
+    "cuisines": {
+      "title": "¿Qué se te antoja?",
+      "subtitle": "Elige tus favoritos — puedes cambiarlos cuando quieras.",
+      "cta": "Continuar",
+      "skip": "Omitir por ahora"
+    },
+    "restrictions": {
+      "title": "¿Algo que evitar?",
+      "subtitle": "Lo filtraremos automáticamente.",
+      "cta": "Empezar a decidir",
+      "skip": "Omitir por ahora",
+      "backA11y": "Volver a preferencias de cocina",
+      "heroEyebrow": "Termina tus ajustes",
+      "statFilters": "Filtros",
+      "statAreas": "Zonas",
+      "sectionCommon": "Restricciones comunes",
+      "sectionCustom": "Añade las tuyas",
+      "customPlaceholder": "Por ejemplo: mariscos o cilantro",
+      "customAddA11y": "Añadir restricción personalizada",
+      "customRemoveA11y": "Eliminar {{name}}",
+      "sectionAreas": "Zonas guardadas",
+      "areaHomePlaceholder": "Zona de casa o barrio",
+      "areaWorkPlaceholder": "Zona de trabajo o barrio",
+      "areaHomeLabel": "Casa",
+      "areaWorkLabel": "Trabajo"
+    }
+  },
+  "home": {
+    "title": "¿Qué tal hoy?",
+    "quotaRemaining_one": "Te queda {{count}} elección hoy",
+    "quotaRemaining_other": "Te quedan {{count}} elecciones hoy",
+    "quotaExhausted": "Se acabaron tus elecciones gratis por hoy.",
+    "quotaUpgradeCta": "Obtén ilimitadas",
+    "actionsLike": "Guardar",
+    "actionsPass": "Pasar",
+    "emptyTitle": "No hay recomendaciones ahora",
+    "emptyBody": "Desliza para actualizar o revisa tus preferencias."
+  },
+  "explore": {
+    "nearbyTitle": "Cerca de ti",
+    "fitsTitle": "Te puede gustar",
+    "searchPlaceholder": "Busca platos, cocinas o ambientes"
+  },
+  "favorites": {
+    "title": "Guardado",
+    "emptyTitle": "Nada guardado aún",
+    "emptyBody": "Guarda algunas opciones para después.",
+    "emptyCta": "Volver al inicio"
+  },
+  "history": {
+    "title": "Historial",
+    "emptyTitle": "Sin decisiones aún",
+    "emptyBody": "Tus decisiones recientes aparecerán aquí."
+  },
+  "profile": {
+    "title": "Perfil",
+    "language": "Idioma",
+    "subscription": "Suscripción",
+    "subscriptionFree": "Gratis",
+    "subscriptionPro": "Teller Pro",
+    "subscriptionFamily": "Teller Family",
+    "manageSubscription": "Administrar suscripción",
+    "signOut": "Cerrar sesión",
+    "deleteAccount": "Eliminar cuenta",
+    "support": "Soporte",
+    "privacy": "Política de privacidad",
+    "terms": "Términos de servicio"
+  },
+  "upgrade": {
+    "heroTitle": "Decide más rápido. Come mejor.",
+    "heroSubtitle": "Recomendaciones ilimitadas, más inteligentes, y más.",
+    "annual": "Anual",
+    "monthly": "Mensual",
+    "bestValue": "MEJOR VALOR",
+    "perMonth": "/mes",
+    "perYear": "/año",
+    "savingsLabel": "Ahorra {{percent}}%",
+    "ctaAnnual": "Comenzar plan anual",
+    "ctaMonthly": "Comenzar plan mensual",
+    "trustNoCommitment": "Cancela cuando quieras",
+    "trustEncrypted": "Cifrado de extremo a extremo",
+    "trustNoAds": "Sin anuncios, nunca",
+    "termsNotice": "Al continuar aceptas nuestros términos y política de privacidad."
+  },
+  "checkout": {
+    "title": "Confirma tu plan",
+    "ctaConfirm": "Comenzar plan anual",
+    "ctaConfirmMonthly": "Comenzar plan mensual",
+    "footerNote": "Renovación automática. Cancela cuando quieras en App Store."
+  },
+  "errors": {
+    "network": "Conexión perdida. Revisa tu red.",
+    "locationDenied": "Necesitamos tu ubicación para recomendar lugares cercanos.",
+    "quota": "Límite diario alcanzado. Mejora para ilimitadas.",
+    "unknown": "Algo salió mal. Inténtalo de nuevo."
+  }
+}

@@ -27,6 +27,14 @@ const paths = {
   storage: path.join(root, 'src', 'storage', 'index.ts'),
   places: path.join(root, 'src', 'services', 'places.ts'),
   menuScanService: path.join(root, 'src', 'services', 'menuScan.ts'),
+  // i18n catalogues — English remains the source of truth for product copy.
+  // After the i18n migration we assert against catalogue content, not raw
+  // string literals embedded in screen TSX. This keeps the contract honest
+  // when copy moves into JSON without forcing manual sync churn here.
+  localesEn: path.join(root, 'src', 'i18n', 'locales', 'en.json'),
+  localesZh: path.join(root, 'src', 'i18n', 'locales', 'zh.json'),
+  localesEs: path.join(root, 'src', 'i18n', 'locales', 'es.json'),
+  localesJa: path.join(root, 'src', 'i18n', 'locales', 'ja.json'),
 };
 
 const mockData = fs.readFileSync(paths.mockData, 'utf8');
@@ -73,8 +81,9 @@ assert(navigatorCode.includes("name=\"MenuScan\""), 'navigator should wire the m
 assert(!navigatorCode.includes('ChiShenMe'), 'navigator shell should use the new North America brand');
 assert(onboardingGuideCode.includes('Swipe left to pass'), 'onboarding guide should teach the current swipe model in English');
 assert(searchOverlayCode.includes('dish, place, area'), 'search overlay should support area and restaurant search');
-assert(onboardingCuisinesCode.includes('Pick your favorites'), 'cuisine onboarding should be English-first');
-assert(onboardingRestrictionsCode.includes('Saved areas'), 'restriction onboarding should capture home/work area context');
+assert(onboardingCuisinesCode.includes("useTranslation"), 'cuisine onboarding should be i18n-aware (uses useTranslation)');
+assert(onboardingRestrictionsCode.includes("useTranslation"), 'restriction onboarding should be i18n-aware (uses useTranslation)');
+assert(onboardingRestrictionsCode.includes('saveAreaPreset'), 'restriction onboarding should still capture home/work area context');
 assert(
   homeCode.includes("triggerDecision('left')") && homeCode.includes("triggerDecision('right')"),
   'home should stay focused on the swipe deck'
@@ -104,5 +113,43 @@ assert(
 );
 assert(menuScanCode.includes('Scan a menu'), 'menu scan screen should exist');
 assert(menuScanCode.includes('Best for you'), 'menu scan results should group recommendations');
+
+// ── i18n catalogue contract ────────────────────────────────────────────────
+// Once strings move out of TSX into JSON, the smoke test asserts on the
+// catalogue instead. Each locale must parse, share the same key shape, and
+// retain the canonical English copy that the product team ships as source.
+const locales = {
+  en: JSON.parse(fs.readFileSync(paths.localesEn, 'utf8')),
+  zh: JSON.parse(fs.readFileSync(paths.localesZh, 'utf8')),
+  es: JSON.parse(fs.readFileSync(paths.localesEs, 'utf8')),
+  ja: JSON.parse(fs.readFileSync(paths.localesJa, 'utf8')),
+};
+
+function collectKeys(obj, prefix = '') {
+  const out = [];
+  for (const [k, v] of Object.entries(obj)) {
+    const next = prefix ? `${prefix}.${k}` : k;
+    if (v && typeof v === 'object' && !Array.isArray(v)) out.push(...collectKeys(v, next));
+    else out.push(next);
+  }
+  return out.sort();
+}
+
+const enKeys = collectKeys(locales.en);
+for (const lang of ['zh', 'es', 'ja']) {
+  const keys = collectKeys(locales[lang]);
+  assert(
+    keys.length === enKeys.length && keys.every((k, i) => k === enKeys[i]),
+    `locale ${lang}.json must share the same key shape as en.json (${enKeys.length} keys)`
+  );
+}
+
+// English remains the canonical copy source. Spot-check a handful of
+// product-critical phrases — these are the ones marketing & ASO sign off on.
+assert(locales.en.common.appName === 'Teller', 'en: app name should be Teller');
+assert(locales.en.common.tagline.toLowerCase().includes('better pick'), 'en: tagline should mention "better pick"');
+assert(locales.en.tabs.home === 'Home', 'en: bottom tab Home label');
+assert(locales.en.onboarding.cuisines.cta === 'Continue', 'en: cuisine CTA copy');
+assert(typeof locales.en.home.quotaRemaining_one === 'string' && typeof locales.en.home.quotaRemaining_other === 'string', 'en: quotaRemaining must have plural variants');
 
 console.log('Smoke test passed.');

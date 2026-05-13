@@ -1,0 +1,123 @@
+{
+  "common": {
+    "appName": "Teller",
+    "tagline": "もっと早く、もっと良い選択を。",
+    "back": "戻る",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "continue": "続ける",
+    "done": "完了",
+    "save": "保存",
+    "skip": "スキップ",
+    "retry": "再試行",
+    "next": "次へ",
+    "loading": "読み込み中…",
+    "error": "問題が発生しました",
+    "errorBody": "しばらくしてからもう一度お試しください。",
+    "ok": "OK"
+  },
+  "tabs": {
+    "home": "ホーム",
+    "explore": "発見",
+    "favorites": "保存済み",
+    "history": "履歴",
+    "profile": "プロフィール"
+  },
+  "onboarding": {
+    "cuisines": {
+      "title": "何が食べたい気分？",
+      "subtitle": "好みをいくつか選んでください — いつでも変更できます。",
+      "cta": "続ける",
+      "skip": "あとで"
+    },
+    "restrictions": {
+      "title": "避けたいものはありますか？",
+      "subtitle": "自動でフィルタリングします。",
+      "cta": "始める",
+      "skip": "あとで",
+      "backA11y": "前の画面に戻る",
+      "heroEyebrow": "初期設定の仕上げ",
+      "statFilters": "フィルタ",
+      "statAreas": "エリア",
+      "sectionCommon": "よくある制限",
+      "sectionCustom": "自分で追加",
+      "customPlaceholder": "例：甲殻類、パクチー",
+      "customAddA11y": "カスタム制限を追加",
+      "customRemoveA11y": "{{name}} を削除",
+      "sectionAreas": "保存済みエリア",
+      "areaHomePlaceholder": "自宅エリアや地域",
+      "areaWorkPlaceholder": "職場エリアや地域",
+      "areaHomeLabel": "自宅",
+      "areaWorkLabel": "職場"
+    }
+  },
+  "home": {
+    "title": "今日は何にする？",
+    "quotaRemaining_one": "今日あと {{count}} 回",
+    "quotaRemaining_other": "今日あと {{count}} 回",
+    "quotaExhausted": "今日の無料分は使い切りました。",
+    "quotaUpgradeCta": "無制限にアップグレード",
+    "actionsLike": "保存",
+    "actionsPass": "パス",
+    "emptyTitle": "今はおすすめがありません",
+    "emptyBody": "プルダウンで更新するか、好みを確認してください。"
+  },
+  "explore": {
+    "nearbyTitle": "近くのお店",
+    "fitsTitle": "あなた好み",
+    "searchPlaceholder": "料理、ジャンル、雰囲気で検索"
+  },
+  "favorites": {
+    "title": "保存済み",
+    "emptyTitle": "まだ何も保存していません",
+    "emptyBody": "気になる選択肢を保存しておきましょう。",
+    "emptyCta": "ホームに戻る"
+  },
+  "history": {
+    "title": "履歴",
+    "emptyTitle": "まだ履歴がありません",
+    "emptyBody": "最近の決定がここに表示されます。"
+  },
+  "profile": {
+    "title": "プロフィール",
+    "language": "言語",
+    "subscription": "サブスクリプション",
+    "subscriptionFree": "無料",
+    "subscriptionPro": "Teller Pro",
+    "subscriptionFamily": "Teller Family",
+    "manageSubscription": "サブスクリプション管理",
+    "signOut": "サインアウト",
+    "deleteAccount": "アカウント削除",
+    "support": "サポート",
+    "privacy": "プライバシーポリシー",
+    "terms": "利用規約"
+  },
+  "upgrade": {
+    "heroTitle": "早く決めて、おいしく食べよう。",
+    "heroSubtitle": "無制限のおすすめ、より賢いレコメンド、もっと。",
+    "annual": "年額",
+    "monthly": "月額",
+    "bestValue": "おすすめ",
+    "perMonth": "/月",
+    "perYear": "/年",
+    "savingsLabel": "{{percent}}% お得",
+    "ctaAnnual": "年額プランを開始",
+    "ctaMonthly": "月額プランを開始",
+    "trustNoCommitment": "いつでも解約",
+    "trustEncrypted": "エンドツーエンド暗号化",
+    "trustNoAds": "広告なし",
+    "termsNotice": "続行することで利用規約とプライバシーポリシーに同意したものとみなされます。"
+  },
+  "checkout": {
+    "title": "プランを確認",
+    "ctaConfirm": "年額プランを開始",
+    "ctaConfirmMonthly": "月額プランを開始",
+    "footerNote": "自動更新。App Store の設定からいつでも解約できます。"
+  },
+  "errors": {
+    "network": "接続が切れました。ネットワークを確認してください。",
+    "locationDenied": "近くのお店を提案するには位置情報が必要です。",
+    "quota": "今日の上限に達しました。無制限にアップグレード。",
+    "unknown": "問題が発生しました。再度お試しください。"
+  }
+}
