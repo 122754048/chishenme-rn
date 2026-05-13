@@ -31,12 +31,39 @@ class BackendApiTest(unittest.TestCase):
         settings.openai_api_key = ''
 
     def setUp(self):
+        # SQLite path: use a unique file per test so each test starts fresh.
+        # PostgreSQL path: the DATABASE_URL env var points at a real shared DB,
+        # so we cannot just "swap files". We isolate via a unique user_id per test
+        # and reset relevant tables. This keeps tests independent on both backends
+        # without forcing the CI runner to drop/recreate schema between cases.
         self.db_path = os.path.join(tempfile.gettempdir(), f'chishenme-test-{uuid4().hex}.db')
         settings.db_path = self.db_path
         init_db()
+
+        if os.environ.get('DATABASE_URL', '').startswith(('postgres://', 'postgresql://')):
+            # Wipe shared state between tests on Postgres CI runs. Order matters
+            # for FK-bearing tables; use TRUNCATE ... CASCADE for safety.
+            from app.db import tx  # local import: avoid circulars during settings mutation
+            with tx() as conn:
+                cur = conn.cursor()
+                for table in (
+                    'idempotency_keys',
+                    'orders',
+                    'daily_quotas',
+                    'subscriptions',
+                    'users',
+                ):
+                    try:
+                        cur.execute(f'TRUNCATE TABLE {table} RESTART IDENTITY CASCADE')
+                    except Exception:  # noqa: BLE001 — table may not exist yet
+                        pass
+
         self.client = TestClient(app)
 
-        reg = self.client.post('/auth/register', json={'user_id': 'u_123', 'password': 'secret123'})
+        # Unique per-test user keeps assertions stable across reruns / parallel
+        # workers and matches the isolation we get from a fresh SQLite file.
+        self.user_id = f'u_{uuid4().hex[:12]}'
+        reg = self.client.post('/auth/register', json={'user_id': self.user_id, 'password': 'secret123'})
         self.assertEqual(reg.status_code, 200)
         self.token = reg.json()['access_token']
         self.headers = {'Authorization': f'Bearer {self.token}'}
@@ -75,7 +102,9 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(created.status_code, 200)
         return created.json()['order_no']
 
-    def revenuecat_event(self, user_id='u_123', product_id='chishenme.pro.monthly', event_type='INITIAL_PURCHASE'):
+    def revenuecat_event(self, user_id=None, product_id='chishenme.pro.monthly', event_type='INITIAL_PURCHASE'):
+        if user_id is None:
+            user_id = self.user_id
         return {
             'event': {
                 'app_user_id': user_id,
@@ -276,7 +305,7 @@ class BackendApiTest(unittest.TestCase):
 
         self.assertEqual(delete_response.status_code, 200)
         self.assertTrue(delete_response.json()['deleted'])
-        login = self.client.post('/auth/login', json={'user_id': 'u_123', 'password': 'secret123'})
+        login = self.client.post('/auth/login', json={'user_id': self.user_id, 'password': 'secret123'})
         self.assertEqual(login.status_code, 401)
         membership = self.client.get('/membership/me', headers=self.headers)
         self.assertEqual(membership.status_code, 401)
