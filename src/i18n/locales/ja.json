@@ -32,9 +32,23 @@
     },
     "restrictions": {
       "title": "避けたいものはありますか？",
-      "subtitle": "アレルギー、食事制限、苦手なもの — すべて配慮します。",
-      "cta": "おすすめを見る",
-      "skip": "スキップ"
+      "subtitle": "自動でフィルタリングします。",
+      "cta": "始める",
+      "skip": "あとで",
+      "backA11y": "前の画面に戻る",
+      "heroEyebrow": "初期設定の仕上げ",
+      "statFilters": "フィルタ",
+      "statAreas": "エリア",
+      "sectionCommon": "よくある制限",
+      "sectionCustom": "自分で追加",
+      "customPlaceholder": "例：甲殻類、パクチー",
+      "customAddA11y": "カスタム制限を追加",
+      "customRemoveA11y": "{{name}} を削除",
+      "sectionAreas": "保存済みエリア",
+      "areaHomePlaceholder": "自宅エリアや地域",
+      "areaWorkPlaceholder": "職場エリアや地域",
+      "areaHomeLabel": "自宅",
+      "areaWorkLabel": "職場"
     }
   },
   "home": {

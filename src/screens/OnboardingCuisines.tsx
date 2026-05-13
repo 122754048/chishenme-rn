@@ -4,16 +4,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowRight, Check, Circle } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { CUISINES, SWIPE_CARDS } from '../data/mockData';
 import type { RootStackParamList } from '../navigation/types';
 import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
+import { track, EventName } from '../monitoring';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function OnboardingCuisines() {
+  const { t } = useTranslation();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
@@ -25,11 +28,13 @@ export function OnboardingCuisines() {
   };
 
   const handleNext = async () => {
+    track(EventName.OnboardingStepCompleted, { step: 'cuisines', selectedCount: selected.length });
     await setCuisines(selected);
     navigation.navigate('OnboardingRestrictions');
   };
 
   const handleSkip = async () => {
+    track(EventName.OnboardingStepCompleted, { step: 'cuisines', skipped: true });
     await completeOnboarding();
     navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
   };
@@ -46,11 +51,11 @@ export function OnboardingCuisines() {
         <Pressable
           onPress={handleSkip}
           accessibilityRole="button"
-          accessibilityLabel="Skip for now"
+          accessibilityLabel={t('onboarding.cuisines.skip')}
           hitSlop={8}
           style={({ pressed }) => [pressed && styles.pressedChrome]}
         >
-          <Text style={styles.skipText}>Skip for now</Text>
+          <Text style={styles.skipText}>{t('onboarding.cuisines.skip')}</Text>
         </Pressable>
       </View>
 
@@ -63,12 +68,14 @@ export function OnboardingCuisines() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroCard}>
-          <Text style={styles.heroEyebrow}>Your deck starts here</Text>
-          <Text style={styles.heroSummary}>{selected.length} picked so far</Text>
+          <Text style={styles.heroEyebrow}>{t('onboarding.cuisines.title')}</Text>
+          <Text style={styles.heroSummary}>
+            {t('onboarding.cuisines.subtitle')}
+          </Text>
         </View>
 
-        <Text style={styles.title}>Pick your favorites</Text>
-        <Text style={styles.subtitle}>Build the first version of your deck.</Text>
+        <Text style={styles.title}>{t('onboarding.cuisines.title')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.cuisines.subtitle')}</Text>
 
         <View style={styles.cuisineGrid}>
           {cuisineImages.map((item) => {
@@ -105,8 +112,8 @@ export function OnboardingCuisines() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={({ pressed }) => [styles.nextButton, pressed && styles.pressedCard]} onPress={handleNext} accessibilityRole="button" accessibilityLabel="Continue to dietary settings">
-          <Text style={styles.nextButtonText}>Continue</Text>
+        <Pressable style={({ pressed }) => [styles.nextButton, pressed && styles.pressedCard]} onPress={handleNext} accessibilityRole="button" accessibilityLabel={t('onboarding.cuisines.cta')}>
+          <Text style={styles.nextButtonText}>{t('onboarding.cuisines.cta')}</Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
       </View>

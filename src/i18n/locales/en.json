@@ -32,9 +32,23 @@
     },
     "restrictions": {
       "title": "Anything to avoid?",
-      "subtitle": "Allergies, diets, or just dislikes — we'll respect them.",
-      "cta": "Show me a pick",
-      "skip": "Skip"
+      "subtitle": "We'll filter these out.",
+      "cta": "Start deciding",
+      "skip": "Skip for now",
+      "backA11y": "Back to cuisine preferences",
+      "heroEyebrow": "Finish your defaults",
+      "statFilters": "Filters",
+      "statAreas": "Areas",
+      "sectionCommon": "Common restrictions",
+      "sectionCustom": "Add your own",
+      "customPlaceholder": "For example: shellfish or cilantro",
+      "customAddA11y": "Add custom restriction",
+      "customRemoveA11y": "Remove {{name}}",
+      "sectionAreas": "Saved areas",
+      "areaHomePlaceholder": "Home area or neighborhood",
+      "areaWorkPlaceholder": "Work area or neighborhood",
+      "areaHomeLabel": "Home",
+      "areaWorkLabel": "Work"
     }
   },
   "home": {

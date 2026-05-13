@@ -32,9 +32,23 @@
     },
     "restrictions": {
       "title": "有什么要避开的？",
-      "subtitle": "过敏、忌口或不喜欢的——都会尊重。",
-      "cta": "推荐一个",
-      "skip": "跳过"
+      "subtitle": "会自动帮你过滤掉。",
+      "cta": "开始决定",
+      "skip": "暂时跳过",
+      "backA11y": "返回上一步",
+      "heroEyebrow": "完成默认设置",
+      "statFilters": "过滤项",
+      "statAreas": "区域",
+      "sectionCommon": "常见忌口",
+      "sectionCustom": "自定义",
+      "customPlaceholder": "例如：贝类、香菜",
+      "customAddA11y": "添加自定义忌口",
+      "customRemoveA11y": "移除 {{name}}",
+      "sectionAreas": "常去的区域",
+      "areaHomePlaceholder": "家附近或社区",
+      "areaWorkPlaceholder": "公司附近或社区",
+      "areaHomeLabel": "家",
+      "areaWorkLabel": "公司"
     }
   },
   "home": {

@@ -32,9 +32,23 @@
     },
     "restrictions": {
       "title": "¿Algo que evitar?",
-      "subtitle": "Alergias, dietas o cosas que no te gustan — las respetaremos.",
-      "cta": "Muéstrame una opción",
-      "skip": "Omitir"
+      "subtitle": "Lo filtraremos automáticamente.",
+      "cta": "Empezar a decidir",
+      "skip": "Omitir por ahora",
+      "backA11y": "Volver a preferencias de cocina",
+      "heroEyebrow": "Termina tus ajustes",
+      "statFilters": "Filtros",
+      "statAreas": "Zonas",
+      "sectionCommon": "Restricciones comunes",
+      "sectionCustom": "Añade las tuyas",
+      "customPlaceholder": "Por ejemplo: mariscos o cilantro",
+      "customAddA11y": "Añadir restricción personalizada",
+      "customRemoveA11y": "Eliminar {{name}}",
+      "sectionAreas": "Zonas guardadas",
+      "areaHomePlaceholder": "Zona de casa o barrio",
+      "areaWorkPlaceholder": "Zona de trabajo o barrio",
+      "areaHomeLabel": "Casa",
+      "areaWorkLabel": "Trabajo"
     }
   },
   "home": {
