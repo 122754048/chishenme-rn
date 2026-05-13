@@ -45,7 +45,8 @@ class BackendApiTest(unittest.TestCase):
             # for FK-bearing tables; use TRUNCATE ... CASCADE for safety.
             from app.db import tx  # local import: avoid circulars during settings mutation
             with tx() as conn:
-                cur = conn.cursor()
+                # tx() yields a _PgConnShim that exposes sqlite3.Connection-style
+                # execute(), not raw cursor(). Use conn.execute() directly.
                 for table in (
                     'idempotency_keys',
                     'orders',
@@ -54,7 +55,7 @@ class BackendApiTest(unittest.TestCase):
                     'users',
                 ):
                     try:
-                        cur.execute(f'TRUNCATE TABLE {table} RESTART IDENTITY CASCADE')
+                        conn.execute(f'TRUNCATE TABLE {table} RESTART IDENTITY CASCADE')
                     except Exception:  # noqa: BLE001 — table may not exist yet
                         pass
 
