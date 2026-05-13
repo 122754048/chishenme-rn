@@ -1,4 +1,4 @@
-"""Initial schema — create all ChiShenMe tables.
+"""Initial schema — create all Teller tables.
 
 Revision ID: 0001_initial_schema
 Revises: (none)

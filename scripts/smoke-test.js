@@ -78,7 +78,7 @@ assert(menuScanServiceCode.includes('launchCameraAsync'), 'menu scan service sho
 assert(menuScanServiceCode.includes('launchImageLibraryAsync'), 'menu scan service should support screenshot/library input');
 assert(navigatorCode.includes("tabBarLabel: 'Home'"), 'navigator should use English North America tab labels');
 assert(navigatorCode.includes("name=\"MenuScan\""), 'navigator should wire the menu scan route');
-assert(!navigatorCode.includes('ChiShenMe'), 'navigator shell should use the new North America brand');
+assert(!navigatorCode.includes('ChiShenMe'), 'navigator shell should use the Teller brand');
 assert(onboardingGuideCode.includes('Swipe left to pass'), 'onboarding guide should teach the current swipe model in English');
 assert(searchOverlayCode.includes('dish, place, area'), 'search overlay should support area and restaurant search');
 assert(onboardingCuisinesCode.includes("useTranslation"), 'cuisine onboarding should be i18n-aware (uses useTranslation)');

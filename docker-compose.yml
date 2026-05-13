@@ -6,13 +6,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-chishenme}
-      POSTGRES_USER: ${POSTGRES_USER:-chishenme}
+      POSTGRES_DB: ${POSTGRES_DB:-teller}
+      POSTGRES_USER: ${POSTGRES_USER:-teller}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-chishenme} -d $${POSTGRES_DB:-chishenme}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-teller} -d $${POSTGRES_DB:-teller}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,14 +35,14 @@ services:
     environment:
       # ── App settings ───────────────────────────────────────────────────────
       APP_ENV: ${APP_ENV:-production}
-      APP_NAME: ${APP_NAME:-chishenme-backend}
+      APP_NAME: ${APP_NAME:-teller-backend}
 
       # ── Database ───────────────────────────────────────────────────────────
       # app/db.py auto-detects: if DATABASE_URL starts with postgres://, use PG.
       # Otherwise falls back to SQLite at DB_PATH.
-      DATABASE_URL: postgresql://${POSTGRES_USER:-chishenme}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-chishenme}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-teller}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-teller}
       # Legacy SQLite path (ignored when DATABASE_URL is set to postgres://)
-      DB_PATH: /data/chishenme.db
+      DB_PATH: /data/teller.db
 
       # ── Auth / JWT ─────────────────────────────────────────────────────────
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}

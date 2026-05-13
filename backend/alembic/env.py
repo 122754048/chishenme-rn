@@ -45,13 +45,22 @@ def _get_url() -> str:
     if url.startswith("postgresql://"):
         return url
 
-    # SQLite fallback (mirrors config.py default)
+    # SQLite fallback (mirrors config.py default _default_db_path resolution).
+    # Uses teller.db preferentially with a backward-compatible fallback to the
+    # legacy chishenme.db when only the legacy file exists.
     from pathlib import Path
     project_root = Path(__file__).resolve().parents[2]
-    sqlite_path = os.environ.get(
-        "DB_PATH",
-        str(project_root / "backend" / "app" / "chishenme.db"),
-    )
+    explicit = os.environ.get("DB_PATH")
+    if explicit:
+        sqlite_path = explicit
+    else:
+        base = project_root / "backend" / "app"
+        new_path = base / "teller.db"
+        legacy_path = base / "chishenme.db"
+        if new_path.exists() or not legacy_path.exists():
+            sqlite_path = str(new_path)
+        else:
+            sqlite_path = str(legacy_path)
     return f"sqlite:///{sqlite_path}"
 
 

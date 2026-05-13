@@ -7,12 +7,29 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _default_db_path() -> str:
-    return str(PROJECT_ROOT / 'backend' / 'app' / 'chishenme.db')
+    """
+    Resolve the default SQLite path.
+
+    Brand was renamed Teller; preferred filename is teller.db. We keep a
+    backward-compatible fallback to the legacy chishenme.db so existing
+    local dev environments don't lose their data on pull. New deployments
+    write to teller.db. To migrate, set DB_PATH explicitly or rename the
+    file once.
+    """
+    base = PROJECT_ROOT / 'backend' / 'app'
+    new_path = base / 'teller.db'
+    legacy_path = base / 'chishenme.db'
+    # Prefer the new name. If only the legacy file exists, keep using it so
+    # nothing breaks for current dev installs; we'll wire migration into
+    # init_db() later if needed.
+    if new_path.exists() or not legacy_path.exists():
+        return str(new_path)
+    return str(legacy_path)
 
 
 @dataclass
 class Settings:
-    app_name: str = os.getenv('APP_NAME', 'chishenme-backend')
+    app_name: str = os.getenv('APP_NAME', 'teller-backend')
     env: str = os.getenv('APP_ENV', 'dev')
     jwt_secret: str = os.getenv('JWT_SECRET', 'replace-in-prod')
     jwt_algo: str = os.getenv('JWT_ALGO', 'HS256')
