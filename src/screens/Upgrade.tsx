@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, Check, Compass, ScanSearch, Shield, Users } from 'lucide-react-native';
 import { SkeletonImage } from '../components/SkeletonImage';
 import type { RootStackParamList } from '../navigation/types';
 import { SWIPE_CARDS } from '../data/mockData';
 import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
+import { EventName, track } from '../monitoring';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -23,6 +25,7 @@ function PlanCard({
   preview,
   styles,
   theme,
+  a11yLabel,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -35,6 +38,7 @@ function PlanCard({
   preview: string;
   styles: ReturnType<typeof makeStyles>;
   theme: AppTheme;
+  a11yLabel: string;
 }) {
   return (
     <Pressable
@@ -42,7 +46,7 @@ function PlanCard({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      accessibilityLabel={`${title} ${price}`}
+      accessibilityLabel={a11yLabel}
     >
       <View style={styles.planPreview}>
         <SkeletonImage src={preview} alt={title} />
@@ -74,98 +78,135 @@ export function Upgrade() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
+  const { t } = useTranslation();
   const [selectedPlan, setSelectedPlan] = useState<'pro' | 'family'>('pro');
+
+  // Fire paywall_viewed once per mount. Real paywall A/B tests will read
+  // properties to slice by variant; we ship a simple baseline event for now.
+  useEffect(() => {
+    track(EventName.PaywallViewed, { source: 'upgrade_screen', initial_plan: 'pro' });
+  }, []);
+
+  const handleSelectPlan = (plan: 'pro' | 'family') => {
+    setSelectedPlan(plan);
+    track(EventName.PaywallPlanSelected, { plan });
+  };
+
+  const handleContinue = () => {
+    track(EventName.CheckoutStarted, { plan: selectedPlan, source: 'upgrade_screen' });
+    navigation.navigate('Checkout', { plan: selectedPlan });
+  };
+
+  const proFeatures = [
+    t('upgrade.planProFeature1'),
+    t('upgrade.planProFeature2'),
+    t('upgrade.planProFeature3'),
+  ];
+  const familyFeatures = [
+    t('upgrade.planFamilyFeature1'),
+    t('upgrade.planFamilyFeature2'),
+    t('upgrade.planFamilyFeature3'),
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.grabber} />
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel="Go back">
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]}
+          accessibilityRole="button"
+          accessibilityLabel={t('upgrade.backA11y')}
+        >
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Text style={styles.headerTitle}>Upgrade</Text>
+        <Text style={styles.headerTitle}>{t('upgrade.headerTitle')}</Text>
         <View style={styles.backBtn} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroCard}>
-          <Text style={styles.heroEyebrow}>Upgrade your daily decision flow</Text>
+          <Text style={styles.heroEyebrow}>{t('upgrade.heroEyebrow')}</Text>
           <View style={styles.heroImage}>
-            <SkeletonImage src={SWIPE_CARDS[3].image} alt="Upgrade preview" />
+            <SkeletonImage src={SWIPE_CARDS[3].image} alt={t('upgrade.heroImageAlt')} />
           </View>
-          <Text style={styles.heroTitle}>Spend less time second-guessing dinner.</Text>
+          <Text style={styles.heroTitle}>{t('upgrade.heroTitle')}</Text>
           <View style={styles.heroPoints}>
             <View style={styles.heroPoint}>
-              <Text style={styles.heroPointValue}>3x</Text>
-              <Text style={styles.heroPointLabel}>faster saves</Text>
+              <Text style={styles.heroPointValue}>{t('upgrade.heroPoint1Value')}</Text>
+              <Text style={styles.heroPointLabel}>{t('upgrade.heroPoint1Label')}</Text>
             </View>
             <View style={styles.heroPoint}>
-              <Text style={styles.heroPointValue}>Full</Text>
-              <Text style={styles.heroPointLabel}>menu help</Text>
+              <Text style={styles.heroPointValue}>{t('upgrade.heroPoint2Value')}</Text>
+              <Text style={styles.heroPointLabel}>{t('upgrade.heroPoint2Label')}</Text>
             </View>
             <View style={styles.heroPoint}>
-              <Text style={styles.heroPointValue}>Less</Text>
-              <Text style={styles.heroPointLabel}>repeat noise</Text>
+              <Text style={styles.heroPointValue}>{t('upgrade.heroPoint3Value')}</Text>
+              <Text style={styles.heroPointLabel}>{t('upgrade.heroPoint3Label')}</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.freeBaseline}>
-          <Text style={styles.freeBaselineLabel}>Free</Text>
-          <Text style={styles.freeBaselineText}>Browse freely, then keep up to 3 good calls each day.</Text>
+          <Text style={styles.freeBaselineLabel}>{t('upgrade.freeLabel')}</Text>
+          <Text style={styles.freeBaselineText}>{t('upgrade.freeText')}</Text>
         </View>
 
         <View style={styles.benefitRow}>
           <View style={styles.benefitTile}>
             <Compass size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.benefitLabel}>Better picks</Text>
+            <Text style={styles.benefitLabel}>{t('upgrade.benefitBetterPicks')}</Text>
           </View>
           <View style={styles.benefitTile}>
             <ScanSearch size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.benefitLabel}>Menu help</Text>
+            <Text style={styles.benefitLabel}>{t('upgrade.benefitMenuHelp')}</Text>
           </View>
           <View style={styles.benefitTile}>
             <Shield size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.benefitLabel}>Fewer misses</Text>
+            <Text style={styles.benefitLabel}>{t('upgrade.benefitFewerMisses')}</Text>
           </View>
           <View style={styles.benefitTile}>
             <Users size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.benefitLabel}>Shared picks</Text>
+            <Text style={styles.benefitLabel}>{t('upgrade.benefitSharedPicks')}</Text>
           </View>
         </View>
 
         <View style={styles.planList}>
           <PlanCard
             icon={<Compass size={18} color={theme.colors.primary} strokeWidth={2} />}
-            title="Pro"
-            price="$9.99"
-            support="Best for solo daily use"
-            badge="Popular"
+            title={t('upgrade.planProTitle')}
+            price={t('upgrade.planProPrice')}
+            support={t('upgrade.planProSupport')}
+            badge={t('upgrade.planProBadge')}
             selected={selectedPlan === 'pro'}
-            features={['Sharper ranking for tonight', 'Full menu scan picks', 'Keep more good calls ready']}
+            features={proFeatures}
             preview={SWIPE_CARDS[0].image}
-            onPress={() => setSelectedPlan('pro')}
+            onPress={() => handleSelectPlan('pro')}
             styles={styles}
             theme={theme}
+            a11yLabel={t('upgrade.planLabelA11y', { title: t('upgrade.planProTitle'), price: t('upgrade.planProPrice') })}
           />
           <PlanCard
             icon={<Users size={18} color={theme.colors.primary} strokeWidth={2} />}
-            title="Family"
-            price="$19.99"
-            support="Best for shared decisions"
+            title={t('upgrade.planFamilyTitle')}
+            price={t('upgrade.planFamilyPrice')}
+            support={t('upgrade.planFamilySupport')}
             selected={selectedPlan === 'family'}
-            features={['Everything in Pro', 'Shared picks for two or more', 'Less friction when everyone votes differently']}
+            features={familyFeatures}
             preview={SWIPE_CARDS[4].image}
-            onPress={() => setSelectedPlan('family')}
+            onPress={() => handleSelectPlan('family')}
             styles={styles}
             theme={theme}
+            a11yLabel={t('upgrade.planLabelA11y', { title: t('upgrade.planFamilyTitle'), price: t('upgrade.planFamilyPrice') })}
           />
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable style={({ pressed }) => [styles.upgradeButton, pressed && styles.pressedCard]} onPress={() => navigation.navigate('Checkout', { plan: selectedPlan })}>
-          <Text style={styles.upgradeButtonText}>{selectedPlan === 'family' ? 'Continue with Family' : 'Continue with Pro'}</Text>
+        <Pressable style={({ pressed }) => [styles.upgradeButton, pressed && styles.pressedCard]} onPress={handleContinue}>
+          <Text style={styles.upgradeButtonText}>
+            {selectedPlan === 'family' ? t('upgrade.ctaFamily') : t('upgrade.ctaPro')}
+          </Text>
           <ArrowRight size={16} color={theme.colors.surface} strokeWidth={2.5} />
         </Pressable>
       </View>

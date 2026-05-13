@@ -8,8 +8,8 @@ This file is the source of truth for which screens have been migrated to react-i
 |---|---|---|
 | OnboardingCuisines | ✅ migrated | hero eyebrow uses title key as fallback until brand voice is locked |
 | OnboardingRestrictions | ✅ migrated | full migration |
-| Profile | ⏳ pending | ~44 user-facing strings |
-| Upgrade (paywall) | ⏳ pending | ~35 strings; will A/B per locale via remote config later |
+| Profile | ✅ migrated | full migration; restore/delete/billing alerts use t() |
+| Upgrade (paywall) | ✅ migrated | full migration; emits paywall_viewed, paywall_plan_selected, checkout_started events |
 | Checkout | ⏳ pending | ~108 strings (largest single screen); migrate in dedicated PR |
 | Home | ⏳ pending | ~118 strings; biggest, do last after locale catalogue is stable |
 | Explore | ⏳ pending | ~65 strings |
