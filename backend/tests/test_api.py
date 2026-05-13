@@ -25,8 +25,8 @@ class BackendApiTest(unittest.TestCase):
         settings.alipay_app_id = 'test-alipay-app-id'
         settings.revenuecat_webhook_secret = 'test-revenuecat-secret'
         settings.revenuecat_entitlement_id = 'premium'
-        settings.revenuecat_pro_product_id = 'chishenme.pro.monthly'
-        settings.revenuecat_family_product_id = 'chishenme.family.monthly'
+        settings.revenuecat_pro_product_id = 'teller.pro.monthly'
+        settings.revenuecat_family_product_id = 'teller.family.monthly'
         settings.google_places_api_key = ''
         settings.openai_api_key = ''
 
@@ -36,7 +36,7 @@ class BackendApiTest(unittest.TestCase):
         # so we cannot just "swap files". We isolate via a unique user_id per test
         # and reset relevant tables. This keeps tests independent on both backends
         # without forcing the CI runner to drop/recreate schema between cases.
-        self.db_path = os.path.join(tempfile.gettempdir(), f'chishenme-test-{uuid4().hex}.db')
+        self.db_path = os.path.join(tempfile.gettempdir(), f'teller-test-{uuid4().hex}.db')
         settings.db_path = self.db_path
         init_db()
 
@@ -103,7 +103,7 @@ class BackendApiTest(unittest.TestCase):
         self.assertEqual(created.status_code, 200)
         return created.json()['order_no']
 
-    def revenuecat_event(self, user_id=None, product_id='chishenme.pro.monthly', event_type='INITIAL_PURCHASE'):
+    def revenuecat_event(self, user_id=None, product_id='teller.pro.monthly', event_type='INITIAL_PURCHASE'):
         if user_id is None:
             user_id = self.user_id
         return {

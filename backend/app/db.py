@@ -1,5 +1,5 @@
 """
-backend/app/db.py — Unified database layer for ChiShenMe backend.
+backend/app/db.py — Unified database layer for Teller backend.
 
 Auto-detects backend at startup:
   - If DATABASE_URL env var is set AND starts with "postgres://" or "postgresql://",
