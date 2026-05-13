@@ -35,16 +35,11 @@ export function Favorites() {
       </View>
 
       {displayData.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <UtensilsCrossed size={36} color={theme.colors.primary} strokeWidth={1.5} />
-          </View>
-          <Text style={styles.emptyTitle}>Nothing saved yet</Text>
-          <Text style={styles.emptyBody}>Save a few strong options for later.</Text>
-          <Pressable style={({ pressed }) => [styles.exploreBtn, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}>
-            <Text style={styles.exploreBtnText}>Back to Home</Text>
-          </Pressable>
-        </View>
+        <EmptyState
+          scenario="favorites-empty"
+          language="en"
+          onCta={() => navigation.navigate('MainTabs', { screen: 'Home' })}
+        />
       ) : (
         <FlatList
           data={displayData}
