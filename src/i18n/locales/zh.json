@@ -1,0 +1,109 @@
+{
+  "common": {
+    "appName": "Teller",
+    "tagline": "更快做出更好的选择。",
+    "back": "返回",
+    "cancel": "取消",
+    "confirm": "确认",
+    "continue": "继续",
+    "done": "完成",
+    "save": "保存",
+    "skip": "跳过",
+    "retry": "重试",
+    "next": "下一步",
+    "loading": "加载中…",
+    "error": "出错了",
+    "errorBody": "请稍后再试。",
+    "ok": "好"
+  },
+  "tabs": {
+    "home": "首页",
+    "explore": "发现",
+    "favorites": "收藏",
+    "history": "记录",
+    "profile": "我的"
+  },
+  "onboarding": {
+    "cuisines": {
+      "title": "今天想吃什么？",
+      "subtitle": "选几个常吃的，随时可以修改。",
+      "cta": "继续",
+      "skip": "暂时跳过"
+    },
+    "restrictions": {
+      "title": "有什么要避开的？",
+      "subtitle": "过敏、忌口或不喜欢的——都会尊重。",
+      "cta": "推荐一个",
+      "skip": "跳过"
+    }
+  },
+  "home": {
+    "title": "今天吃点啥？",
+    "quotaRemaining_one": "今日还剩 {{count}} 次推荐",
+    "quotaRemaining_other": "今日还剩 {{count}} 次推荐",
+    "quotaExhausted": "今天的免费推荐用完了。",
+    "quotaUpgradeCta": "升级解锁",
+    "actionsLike": "收藏",
+    "actionsPass": "跳过",
+    "emptyTitle": "暂时没有推荐",
+    "emptyBody": "下拉刷新或检查偏好设置。"
+  },
+  "explore": {
+    "nearbyTitle": "附近",
+    "fitsTitle": "你可能喜欢",
+    "searchPlaceholder": "搜索菜品、菜系或氛围"
+  },
+  "favorites": {
+    "title": "收藏",
+    "emptyTitle": "还没有收藏",
+    "emptyBody": "把心动的选项存下来，以后再看。",
+    "emptyCta": "回到首页"
+  },
+  "history": {
+    "title": "记录",
+    "emptyTitle": "还没有记录",
+    "emptyBody": "最近的决定会出现在这里。"
+  },
+  "profile": {
+    "title": "我的",
+    "language": "语言",
+    "subscription": "订阅",
+    "subscriptionFree": "免费版",
+    "subscriptionPro": "Teller Pro",
+    "subscriptionFamily": "Teller Family",
+    "manageSubscription": "管理订阅",
+    "signOut": "退出登录",
+    "deleteAccount": "删除账户",
+    "support": "帮助",
+    "privacy": "隐私政策",
+    "terms": "服务条款"
+  },
+  "upgrade": {
+    "heroTitle": "更快决定，吃得更好。",
+    "heroSubtitle": "无限次推荐、更聪明的算法，还有更多。",
+    "annual": "年付",
+    "monthly": "月付",
+    "bestValue": "最划算",
+    "perMonth": "/月",
+    "perYear": "/年",
+    "savingsLabel": "省 {{percent}}%",
+    "ctaAnnual": "开通年付方案",
+    "ctaMonthly": "开通月付方案",
+    "trustNoCommitment": "随时取消",
+    "trustEncrypted": "端到端加密",
+    "trustNoAds": "永不弹广告",
+    "termsNotice": "继续即表示同意条款与隐私政策。"
+  },
+  "checkout": {
+    "title": "确认订阅",
+    "ctaConfirm": "开通年付方案",
+    "ctaConfirmMonthly": "开通月付方案",
+    "footerNote": "自动续订，可随时在 App Store 设置中取消。"
+  },
+  "errors": {
+    "network": "网络断开，请检查连接。",
+    "locationDenied": "需要位置权限才能推荐附近的店。",
+    "quota": "今日次数已用完，升级解锁无限。",
+    "unknown": "出错了，请稍后再试。"
+  }
+}

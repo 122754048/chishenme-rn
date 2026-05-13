@@ -51,7 +51,8 @@
           "photosPermission": "Teller uses your photos so you can upload menu screenshots for dish recommendations.",
           "cameraPermission": "Teller uses the camera so you can scan physical menus and get dish recommendations."
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "extra": {
       "eas": {
