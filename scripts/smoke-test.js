@@ -98,9 +98,11 @@ assert(exploreCode.includes('Nearby'), 'explore should show nearby restaurant tr
 assert(exploreCode.includes('Fresh'), 'explore should expose repeat-avoidance mode');
 assert(exploreCode.includes('For two'), 'explore should expose duo mode');
 assert(fs.readFileSync(path.join(root, 'src', 'screens', 'History.tsx'), 'utf8').includes('Worth revisiting'), 'history should help users revisit strong prior picks');
-assert(profileCode.includes('Delete account'), 'profile should expose account deletion');
-assert(profileCode.includes('saveAreaPreset') || profileCode.includes('Areas'), 'profile should reflect saved location context');
-assert(upgradeCode.includes('Smart rank') || upgradeCode.includes('Upgrade'), 'upgrade should still sell decision quality');
+assert(profileCode.includes("useTranslation"), 'profile should be i18n-aware (uses useTranslation)');
+assert(profileCode.includes("profile.alertDeleteTitle") || profileCode.includes("deleteAccount"), 'profile should expose account deletion via t() or storage state');
+assert(profileCode.includes('saveAreaPreset') || profileCode.includes('tileAreas') || profileCode.includes('Areas'), 'profile should reflect saved location context');
+assert(upgradeCode.includes("useTranslation"), 'upgrade should be i18n-aware (uses useTranslation)');
+assert(upgradeCode.includes('PaywallViewed') || upgradeCode.includes('paywall_viewed') || upgradeCode.includes("upgrade.heroTitle"), 'upgrade should still drive paywall conversion (event or copy)');
 assert(
   checkoutCode.includes('Confirm subscription') ||
     checkoutCode.includes('Start Annual Plan') ||
@@ -151,5 +153,7 @@ assert(locales.en.common.tagline.toLowerCase().includes('better pick'), 'en: tag
 assert(locales.en.tabs.home === 'Home', 'en: bottom tab Home label');
 assert(locales.en.onboarding.cuisines.cta === 'Continue', 'en: cuisine CTA copy');
 assert(typeof locales.en.home.quotaRemaining_one === 'string' && typeof locales.en.home.quotaRemaining_other === 'string', 'en: quotaRemaining must have plural variants');
+assert(locales.en.profile.alertDeleteTitle.toLowerCase().includes('delete'), 'en: profile delete title should mention delete');
+assert(locales.en.upgrade.heroTitle.length > 0, 'en: upgrade hero title must be non-empty');
 
 console.log('Smoke test passed.');

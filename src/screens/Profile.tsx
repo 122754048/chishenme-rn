@@ -3,6 +3,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { Bell, Compass, CreditCard, Heart, HelpCircle, History as HistoryIcon, LogOut, MapPin, ShieldAlert, Sparkles } from 'lucide-react-native';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { backendApi } from '../api/backend';
@@ -14,6 +15,7 @@ import { subscriptionService } from '../services/subscriptions';
 import { storage } from '../storage';
 import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
+import { EventName, track } from '../monitoring';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -55,6 +57,7 @@ export function Profile() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
+  const { t } = useTranslation();
   const {
     favorites,
     history,
@@ -67,43 +70,55 @@ export function Profile() {
     setMembershipPlan,
   } = useApp();
 
-  const planTitle = membershipPlan === 'family' ? 'Family' : membershipPlan === 'pro' ? 'Pro' : 'Free';
-  const preferenceValue = selectedCuisines.length + selectedRestrictions.length > 0 ? `${selectedCuisines.length + selectedRestrictions.length}` : '0';
-  const areaValue = savedAreas.home?.query || savedAreas.work?.query ? [savedAreas.home?.query, savedAreas.work?.query].filter(Boolean).join(' / ') : 'Add';
+  const planTitle =
+    membershipPlan === 'family'
+      ? t('profile.planTitleFamily')
+      : membershipPlan === 'pro'
+        ? t('profile.planTitlePro')
+        : t('profile.planTitleFree');
+  const preferenceValue = String(selectedCuisines.length + selectedRestrictions.length);
+  const areaValue =
+    savedAreas.home?.query || savedAreas.work?.query
+      ? [savedAreas.home?.query, savedAreas.work?.query].filter(Boolean).join(' / ')
+      : t('profile.tileAreasFallback');
   const previewImages = SWIPE_CARDS.filter((card) => favorites.includes(card.id)).slice(0, 3);
   const planSummary =
     membershipPlan === 'family'
-      ? 'Shared picks and stronger group decisions are active.'
+      ? t('profile.planSummaryFamily')
       : membershipPlan === 'pro'
-        ? 'Smarter saves and stronger ranking are active.'
-        : 'Keep your best three calls today, then upgrade when you want more.';
+        ? t('profile.planSummaryPro')
+        : t('profile.planSummaryFree');
 
   const showPaymentInfo = () => {
-    Alert.alert('Billing', 'Managed in Apple subscriptions.');
+    Alert.alert(t('profile.alertBillingTitle'), t('profile.alertBillingBody'));
   };
 
   const showFeedbackInfo = () => {
-    Alert.alert('Launch notes', 'Support URL, privacy URL, and App Store setup still need final production values.');
+    Alert.alert(t('profile.alertFeedbackTitle'), t('profile.alertFeedbackBody'));
   };
 
   const handleRestorePurchase = async () => {
+    track(EventName.SubscriptionRestored, { source: 'profile' });
     try {
       const revenueCatUserId = await storage.ensureBackendUserId();
       const result = await subscriptionService.restore(revenueCatUserId);
       if (result.plan !== 'free') {
         await setMembershipPlan(result.plan);
       }
-      Alert.alert('Restore purchases', result.message);
+      Alert.alert(t('profile.alertRestoreTitle'), result.message);
     } catch (error) {
-      Alert.alert('Restore purchases', error instanceof Error ? error.message : 'Please try again in a moment.');
+      Alert.alert(
+        t('profile.alertRestoreTitle'),
+        error instanceof Error ? error.message : t('profile.alertRestoreFallback'),
+      );
     }
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert('Delete account', 'Clears local data. Apple subscription stays active until cancelled in Apple settings.', [
-      { text: 'Keep', style: 'cancel' },
+    Alert.alert(t('profile.alertDeleteTitle'), t('profile.alertDeleteBody'), [
+      { text: t('profile.alertDeleteKeep'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('profile.alertDeleteConfirm'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -135,7 +150,7 @@ export function Profile() {
           style={({ pressed }) => [styles.iconBtn, pressed && styles.pressedChrome]}
           onPress={() => navigation.navigate('History')}
           accessibilityRole="button"
-          accessibilityLabel="Open history"
+          accessibilityLabel={t('profile.openHistoryA11y')}
           hitSlop={8}
         >
           <Bell size={20} color={theme.colors.foreground} strokeWidth={1.8} />
@@ -148,16 +163,18 @@ export function Profile() {
           <Text style={styles.heroBody}>{planSummary}</Text>
           <View style={styles.heroStats}>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>{recommendationsLeft < 0 ? 'Open' : recommendationsLeft}</Text>
-              <Text style={styles.statLabel}>Picks</Text>
+              <Text style={styles.statValue}>
+                {recommendationsLeft < 0 ? t('profile.statsPicksOpen') : String(recommendationsLeft)}
+              </Text>
+              <Text style={styles.statLabel}>{t('profile.statsPicks')}</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{favorites.length}</Text>
-              <Text style={styles.statLabel}>Saved</Text>
+              <Text style={styles.statLabel}>{t('profile.statsSaved')}</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{history.length}</Text>
-              <Text style={styles.statLabel}>History</Text>
+              <Text style={styles.statLabel}>{t('profile.statsHistory')}</Text>
             </View>
           </View>
           {previewImages.length > 0 ? (
@@ -172,37 +189,100 @@ export function Profile() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your setup</Text>
+          <Text style={styles.sectionTitle}>{t('profile.sectionSetup')}</Text>
           <View style={styles.grid}>
-            <ActionTile icon={<Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />} label="Taste" value={preferenceValue} onPress={() => navigation.navigate('OnboardingCuisines')} styles={styles} />
-            <ActionTile icon={<MapPin size={18} color={theme.colors.primary} strokeWidth={2} />} label="Areas" value={areaValue} onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })} styles={styles} />
+            <ActionTile
+              icon={<Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />}
+              label={t('profile.tileTaste')}
+              value={preferenceValue}
+              onPress={() => navigation.navigate('OnboardingCuisines')}
+              styles={styles}
+            />
+            <ActionTile
+              icon={<MapPin size={18} color={theme.colors.primary} strokeWidth={2} />}
+              label={t('profile.tileAreas')}
+              value={areaValue}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
+              styles={styles}
+            />
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your library</Text>
+          <Text style={styles.sectionTitle}>{t('profile.sectionLibrary')}</Text>
           <View style={styles.grid}>
-            <ActionTile icon={<Heart size={18} color={theme.colors.primary} strokeWidth={2} />} label="Saved" value={`${favorites.length}`} onPress={() => navigation.navigate('MainTabs', { screen: 'Favorites' })} styles={styles} />
-            <ActionTile icon={<HistoryIcon size={18} color={theme.colors.primary} strokeWidth={2} />} label="History" value={`${history.length}`} onPress={() => navigation.navigate('History')} styles={styles} />
-            <ActionTile icon={<Compass size={18} color={theme.colors.primary} strokeWidth={2} />} label="Explore" onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })} styles={styles} />
+            <ActionTile
+              icon={<Heart size={18} color={theme.colors.primary} strokeWidth={2} />}
+              label={t('profile.tileSaved')}
+              value={`${favorites.length}`}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Favorites' })}
+              styles={styles}
+            />
+            <ActionTile
+              icon={<HistoryIcon size={18} color={theme.colors.primary} strokeWidth={2} />}
+              label={t('profile.tileHistory')}
+              value={`${history.length}`}
+              onPress={() => navigation.navigate('History')}
+              styles={styles}
+            />
+            <ActionTile
+              icon={<Compass size={18} color={theme.colors.primary} strokeWidth={2} />}
+              label={t('profile.tileExplore')}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
+              styles={styles}
+            />
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Membership</Text>
+          <Text style={styles.sectionTitle}>{t('profile.sectionMembership')}</Text>
           <View style={styles.grid}>
-            <ActionTile icon={<CreditCard size={18} color={theme.colors.primary} strokeWidth={2} />} label="Plan" value={planTitle} onPress={() => navigation.navigate('Upgrade')} styles={styles} />
-            <ActionTile icon={<Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />} label="Restore" value="Apple" onPress={handleRestorePurchase} styles={styles} />
-            <ActionTile icon={<HelpCircle size={18} color={theme.colors.subtle} strokeWidth={2} />} label="Billing" value="Apple" onPress={showPaymentInfo} styles={styles} />
+            <ActionTile
+              icon={<CreditCard size={18} color={theme.colors.primary} strokeWidth={2} />}
+              label={t('profile.tilePlan')}
+              value={planTitle}
+              onPress={() => navigation.navigate('Upgrade')}
+              styles={styles}
+            />
+            <ActionTile
+              icon={<Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />}
+              label={t('profile.tileRestore')}
+              value={t('profile.tileRestoreValue')}
+              onPress={handleRestorePurchase}
+              styles={styles}
+            />
+            <ActionTile
+              icon={<HelpCircle size={18} color={theme.colors.subtle} strokeWidth={2} />}
+              label={t('profile.tileBilling')}
+              value={t('profile.tileBillingValue')}
+              onPress={showPaymentInfo}
+              styles={styles}
+            />
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
+          <Text style={styles.sectionTitle}>{t('profile.sectionSupport')}</Text>
           <View style={styles.grid}>
-            <ActionTile icon={<HelpCircle size={18} color={theme.colors.subtle} strokeWidth={2} />} label="Notes" onPress={showFeedbackInfo} styles={styles} />
-            <ActionTile icon={<ShieldAlert size={18} color={theme.colors.error} strokeWidth={2} />} label="Delete" value="Local" onPress={handleDeleteAccount} styles={styles} />
-            <ActionTile icon={<LogOut size={18} color={theme.colors.subtle} strokeWidth={2} />} label="Reset" onPress={handleResetExperience} styles={styles} />
+            <ActionTile
+              icon={<HelpCircle size={18} color={theme.colors.subtle} strokeWidth={2} />}
+              label={t('profile.tileNotes')}
+              onPress={showFeedbackInfo}
+              styles={styles}
+            />
+            <ActionTile
+              icon={<ShieldAlert size={18} color={theme.colors.error} strokeWidth={2} />}
+              label={t('profile.tileDelete')}
+              value={t('profile.tileDeleteValue')}
+              onPress={handleDeleteAccount}
+              styles={styles}
+            />
+            <ActionTile
+              icon={<LogOut size={18} color={theme.colors.subtle} strokeWidth={2} />}
+              label={t('profile.tileReset')}
+              onPress={handleResetExperience}
+              styles={styles}
+            />
           </View>
         </View>
       </ScrollView>
