@@ -1,19 +1,9 @@
 /**
- * Checkout.tsx  (redesigned)
+ * Checkout.tsx (i18n)
  *
- * Layout:
- *  Grabber → Header → ScrollView[
- *    CheckoutHero (220pt)
- *    PricingComparison (monthly vs annual)
- *    BenefitList (3 rows)
- *    TrustSignals (testimonial + stats + guarantee)
- *    Feature Grid (3 tiles)
- *    PendingOrderCard? / FailedOrderCard?
- *  ] → StickyFooter[
- *    Primary CTA (54pt, plan-aware)
- *    Switch-plan text link
- *    Legal row (Restore · Terms · Privacy)
- *  ]
+ * All user-facing copy now flows through react-i18next via the `checkout.*`
+ * namespace. This file owns flow control + payment side effects only; copy
+ * decisions live in src/i18n/locales/*.json.
  */
 
 import React from 'react';
@@ -34,6 +24,7 @@ import {
   type RouteProp,
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -48,6 +39,7 @@ import { subscriptionService } from '../services/subscriptions';
 import { storage } from '../storage';
 import { useThemeColors, useThemedStyles } from '../theme';
 import type { AppTheme } from '../theme/useTheme';
+import { EventName, track } from '../monitoring';
 import {
   BenefitList,
   CheckoutHero,
@@ -58,69 +50,40 @@ import {
   type PricingPlan,
 } from './Checkout.components';
 
-// ─────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────
-
 const ENABLE_MOCK_PAYMENTS =
   process.env.EXPO_PUBLIC_ENABLE_MOCK_PAYMENTS === 'true';
-
-// CTA label helpers
-function ctaLabel(plan: PricingPlan): string {
-  return plan === 'annual' ? 'Start Annual Plan' : 'Start Monthly Plan';
-}
-
-function ctaSubtext(plan: PricingPlan): string {
-  return plan === 'annual' ? '$39.99 / year · $0.11/day' : '$4.99 / month';
-}
-
-function switchPlanLabel(plan: PricingPlan): string {
-  return plan === 'annual'
-    ? 'Just want monthly? $4.99/mo'
-    : 'Get annual and save 33%';
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type CheckoutRouteProp = RouteProp<RootStackParamList, 'Checkout'>;
 
 type ProcessingState = 'idle' | 'pay' | 'trial' | 'pending' | 'failed';
 
-// ─────────────────────────────────────────────────────────────────
-// Checkout screen
-// ─────────────────────────────────────────────────────────────────
-
 export function Checkout() {
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
   const route = useRoute<CheckoutRouteProp>();
+  const { t } = useTranslation();
   const { completeOnboarding, setMembershipPlan } = useApp();
 
-  // ── State ──────────────────────────────────────────────────────
   const [processing, setProcessing] = React.useState<ProcessingState>('idle');
   const [paymentNotice, setPaymentNotice] = React.useState<string | null>(null);
   const [lastOrderNo, setLastOrderNo] = React.useState<string | null>(null);
-
-  /**
-   * selectedPlan drives both the PricingComparison UI and the CTA label.
-   * Default: 'annual' (best conversion, per design spec).
-   */
-  const [selectedPlan, setSelectedPlan] =
-    React.useState<PricingPlan>('annual');
+  const [selectedPlan, setSelectedPlan] = React.useState<PricingPlan>('annual');
 
   const eventSeq = React.useRef(0);
 
-  // ── Derived ───────────────────────────────────────────────────
   const membershipPlan = route.params?.plan ?? 'pro';
   const heroImage =
     membershipPlan === 'family' ? SWIPE_CARDS[4].image : SWIPE_CARDS[0].image;
   const isBusy = processing === 'pay' || processing === 'trial';
 
-  // ── Helpers ───────────────────────────────────────────────────
+  const ctaLabel = (plan: PricingPlan) =>
+    t(plan === 'annual' ? 'checkout.ctaAnnual' : 'checkout.ctaMonthly');
+  const ctaSubtext = (plan: PricingPlan) =>
+    t(plan === 'annual' ? 'checkout.ctaAnnualSubtext' : 'checkout.ctaMonthlySubtext');
+  const switchPlanLabel = (plan: PricingPlan) =>
+    t(plan === 'annual' ? 'checkout.switchToMonthly' : 'checkout.switchToAnnual');
 
   const getSubscriptionUserId = async () => {
     const userId = await storage.ensureBackendUserId();
@@ -155,10 +118,7 @@ export function Checkout() {
       routes: [
         {
           name: 'MainTabs',
-          params: {
-            screen: 'Home',
-            params: { justUnlocked: membershipPlan },
-          },
+          params: { screen: 'Home', params: { justUnlocked: membershipPlan } },
         },
       ],
     });
@@ -168,9 +128,7 @@ export function Checkout() {
     token: string,
     fallbackPlan: 'pro' | 'family'
   ) => {
-    const membership = await backendApi
-      .getMembership(token)
-      .catch(() => null);
+    const membership = await backendApi.getMembership(token).catch(() => null);
     const effectivePlan =
       membership?.plan === 'pro' || membership?.plan === 'family'
         ? membership.plan
@@ -182,10 +140,7 @@ export function Checkout() {
       routes: [
         {
           name: 'MainTabs',
-          params: {
-            screen: 'Home',
-            params: { justUnlocked: effectivePlan },
-          },
+          params: { screen: 'Home', params: { justUnlocked: effectivePlan } },
         },
       ],
     });
@@ -204,12 +159,15 @@ export function Checkout() {
     return 'pending';
   };
 
-  // ── Payment handlers ──────────────────────────────────────────
-
   const handlePay = async () => {
     if (isBusy) return;
     try {
       await recordEvent('pay', 'processing');
+      track(EventName.CheckoutStarted, {
+        plan: membershipPlan,
+        billingCycle: selectedPlan,
+        source: 'checkout_screen',
+      });
       setPaymentNotice(null);
       setProcessing('pay');
 
@@ -223,6 +181,11 @@ export function Checkout() {
           revenueCatUserId ?? undefined
         );
         await recordEvent('pay', 'success');
+        track(EventName.CheckoutCompleted, {
+          plan: membershipPlan,
+          billingCycle: selectedPlan,
+          provider: 'apple',
+        });
         const resolvedPlan =
           result.plan === 'free' ? membershipPlan : result.plan;
         await setMembershipPlan(resolvedPlan);
@@ -232,10 +195,7 @@ export function Checkout() {
           routes: [
             {
               name: 'MainTabs',
-              params: {
-                screen: 'Home',
-                params: { justUnlocked: resolvedPlan },
-              },
+              params: { screen: 'Home', params: { justUnlocked: resolvedPlan } },
             },
           ],
         });
@@ -251,13 +211,16 @@ export function Checkout() {
         const status = await pollOrderUntilSettled(token, created.order_no);
         if (status === 'paid') {
           await recordEvent('pay', 'success');
+          track(EventName.CheckoutCompleted, {
+            plan: membershipPlan,
+            billingCycle: selectedPlan,
+            provider: 'alipay',
+          });
           await finishPaidMembership(token, membershipPlan);
           return;
         }
         if (status === 'pending') {
-          setPaymentNotice(
-            'Your order is created. Finish payment, then come back here and refresh the status.'
-          );
+          setPaymentNotice(t('checkout.pendingBodyOpened'));
           setProcessing('pending');
           return;
         }
@@ -267,6 +230,11 @@ export function Checkout() {
       if (ENABLE_MOCK_PAYMENTS) {
         await new Promise((resolve) => setTimeout(resolve, 600));
         await recordEvent('pay', 'success');
+        track(EventName.CheckoutCompleted, {
+          plan: membershipPlan,
+          billingCycle: selectedPlan,
+          provider: 'mock',
+        });
         await completeMembership();
         return;
       }
@@ -289,12 +257,17 @@ export function Checkout() {
 
       setPaymentNotice(
         backendUnavailable || iapUnavailable
-          ? 'Apple subscription services are not configured for this build yet. You can keep using Free and finish setup later.'
+          ? t('checkout.failedBackendUnavailable')
           : orderFailed
-            ? 'The order could not be completed. Please try again.'
-            : 'Payment did not finish. Try again or stay on the free plan for now.'
+            ? t('checkout.failedOrder')
+            : t('checkout.failedGeneric')
       );
       await recordEvent('pay', 'failed', reason);
+      track(EventName.CheckoutFailed, {
+        plan: membershipPlan,
+        billingCycle: selectedPlan,
+        reason,
+      });
       setProcessing('failed');
     }
   };
@@ -309,22 +282,23 @@ export function Checkout() {
       const status = await pollOrderUntilSettled(token, lastOrderNo);
       if (status === 'paid') {
         await recordEvent('pay', 'success');
+        track(EventName.CheckoutCompleted, {
+          plan: membershipPlan,
+          billingCycle: selectedPlan,
+          provider: 'alipay',
+        });
         await finishPaidMembership(token, membershipPlan);
         return;
       }
       if (status === 'pending') {
-        setPaymentNotice(
-          'We still have not received a completed payment notification yet. Please refresh again in a moment.'
-        );
+        setPaymentNotice(t('checkout.pendingBodyRefresh'));
         setProcessing('pending');
         return;
       }
       throw new Error(`order status is ${status}`);
     } catch (error) {
       console.warn('Refresh order status failed:', error);
-      setPaymentNotice(
-        'We could not refresh the order status right now. Please try again in a moment.'
-      );
+      setPaymentNotice(t('checkout.failedRefresh'));
       setProcessing('failed');
     }
   };
@@ -333,9 +307,7 @@ export function Checkout() {
     if (isBusy) return;
     if (!ENABLE_MOCK_PAYMENTS) {
       await recordEvent('trial', 'failed', 'trial_not_enabled');
-      setPaymentNotice(
-        'Trial mode is not enabled for this build. Keep using Free or use the real subscription flow.'
-      );
+      setPaymentNotice(t('checkout.trialNotEnabled'));
       setProcessing('failed');
       return;
     }
@@ -358,6 +330,7 @@ export function Checkout() {
     try {
       setProcessing('pay');
       setPaymentNotice(null);
+      track(EventName.SubscriptionRestored, { source: 'checkout_screen' });
       const revenueCatUserId = await getSubscriptionUserId();
       const result = await subscriptionService.restore(
         revenueCatUserId ?? undefined
@@ -374,90 +347,83 @@ export function Checkout() {
         routes: [
           {
             name: 'MainTabs',
-            params: {
-              screen: 'Home',
-              params: { justUnlocked: result.plan },
-            },
+            params: { screen: 'Home', params: { justUnlocked: result.plan } },
           },
         ],
       });
     } catch (error) {
       console.warn('Restore purchase failed:', error);
       setPaymentNotice(
-        error instanceof Error
-          ? error.message
-          : 'Restore failed. Please try again in a moment.'
+        error instanceof Error ? error.message : t('checkout.failedRestoreFallback')
       );
       setProcessing('failed');
     }
   };
 
   const handleTogglePlan = () => {
-    setSelectedPlan((prev) => (prev === 'annual' ? 'monthly' : 'annual'));
+    setSelectedPlan((prev) => {
+      const next: PricingPlan = prev === 'annual' ? 'monthly' : 'annual';
+      track(EventName.PaywallPlanSelected, {
+        plan: membershipPlan,
+        billingCycle: next,
+        source: 'checkout_switch',
+      });
+      return next;
+    });
   };
-
-  // ── Render ────────────────────────────────────────────────────
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Grabber */}
       <View style={styles.grabber} />
 
-      {/* Header */}
       <View style={styles.header}>
         <Pressable
           onPress={() => navigation.goBack()}
-          style={({ pressed }) => [
-            styles.backBtn,
-            pressed && styles.pressedChrome,
-          ]}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('checkout.backA11y')}
           hitSlop={8}
         >
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Text style={styles.headerTitle}>Upgrade to Pro</Text>
+        <Text style={styles.headerTitle}>{t('checkout.headerTitle')}</Text>
         <View style={styles.backBtn} />
       </View>
 
-      {/* Scrollable content */}
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* 1 · Hero – 220pt */}
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <CheckoutHero plan={membershipPlan} heroImage={heroImage} />
 
-        {/* 2 · Price comparison – monthly vs annual */}
         <PricingComparison
           selectedPlan={selectedPlan}
-          onSelectPlan={setSelectedPlan}
+          onSelectPlan={(plan) => {
+            setSelectedPlan(plan);
+            track(EventName.PaywallPlanSelected, {
+              plan: membershipPlan,
+              billingCycle: plan,
+              source: 'checkout_card',
+            });
+          }}
         />
 
-        {/* 3 · Benefit list – emotional / quantified */}
         <BenefitList plan={membershipPlan} />
 
-        {/* 4 · Social proof + trust signals */}
         <TrustSignals />
 
-        {/* 5 · Feature grid – 3 tiles */}
         <View style={styles.benefitGrid}>
           <View style={styles.benefitTile}>
             <Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.benefitText}>Fewer repeats</Text>
+            <Text style={styles.benefitText}>{t('checkout.featureFewerRepeats')}</Text>
           </View>
           <View style={styles.benefitTile}>
             <ScanSearch size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.benefitText}>Menu picks</Text>
+            <Text style={styles.benefitText}>{t('checkout.featureMenuPicks')}</Text>
           </View>
           <View style={styles.benefitTile}>
             <CheckCircle2 size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.benefitText}>Stronger filters</Text>
+            <Text style={styles.benefitText}>{t('checkout.featureStrongerFilters')}</Text>
           </View>
         </View>
 
-        {/* 6 · Inline status cards (pending / failed) */}
         {processing === 'pending' && paymentNotice ? (
           <PendingOrderCard
             message={paymentNotice}
@@ -470,7 +436,6 @@ export function Checkout() {
           <FailedOrderCard message={paymentNotice} onRetry={handlePay} />
         ) : null}
 
-        {/* Trial (mock-only) */}
         {ENABLE_MOCK_PAYMENTS ? (
           <Pressable
             style={({ pressed }) => [
@@ -481,17 +446,15 @@ export function Checkout() {
             onPress={handleTrial}
             disabled={isBusy}
             accessibilityRole="button"
-            accessibilityLabel="Start a trial"
+            accessibilityLabel={t('checkout.trialA11y')}
             accessibilityState={{ disabled: isBusy }}
           >
-            <Text style={styles.trialText}>Start trial (mock)</Text>
+            <Text style={styles.trialText}>{t('checkout.trialButton')}</Text>
           </Pressable>
         ) : null}
       </ScrollView>
 
-      {/* Sticky footer */}
       <View style={styles.footer}>
-        {/* Primary CTA */}
         <Pressable
           style={({ pressed }) => [
             styles.payBtn,
@@ -514,51 +477,37 @@ export function Checkout() {
           )}
         </Pressable>
 
-        {/* Switch plan text link */}
         <Pressable
           onPress={handleTogglePlan}
           style={styles.switchPlanBtn}
           accessibilityRole="button"
           accessibilityLabel={switchPlanLabel(selectedPlan)}
         >
-          <Text style={styles.switchPlanText}>
-            {switchPlanLabel(selectedPlan)}
-          </Text>
+          <Text style={styles.switchPlanText}>{switchPlanLabel(selectedPlan)}</Text>
         </Pressable>
 
-        {/* Legal + Restore row */}
         <View style={styles.legalRow}>
           <Pressable
             onPress={handleRestore}
             disabled={isBusy}
             accessibilityRole="button"
-            accessibilityLabel="Restore purchases"
+            accessibilityLabel={t('checkout.legalRestoreA11y')}
           >
-            <Text style={styles.legalText}>Restore purchase</Text>
+            <Text style={styles.legalText}>{t('checkout.legalRestore')}</Text>
           </Pressable>
           <Text style={styles.legalDot}>·</Text>
-          <Text style={styles.legalText}>Terms</Text>
+          <Text style={styles.legalText}>{t('checkout.legalTerms')}</Text>
           <Text style={styles.legalDot}>·</Text>
-          <Text style={styles.legalText}>Privacy</Text>
+          <Text style={styles.legalText}>{t('checkout.legalPrivacy')}</Text>
         </View>
       </View>
     </SafeAreaView>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Styles
-// ─────────────────────────────────────────────────────────────────
-
 function makeStyles(t: AppTheme) {
   return StyleSheet.create({
-    // ── Layout ─────────────────────────────────────────────────
-    container: {
-      flex: 1,
-      backgroundColor: t.colors.background,
-    },
-
-    // ── Grabber ────────────────────────────────────────────────
+    container: { flex: 1, backgroundColor: t.colors.background },
     grabber: {
       alignSelf: 'center',
       width: 40,
@@ -568,8 +517,6 @@ function makeStyles(t: AppTheme) {
       marginTop: t.spacing.xs,
       marginBottom: t.spacing.xs,
     },
-
-    // ── Header ─────────────────────────────────────────────────
     header: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -577,30 +524,10 @@ function makeStyles(t: AppTheme) {
       paddingHorizontal: t.spacing.md,
       paddingBottom: t.spacing.sm,
     },
-    backBtn: {
-      width: 40,
-      height: 40,
-      alignItems: 'flex-start',
-      justifyContent: 'center',
-    },
-    headerTitle: {
-      ...t.typography.h2,
-      color: t.colors.foreground,
-    },
-
-    // ── Content ────────────────────────────────────────────────
-    content: {
-      paddingHorizontal: t.spacing.md,
-      paddingBottom: t.spacing.lg,
-      // no global gap — subcomponents manage their own bottom margins
-    },
-
-    // ── Feature grid ───────────────────────────────────────────
-    benefitGrid: {
-      flexDirection: 'row',
-      gap: t.spacing.sm,
-      marginBottom: t.spacing.md,
-    },
+    backBtn: { width: 40, height: 40, alignItems: 'flex-start', justifyContent: 'center' },
+    headerTitle: { ...t.typography.h2, color: t.colors.foreground },
+    content: { paddingHorizontal: t.spacing.md, paddingBottom: t.spacing.lg },
+    benefitGrid: { flexDirection: 'row', gap: t.spacing.sm, marginBottom: t.spacing.md },
     benefitTile: {
       flex: 1,
       minHeight: 84,
@@ -610,13 +537,7 @@ function makeStyles(t: AppTheme) {
       justifyContent: 'center',
       gap: 8,
     },
-    benefitText: {
-      ...t.typography.caption,
-      color: t.colors.foreground,
-      fontWeight: '700',
-    },
-
-    // ── Trial button (mock only) ────────────────────────────────
+    benefitText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '700' },
     trialBtn: {
       backgroundColor: t.colors.surface,
       borderWidth: 1,
@@ -627,13 +548,7 @@ function makeStyles(t: AppTheme) {
       justifyContent: 'center',
       marginBottom: t.spacing.md,
     },
-    trialText: {
-      ...t.typography.caption,
-      color: t.colors.foreground,
-      fontWeight: '600',
-    },
-
-    // ── Footer ─────────────────────────────────────────────────
+    trialText: { ...t.typography.caption, color: t.colors.foreground, fontWeight: '600' },
     footer: {
       paddingHorizontal: t.spacing.md,
       paddingTop: t.spacing.md,
@@ -643,8 +558,6 @@ function makeStyles(t: AppTheme) {
       backgroundColor: t.colors.surface,
       gap: t.spacing.xs,
     },
-
-    // Primary CTA
     payBtn: {
       backgroundColor: t.colors.primary,
       height: 54,
@@ -652,59 +565,19 @@ function makeStyles(t: AppTheme) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    payBtnInner: {
-      alignItems: 'center',
-      gap: 2,
-    },
-    payText: {
-      fontSize: 17,
-      color: '#FFFFFF',
-      fontWeight: '700',
-    },
-    paySubtext: {
-      fontSize: 12,
-      color: 'rgba(255,255,255,0.82)',
-      fontWeight: '500',
-    },
-
-    // Switch plan link
-    switchPlanBtn: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 36,
-    },
-    switchPlanText: {
-      fontSize: 14,
-      color: t.colors.primaryDark,
-      fontWeight: '600',
-    },
-
-    // Legal row
-    legalRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: 8,
-      alignItems: 'center',
-    },
-    legalText: {
-      fontSize: 12,
-      color: t.colors.subtle,
-    },
-    legalDot: {
-      fontSize: 12,
-      color: t.colors.borderLight,
-    },
-
-    // ── Interaction ────────────────────────────────────────────
-    pressedChrome: {
-      opacity: t.interaction.chipPressedOpacity,
-    },
+    payBtnInner: { alignItems: 'center', gap: 2 },
+    payText: { fontSize: 17, color: '#FFFFFF', fontWeight: '700' },
+    paySubtext: { fontSize: 12, color: 'rgba(255,255,255,0.82)', fontWeight: '500' },
+    switchPlanBtn: { alignItems: 'center', justifyContent: 'center', minHeight: 36 },
+    switchPlanText: { fontSize: 14, color: t.colors.primaryDark, fontWeight: '600' },
+    legalRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, alignItems: 'center' },
+    legalText: { fontSize: 12, color: t.colors.subtle },
+    legalDot: { fontSize: 12, color: t.colors.borderLight },
+    pressedChrome: { opacity: t.interaction.chipPressedOpacity },
     payBtnPressed: {
       opacity: t.interaction.pressedOpacity,
       transform: [{ scale: t.interaction.pressedScale }],
     },
-    btnDisabled: {
-      opacity: 0.42,
-    },
+    btnDisabled: { opacity: 0.42 },
   });
 }
