@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, CheckCircle2, Heart, MapPin, Share2, ShieldCheck, Star } from 'lucide-react-native';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
@@ -18,6 +19,7 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type DetailRouteProp = RouteProp<RootStackParamList, 'Detail'>;
 
 export function Detail() {
+  const { t } = useTranslation();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
@@ -51,10 +53,10 @@ export function Detail() {
 
   const compatibility =
     selectedRestrictions.length === 0
-      ? 'No dietary restrictions are set yet, so this ranking leans on taste match, timing, and nearby quality signals.'
+      ? t('detail.compatibilityNoRestrictions')
       : dish.restrictionConflicts.length === 0
-        ? `This pick avoids your current restrictions: ${selectedRestrictions.join(', ')}.`
-        : `Watch for ${dish.restrictionConflicts.join(', ')} in this dish before you order.`;
+        ? t('detail.compatibilityClean', { list: selectedRestrictions.join(', ') })
+        : t('detail.compatibilityConflict', { list: dish.restrictionConflicts.join(', ') });
 
   const handleOpenMap = async () => {
     const query = encodeURIComponent(`${dish.restaurantName} ${dish.restaurantAddress}`);
@@ -63,13 +65,13 @@ export function Detail() {
     try {
       await Linking.openURL(url);
     } catch (error) {
-      Alert.alert('Map unavailable', error instanceof Error ? error.message : 'Please try again in a moment.');
+      Alert.alert(t('detail.mapUnavailableTitle'), error instanceof Error ? error.message : t('detail.mapUnavailableBody'));
     }
   };
 
   const handleShare = async () => {
     await Share.share({
-      message: `A strong pick from ${dish.restaurantName}: ${dish.name}.`,
+      message: t('detail.shareMessage', { restaurant: dish.restaurantName, name: dish.name }),
     });
   };
 
@@ -83,21 +85,21 @@ export function Detail() {
       category: dish.restaurantName,
       status: 'Liked',
     });
-    Alert.alert('Saved for today', `${dish.name} is now in your decision history for a faster return later.`);
+    Alert.alert(t('detail.saveAlertTitle'), t('detail.saveAlertBody', { name: dish.name }));
   };
 
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.navBarOuter}>
         <Animated.View style={[styles.navBar, navBarStyle]}>
-          <Pressable style={({ pressed }) => [styles.navCircle, pressed && styles.pressedChrome]} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back">
+          <Pressable style={({ pressed }) => [styles.navCircle, pressed && styles.pressedChrome]} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel={t('detail.a11yBack')}>
             <ArrowLeft size={18} color={theme.colors.foreground} strokeWidth={2} />
           </Pressable>
           <View style={styles.navRight}>
-            <Pressable style={({ pressed }) => [styles.navCircle, pressed && styles.pressedChrome]} onPress={handleShare} accessibilityRole="button" accessibilityLabel="Share this pick">
+            <Pressable style={({ pressed }) => [styles.navCircle, pressed && styles.pressedChrome]} onPress={handleShare} accessibilityRole="button" accessibilityLabel={t('detail.a11yShare')}>
               <Share2 size={16} color={theme.colors.foreground} strokeWidth={2} />
             </Pressable>
-            <Pressable style={({ pressed }) => [styles.navCircle, pressed && styles.pressedChrome]} onPress={() => toggleFavorite(dish.id)} accessibilityRole="button" accessibilityLabel={liked ? 'Remove from saved' : 'Save this pick'}>
+            <Pressable style={({ pressed }) => [styles.navCircle, pressed && styles.pressedChrome]} onPress={() => toggleFavorite(dish.id)} accessibilityRole="button" accessibilityLabel={liked ? t('detail.a11yUnsave') : t('detail.a11ySave')}>
               <Heart size={16} color={liked ? theme.colors.error : theme.colors.foreground} fill={liked ? theme.colors.error : 'transparent'} strokeWidth={2} />
             </Pressable>
           </View>
@@ -143,25 +145,25 @@ export function Detail() {
             <View style={styles.restaurantCopy}>
               <Text style={styles.restaurantText}>{dish.restaurantName}</Text>
               <Text style={styles.restaurantSubtext}>{dish.restaurantAddress}</Text>
-              <Text style={styles.restaurantActionText}>Open in Maps</Text>
+              <Text style={styles.restaurantActionText}>{t('detail.restaurantAction')}</Text>
             </View>
           </Pressable>
 
           <View style={styles.quickActionRow}>
             <Pressable style={({ pressed }) => [styles.quickActionCard, pressed && styles.pressedCard]} onPress={handleOpenMap}>
               <MapPin size={18} color={theme.colors.primary} strokeWidth={2} />
-              <Text style={styles.quickActionLabel}>Next step</Text>
-              <Text style={styles.quickActionValue}>Route there</Text>
+              <Text style={styles.quickActionLabel}>{t('detail.quickActionNextStep')}</Text>
+              <Text style={styles.quickActionValue}>{t('detail.quickActionRoute')}</Text>
             </Pressable>
             <Pressable style={({ pressed }) => [styles.quickActionCard, pressed && styles.pressedCard]} onPress={handleShare}>
               <Share2 size={18} color={theme.colors.primary} strokeWidth={2} />
-              <Text style={styles.quickActionLabel}>Share</Text>
-              <Text style={styles.quickActionValue}>Ask someone</Text>
+              <Text style={styles.quickActionLabel}>{t('detail.quickActionShare')}</Text>
+              <Text style={styles.quickActionValue}>{t('detail.quickActionAsk')}</Text>
             </Pressable>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Why it fits</Text>
+            <Text style={styles.sectionTitle}>{t('detail.sectionWhy')}</Text>
             {reasons.map((reason) => (
               <View key={reason} style={styles.reasonRow}>
                 <CheckCircle2 size={14} color={theme.colors.primary} strokeWidth={2.3} />
@@ -171,7 +173,7 @@ export function Detail() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>At a glance</Text>
+            <Text style={styles.sectionTitle}>{t('detail.sectionGlance')}</Text>
             <View style={styles.snapshotGrid}>
               {decisionSnapshot.map((item) => (
                 <View key={item.label} style={styles.snapshotCard}>
@@ -183,24 +185,24 @@ export function Detail() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Dietary fit</Text>
+            <Text style={styles.sectionTitle}>{t('detail.sectionDietary')}</Text>
             <View style={styles.compatibilityCard}>
               <View style={styles.compatibilityHeader}>
                 <ShieldCheck size={16} color={theme.colors.primary} strokeWidth={2} />
-                <Text style={styles.compatibilityTitle}>Restriction check</Text>
+                <Text style={styles.compatibilityTitle}>{t('detail.restrictionCheck')}</Text>
               </View>
               <Text style={styles.compatibilityBody}>{compatibility}</Text>
               <View style={styles.nutritionRow}>
                 <View style={styles.nutritionCell}>
-                  <Text style={styles.nutritionLabel}>Calories</Text>
-                  <Text style={styles.nutritionValue}>{dish.nutrition.calories} kcal</Text>
+                  <Text style={styles.nutritionLabel}>{t('detail.nutritionCalories')}</Text>
+                  <Text style={styles.nutritionValue}>{t('detail.caloriesUnit', { count: dish.nutrition.calories })}</Text>
                 </View>
                 <View style={styles.nutritionCell}>
-                  <Text style={styles.nutritionLabel}>Protein</Text>
+                  <Text style={styles.nutritionLabel}>{t('detail.nutritionProtein')}</Text>
                   <Text style={styles.nutritionValue}>{dish.nutrition.protein}</Text>
                 </View>
                 <View style={styles.nutritionCell}>
-                  <Text style={styles.nutritionLabel}>Fat</Text>
+                  <Text style={styles.nutritionLabel}>{t('detail.nutritionFat')}</Text>
                   <Text style={styles.nutritionValue}>{dish.nutrition.fat}</Text>
                 </View>
               </View>
@@ -208,7 +210,7 @@ export function Detail() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>More from here</Text>
+            <Text style={styles.sectionTitle}>{t('detail.sectionMore')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
               {related.map(({ dish: alternative }) => (
                 <Pressable key={alternative.id} style={({ pressed }) => [styles.relatedCard, pressed && styles.pressedCard]} onPress={() => navigation.replace('Detail', { itemId: alternative.id, title: alternative.name, image: alternative.image })}>
@@ -228,18 +230,18 @@ export function Detail() {
 
       <SafeAreaView edges={['bottom']} style={styles.actionBar}>
         <View>
-          <Text style={styles.actionLabel}>Today</Text>
+          <Text style={styles.actionLabel}>{t('detail.actionLabelToday')}</Text>
           <Text style={styles.actionSummary} numberOfLines={1}>{dish.name}</Text>
         </View>
         <View style={styles.actionButtons}>
           <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressedChrome]} onPress={handleOpenMap}>
-            <Text style={styles.secondaryButtonText}>Map</Text>
+            <Text style={styles.secondaryButtonText}>{t('detail.actionMap')}</Text>
           </Pressable>
           <Pressable style={({ pressed }) => [styles.secondaryButton, liked && styles.secondaryButtonActive, pressed && styles.pressedChrome]} onPress={() => toggleFavorite(dish.id)}>
-            <Text style={[styles.secondaryButtonText, liked && styles.secondaryButtonTextActive]}>{liked ? 'Saved' : 'Save'}</Text>
+            <Text style={[styles.secondaryButtonText, liked && styles.secondaryButtonTextActive]}>{liked ? t('detail.actionSaved') : t('detail.actionSave')}</Text>
           </Pressable>
           <Pressable style={({ pressed }) => [styles.primaryButton, pressed && styles.pressedChrome]} onPress={handleChoose}>
-            <Text style={styles.primaryButtonText}>Choose</Text>
+            <Text style={styles.primaryButtonText}>{t('detail.actionChoose')}</Text>
           </Pressable>
         </View>
       </SafeAreaView>

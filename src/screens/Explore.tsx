@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { Compass, MapPin, RefreshCw, Search, Sparkles, User, Users } from 'lucide-react-native';
 import { SearchOverlay } from '../components/SearchOverlay';
 import { brand, type HomeFilter } from '../config/brand';
@@ -78,6 +79,7 @@ function IconToggle({
 }
 
 export function Explore() {
+  const { t } = useTranslation();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const route = useRoute<ExploreRouteProp>();
@@ -201,7 +203,7 @@ export function Explore() {
   const saveCurrentSearch = async (key: 'home' | 'work') => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return;
-    await saveAreaPreset(key, { label: key === 'home' ? 'Home' : 'Work', query: trimmed });
+    await saveAreaPreset(key, { label: key === 'home' ? t('explore.saveAreaHomeLabel') : t('explore.saveAreaWorkLabel'), query: trimmed });
   };
 
   const openRestaurantPreview = (restaurantName: string) => {
@@ -217,7 +219,7 @@ export function Explore() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.topNav}>
         <View style={styles.topNavLead}>
-          <Text style={styles.navTitle}>Explore</Text>
+          <Text style={styles.navTitle}>{t('explore.navTitle')}</Text>
           {locationContext?.label ? (
             <View style={styles.inlineArea}>
               <MapPin size={12} color={theme.colors.primary} strokeWidth={2} />
@@ -228,10 +230,10 @@ export function Explore() {
           ) : null}
         </View>
         <View style={styles.navActions}>
-          <Pressable style={({ pressed }) => [styles.navBtn, pressed && styles.pressedChrome]} onPress={() => setShowSearch(true)} accessibilityRole="button" accessibilityLabel="Search">
+          <Pressable style={({ pressed }) => [styles.navBtn, pressed && styles.pressedChrome]} onPress={() => setShowSearch(true)} accessibilityRole="button" accessibilityLabel={t('explore.a11ySearch')}>
             <Search size={18} color={theme.colors.foreground} strokeWidth={1.8} />
           </Pressable>
-          <Pressable style={({ pressed }) => [styles.navBtn, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })} accessibilityRole="button" accessibilityLabel="Open profile">
+          <Pressable style={({ pressed }) => [styles.navBtn, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })} accessibilityRole="button" accessibilityLabel={t('explore.a11yProfile')}>
             <User size={18} color={theme.colors.foreground} strokeWidth={1.8} />
           </Pressable>
         </View>
@@ -239,20 +241,20 @@ export function Explore() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryEyebrow}>Built around {locationLabel}</Text>
-          <Text style={styles.summaryTitle}>Find a better answer faster.</Text>
+          <Text style={styles.summaryEyebrow}>{t('explore.summaryEyebrow', { location: locationLabel })}</Text>
+          <Text style={styles.summaryTitle}>{t('explore.summaryTitle')}</Text>
           <View style={styles.summaryStats}>
             <View style={styles.summaryStat}>
               <Text style={styles.summaryStatValue}>{topPicks.length}</Text>
-              <Text style={styles.summaryStatLabel}>Top picks</Text>
+              <Text style={styles.summaryStatLabel}>{t('explore.statTopPicks')}</Text>
             </View>
             <View style={styles.summaryStat}>
               <Text style={styles.summaryStatValue}>{nearbyRestaurants.length}</Text>
-              <Text style={styles.summaryStatLabel}>Nearby</Text>
+              <Text style={styles.summaryStatLabel}>{t('explore.statNearby')}</Text>
             </View>
             <View style={styles.summaryStat}>
               <Text style={styles.summaryStatValue}>{visibleCards.length}</Text>
-              <Text style={styles.summaryStatLabel}>Fits</Text>
+              <Text style={styles.summaryStatLabel}>{t('explore.statFits')}</Text>
             </View>
           </View>
           {activeSignals.length > 0 ? (
@@ -269,22 +271,22 @@ export function Explore() {
         <View style={styles.savedAreaRow}>
           <Pressable style={({ pressed }) => [styles.savedAreaChip, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}>
             <Compass size={14} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.savedAreaText}>Deck</Text>
+            <Text style={styles.savedAreaText}>{t('explore.savedAreaDeck')}</Text>
           </Pressable>
           <Pressable style={({ pressed }) => [styles.savedAreaChip, pressed && styles.pressedChrome]} onPress={() => savedAreas.home && setLocationSelection(buildManualAreaContext(savedAreas.home.query))}>
             <MapPin size={14} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.savedAreaText}>{savedAreas.home?.query ?? 'Home'}</Text>
+            <Text style={styles.savedAreaText}>{savedAreas.home?.query ?? t('explore.savedAreaHomeFallback')}</Text>
           </Pressable>
           <Pressable style={({ pressed }) => [styles.savedAreaChip, pressed && styles.pressedChrome]} onPress={() => savedAreas.work && setLocationSelection(buildManualAreaContext(savedAreas.work.query))}>
             <MapPin size={14} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.savedAreaText}>{savedAreas.work?.query ?? 'Work'}</Text>
+            <Text style={styles.savedAreaText}>{savedAreas.work?.query ?? t('explore.savedAreaWorkFallback')}</Text>
           </Pressable>
         </View>
 
         <View style={styles.toggleRow}>
           <IconToggle
             icon={<RefreshCw size={16} color={decisionSettings.keepItFresh ? '#FFFFFF' : theme.colors.muted} strokeWidth={2} />}
-            label="Fresh"
+            label={t('explore.filterToggleFresh')}
             active={decisionSettings.keepItFresh}
             onPress={() => void updateDecisionSettings({ keepItFresh: !decisionSettings.keepItFresh })}
             styles={styles}
@@ -292,7 +294,7 @@ export function Explore() {
           />
           <IconToggle
             icon={<Users size={16} color={decisionSettings.forTwo ? '#FFFFFF' : theme.colors.muted} strokeWidth={2} />}
-            label="For two"
+            label={t('explore.filterToggleForTwo')}
             active={decisionSettings.forTwo}
             onPress={() => void updateDecisionSettings({ forTwo: !decisionSettings.forTwo })}
             styles={styles}
@@ -310,7 +312,7 @@ export function Explore() {
                 style={({ pressed }) => [styles.filterChip, active && styles.filterChipActive, pressed && styles.pressedChrome]}
                 onPress={() => setScenario(item)}
                 accessibilityRole="button"
-                accessibilityLabel={`Filter ${item}`}
+                accessibilityLabel={t('explore.a11yFilter', { name: item })}
                 accessibilityState={{ selected: active }}
               >
                 <Icon size={14} color={active ? '#FFFFFF' : theme.colors.muted} strokeWidth={2} />
@@ -329,10 +331,10 @@ export function Explore() {
               </Text>
             </Pressable>
             <Pressable style={({ pressed }) => [styles.microAction, pressed && styles.pressedChrome]} onPress={() => void saveCurrentSearch('home')}>
-              <Text style={styles.microActionText}>Save Home</Text>
+              <Text style={styles.microActionText}>{t('explore.microSaveHome')}</Text>
             </Pressable>
             <Pressable style={({ pressed }) => [styles.microAction, pressed && styles.pressedChrome]} onPress={() => void saveCurrentSearch('work')}>
-              <Text style={styles.microActionText}>Save Work</Text>
+              <Text style={styles.microActionText}>{t('explore.microSaveWork')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -340,9 +342,9 @@ export function Explore() {
         {topPicks.length > 0 ? (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Top 3</Text>
+              <Text style={styles.sectionTitle}>{t('explore.sectionTopPicks')}</Text>
               <Pressable style={({ pressed }) => [styles.sectionAction, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })}>
-                <Text style={styles.sectionActionText}>Use deck</Text>
+                <Text style={styles.sectionActionText}>{t('explore.sectionTopPicksAction')}</Text>
               </Pressable>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topPicksRow}>
@@ -382,7 +384,7 @@ export function Explore() {
         {featuredNearby ? (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Spotlight nearby</Text>
+              <Text style={styles.sectionTitle}>{t('explore.sectionSpotlight')}</Text>
             </View>
             <Pressable
               style={({ pressed }) => [styles.featuredNearbyCard, pressed && styles.pressedChrome]}
@@ -422,7 +424,7 @@ export function Explore() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Nearby</Text>
+            <Text style={styles.sectionTitle}>{t('explore.sectionNearby')}</Text>
           </View>
           {nearbyRestaurants.length === 0 ? (
             <View style={styles.emptyBlock}>
@@ -459,7 +461,7 @@ export function Explore() {
                       {restaurant.name}
                     </Text>
                     <Text style={styles.restaurantVisualBody} numberOfLines={2}>
-                      {restaurant.openNow === false ? 'Closed right now' : restaurant.editorialSummary ?? restaurant.address}
+                      {restaurant.openNow === false ? t('explore.restaurantClosed') : restaurant.editorialSummary ?? restaurant.address}
                     </Text>
                   </View>
                 </Pressable>
@@ -470,7 +472,7 @@ export function Explore() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Fits</Text>
+            <Text style={styles.sectionTitle}>{t('explore.sectionFits')}</Text>
           </View>
           {visibleCards.length === 0 ? (
             <View style={styles.emptyBlock}>

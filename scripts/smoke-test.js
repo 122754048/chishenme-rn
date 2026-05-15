@@ -104,12 +104,13 @@ assert(
   homeCode.includes("home.unlockTitlePro") || homeCode.includes("home.unlockTitleFamily"),
   'home unlock notice should use t() keys'
 );
-assert(detailCode.includes('Snapshot') || detailCode.includes('buildDecisionSnapshot'), 'detail should include decision framing, not just presentation');
-assert(exploreCode.includes('Top 3'), 'explore should own the curated daily picks');
-assert(exploreCode.includes('buildManualAreaContext') || exploreCode.includes('Save Home'), 'explore should support using a manual area for the home deck');
-assert(exploreCode.includes('Nearby'), 'explore should show nearby restaurant trust signals');
-assert(exploreCode.includes('Fresh'), 'explore should expose repeat-avoidance mode');
-assert(exploreCode.includes('For two'), 'explore should expose duo mode');
+assert(detailCode.includes('Snapshot') || detailCode.includes('buildDecisionSnapshot') || detailCode.includes("detail.sectionGlance"), 'detail should include decision framing, not just presentation');
+assert(detailCode.includes("useTranslation") && detailCode.includes("detail.actionChoose"), 'detail should be i18n-aware (decision CTA via t())');
+assert(exploreCode.includes("useTranslation") && exploreCode.includes("explore.sectionTopPicks"), 'explore should own the curated daily picks (via t() key)');
+assert(exploreCode.includes('buildManualAreaContext') || exploreCode.includes("explore.microSaveHome"), 'explore should support using a manual area for the home deck');
+assert(exploreCode.includes("explore.sectionNearby"), 'explore should show nearby restaurant trust signals via t()');
+assert(exploreCode.includes("explore.filterToggleFresh"), 'explore should expose repeat-avoidance mode (Fresh) via t()');
+assert(exploreCode.includes("explore.filterToggleForTwo"), 'explore should expose duo mode (For two) via t()');
 assert(fs.readFileSync(path.join(root, 'src', 'screens', 'History.tsx'), 'utf8').includes('history.revisitTitle'), 'history should help users revisit strong prior picks (via t() key)');
 assert(profileCode.includes("useTranslation"), 'profile should be i18n-aware (uses useTranslation)');
 assert(profileCode.includes("profile.alertDeleteTitle") || profileCode.includes("deleteAccount"), 'profile should expose account deletion via t() or storage state');
