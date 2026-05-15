@@ -103,15 +103,18 @@ assert(profileCode.includes("profile.alertDeleteTitle") || profileCode.includes(
 assert(profileCode.includes('saveAreaPreset') || profileCode.includes('tileAreas') || profileCode.includes('Areas'), 'profile should reflect saved location context');
 assert(upgradeCode.includes("useTranslation"), 'upgrade should be i18n-aware (uses useTranslation)');
 assert(upgradeCode.includes('PaywallViewed') || upgradeCode.includes('paywall_viewed') || upgradeCode.includes("upgrade.heroTitle"), 'upgrade should still drive paywall conversion (event or copy)');
+assert(checkoutCode.includes("useTranslation"), 'checkout should be i18n-aware (uses useTranslation)');
 assert(
-  checkoutCode.includes('Confirm subscription') ||
-    checkoutCode.includes('Start Annual Plan') ||
-    checkoutCode.includes('Start Monthly Plan'),
-  'checkout should have a productized English CTA (Start Annual/Monthly Plan or Confirm subscription)'
+  checkoutCode.includes('checkout.ctaAnnual') || checkoutCode.includes('checkout.ctaMonthly'),
+  'checkout should drive purchase via t() CTA keys'
 );
 assert(
-  checkoutCode.includes('Restore purchases') || checkoutCode.includes('Restore purchase'),
-  'checkout should expose restore purchase'
+  checkoutCode.includes('CheckoutStarted') && checkoutCode.includes('CheckoutCompleted') && checkoutCode.includes('CheckoutFailed'),
+  'checkout should emit canonical checkout funnel events'
+);
+assert(
+  checkoutCode.includes('checkout.legalRestore') || checkoutCode.includes('handleRestore'),
+  'checkout should expose restore purchase (handler or t() key)'
 );
 assert(menuScanCode.includes('Scan a menu'), 'menu scan screen should exist');
 assert(menuScanCode.includes('Best for you'), 'menu scan results should group recommendations');
@@ -155,5 +158,18 @@ assert(locales.en.onboarding.cuisines.cta === 'Continue', 'en: cuisine CTA copy'
 assert(typeof locales.en.home.quotaRemaining_one === 'string' && typeof locales.en.home.quotaRemaining_other === 'string', 'en: quotaRemaining must have plural variants');
 assert(locales.en.profile.alertDeleteTitle.toLowerCase().includes('delete'), 'en: profile delete title should mention delete');
 assert(locales.en.upgrade.heroTitle.length > 0, 'en: upgrade hero title must be non-empty');
+assert(
+  locales.en.checkout.ctaAnnual.includes('Annual') && locales.en.checkout.ctaMonthly.includes('Monthly'),
+  'en: checkout CTAs should reference Annual / Monthly plans'
+);
+assert(
+  locales.en.checkout.legalRestore.toLowerCase().includes('restore'),
+  'en: checkout legalRestore should mention restore'
+);
+assert(
+  locales.en.checkout.pricingAnnualAmount.startsWith('$') &&
+    locales.en.checkout.pricingMonthlyAmount.startsWith('$'),
+  'en: checkout prices should remain in USD until per-locale pricing lands'
+);
 
 console.log('Smoke test passed.');
