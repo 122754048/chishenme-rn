@@ -66,7 +66,7 @@ export function CheckoutHero({ plan, heroImage }: CheckoutHeroProps) {
   return (
     <View style={styles.heroZone}>
       <View style={StyleSheet.absoluteFill}>
-        <SkeletonImage src={heroImage} alt={badgeLabel} />
+        <SkeletonImage src={heroImage} alt={badgeLabel} priority="high" />
       </View>
 
       <LinearGradient

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Image, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,9 +16,24 @@ interface SkeletonImageProps {
   src: string;
   alt: string;
   style?: ViewStyle;
+  /**
+   * Cache policy passed through to expo-image. Defaults to 'memory-disk'
+   * which gives offline reads + warm RAM hits across screen mounts.
+   */
+  cachePolicy?: 'none' | 'disk' | 'memory' | 'memory-disk';
+  /**
+   * expo-image priority hint. Use 'high' for above-the-fold hero images.
+   */
+  priority?: 'low' | 'normal' | 'high';
 }
 
-export function SkeletonImage({ src, alt, style }: SkeletonImageProps) {
+export function SkeletonImage({
+  src,
+  alt,
+  style,
+  cachePolicy = 'memory-disk',
+  priority = 'normal',
+}: SkeletonImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
@@ -64,15 +80,23 @@ export function SkeletonImage({ src, alt, style }: SkeletonImageProps) {
         </View>
       )}
 
-      {/* Actual image with fade-in */}
+      {/* Actual image with fade-in (powered by expo-image: cache + decoding off main thread) */}
       {!error && (
         <Animated.View style={[styles.imageWrap, imageAnimStyle]}>
-          <Image
+          <ExpoImage
             source={{ uri: src }}
             style={styles.image}
             onLoad={handleLoad}
             onError={() => setError(true)}
-            resizeMode="cover"
+            contentFit="cover"
+            cachePolicy={cachePolicy}
+            priority={priority}
+            // expo-image performs its own decode + crossfade; we keep the
+            // outer Animated.View opacity to coordinate with our shimmer
+            // skeleton state, and disable expo-image's transition so the
+            // two animations don't fight.
+            transition={0}
+            accessible
             accessibilityLabel={alt}
           />
         </Animated.View>
