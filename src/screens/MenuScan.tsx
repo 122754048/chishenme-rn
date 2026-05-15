@@ -3,6 +3,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Camera, ImageUp, ShieldAlert, Sparkles } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
 import type { RootStackParamList } from '../navigation/types';
@@ -14,6 +15,7 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type MenuScanRouteProp = RouteProp<RootStackParamList, 'MenuScan'>;
 
 export function MenuScan() {
+  const { t } = useTranslation();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
@@ -30,12 +32,12 @@ export function MenuScan() {
     caution?: string | null;
   }>>([]);
 
-  const restaurantName = route.params?.restaurantName ?? 'this restaurant';
+  const restaurantName = route.params?.restaurantName ?? t('menuScan.heroTitle');
   const profileChips = [...selectedCuisines.slice(0, 2), ...selectedRestrictions.slice(0, 2)].slice(0, 4);
 
   const runScan = async (source: 'camera' | 'library') => {
     if (!backendToken) {
-      Alert.alert('Menu scan unavailable', 'Menu scan needs the app service configuration before it can process images.');
+      Alert.alert(t('errors.menuScanUnavailableTitle'), t('errors.menuScanUnavailableBody'));
       return;
     }
 
@@ -48,9 +50,9 @@ export function MenuScan() {
         restaurantName,
       });
       setItems(result.items);
-      setNote(result.note ?? (result.source === 'fallback' ? 'Using a fallback recommendation set.' : null));
+      setNote(result.note ?? (result.source === 'fallback' ? t('errors.menuScanFallback') : null));
     } catch (error) {
-      Alert.alert('Scan interrupted', error instanceof Error ? error.message : 'Please try again with a clearer image.');
+      Alert.alert(t('errors.menuScanInterruptedTitle'), error instanceof Error ? error.message : t('errors.menuScanInterruptedBody'));
     } finally {
       setLoading(null);
     }
@@ -64,18 +66,18 @@ export function MenuScan() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.grabber} />
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel="Go back">
+        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel={t('menuScan.a11yBack')}>
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Text style={styles.headerTitle}>Scan a menu</Text>
+        <Text style={styles.headerTitle}>{t('menuScan.navTitle')}</Text>
         <View style={styles.backBtn} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         <View style={styles.heroCard}>
           <Text style={styles.heroEyebrow}>For {restaurantName}</Text>
-          <Text style={styles.heroTitle}>Scan a menu</Text>
-          <Text style={styles.heroBody}>Photo or screenshot. We&apos;ll sort the safest picks first.</Text>
+          <Text style={styles.heroTitle}>{t('menuScan.heroTitle')}</Text>
+          <Text style={styles.heroBody}>{t('menuScan.heroBody')}</Text>
           {profileChips.length > 0 ? (
             <View style={styles.profileChipRow}>
               {profileChips.map((chip) => (
@@ -92,26 +94,26 @@ export function MenuScan() {
             style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
             onPress={() => runScan('camera')}
             accessibilityRole="button"
-            accessibilityLabel="Take a photo of a menu"
+            accessibilityLabel={t('menuScan.a11yTakePhoto')}
           >
             <View style={styles.actionIcon}>
               <Camera size={18} color={theme.colors.primary} strokeWidth={2} />
             </View>
-            <Text style={styles.actionTitle}>{loading === 'camera' ? 'Opening camera...' : 'Take photo'}</Text>
-            <Text style={styles.actionBody}>Printed menus</Text>
+            <Text style={styles.actionTitle}>{loading === 'camera' ? t('common.loading') : t('menuScan.ctaTakePhoto')}</Text>
+            <Text style={styles.actionBody}>{t('menuScan.sourcePrinted')}</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [styles.actionCard, pressed && styles.actionCardPressed]}
             onPress={() => runScan('library')}
             accessibilityRole="button"
-            accessibilityLabel="Upload a screenshot of a menu"
+            accessibilityLabel={t('menuScan.a11yUploadPhoto')}
           >
             <View style={styles.actionIcon}>
               <ImageUp size={18} color={theme.colors.primary} strokeWidth={2} />
             </View>
-            <Text style={styles.actionTitle}>{loading === 'library' ? 'Opening photos...' : 'Upload screenshot'}</Text>
-            <Text style={styles.actionBody}>Apps and websites</Text>
+            <Text style={styles.actionTitle}>{loading === 'library' ? t('common.loading') : t('menuScan.ctaUpload')}</Text>
+            <Text style={styles.actionBody}>{t('menuScan.sourceDigital')}</Text>
           </Pressable>
         </View>
 
@@ -126,15 +128,15 @@ export function MenuScan() {
           <View style={styles.summaryRow}>
             <View style={styles.summaryChip}>
               <Text style={styles.summaryChipValue}>{best.length}</Text>
-              <Text style={styles.summaryChipLabel}>Best</Text>
+              <Text style={styles.summaryChipLabel}>{t('menuScan.sectionBestShort')}</Text>
             </View>
             <View style={styles.summaryChip}>
               <Text style={styles.summaryChipValue}>{safe.length}</Text>
-              <Text style={styles.summaryChipLabel}>Safe</Text>
+              <Text style={styles.summaryChipLabel}>{t('menuScan.sectionSafeShort')}</Text>
             </View>
             <View style={styles.summaryChip}>
               <Text style={styles.summaryChipValue}>{avoid.length}</Text>
-              <Text style={styles.summaryChipLabel}>Avoid</Text>
+              <Text style={styles.summaryChipLabel}>{t('menuScan.sectionAvoidShort')}</Text>
             </View>
           </View>
         ) : null}
@@ -142,14 +144,14 @@ export function MenuScan() {
         {items.length === 0 ? (
           <View style={styles.emptyCard}>
             <Sparkles size={18} color={theme.colors.primary} strokeWidth={2} />
-            <Text style={styles.emptyTitle}>No menu items yet</Text>
-            <Text style={styles.emptyBody}>Your picks will show up here.</Text>
+            <Text style={styles.emptyTitle}>{t('menuScan.emptyTitle')}</Text>
+            <Text style={styles.emptyBody}>{t('menuScan.emptyBody')}</Text>
           </View>
         ) : (
           <>
-            <Section title="Best for you" tone="best" items={best} styles={styles} />
-            <Section title="Safe picks" tone="safe" items={safe} styles={styles} />
-            <Section title="Avoid" tone="avoid" items={avoid} styles={styles} />
+            <Section title={t('menuScan.sectionBest')} tone="best" items={best} styles={styles} />
+            <Section title={t('menuScan.sectionSafe')} tone="safe" items={safe} styles={styles} />
+            <Section title={t('menuScan.sectionAvoid')} tone="avoid" items={avoid} styles={styles} />
           </>
         )}
       </ScrollView>

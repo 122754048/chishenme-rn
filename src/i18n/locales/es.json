@@ -98,15 +98,34 @@
     "searchPlaceholder": "Busca platos, cocinas o ambientes"
   },
   "favorites": {
-    "title": "Guardados",
-    "emptyTitle": "Aún no hay nada guardado",
-    "emptyBody": "Guarda algunas opciones fuertes para después.",
-    "emptyCta": "Volver a Inicio"
+    "navTitle": "Guardados",
+    "a11yMore": "Abrir historial de decisiones",
+    "a11yRemoveSaved": "Quitar de guardados",
+    "summaryEyebrow": "Para más tarde",
+    "summaryTitle_one": "{{count}} opción lista",
+    "summaryTitle_other": "{{count}} opciones listas",
+    "summaryActionTry": "Probar hoy",
+    "summaryActionHistory": "Historial",
+    "featuredEyebrow": "Lo más seguro para hoy"
   },
   "history": {
-    "title": "Historial",
-    "emptyTitle": "Aún no hay decisiones",
-    "emptyBody": "Tus decisiones recientes aparecerán aquí."
+    "navTitle": "Historial",
+    "a11yBack": "Volver",
+    "a11yHome": "Volver al inicio",
+    "summaryEyebrow": "Memoria de decisiones",
+    "summaryTitle": "Reutiliza fácilmente lo bueno.",
+    "statPicked": "Elegidos",
+    "statPassed": "Saltados",
+    "statTotal": "Total",
+    "tonightEyebrow": "Hoy desde tu historial",
+    "revisitTitle": "Vale la pena repetir",
+    "revisitHintFresh": "Modo fresco activo",
+    "groupToday": "Hoy",
+    "groupYesterday": "Ayer",
+    "groupEarlier": "Antes",
+    "badgePicked": "Elegido",
+    "badgePassed": "Saltado",
+    "endText": "Todo al día."
   },
   "profile": {
     "title": "Perfil",
@@ -290,6 +309,31 @@
     "network": "Conexión perdida. Revisa tu red.",
     "locationDenied": "Necesitamos ubicación para recomendar lugares cercanos.",
     "quota": "Llegaste al límite diario. Mejora para ilimitado.",
-    "unknown": "Algo salió mal. Inténtalo de nuevo."
+    "unknown": "Algo salió mal. Inténtalo de nuevo.",
+    "menuScanUnavailableTitle": "Escaneo no disponible",
+    "menuScanUnavailableBody": "El escaneo de menú necesita la configuración del servicio antes de procesar imágenes.",
+    "menuScanInterruptedTitle": "Escaneo interrumpido",
+    "menuScanInterruptedBody": "Inténtalo de nuevo con una imagen más clara.",
+    "menuScanFallback": "Usando un conjunto de recomendaciones alternativo."
+  },
+  "menuScan": {
+    "navTitle": "Escanear menú",
+    "a11yBack": "Volver",
+    "a11yTakePhoto": "Tomar foto del menú",
+    "a11yUploadPhoto": "Subir captura del menú",
+    "heroTitle": "Escanear menú",
+    "heroBody": "Foto o captura. Ordenaremos primero las opciones más seguras.",
+    "sourcePrinted": "Menús impresos",
+    "sourceDigital": "Apps y sitios web",
+    "sectionBest": "Para ti",
+    "sectionSafe": "Opciones seguras",
+    "sectionAvoid": "Evitar",
+    "sectionBestShort": "Para ti",
+    "sectionSafeShort": "Seguras",
+    "sectionAvoidShort": "Evitar",
+    "emptyTitle": "Aún no hay platos",
+    "emptyBody": "Tus opciones aparecerán aquí.",
+    "ctaTakePhoto": "Tomar foto",
+    "ctaUpload": "Subir"
   }
 }

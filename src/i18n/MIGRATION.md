@@ -12,11 +12,11 @@ This file is the source of truth for which screens have been migrated to react-i
 | Upgrade (paywall) | ✅ migrated | full migration; emits paywall_viewed, paywall_plan_selected, checkout_started events |
 | Checkout | ✅ migrated | full migration; emits checkout_started/completed/failed funnel events with billingCycle dimension |
 | Home | ✅ migrated | patch-mode i18n on the 37KB swipe deck; locale-aware EmptyState wired |
-| Explore | ⏳ pending | ~65 strings |
-| Favorites | ⏳ pending | already calls `<EmptyState language="en" />` — promote to active locale |
-| History | ⏳ pending | same as Favorites |
-| Detail | ⏳ pending | |
-| MenuScan | ⏳ pending | |
+| Explore | ⏳ pending | ~65 strings; 33KB file, patch-mode required |
+| Favorites | ✅ migrated | full migration; locale-aware EmptyState |
+| History | ✅ migrated | full migration; group labels (Today/Yesterday/Earlier) via t() |
+| Detail | ⏳ pending | next batch |
+| MenuScan | ✅ migrated | full migration; alert + section titles + CTAs all via t() |
 | DeveloperMode | ❌ skipped | dev-only, not user-visible in production |
 | Components (EmptyState, Toast, etc.) | partial | EmptyState ships own `language` prop; consumer should pass `i18n.language` |
 

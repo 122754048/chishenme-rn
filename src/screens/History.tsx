@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ClipboardList, Heart, MoreHorizontal, RefreshCw } from 'lucide-react-native';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
@@ -14,6 +15,7 @@ import { EmptyState } from '../components/EmptyState';
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function History() {
+  const { t, i18n } = useTranslation();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
@@ -54,31 +56,31 @@ export function History() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.topNav}>
-        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel="Go back">
+        <Pressable onPress={() => navigation.goBack()} style={({ pressed }) => [styles.backBtn, pressed && styles.pressedChrome]} accessibilityRole="button" accessibilityLabel={t('history.a11yBack')}>
           <ArrowLeft size={20} color={theme.colors.foreground} strokeWidth={2} />
         </Pressable>
-        <Text style={styles.navTitle}>History</Text>
-        <Pressable style={({ pressed }) => [styles.moreBtn, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} accessibilityRole="button" accessibilityLabel="Back to home">
+        <Text style={styles.navTitle}>{t('history.navTitle')}</Text>
+        <Pressable style={({ pressed }) => [styles.moreBtn, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} accessibilityRole="button" accessibilityLabel={t('history.a11yHome')}>
           <MoreHorizontal size={20} color={theme.colors.muted} strokeWidth={1.8} />
         </Pressable>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryEyebrow}>Decision memory</Text>
-          <Text style={styles.summaryTitle}>Keep the good calls easy to reuse.</Text>
+          <Text style={styles.summaryEyebrow}>{t('history.summaryEyebrow')}</Text>
+          <Text style={styles.summaryTitle}>{t('history.summaryTitle')}</Text>
           <View style={styles.summaryStats}>
             <View style={styles.summaryStat}>
               <Text style={styles.summaryStatValue}>{likedCount}</Text>
-              <Text style={styles.summaryStatLabel}>Picked</Text>
+              <Text style={styles.summaryStatLabel}>{t('history.statPicked')}</Text>
             </View>
             <View style={styles.summaryStat}>
               <Text style={styles.summaryStatValue}>{skippedCount}</Text>
-              <Text style={styles.summaryStatLabel}>Passed</Text>
+              <Text style={styles.summaryStatLabel}>{t('history.statPassed')}</Text>
             </View>
             <View style={styles.summaryStat}>
               <Text style={styles.summaryStatValue}>{history.length}</Text>
-              <Text style={styles.summaryStatLabel}>Total</Text>
+              <Text style={styles.summaryStatLabel}>{t('history.statTotal')}</Text>
             </View>
           </View>
         </View>
@@ -89,7 +91,7 @@ export function History() {
               <SkeletonImage src={latestLiked.img} alt={latestLiked.title} />
             </View>
             <View style={styles.tonightCopy}>
-              <Text style={styles.tonightEyebrow}>Tonight from your history</Text>
+              <Text style={styles.tonightEyebrow}>{t('history.tonightEyebrow')}</Text>
               <Text style={styles.tonightTitle}>{latestLiked.title}</Text>
               <Text style={styles.tonightMeta}>{latestLiked.category} / {latestLiked.time}</Text>
             </View>
@@ -99,8 +101,8 @@ export function History() {
         {revisitPicks.length > 0 ? (
           <View style={styles.revisitSection}>
             <View style={styles.revisitHeader}>
-              <Text style={styles.revisitTitle}>Worth revisiting</Text>
-              {decisionSettings.keepItFresh ? <Text style={styles.revisitHint}>Fresh mode on</Text> : null}
+              <Text style={styles.revisitTitle}>{t('history.revisitTitle')}</Text>
+              {decisionSettings.keepItFresh ? <Text style={styles.revisitHint}>{t('history.revisitHintFresh')}</Text> : null}
             </View>
             <View style={styles.revisitList}>
               {revisitPicks.map((item) => (
@@ -125,12 +127,12 @@ export function History() {
         ) : null}
 
         {groupedHistory.length === 0 ? (
-          <EmptyState scenario="history-empty" language="en" />
+          <EmptyState scenario="history-empty" language={i18n.language?.toLowerCase().startsWith('zh') ? 'zh' : 'en'} />
         ) : (
           groupedHistory.map((group) => (
             <View key={group.group} style={styles.group}>
               <View style={styles.groupHeader}>
-                <Text style={styles.groupLabel}>{group.group}</Text>
+                <Text style={styles.groupLabel}>{t(`history.group${group.group}`)}</Text>
                 <View style={styles.groupLine} />
               </View>
               <View style={styles.groupItems}>
@@ -147,7 +149,7 @@ export function History() {
                     </View>
                     <View style={[styles.statusBadge, item.status === 'Liked' ? styles.likedBadge : styles.skippedBadge]}>
                       <Heart size={10} color={item.status === 'Liked' ? theme.colors.primary : theme.colors.subtle} fill={item.status === 'Liked' ? theme.colors.primary : 'transparent'} strokeWidth={2} />
-                      <Text style={[styles.statusText, item.status === 'Liked' ? styles.likedText : styles.skippedText]}>{item.status === 'Liked' ? 'Picked' : 'Passed'}</Text>
+                      <Text style={[styles.statusText, item.status === 'Liked' ? styles.likedText : styles.skippedText]}>{item.status === 'Liked' ? t('history.badgePicked') : t('history.badgePassed')}</Text>
                     </View>
                   </Pressable>
                 ))}
@@ -161,7 +163,7 @@ export function History() {
             <View style={styles.endIcon}>
               <RefreshCw size={20} color={theme.colors.subtle} strokeWidth={1.5} />
             </View>
-            <Text style={styles.endText}>All caught up.</Text>
+            <Text style={styles.endText}>{t('history.endText')}</Text>
           </View>
         ) : null}
       </ScrollView>

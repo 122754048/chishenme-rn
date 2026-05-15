@@ -98,15 +98,34 @@
     "searchPlaceholder": "搜索菜品、菜系或氛围"
   },
   "favorites": {
-    "title": "收藏",
-    "emptyTitle": "还没有收藏",
-    "emptyBody": "保存一些不错的选择以备后用。",
-    "emptyCta": "回到首页"
+    "navTitle": "收藏",
+    "a11yMore": "打开决策历史",
+    "a11yRemoveSaved": "取消收藏",
+    "summaryEyebrow": "稍后尝试",
+    "summaryTitle_one": "已收藏 {{count}} 道",
+    "summaryTitle_other": "已收藏 {{count}} 道",
+    "summaryActionTry": "今晚试试",
+    "summaryActionHistory": "历史",
+    "featuredEyebrow": "今晚最稳妥的选择"
   },
   "history": {
-    "title": "历史",
-    "emptyTitle": "还没有决定记录",
-    "emptyBody": "你最近的选择会出现在这里。"
+    "navTitle": "历史",
+    "a11yBack": "返回",
+    "a11yHome": "回到首页",
+    "summaryEyebrow": "决策记忆",
+    "summaryTitle": "让好选择更容易复用。",
+    "statPicked": "已选",
+    "statPassed": "跳过",
+    "statTotal": "总计",
+    "tonightEyebrow": "今晚从历史中挑",
+    "revisitTitle": "值得再来",
+    "revisitHintFresh": "新鲜模式已开",
+    "groupToday": "今天",
+    "groupYesterday": "昨天",
+    "groupEarlier": "更早",
+    "badgePicked": "已选",
+    "badgePassed": "跳过",
+    "endText": "已经看完了。"
   },
   "profile": {
     "title": "我的",
@@ -290,6 +309,31 @@
     "network": "网络断开。请检查你的网络。",
     "locationDenied": "需要位置权限来推荐附近的店。",
     "quota": "今日次数已用完。升级解锁无限次。",
-    "unknown": "出了点问题。请重试。"
+    "unknown": "出了点问题。请重试。",
+    "menuScanUnavailableTitle": "菜单扫描不可用",
+    "menuScanUnavailableBody": "需要先配置应用服务后才能处理图像。",
+    "menuScanInterruptedTitle": "扫描中断",
+    "menuScanInterruptedBody": "请用清晰一些的图片再试。",
+    "menuScanFallback": "使用了备用推荐集。"
+  },
+  "menuScan": {
+    "navTitle": "扫描菜单",
+    "a11yBack": "返回",
+    "a11yTakePhoto": "拍菜单照片",
+    "a11yUploadPhoto": "上传菜单截图",
+    "heroTitle": "扫描菜单",
+    "heroBody": "照片或截图均可，我们会优先推荐最安全的菜品。",
+    "sourcePrinted": "纸质菜单",
+    "sourceDigital": "应用与网页",
+    "sectionBest": "推荐给你",
+    "sectionSafe": "安全选项",
+    "sectionAvoid": "建议避开",
+    "sectionBestShort": "推荐",
+    "sectionSafeShort": "安全",
+    "sectionAvoidShort": "避开",
+    "emptyTitle": "还没有菜品",
+    "emptyBody": "识别结果会显示在这里。",
+    "ctaTakePhoto": "拍照",
+    "ctaUpload": "上传"
   }
 }

@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { Heart, MoreHorizontal, Star, UtensilsCrossed } from 'lucide-react-native';
 import { SkeletonImage } from '../components/SkeletonImage';
 import { useApp } from '../context/AppContext';
@@ -16,6 +17,7 @@ import { haptics } from '../utils/haptics';
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function Favorites() {
+  const { t, i18n } = useTranslation();
   const theme = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const navigation = useNavigation<NavProp>();
@@ -28,8 +30,8 @@ export function Favorites() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.topNav}>
         <View style={styles.navSpacer} />
-        <Text style={styles.navTitle}>Saved</Text>
-        <Pressable style={({ pressed }) => [styles.moreBtn, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('History')} accessibilityRole="button" accessibilityLabel="Open decision history">
+        <Text style={styles.navTitle}>{t('favorites.navTitle')}</Text>
+        <Pressable style={({ pressed }) => [styles.moreBtn, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('History')} accessibilityRole="button" accessibilityLabel={t('favorites.a11yMore')}>
           <MoreHorizontal size={20} color={theme.colors.muted} strokeWidth={1.8} />
         </Pressable>
       </View>
@@ -37,7 +39,7 @@ export function Favorites() {
       {displayData.length === 0 ? (
         <EmptyState
           scenario="favorites-empty"
-          language="en"
+          language={i18n.language?.toLowerCase().startsWith('zh') ? 'zh' : 'en'}
           onCta={() => navigation.navigate('MainTabs', { screen: 'Home' })}
         />
       ) : (
@@ -51,14 +53,14 @@ export function Favorites() {
             featuredPick ? (
               <View style={styles.headerStack}>
                 <View style={styles.summaryCard}>
-                  <Text style={styles.summaryEyebrow}>Saved for later</Text>
-                  <Text style={styles.summaryTitle}>{displayData.length} strong picks ready</Text>
+                  <Text style={styles.summaryEyebrow}>{t('favorites.summaryEyebrow')}</Text>
+                  <Text style={styles.summaryTitle}>{t('favorites.summaryTitle', { count: displayData.length })}</Text>
                   <View style={styles.summaryActions}>
                     <Pressable style={({ pressed }) => [styles.summaryAction, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('Detail', { itemId: featuredPick.id, title: featuredPick.title, image: featuredPick.image })}>
-                      <Text style={styles.summaryActionText}>Try tonight</Text>
+                      <Text style={styles.summaryActionText}>{t('favorites.summaryActionTry')}</Text>
                     </Pressable>
                     <Pressable style={({ pressed }) => [styles.summaryAction, pressed && styles.pressedChrome]} onPress={() => navigation.navigate('History')}>
-                      <Text style={styles.summaryActionText}>History</Text>
+                      <Text style={styles.summaryActionText}>{t('favorites.summaryActionHistory')}</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -68,7 +70,7 @@ export function Favorites() {
                     <SkeletonImage src={featuredPick.image} alt={featuredPick.title} />
                   </View>
                   <View style={styles.featuredCopy}>
-                    <Text style={styles.featuredEyebrow}>Tonight's easiest yes</Text>
+                    <Text style={styles.featuredEyebrow}>{t('favorites.featuredEyebrow')}</Text>
                     <Text style={styles.featuredTitle}>{featuredPick.title}</Text>
                     <Text style={styles.featuredMeta}>{featuredPick.restaurantName} / {featuredPick.rating.toFixed(1)}</Text>
                   </View>
@@ -80,7 +82,7 @@ export function Favorites() {
             <Pressable style={({ pressed }) => [styles.gridItem, pressed && styles.pressedCard]} onPress={() => navigation.navigate('Detail', { itemId: item.id, title: item.title, image: item.image })}>
               <View style={styles.gridImageWrap}>
                 <SkeletonImage src={item.image} alt={item.title} />
-                <Pressable style={({ pressed }) => [styles.heartBtn, pressed && styles.pressedChrome]} onPress={() => toggleFavorite(item.id)} accessibilityRole="button" accessibilityLabel="Remove from saved">
+                <Pressable style={({ pressed }) => [styles.heartBtn, pressed && styles.pressedChrome]} onPress={() => toggleFavorite(item.id)} accessibilityRole="button" accessibilityLabel={t('favorites.a11yRemoveSaved')}>
                   <Heart size={14} color={theme.colors.error} fill={theme.colors.error} strokeWidth={2} />
                 </Pressable>
               </View>
