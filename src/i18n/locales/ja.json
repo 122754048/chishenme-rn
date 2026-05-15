@@ -98,15 +98,34 @@
     "searchPlaceholder": "料理、ジャンル、雰囲気で検索"
   },
   "favorites": {
-    "title": "保存",
-    "emptyTitle": "まだ保存はありません",
-    "emptyBody": "気になるお店を保存しておきましょう。",
-    "emptyCta": "ホームへ戻る"
+    "navTitle": "保存済み",
+    "a11yMore": "決定履歴を開く",
+    "a11yRemoveSaved": "保存から外す",
+    "summaryEyebrow": "後で試す",
+    "summaryTitle_one": "{{count}}件の候補",
+    "summaryTitle_other": "{{count}}件の候補",
+    "summaryActionTry": "今夜試す",
+    "summaryActionHistory": "履歴",
+    "featuredEyebrow": "今夜の手堅い一品"
   },
   "history": {
-    "title": "履歴",
-    "emptyTitle": "まだ履歴はありません",
-    "emptyBody": "選んだ履歴がここに表示されます。"
+    "navTitle": "履歴",
+    "a11yBack": "戻る",
+    "a11yHome": "ホームに戻る",
+    "summaryEyebrow": "決定の記憶",
+    "summaryTitle": "良い選択を再利用しやすく。",
+    "statPicked": "採用",
+    "statPassed": "スキップ",
+    "statTotal": "合計",
+    "tonightEyebrow": "履歴から今夜の一品",
+    "revisitTitle": "もう一度試す価値あり",
+    "revisitHintFresh": "フレッシュモード ON",
+    "groupToday": "今日",
+    "groupYesterday": "昨日",
+    "groupEarlier": "それより前",
+    "badgePicked": "採用",
+    "badgePassed": "スキップ",
+    "endText": "すべて確認済み。"
   },
   "profile": {
     "title": "プロフィール",
@@ -290,6 +309,31 @@
     "network": "接続が切れました。ネットワークを確認してください。",
     "locationDenied": "近くの店をおすすめするには位置情報が必要です。",
     "quota": "今日の上限に達しました。アップグレードで無制限。",
-    "unknown": "問題が発生しました。もう一度お試しください。"
+    "unknown": "問題が発生しました。もう一度お試しください。",
+    "menuScanUnavailableTitle": "メニュースキャンを利用できません",
+    "menuScanUnavailableBody": "画像処理にはアプリサービスの設定が必要です。",
+    "menuScanInterruptedTitle": "スキャンが中断されました",
+    "menuScanInterruptedBody": "もう少しクリアな画像でお試しください。",
+    "menuScanFallback": "フォールバックの推奨セットを使用しています。"
+  },
+  "menuScan": {
+    "navTitle": "メニューをスキャン",
+    "a11yBack": "戻る",
+    "a11yTakePhoto": "メニューを撮影",
+    "a11yUploadPhoto": "メニューのスクショをアップロード",
+    "heroTitle": "メニューをスキャン",
+    "heroBody": "写真でもスクショでも。安全なものから順に並べます。",
+    "sourcePrinted": "紙のメニュー",
+    "sourceDigital": "アプリとウェブ",
+    "sectionBest": "あなたへのおすすめ",
+    "sectionSafe": "安全な選択",
+    "sectionAvoid": "避けるべき",
+    "sectionBestShort": "おすすめ",
+    "sectionSafeShort": "安全",
+    "sectionAvoidShort": "避ける",
+    "emptyTitle": "まだメニュー項目がありません",
+    "emptyBody": "スキャン結果がここに表示されます。",
+    "ctaTakePhoto": "撮影",
+    "ctaUpload": "アップロード"
   }
 }

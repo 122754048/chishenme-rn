@@ -110,7 +110,7 @@ assert(exploreCode.includes('buildManualAreaContext') || exploreCode.includes('S
 assert(exploreCode.includes('Nearby'), 'explore should show nearby restaurant trust signals');
 assert(exploreCode.includes('Fresh'), 'explore should expose repeat-avoidance mode');
 assert(exploreCode.includes('For two'), 'explore should expose duo mode');
-assert(fs.readFileSync(path.join(root, 'src', 'screens', 'History.tsx'), 'utf8').includes('Worth revisiting'), 'history should help users revisit strong prior picks');
+assert(fs.readFileSync(path.join(root, 'src', 'screens', 'History.tsx'), 'utf8').includes('history.revisitTitle'), 'history should help users revisit strong prior picks (via t() key)');
 assert(profileCode.includes("useTranslation"), 'profile should be i18n-aware (uses useTranslation)');
 assert(profileCode.includes("profile.alertDeleteTitle") || profileCode.includes("deleteAccount"), 'profile should expose account deletion via t() or storage state');
 assert(profileCode.includes('saveAreaPreset') || profileCode.includes('tileAreas') || profileCode.includes('Areas'), 'profile should reflect saved location context');
@@ -129,8 +129,8 @@ assert(
   checkoutCode.includes('checkout.legalRestore') || checkoutCode.includes('handleRestore'),
   'checkout should expose restore purchase (handler or t() key)'
 );
-assert(menuScanCode.includes('Scan a menu'), 'menu scan screen should exist');
-assert(menuScanCode.includes('Best for you'), 'menu scan results should group recommendations');
+assert(menuScanCode.includes('useTranslation') && menuScanCode.includes('menuScan.heroTitle'), 'menu scan screen should be i18n-aware');
+assert(menuScanCode.includes('menuScan.sectionBest'), 'menu scan results should group recommendations via t()');
 
 // ── i18n catalogue contract ────────────────────────────────────────────────
 // Once strings move out of TSX into JSON, the smoke test asserts on the

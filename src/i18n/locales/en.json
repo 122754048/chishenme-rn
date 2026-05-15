@@ -11,7 +11,7 @@
     "skip": "Skip",
     "retry": "Retry",
     "next": "Next",
-    "loading": "Loading…",
+    "loading": "Loading...",
     "error": "Something went wrong",
     "errorBody": "Please try again in a moment.",
     "ok": "OK"
@@ -98,15 +98,34 @@
     "searchPlaceholder": "Search dishes, cuisines, or vibes"
   },
   "favorites": {
-    "title": "Saved",
-    "emptyTitle": "Nothing saved yet",
-    "emptyBody": "Save a few strong options for later.",
-    "emptyCta": "Back to Home"
+    "navTitle": "Saved",
+    "a11yMore": "Open decision history",
+    "a11yRemoveSaved": "Remove from saved",
+    "summaryEyebrow": "Saved for later",
+    "summaryTitle_one": "{{count}} strong pick ready",
+    "summaryTitle_other": "{{count}} strong picks ready",
+    "summaryActionTry": "Try tonight",
+    "summaryActionHistory": "History",
+    "featuredEyebrow": "Tonight's easiest yes"
   },
   "history": {
-    "title": "History",
-    "emptyTitle": "No decisions yet",
-    "emptyBody": "Your recent decisions will show up here."
+    "navTitle": "History",
+    "a11yBack": "Go back",
+    "a11yHome": "Back to home",
+    "summaryEyebrow": "Decision memory",
+    "summaryTitle": "Keep the good calls easy to reuse.",
+    "statPicked": "Picked",
+    "statPassed": "Passed",
+    "statTotal": "Total",
+    "tonightEyebrow": "Tonight from your history",
+    "revisitTitle": "Worth revisiting",
+    "revisitHintFresh": "Fresh mode on",
+    "groupToday": "Today",
+    "groupYesterday": "Yesterday",
+    "groupEarlier": "Earlier",
+    "badgePicked": "Picked",
+    "badgePassed": "Passed",
+    "endText": "All caught up."
   },
   "profile": {
     "title": "Profile",
@@ -290,6 +309,31 @@
     "network": "Connection lost. Check your network.",
     "locationDenied": "We need location to recommend nearby spots.",
     "quota": "Daily limit reached. Upgrade for unlimited.",
-    "unknown": "Something went wrong. Please try again."
+    "unknown": "Something went wrong. Please try again.",
+    "menuScanUnavailableTitle": "Menu scan unavailable",
+    "menuScanUnavailableBody": "Menu scan needs the app service configuration before it can process images.",
+    "menuScanInterruptedTitle": "Scan interrupted",
+    "menuScanInterruptedBody": "Please try again with a clearer image.",
+    "menuScanFallback": "Using a fallback recommendation set."
+  },
+  "menuScan": {
+    "navTitle": "Scan a menu",
+    "a11yBack": "Go back",
+    "a11yTakePhoto": "Take a photo of a menu",
+    "a11yUploadPhoto": "Upload a screenshot of a menu",
+    "heroTitle": "Scan a menu",
+    "heroBody": "Photo or screenshot. We'll sort the safest picks first.",
+    "sourcePrinted": "Printed menus",
+    "sourceDigital": "Apps and websites",
+    "sectionBest": "Best for you",
+    "sectionSafe": "Safe picks",
+    "sectionAvoid": "Avoid",
+    "sectionBestShort": "Best",
+    "sectionSafeShort": "Safe",
+    "sectionAvoidShort": "Avoid",
+    "emptyTitle": "No menu items yet",
+    "emptyBody": "Your picks will show up here.",
+    "ctaTakePhoto": "Take photo",
+    "ctaUpload": "Upload"
   }
 }
