@@ -11,6 +11,7 @@ import Animated, {
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Compass, Crown, Heart, MapPin, ScanSearch, Sparkles, Star, X } from 'lucide-react-native';
 import { brand } from '../config/brand';
 import { useApp } from '../context/AppContext';
@@ -74,6 +75,7 @@ function DecisionCard({
   swipeRequest: { direction: 'left' | 'right'; key: number } | null;
   canCommitSwipe: boolean;
 }) {
+  const { t } = useTranslation();
   const pan = useRef(new NativeAnimated.ValueXY()).current;
   const gestureStartAt = useRef(0);
 
@@ -200,17 +202,17 @@ function DecisionCard({
         ]}
       >
         <NativeAnimated.View style={[styles.badgeLike, { opacity: positiveOpacity }]}>
-          <Text style={styles.badgeLikeText}>Save</Text>
+          <Text style={styles.badgeLikeText}>{t('home.swipeBadgeSave')}</Text>
         </NativeAnimated.View>
         <NativeAnimated.View style={[styles.badgeNope, { opacity: negativeOpacity }]}>
-          <Text style={styles.badgeNopeText}>Skip</Text>
+          <Text style={styles.badgeNopeText}>{t('home.swipeBadgeSkip')}</Text>
         </NativeAnimated.View>
 
         <Pressable
           onPress={onOpenDetail}
           style={styles.cardTapTarget}
           accessibilityRole="button"
-          accessibilityLabel={`Open details for ${card.name}`}
+          accessibilityLabel={t('home.a11yOpenDetail', { name: card.name })}
         >
           <View style={styles.cardImage}>
             <SkeletonImage src={card.image} alt={card.name} />
@@ -350,6 +352,7 @@ const actionBtnStyles = StyleSheet.create({
 });
 
 export function Home() {
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation<NavProp>();
   const tabNavigation = useNavigation<HomeTabNavProp>();
   const route = useRoute<HomeRouteProp>();
@@ -466,9 +469,9 @@ export function Home() {
   const currentNearby = currentRecommendation?.nearbyRestaurant ?? null;
   const nextRecommendations = recommendations.slice(1, 3);
   const reasons = currentRecommendation?.reasons ?? [];
-  const distanceLabel = formatDistanceMiles(currentNearby?.distanceMeters ?? currentCard?.distanceMeters) ?? currentCard?.distance ?? 'Nearby';
+  const distanceLabel = formatDistanceMiles(currentNearby?.distanceMeters ?? currentCard?.distanceMeters) ?? currentCard?.distance ?? t('home.distanceNearby');
   const rating = currentNearby?.rating?.toFixed(1) ?? currentCard?.restaurantRating.toFixed(1) ?? '--';
-  const locationLabel = locationContext?.label ?? 'Current area';
+  const locationLabel = locationContext?.label ?? t('home.locationFallback');
 
   const openDetail = useCallback(() => {
     if (!currentCard) return;
@@ -514,15 +517,15 @@ export function Home() {
     setIsCardDragging(false);
     showToast({
       type: 'warning',
-      title: "You've used today's free picks.",
-      body: 'Upgrade to Pro for unlimited daily picks.',
+      title: t('home.toastQuotaTitle'),
+      body: t('home.toastQuotaBody'),
       duration: 3500,
       action: {
-        label: 'Upgrade',
+        label: t('home.toastQuotaAction'),
         onPress: () => navigation.navigate('Upgrade'),
       },
     });
-  }, [navigation, showToast]);
+  }, [navigation, showToast, t]);
 
   const triggerDecision = useCallback(
     (direction: 'left' | 'right') => {
@@ -565,7 +568,7 @@ export function Home() {
         <Pressable
           onPress={handleBrandTap}
           accessibilityRole="button"
-          accessibilityLabel={`${brand.appName} hidden menu`}
+          accessibilityLabel={t('home.a11yBrandMenu', { brand: brand.appName })}
           hitSlop={8}
         >
           <Text style={styles.brandText}>{brand.appName}</Text>
@@ -574,7 +577,7 @@ export function Home() {
           style={({ pressed }) => [styles.topBarIconBtn, pressed && styles.pressedChip]}
           onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
           accessibilityRole="button"
-          accessibilityLabel="Open explore"
+          accessibilityLabel={t('home.a11yOpenExplore')}
           hitSlop={8}
         >
           <Compass size={20} color={theme.colors.foreground} strokeWidth={1.8} />
@@ -594,7 +597,7 @@ export function Home() {
             style={({ pressed }) => [styles.areaPill, pressed && styles.pressedChip]}
             onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
             accessibilityRole="button"
-            accessibilityLabel="Choose area"
+            accessibilityLabel={t('home.a11yChooseArea')}
           >
             <MapPin size={14} color={theme.colors.primary} strokeWidth={2} />
             <Text style={styles.areaPillText} numberOfLines={1}>
@@ -610,12 +613,12 @@ export function Home() {
               })
             }
             accessibilityRole="button"
-            accessibilityLabel="Scan a menu"
+            accessibilityLabel={t('home.a11yScanMenu')}
           >
             <View style={styles.scanActionIcon}>
               <ScanSearch size={16} color={theme.colors.primary} strokeWidth={2} />
             </View>
-            <Text style={styles.scanActionText}>Scan menu</Text>
+            <Text style={styles.scanActionText}>{t('home.scanMenuLabel')}</Text>
           </Pressable>
         </View>
 
@@ -628,12 +631,14 @@ export function Home() {
             )}
             <Text style={[styles.statusPillText, membershipPlan !== 'free' && styles.statusPillTextPremium]}>
               {membershipPlan === 'free'
-                ? `${Math.max(recommendationsLeft, 0)} smart saves left`
+                ? t('home.smartSavesLeft', { count: Math.max(recommendationsLeft, 0) })
                 : unlockNoticePlan === 'family'
-                  ? 'Family unlocked'
+                  ? t('home.familyUnlocked')
                   : unlockNoticePlan === 'pro'
-                    ? 'Pro unlocked'
-                    : `${membershipPlan === 'family' ? 'Family' : 'Pro'} active`}
+                    ? t('home.proUnlocked')
+                    : membershipPlan === 'family'
+                      ? t('home.familyActive')
+                      : t('home.proActive')}
             </Text>
           </View>
           {unlockNoticePlan ? (
@@ -641,7 +646,7 @@ export function Home() {
               style={({ pressed }) => [styles.dismissNoticeBtn, pressed && styles.pressedChip]}
               onPress={() => setUnlockNoticePlan(null)}
               accessibilityRole="button"
-              accessibilityLabel="Dismiss premium notice"
+              accessibilityLabel={t('home.a11yDismissUnlock')}
             >
               <X size={14} color={theme.colors.subtle} strokeWidth={2} />
             </Pressable>
@@ -654,11 +659,11 @@ export function Home() {
               <CheckCircle2 size={18} color={theme.colors.primary} strokeWidth={2} />
             </View>
             <View style={styles.unlockCopy}>
-              <Text style={styles.unlockTitle}>{unlockNoticePlan === 'family' ? 'Family is live' : 'Pro is live'}</Text>
+              <Text style={styles.unlockTitle}>{unlockNoticePlan === 'family' ? t('home.unlockTitleFamily') : t('home.unlockTitlePro')}</Text>
               <Text style={styles.unlockBody}>
                 {unlockNoticePlan === 'family'
-                  ? 'Shared picks, stronger ranking, and full menu scan are ready now.'
-                  : 'Smarter saves, stronger ranking, and full menu scan are ready now.'}
+                  ? t('home.unlockBodyFamily')
+                  : t('home.unlockBodyPro')}
               </Text>
             </View>
           </View>
@@ -675,7 +680,7 @@ export function Home() {
                   const previewCard = recommendation.dish;
                   const previewNearby = recommendation.nearbyRestaurant ?? null;
                   const previewDistance =
-                    formatDistanceMiles(previewNearby?.distanceMeters ?? previewCard.distanceMeters) ?? previewCard.distance ?? 'Nearby';
+                    formatDistanceMiles(previewNearby?.distanceMeters ?? previewCard.distanceMeters) ?? previewCard.distance ?? t('home.distanceNearby');
                   const previewRating = previewNearby?.rating?.toFixed(1) ?? previewCard.restaurantRating.toFixed(1) ?? '--';
 
                   return (
@@ -714,7 +719,7 @@ export function Home() {
           ) : (
             <EmptyState
               scenario="home-empty"
-              language="en"
+              language={i18n.language?.toLowerCase().startsWith('zh') ? 'zh' : 'en'}
               onCta={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
             />
           )}
@@ -722,13 +727,13 @@ export function Home() {
 
         <View style={styles.bottomDock}>
         <View style={styles.actionRow}>
-            <AnimatedActionBtn onPress={() => triggerDecision('left')} disabled={!currentCard || isResolvingDecision} accessibilityLabel="Skip this pick for today">
+            <AnimatedActionBtn onPress={() => triggerDecision('left')} disabled={!currentCard || isResolvingDecision} accessibilityLabel={t('home.a11ySkipPick')}>
               <View style={[styles.actionBtn, styles.skipBtn]}>
                 <X size={30} color={theme.colors.muted} strokeWidth={2.5} />
               </View>
             </AnimatedActionBtn>
 
-            <AnimatedActionBtn onPress={() => triggerDecision('right')} disabled={!currentCard || isResolvingDecision} accessibilityLabel="Save this pick">
+            <AnimatedActionBtn onPress={() => triggerDecision('right')} disabled={!currentCard || isResolvingDecision} accessibilityLabel={t('home.a11ySavePick')}>
               <View style={[styles.actionBtn, styles.likeBtn]}>
                 <Heart size={30} color="#D65947" fill="#D65947" strokeWidth={0} />
               </View>
@@ -740,15 +745,15 @@ export function Home() {
               style={({ pressed }) => [styles.upgradePill, pressed && styles.pressedChip]}
               onPress={() => navigation.navigate('Upgrade')}
               accessibilityRole="button"
-              accessibilityLabel="Upgrade for more picks"
+              accessibilityLabel={t('home.a11yUpgrade')}
             >
-              <Text style={styles.upgradePillText}>Upgrade for more picks</Text>
+              <Text style={styles.upgradePillText}>{t('home.upgradeCtaPill')}</Text>
             </Pressable>
           ) : (
             <View style={styles.swipeHint}>
               <Compass size={16} color={theme.colors.subtle} strokeWidth={1.9} />
               <Text style={styles.swipeHintText}>
-                {isDiscovering ? 'Refreshing nearby' : canCommitSwipe ? 'Left to skip, right to save' : 'Swipe to preview, upgrade to act'}
+                {isDiscovering ? t('home.hintRefreshing') : canCommitSwipe ? t('home.hintSwipeActive') : t('home.hintSwipeLocked')}
               </Text>
             </View>
           )}

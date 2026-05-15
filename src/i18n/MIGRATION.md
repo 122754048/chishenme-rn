@@ -11,7 +11,7 @@ This file is the source of truth for which screens have been migrated to react-i
 | Profile | ✅ migrated | full migration; restore/delete/billing alerts use t() |
 | Upgrade (paywall) | ✅ migrated | full migration; emits paywall_viewed, paywall_plan_selected, checkout_started events |
 | Checkout | ✅ migrated | full migration; emits checkout_started/completed/failed funnel events with billingCycle dimension |
-| Home | ⏳ pending | ~118 strings; biggest, do last after locale catalogue is stable |
+| Home | ✅ migrated | patch-mode i18n on the 37KB swipe deck; locale-aware EmptyState wired |
 | Explore | ⏳ pending | ~65 strings |
 | Favorites | ⏳ pending | already calls `<EmptyState language="en" />` — promote to active locale |
 | History | ⏳ pending | same as Favorites |

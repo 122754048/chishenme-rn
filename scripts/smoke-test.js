@@ -91,6 +91,19 @@ assert(
 assert(homeCode.includes("navigation.navigate('MainTabs', { screen: 'Explore' })"), 'home should hand secondary discovery to Explore');
 assert(homeCode.includes("navigation.navigate('Upgrade')"), 'home should route quota exhaustion to upgrade');
 assert(homeCode.includes("navigation.navigate('MenuScan'"), 'home should expose menu scan from the main deck');
+assert(homeCode.includes("useTranslation"), 'home should be i18n-aware (uses useTranslation)');
+assert(
+  homeCode.includes("home.swipeBadgeSave") && homeCode.includes("home.swipeBadgeSkip"),
+  'home should drive swipe badges via t() keys'
+);
+assert(
+  homeCode.includes("home.toastQuotaTitle") && homeCode.includes("home.toastQuotaBody"),
+  'home quota toast should use t() keys'
+);
+assert(
+  homeCode.includes("home.unlockTitlePro") || homeCode.includes("home.unlockTitleFamily"),
+  'home unlock notice should use t() keys'
+);
 assert(detailCode.includes('Snapshot') || detailCode.includes('buildDecisionSnapshot'), 'detail should include decision framing, not just presentation');
 assert(exploreCode.includes('Top 3'), 'explore should own the curated daily picks');
 assert(exploreCode.includes('buildManualAreaContext') || exploreCode.includes('Save Home'), 'explore should support using a manual area for the home deck');
@@ -156,6 +169,9 @@ assert(locales.en.common.tagline.toLowerCase().includes('better pick'), 'en: tag
 assert(locales.en.tabs.home === 'Home', 'en: bottom tab Home label');
 assert(locales.en.onboarding.cuisines.cta === 'Continue', 'en: cuisine CTA copy');
 assert(typeof locales.en.home.quotaRemaining_one === 'string' && typeof locales.en.home.quotaRemaining_other === 'string', 'en: quotaRemaining must have plural variants');
+assert(locales.en.home.swipeBadgeSave === 'Save' && locales.en.home.swipeBadgeSkip === 'Skip', 'en: home swipe badges must be Save/Skip');
+assert(locales.en.home.toastQuotaAction === 'Upgrade', 'en: quota toast CTA should still say Upgrade');
+assert(locales.en.home.unlockTitleFamily.includes('Family') && locales.en.home.unlockTitlePro.includes('Pro'), 'en: home unlock titles must reference plan');
 assert(locales.en.profile.alertDeleteTitle.toLowerCase().includes('delete'), 'en: profile delete title should mention delete');
 assert(locales.en.upgrade.heroTitle.length > 0, 'en: upgrade hero title must be non-empty');
 assert(
