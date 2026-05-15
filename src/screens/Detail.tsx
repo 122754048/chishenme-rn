@@ -107,7 +107,7 @@ export function Detail() {
       <Animated.ScrollView style={styles.scrollView} onScroll={scrollHandler} scrollEventThrottle={16} showsVerticalScrollIndicator={false}>
         <View style={styles.heroWrap}>
           <Animated.View style={[styles.heroImage, { width: screenWidth, height: 380 }, heroImageStyle]}>
-            <SkeletonImage src={dish.image} alt={dish.name} />
+            <SkeletonImage src={dish.image} alt={dish.name} priority="high" />
           </Animated.View>
           <View style={styles.heroOverlay}>
             <View style={styles.topline}>
