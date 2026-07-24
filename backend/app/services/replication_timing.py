@@ -140,14 +140,26 @@ class RedisTimingLedgerStore:
         redis_client: Any,
         *,
         prefix: str = "usfr:timing",
+        ttl_seconds: int = 86_400,
+        job_scoped_keys: bool = False,
         now: Callable[[], float] = time.time,
     ) -> None:
         if not callable(getattr(redis_client, "get", None)) or not callable(getattr(redis_client, "set", None)):
             raise ValueError("TIMING_LEDGER_REDIS_REQUIRED")
-        if not isinstance(prefix, str) or not prefix.strip() or not callable(now):
+        if (
+            not isinstance(prefix, str)
+            or not prefix.strip()
+            or isinstance(ttl_seconds, bool)
+            or not isinstance(ttl_seconds, int)
+            or ttl_seconds <= 0
+            or not isinstance(job_scoped_keys, bool)
+            or not callable(now)
+        ):
             raise ValueError("TIMING_LEDGER_CONFIGURATION_INVALID")
         self._redis = redis_client
         self._prefix = prefix.strip()
+        self._ttl_seconds = ttl_seconds
+        self._job_scoped_keys = job_scoped_keys
         self._now = now
 
     def create(self, job_id: str) -> None:
@@ -180,6 +192,8 @@ class RedisTimingLedgerStore:
     def _key(self, job_id: str) -> str:
         if not isinstance(job_id, str) or not job_id.strip():
             raise ValueError("TIMING_LEDGER_JOB_INVALID")
+        if self._job_scoped_keys:
+            return f"{self._prefix}:{job_id}:timing"
         return f"{self._prefix}:{job_id}"
 
     def _ledger(self, job_id: str) -> TimingLedger:
@@ -209,7 +223,18 @@ class RedisTimingLedgerStore:
         snapshot = ledger.snapshot()
         payload = {"created_at": snapshot["created_at"], "stages": snapshot["stages"]}
         try:
-            self._redis.set(self._key(job_id), json.dumps(payload, sort_keys=True, separators=(",", ":")))
+            self._redis.set(
+                self._key(job_id),
+                json.dumps(payload, sort_keys=True, separators=(",", ":")),
+                ex=self._ttl_seconds,
+            )
+        except TypeError:
+            # Test doubles and compatibility fakes may not implement Redis SET
+            # expiry arguments. Production Redis must receive the TTL above.
+            try:
+                self._redis.set(self._key(job_id), json.dumps(payload, sort_keys=True, separators=(",", ":")))
+            except Exception as error:
+                raise RuntimeError("TIMING_LEDGER_STORE_UNAVAILABLE") from error
         except Exception as error:
             raise RuntimeError("TIMING_LEDGER_STORE_UNAVAILABLE") from error
 

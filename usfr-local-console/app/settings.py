@@ -42,6 +42,7 @@ class Settings:
     skill_sha256: str
     runninghub_api_key: str | None
     commercial_batch_api_url: str | None = None
+    temporary_job_ttl_seconds: int = 86_400
 
     @classmethod
     def load(cls) -> "Settings":
@@ -65,6 +66,13 @@ class Settings:
         if not 1 <= port <= 65535:
             raise ValueError("USFR_CONSOLE_PORT must be between 1 and 65535")
 
+        try:
+            temporary_job_ttl_seconds = int(os.environ.get("USFR_CONSOLE_TEMP_TTL_SECONDS", "86400"))
+        except ValueError as error:
+            raise ValueError("USFR_CONSOLE_TEMP_TTL_SECONDS must be a positive integer") from error
+        if temporary_job_ttl_seconds <= 0:
+            raise ValueError("USFR_CONSOLE_TEMP_TTL_SECONDS must be a positive integer")
+
         commercial_batch_api_url = (os.environ.get("USFR_COMMERCIAL_BATCH_API_URL") or "").strip()
         if commercial_batch_api_url:
             parsed = urlsplit(commercial_batch_api_url)
@@ -80,6 +88,7 @@ class Settings:
             skill_sha256=sha256_file(skill_path),
             runninghub_api_key=os.environ.get("RUNNINGHUB_API_KEY") or None,
             commercial_batch_api_url=commercial_batch_api_url or None,
+            temporary_job_ttl_seconds=temporary_job_ttl_seconds,
         )
 
     @property

@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from app.jobs import FileJobStore, VersionConflict
+from app.jobs import FileJobStore, JobNotFound, VersionConflict
 from app.settings import sha256_file
 from app.slots import build_intake, validate_intake
 
@@ -171,3 +171,74 @@ def test_background_music_job_requires_frozen_music_timeline_before_it_can_leave
             expected_version=job.version,
             source_contract={"regions": [{"region_id": "c01", "start_ms": 0, "end_ms": 3000, "kind": "body"}]},
         )
+
+
+def test_publishing_final_video_removes_all_job_history_but_keeps_the_mp4(tmp_path):
+    store = FileJobStore(tmp_path / "data")
+    job = store.create(make_validated_intake(tmp_path))
+
+    receipt = store.publish_final_video(
+        job.job_id,
+        expected_version=job.version,
+        payload=b"final-video-bytes",
+    )
+
+    assert receipt.job_id == job.job_id
+    assert store.final_video_path(job.job_id).read_bytes() == b"final-video-bytes"
+    assert not store.job_dir(job.job_id).exists()
+    with pytest.raises(JobNotFound):
+        store.get(job.job_id)
+    assert sorted(path.relative_to(store.data_root).as_posix() for path in store.data_root.rglob("*") if path.is_file()) == [
+        f"final/{job.job_id}/result.mp4"
+    ]
+
+
+def test_expired_temporary_jobs_are_purged_without_deleting_final_videos(tmp_path):
+    store = FileJobStore(tmp_path / "data")
+    expired = store.create(make_validated_intake(tmp_path))
+    delivered = store.create(make_validated_intake(tmp_path))
+    store.publish_final_video(delivered.job_id, expected_version=delivered.version, payload=b"final")
+
+    import os
+
+    os.utime(store.job_dir(expired.job_id), (0, 0))
+    removed = store.purge_expired_jobs(ttl_seconds=1, now_epoch_seconds=2)
+
+    assert removed == (expired.job_id,)
+    assert not store.job_dir(expired.job_id).exists()
+    assert store.final_video_path(delivered.job_id).read_bytes() == b"final"
+
+
+def test_default_app_store_cache_is_job_temporary_and_is_removed_at_delivery(tmp_path):
+    def resolve_app_evidence(*, url, purpose):
+        del purpose
+        return {
+            "bundle_sha256": "a" * 64,
+            "canonical_url": url,
+            "app_id": "com.example.app",
+            "screenshots": [{"sha256": "b" * 64, "source": "official"}],
+            "icon": {"sha256": "c" * 64, "source": "official"},
+        }
+
+    source = tmp_path / "source.mp4"
+    source.write_bytes(b"source")
+    store = FileJobStore(tmp_path / "data", app_evidence_resolver=resolve_app_evidence)
+    job = store.create(
+        validate_intake(
+            build_intake(
+                source_video=source,
+                app_store_url="https://play.google.com/store/apps/details?id=com.example.app",
+            ),
+            probe_duration=lambda _: 3.0,
+        )
+    )
+    store.freeze_source_contract(
+        job.job_id,
+        expected_version=job.version,
+        source_contract={"regions": [{"region_id": "c01", "start_ms": 0, "end_ms": 3000, "kind": "body"}]},
+    )
+
+    assert (store.job_dir(job.job_id) / "cache" / "app_evidence").is_dir()
+    assert not (store.data_root / "app_evidence_cache").exists()
+    store.publish_final_video(job.job_id, expected_version=store.get(job.job_id).version, payload=b"final")
+    assert not (store.job_dir(job.job_id) / "cache").exists()

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import mimetypes
 import shutil
 import tempfile
+import time
 import uuid
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable
@@ -24,6 +27,14 @@ class JobNotFound(FileNotFoundError):
 
 class VersionConflict(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class FinalVideoReceipt:
+    job_id: str
+    sha256: str
+    byte_count: int
+    filename: str = "result.mp4"
 
 
 def _utc_now() -> str:
@@ -46,16 +57,83 @@ class FileJobStore:
     ):
         self.data_root = Path(data_root)
         self.jobs_root = self.data_root / "jobs"
+        self.final_root = self.data_root / "final"
         self.jobs_root.mkdir(parents=True, exist_ok=True)
         if app_evidence_resolver is not None and not callable(app_evidence_resolver):
             raise ValueError("APP_EVIDENCE_RESOLVER_INVALID")
         self._app_evidence_resolver = app_evidence_resolver
-        self._app_evidence_cache = app_evidence_cache or AppEvidenceCache(self.data_root / "app_evidence_cache")
+        self._app_evidence_cache = app_evidence_cache
         self._app_evidence_locale = app_evidence_locale
         self._app_evidence_parser_version = app_evidence_parser_version
 
     def job_dir(self, job_id: str) -> Path:
         return self.jobs_root / job_id
+
+    def final_video_path(self, job_id: str) -> Path:
+        if not isinstance(job_id, str) or len(job_id) != 32 or any(character not in "0123456789abcdef" for character in job_id):
+            raise JobNotFound(job_id)
+        return self.final_root / job_id / "result.mp4"
+
+    def publish_final_video(
+        self,
+        job_id: str,
+        *,
+        expected_version: int,
+        payload: bytes,
+    ) -> FinalVideoReceipt:
+        job = self.get(job_id)
+        if job.version != expected_version:
+            raise VersionConflict("JOB_VERSION_CONFLICT")
+        if not isinstance(payload, bytes) or not payload:
+            raise ValueError("FINAL_VIDEO_INVALID")
+        destination = self.final_video_path(job_id)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(dir=destination.parent, prefix=".result.", delete=False) as temporary:
+            temporary.write(payload)
+            temporary_path = Path(temporary.name)
+        temporary_path.replace(destination)
+        try:
+            shutil.rmtree(self.job_dir(job_id))
+        except Exception:
+            destination.unlink(missing_ok=True)
+            raise
+        self._remove_empty_jobs_root()
+        return FinalVideoReceipt(
+            job_id=job_id,
+            sha256=hashlib.sha256(payload).hexdigest(),
+            byte_count=len(payload),
+        )
+
+    def open_final_video(self, job_id: str) -> Path:
+        path = self.final_video_path(job_id)
+        if not path.is_file():
+            raise JobNotFound(job_id)
+        return path
+
+    def purge_expired_jobs(self, *, ttl_seconds: int, now_epoch_seconds: float | None = None) -> tuple[str, ...]:
+        if isinstance(ttl_seconds, bool) or not isinstance(ttl_seconds, int) or ttl_seconds <= 0:
+            raise ValueError("TEMPORARY_JOB_TTL_INVALID")
+        if not self.jobs_root.is_dir():
+            return ()
+        now = time.time() if now_epoch_seconds is None else now_epoch_seconds
+        if isinstance(now, bool) or not isinstance(now, (int, float)):
+            raise ValueError("TEMPORARY_JOB_CLEANUP_TIME_INVALID")
+        removed: list[str] = []
+        for path in sorted(self.jobs_root.iterdir()):
+            if not path.is_dir() or path.is_symlink():
+                continue
+            try:
+                job = self.get(path.name)
+            except JobNotFound:
+                continue
+            if self._provider_reconciliation_active(job):
+                continue
+            if now - path.stat().st_mtime < ttl_seconds:
+                continue
+            shutil.rmtree(path)
+            removed.append(path.name)
+        self._remove_empty_jobs_root()
+        return tuple(removed)
 
     def create(self, validated: ValidatedIntake) -> JobSnapshot:
         job_id = uuid.uuid4().hex
@@ -238,7 +316,8 @@ class FileJobStore:
             raise ValueError("APP_EVIDENCE_INPUT_REQUIRED")
         if self._app_evidence_resolver is None:
             raise ValueError("APP_EVIDENCE_RESOLVER_REQUIRED")
-        bundle = self._app_evidence_cache.get_or_resolve(
+        cache = self._app_evidence_cache or AppEvidenceCache(self.job_dir(job.job_id) / "cache" / "app_evidence")
+        bundle = cache.get_or_resolve(
             url=url,
             purpose=tuple(str(item) for item in purpose),
             store_locale=self._app_evidence_locale,
@@ -264,9 +343,19 @@ class FileJobStore:
 
     @staticmethod
     def _sha256_text(value: str) -> str:
-        import hashlib
-
         return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _provider_reconciliation_active(job: JobSnapshot) -> bool:
+        provider = job.provider or {}
+        status = str(provider.get("status") or provider.get("state") or "").upper()
+        return status in {"PENDING_CREATE", "SUBMITTING", "SUBMITTED", "RUNNING", "PROCESSING", "AMBIGUOUS"}
+
+    def _remove_empty_jobs_root(self) -> None:
+        try:
+            self.jobs_root.rmdir()
+        except OSError:
+            return
 
     @staticmethod
     def _read_json(path: Path) -> dict[str, Any]:

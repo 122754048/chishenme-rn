@@ -17,12 +17,14 @@ class _Clock:
 class _Redis:
     def __init__(self):
         self.values = {}
+        self.expirations = {}
 
     def get(self, key):
         return self.values.get(key)
 
-    def set(self, key, value):
+    def set(self, key, value, ex=None):
         self.values[key] = value
+        self.expirations[key] = ex
 
 
 def test_timing_ledger_separates_queue_active_provider_and_skipped_work():
@@ -97,6 +99,21 @@ def test_redis_timing_ledger_store_keeps_one_job_ledger_durable_between_processe
             }
         ],
     }
+
+
+def test_redis_timing_ledger_uses_a_job_scoped_24_hour_temporary_key():
+    redis = _Redis()
+    store = RedisTimingLedgerStore(
+        redis,
+        prefix="usfr:test",
+        ttl_seconds=86_400,
+        job_scoped_keys=True,
+    )
+
+    store.create("music-job")
+
+    assert "usfr:test:music-job:timing" in redis.values
+    assert redis.expirations["usfr:test:music-job:timing"] == 86_400
 
 
 def test_timed_stage_port_records_a_real_provider_wait_against_the_registered_job_ledger():

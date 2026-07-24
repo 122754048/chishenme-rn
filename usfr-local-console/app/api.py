@@ -4,6 +4,7 @@ import csv
 import io
 import json
 import tempfile
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Callable, Protocol
 from urllib.error import HTTPError, URLError
@@ -181,7 +182,12 @@ def create_app(
         if settings.commercial_batch_api_url
         else UnavailableCommercialBatchDispatcher()
     )
-    app = FastAPI(title="USFR Local Console", docs_url=None, redoc_url=None, openapi_url=None)
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        store.purge_expired_jobs(ttl_seconds=settings.temporary_job_ttl_seconds)
+        yield
+
+    app = FastAPI(title="USFR Local Console", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.state.settings = settings
     app.state.store = store
     app.state.gateway = gateway
@@ -237,6 +243,7 @@ def create_app(
         output_language: str | None = Form(None),
         opaque_audio_policy: str | None = Form(None),
     ) -> dict[str, Any]:
+        store.purge_expired_jobs(ttl_seconds=settings.temporary_job_ttl_seconds)
         with tempfile.TemporaryDirectory(dir=settings.data_root) as temp_dir:
             temporary = Path(temp_dir)
             source_path = await _save_upload(source_video, temporary, "source_video")
@@ -275,6 +282,10 @@ def create_app(
     @app.get("/api/jobs/{job_id}")
     def get_job(job_id: str) -> dict[str, Any]:
         return _job_payload(store.get(job_id))
+
+    @app.get("/api/final-videos/{job_id}")
+    def get_final_video(job_id: str) -> FileResponse:
+        return FileResponse(store.open_final_video(job_id), media_type="video/mp4", filename="result.mp4")
 
     @app.post("/api/batches/preflight")
     def preflight_batch(command: BatchManifestCommand) -> dict[str, object]:
@@ -356,9 +367,16 @@ def create_app(
         attempt = gateway.poll_existing(job_id, command.expected_version)
         job = store.get(job_id)
         if attempt.status == "SUCCESS":
-            receipt = gateway.download_registered_artifact(job_id, job.version)
-            job = store.get(job_id)
-            return {**_job_payload(job), "provider_attempt": attempt.__dict__, "artifact": receipt.__dict__}
+            receipt = gateway.deliver_final_video(job_id, job.version)
+            return {
+                "job_id": receipt.job_id,
+                "stage": "DELIVERED",
+                "final_video_url": f"/api/final-videos/{receipt.job_id}",
+                "filename": receipt.filename,
+                "sha256": receipt.sha256,
+                "byte_count": receipt.byte_count,
+                "provider_attempt": attempt.__dict__,
+            }
         return {**_job_payload(job), "provider_attempt": attempt.__dict__}
 
     @app.get("/api/jobs/{job_id}/artifacts")

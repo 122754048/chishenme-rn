@@ -57,7 +57,9 @@ def build_commercial_deployment_runtime(
         raise CommercialDeploymentError("COMMERCIAL_DEPLOYMENT_FACTORY_INVALID")
     timing_ledger_store = RedisTimingLedgerStore(
         redis_client,
-        prefix=f"{prefix}:commercial:timing",
+        prefix=prefix,
+        ttl_seconds=_positive_environment(environment or {}, "USFR_COMMERCIAL_BATCH_TTL_SECONDS", default=86_400),
+        job_scoped_keys=True,
     )
     worker_manager.timing_ledger_store = timing_ledger_store
     queues = {
@@ -220,7 +222,7 @@ def build_backend_runtime_from_deployment(
         raise CommercialDeploymentError("COMMERCIAL_DEPLOYMENT_UPLOAD_SCOPE_REQUIRED")
     if not callable(commercial_runtime_builder):
         raise CommercialDeploymentError("COMMERCIAL_DEPLOYMENT_FACTORY_INVALID")
-    ttl_seconds = _positive_environment(environment, "USFR_COMMERCIAL_BATCH_TTL_SECONDS", default=3600)
+    ttl_seconds = _positive_environment(environment, "USFR_COMMERCIAL_BATCH_TTL_SECONDS", default=86_400)
     commercial_runtime = commercial_runtime_builder(
         job_store=job_store,
         object_store=object_store,

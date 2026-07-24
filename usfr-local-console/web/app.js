@@ -69,6 +69,11 @@ function renderJob(job) {
   renderQaReceipt(job.qa_receipt || {});
   renderInputs(job.inputs || {});
   renderArtifacts(job.artifacts || []);
+  if (job.stage === "DELIVERED" && job.final_video_url) {
+    renderDelivery(job);
+    schedulePolling({});
+    return;
+  }
   schedulePolling(provider);
 }
 
@@ -239,6 +244,18 @@ function renderQaReceipt(receipt) {
     const content = document.createElement("strong"); content.textContent = String(value);
     line.append(name, content); target.append(line);
   });
+}
+
+function renderDelivery(job) {
+  const target = document.querySelector("#artifact-list");
+  const card = document.createElement("article"); card.className = "artifact";
+  const title = document.createElement("strong"); title.textContent = "最终视频";
+  const link = document.createElement("a");
+  link.href = job.final_video_url;
+  link.textContent = "下载最终视频";
+  link.download = job.filename || "result.mp4";
+  const video = document.createElement("video"); video.controls = true; video.src = job.final_video_url;
+  card.append(title, video, link); target.append(card);
 }
 
 function providerPollDelay(provider) {

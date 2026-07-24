@@ -35,5 +35,14 @@ def test_settings_reads_an_optional_commercial_batch_api_url(tmp_path, monkeypat
     assert settings.commercial_batch_api_url == "http://127.0.0.1:8000/api/v1/commercial-batches"
 
 
+def test_settings_reads_the_temporary_job_retention_window(tmp_path, monkeypatch):
+    monkeypatch.setenv("USFR_CONSOLE_DATA_ROOT", str(tmp_path / "data"))
+    monkeypatch.setenv("USFR_CONSOLE_TEMP_TTL_SECONDS", "86400")
+
+    settings = Settings.load()
+
+    assert settings.temporary_job_ttl_seconds == 86400
+
+
 def test_default_skill_path_is_the_repository_owned_usfr_server():
     assert DEFAULT_SKILL_PATH == Path(__file__).resolve().parents[2] / "usfr-server" / "SKILL.md"

@@ -1,4 +1,6 @@
 import hashlib
+import os
+from dataclasses import replace
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -6,6 +8,7 @@ from fastapi.testclient import TestClient
 from app.api import create_app
 from app.artifacts import ArtifactRegistry
 from app.jobs import FileJobStore
+from app.runninghub import RunningHubGateway
 from app.settings import Settings
 from app.slots import build_intake, validate_intake
 
@@ -147,3 +150,86 @@ def test_api_serves_only_registered_immutable_job_inputs(tmp_path):
 
     assert ok.status_code == 200
     assert missing.status_code == 404
+
+
+def test_final_video_download_survives_without_a_job_history_record(tmp_path):
+    app, store = make_app(tmp_path)
+    source = tmp_path / "source.mp4"
+    source.write_bytes(b"source")
+    job = store.create(
+        validate_intake(build_intake(source_video=source, output_language="fr"), probe_duration=lambda _: 5)
+    )
+    store.publish_final_video(job.job_id, expected_version=job.version, payload=b"final-video")
+    client = TestClient(app)
+
+    delivered = client.get(f"/api/final-videos/{job.job_id}")
+    history = client.get(f"/api/jobs/{job.job_id}")
+
+    assert delivered.status_code == 200
+    assert delivered.content == b"final-video"
+    assert history.status_code == 404
+
+
+def test_provider_success_delivers_only_final_video_and_purges_job_history(tmp_path):
+    class SuccessfulTransport:
+        def create(self, request):
+            del request
+            return {"task_id": "provider-task", "status": "RUNNING"}
+
+        def query(self, task_id):
+            assert task_id == "provider-task"
+            return {
+                "task_id": task_id,
+                "status": "SUCCESS",
+                "output_url": "https://provider.example/result.mp4",
+            }
+
+        def download(self, url):
+            assert url == "https://provider.example/result.mp4"
+            return b"provider-final-video"
+
+    settings = make_settings(tmp_path)
+    store = FileJobStore(settings.data_root)
+    gateway = RunningHubGateway(store, SuccessfulTransport())
+    app = create_app(settings=settings, store=store, gateway=gateway, probe_duration=lambda _: 5)
+    source = tmp_path / "source.mp4"
+    source.write_bytes(b"source")
+    job = store.create(
+        validate_intake(build_intake(source_video=source, output_language="fr"), probe_duration=lambda _: 5)
+    )
+    submitted = gateway.submit_once(job.job_id, job.version, {"workflow_id": "123", "payload": {}})
+    client = TestClient(app)
+
+    response = client.post(
+        f"/api/jobs/{job.job_id}/provider/poll",
+        json={"expected_version": submitted.job_version},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["stage"] == "DELIVERED"
+    assert payload["final_video_url"] == f"/api/final-videos/{job.job_id}"
+    assert payload["byte_count"] == len(b"provider-final-video")
+    assert client.get(payload["final_video_url"]).content == b"provider-final-video"
+    assert client.get(f"/api/jobs/{job.job_id}").status_code == 404
+
+
+def test_new_job_submission_sweeps_expired_temporary_job_history(tmp_path):
+    settings = replace(make_settings(tmp_path), temporary_job_ttl_seconds=1)
+    store = FileJobStore(settings.data_root)
+    source = tmp_path / "expired.mp4"
+    source.write_bytes(b"source")
+    expired = store.create(
+        validate_intake(build_intake(source_video=source, output_language="fr"), probe_duration=lambda _: 5)
+    )
+    os.utime(store.job_dir(expired.job_id), (0, 0))
+    client = TestClient(create_app(settings=settings, store=store, probe_duration=lambda _: 5))
+
+    created = client.post(
+        "/api/jobs",
+        data={"output_language": "fr"},
+        files={"source_video": ("new.mp4", b"new-source", "video/mp4")},
+    )
+
+    assert created.status_code == 201
+    assert not store.job_dir(expired.job_id).exists()

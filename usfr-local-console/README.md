@@ -4,7 +4,7 @@
 
 这是 `universal-source-fidelity-replication` 的独立本地可视化工作台。它 **does not modify the Skill**：不会改写、复制、删除或覆盖现有 Skill 内的任何文件，也不会使用 OpenAI API。
 
-浏览器只连接 `127.0.0.1`。GPT 分析、翻译、脚本和提示词推理继续由当前 Codex 客户端执行；控制台只保存本地任务、显示两个确认点、提交已验证的 Provider 请求、轮询和下载结果。
+浏览器只连接 `127.0.0.1`。GPT 分析、翻译、脚本和提示词推理继续由当前 Codex 客户端执行；控制台只在任务进行时临时保存任务、显示两个确认点、提交已验证的 Provider 请求、轮询和交付结果。
 
 ## 启动
 
@@ -27,7 +27,7 @@
    - “确认文字脚本”：可编辑并保存为新版本；确认后才进入故事板阶段。
    - “确认故事板”：只确认当前 SHA-256 对应的版本；确认后自动准备 Provider。
 6. `provider_request_ready` 导入后，不会出现“确认提交”按钮。控制台会先永久保存请求 SHA-256，再向 RunningHub 创建一次任务；之后只轮询同一 task ID。
-7. 成功后，控制台自动下载已登记的结果，并显示视频预览和下载按钮。
+7. 成功后，控制台立即清除输入、分析、缓存、Provider 记录和 QA 记录，只保留最终 MP4，并显示视频预览和下载按钮。
 
 背景音乐是可选 `background_music` 扩展，不是第八固定槽位。仅“原视频加背景音乐”不会进入 language-only/TTS 快速通道：标准执行路线必须把上传音乐作为 Seedance 2.0 的 `@Audio1`，注册为 Audio 资产，并禁止 `reference_audios`。源合同冻结后需要帧级音乐窗口；最终 QA 必须保存上传音乐精确片段、可见演唱歌词或音素对齐和口型收据，以及最终混音收据。控制台不会把这条路线降级为 RunningHub 请求。
 
@@ -52,9 +52,9 @@
 
 `payload` 必须是该 RunningHub 工作流 API 页面规定的请求体，例如 `nodeInfoList`、`instanceType` 和 `usePersonalQueue`。控制台按 RunningHub 标准接口提交到：`/openapi/v2/run/ai-app/{workflow_id}`，并轮询 `/openapi/v2/query`。这意味着 Codex/既有 Skill 必须在生成结果包前将需要的媒体字段准备为该工作流可接受的值；控制台不会猜测节点 ID 或重绘工作流。
 
-## 恢复规则
+## 临时恢复规则
 
-- 页面刷新、浏览器关闭或控制台重启后，先刷新任务；已经有 task ID 的任务只会继续查询，绝不会再创建一次。
+- 视频交付前，页面刷新、浏览器关闭或控制台重启后，可刷新任务；已经有 task ID 的任务只会继续查询，绝不会再创建一次。视频交付后任务记录会被清除，页面只保留最终视频下载地址。
 - 如果创建请求写入后网络超时，状态会是 `PENDING_CREATE`。这是一种“结果不明”状态：不要再次点击或重新导入请求。先到 RunningHub 后台核对是否已有任务，再依据 task ID 恢复。
 - 若提示 `CODEX_BRIDGE_RESULT_REJECTED`，重新导出当前任务包并让 Codex 按新版本生成结果；不要修改旧 JSON 的 job ID、版本或摘要。
 - 如出现 `JOB_VERSION_CONFLICT`，页面状态已过期，点击“刷新状态”后继续。
@@ -62,7 +62,7 @@
 
 ## 本地数据与安全
 
-- 所有任务数据只写入本项目的 `data/jobs/<job-id>/`；输入会复制并 SHA-256 固化。
+- `data/jobs/<job-id>/` 仅是临时目录，保存输入、分析、App Store 证据缓存、Provider 状态和 QA 资料；成功交付后立即删除，未完成任务默认 24 小时后清理。唯一长期文件是 `data/final/<job-id>/result.mp4`。
 - 控制台不会写入既有 Skill，也不会写入历史 `replication-runs`。
 - 密钥仅由后端读取 `.env` 或进程环境变量，不会进入任务 JSON、浏览器页面、日志、下载链接或错误响应。
 - 静态素材只允许通过已登记的 artifact ID 读取；路径遍历和 `.env` 读取会被拒绝。

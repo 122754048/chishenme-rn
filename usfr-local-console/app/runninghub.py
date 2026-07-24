@@ -6,8 +6,7 @@ from typing import Any, Callable, Protocol
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from .artifacts import ArtifactReceipt, ArtifactRegistry
-from .jobs import FileJobStore, VersionConflict
+from .jobs import FileJobStore, FinalVideoReceipt, VersionConflict
 from .models import JobSnapshot
 from .reviews import canonical_digest
 
@@ -122,7 +121,6 @@ class RunningHubGateway:
     def __init__(self, store: FileJobStore, transport: RunningHubTransport):
         self.store = store
         self.transport = transport
-        self.artifacts = ArtifactRegistry(store)
 
     def submit_once(
         self, job_id: str, expected_version: int, request: dict[str, Any]
@@ -244,9 +242,7 @@ class RunningHubGateway:
         )
         return ProviderAttempt(provider["request_sha256"], task_id, status, updated.version)
 
-    def download_registered_artifact(
-        self, job_id: str, expected_version: int, *, role: str = "final_video"
-    ) -> ArtifactReceipt:
+    def deliver_final_video(self, job_id: str, expected_version: int) -> FinalVideoReceipt:
         job = self.store.get(job_id)
         if job.version != expected_version:
             raise VersionConflict("JOB_VERSION_CONFLICT")
@@ -258,11 +254,8 @@ class RunningHubGateway:
         if not isinstance(output_url, str) or not output_url.startswith(("https://", "http://")):
             raise ProviderError("PROVIDER_OUTPUT_URL_MISSING")
         payload = self.transport.download(output_url)
-        return self.artifacts.register_bytes(
+        return self.store.publish_final_video(
             job_id,
-            expected_version,
-            role=role,
-            filename="result.mp4",
-            mime_type="video/mp4",
+            expected_version=expected_version,
             payload=payload,
         )

@@ -36,6 +36,9 @@ class _StateStore:
     def get_batch(self, batch_id):
         return self.batches[batch_id]
 
+    def delete_batch(self, batch_id):
+        del self.batches[batch_id]
+
 
 class _Snapshot:
     def __init__(self, *, state, final_ref=None, version=3, review_route=None):
@@ -257,7 +260,7 @@ def test_commercial_batch_reads_current_standard_job_snapshot_and_persists_deliv
     assert index["items"] == [
         {"row_id": "one", "job_id": "job-one", "status": "succeeded", "result": expected_result}
     ]
-    assert state_store.get_batch(submitted["batch_id"])["rows"][0]["status"] == "succeeded"
+    assert submitted["batch_id"] not in state_store.batches
 
 
 def test_commercial_batch_persists_the_durable_standard_job_timing_receipt():

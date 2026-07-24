@@ -80,9 +80,11 @@ class _BackgroundMusicExecutionAdapter:
 class _Redis:
     def __init__(self):
         self.values = {}
+        self.expirations = {}
 
-    def set(self, key, value):
+    def set(self, key, value, ex=None):
         self.values[key] = value
+        self.expirations[key] = ex
 
     def get(self, key):
         return self.values.get(key)
@@ -315,6 +317,15 @@ def test_redis_batch_state_store_persists_row_recovery_metadata_without_a_file_s
             "timing_ledger": {"provider_wait_ms": 1200},
         }
     ]
+
+
+def test_redis_batch_state_uses_the_same_24_hour_temporary_retention_window():
+    redis = _Redis()
+    store = RedisBatchStateStore(redis, prefix="commercial-test", ttl_seconds=86_400)
+
+    batch_id = store.create_batch([{"row_id": "row-1", "status": "queued"}])
+
+    assert redis.expirations[f"commercial-test:commercial-batches:{batch_id}"] == 86_400
 
 
 def test_standard_runtime_builder_uses_the_durable_creator_state_store_and_capability_limits():

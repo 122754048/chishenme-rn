@@ -32,17 +32,22 @@ class BatchStateStore(Protocol):
 
     def get_batch(self, batch_id: str) -> Mapping[str, object]: ...
 
+    def delete_batch(self, batch_id: str) -> None: ...
+
 
 class RedisBatchStateStore:
     """Durable commercial batch ledger backed by the deployment Redis authority."""
 
-    def __init__(self, redis_client: Any, *, prefix: str = "usfr") -> None:
+    def __init__(self, redis_client: Any, *, prefix: str = "usfr", ttl_seconds: int = 86_400) -> None:
         if not callable(getattr(redis_client, "get", None)) or not callable(getattr(redis_client, "set", None)):
             raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_REDIS_STATE_REQUIRED")
         if not isinstance(prefix, str) or not prefix.strip():
             raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_REDIS_PREFIX_INVALID")
+        if isinstance(ttl_seconds, bool) or not isinstance(ttl_seconds, int) or ttl_seconds <= 0:
+            raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_TTL_INVALID")
         self._redis = redis_client
         self._prefix = prefix.strip()
+        self._ttl_seconds = ttl_seconds
 
     def create_batch(self, rows: list[dict[str, object]]) -> str:
         batch_id = uuid.uuid4().hex
@@ -58,6 +63,12 @@ class RedisBatchStateStore:
     def get_batch(self, batch_id: str) -> Mapping[str, object]:
         return copy.deepcopy(self._read(batch_id))
 
+    def delete_batch(self, batch_id: str) -> None:
+        try:
+            self._redis.delete(self._key(batch_id))
+        except Exception as error:
+            raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_STATE_UNAVAILABLE") from error
+
     def _key(self, batch_id: str) -> str:
         if not isinstance(batch_id, str) or not batch_id:
             raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_STATE_INVALID")
@@ -68,7 +79,16 @@ class RedisBatchStateStore:
             self._redis.set(
                 self._key(batch_id),
                 json.dumps(dict(payload), sort_keys=True, separators=(",", ":")),
+                ex=self._ttl_seconds,
             )
+        except TypeError:
+            try:
+                self._redis.set(
+                    self._key(batch_id),
+                    json.dumps(dict(payload), sort_keys=True, separators=(",", ":")),
+                )
+            except Exception as error:
+                raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_STATE_UNAVAILABLE") from error
         except CommercialBatchRuntimeError:
             raise
         except Exception as error:
@@ -389,7 +409,9 @@ def build_standard_commercial_batch_runtime(
 
     timing_store = timing_ledger_store or RedisTimingLedgerStore(
         redis_client,
-        prefix=f"{redis_prefix}:commercial:timing",
+        prefix=redis_prefix,
+        ttl_seconds=ttl_seconds,
+        job_scoped_keys=True,
     )
     if not callable(getattr(timing_store, "snapshot", None)):
         raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_TIMING_STORE_REQUIRED")
@@ -409,7 +431,11 @@ def build_standard_commercial_batch_runtime(
         create_standard_job=creator,
         resume_known_job=creator.resume_known_job,
         capability_queues=capability_queues,
-        batch_state_store=RedisBatchStateStore(redis_client, prefix=redis_prefix),
+        batch_state_store=RedisBatchStateStore(
+            redis_client,
+            prefix=redis_prefix,
+            ttl_seconds=ttl_seconds,
+        ),
         snapshot_for_job=job_store.get_job,
         timing_for_job=timing_store.snapshot,
         environment=environment,
@@ -437,7 +463,10 @@ class CommercialBatchRuntime:
             raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_STANDARD_RUNTIME_REQUIRED")
         if set(self.CAPABILITY_QUEUES) - set(capability_queues):
             raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_CAPABILITY_QUEUE_MISSING")
-        if not all(callable(getattr(batch_state_store, name, None)) for name in ("create_batch", "replace_rows", "get_batch")):
+        if not all(
+            callable(getattr(batch_state_store, name, None))
+            for name in ("create_batch", "replace_rows", "get_batch", "delete_batch")
+        ):
             raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_STATE_STORE_REQUIRED")
         self._state_store = batch_state_store
         self._snapshot_for_job = snapshot_for_job
@@ -552,7 +581,7 @@ class CommercialBatchRuntime:
         rows = batch.get("rows")
         if not isinstance(rows, list):
             raise CommercialBatchRuntimeError("COMMERCIAL_BATCH_STATE_INVALID")
-        return {
+        response = {
             "batch_id": batch_id,
             "items": [
                 {
@@ -565,6 +594,9 @@ class CommercialBatchRuntime:
                 if isinstance(row, Mapping)
             ],
         }
+        if rows and all(_row_has_delivered_final_video(row) for row in rows if isinstance(row, Mapping)):
+            self._state_store.delete_batch(batch_id)
+        return response
 
     def _preflight_row(self, raw: dict[str, object]) -> dict[str, object]:
         row_id = str(raw.get("row_id") or "") if isinstance(raw, dict) else ""
@@ -668,6 +700,10 @@ def _required_qa(row: BatchRow) -> list[str]:
 
 def _public_row(row: Mapping[str, object]) -> dict[str, object]:
     return {key: value for key, value in row.items() if key != "input"}
+
+
+def _row_has_delivered_final_video(row: Mapping[str, object]) -> bool:
+    return str(row.get("status") or "").lower() == "succeeded" and isinstance(row.get("result"), Mapping)
 
 
 def _snapshot_projection(snapshot: object) -> dict[str, object]:
