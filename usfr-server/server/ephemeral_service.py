@@ -87,6 +87,25 @@ class ReplicationService:
                 "INVALID_INPUT",
                 "line_contracts and source_content_timeline_sha256 must be supplied together",
             )
+        list_artifacts = getattr(self.job_store, "list_artifacts", None)
+        artifacts = list_artifacts(job_id) if callable(list_artifacts) else ()
+        source_audio_kinds = {
+            str(getattr(item, "kind", "") or "")
+            for item in artifacts
+        } & {"performance_audio_source_contract", "audio_lyrics_beat_contract"}
+        if source_audio_kinds and source_audio_kinds != {
+            "performance_audio_source_contract",
+            "audio_lyrics_beat_contract",
+        }:
+            raise ReplicationError(
+                "INVALID_INPUT",
+                "source-audio evidence artifacts must be present as an atomic pair",
+            )
+        if source_audio_kinds and line_contracts is None:
+            raise ReplicationError(
+                "INVALID_INPUT",
+                "source-audio script approval requires line_contracts and source_content_timeline_sha256",
+            )
         script_approval = None
         if line_contracts is not None:
             try:

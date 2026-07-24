@@ -13,7 +13,7 @@ import server.performance_audio_contracts as performance_audio_contracts
 from server.errors import ReplicationError
 from server.high_fidelity_ports import HighFidelityStageAdapter
 
-from test_performance_audio_contracts import _approved_lines, _lines
+from test_performance_audio_contracts import _approved_lines, _audio_contract, _lines
 
 
 def _canonical(value):
@@ -36,6 +36,18 @@ class _Context:
     def __init__(self, *, approval, script_payload, timeline_payload):
         script_raw = _canonical(script_payload)
         timeline_raw = _canonical(timeline_payload)
+        source_audio_payload = {
+            "contract": "performance-audio-source/v1",
+            "mode": "source_audio_replicate_v1",
+            "source_audio_sha256": "4" * 64,
+        }
+        lyrics_payload = {
+            "contract": "audio-lyrics-beat/v1",
+            "source_audio_sha256": "4" * 64,
+            "segments": _audio_contract()["audio_contract"]["segments"],
+        }
+        source_audio_raw = _canonical(source_audio_payload)
+        lyrics_raw = _canonical(lyrics_payload)
         self.job_id = "recovery-job"
         self.snapshot = SimpleNamespace(
             current_script_revision=approval["revision"],
@@ -48,12 +60,14 @@ class _Context:
         self._payloads = {
             ("script_revision", self.snapshot.approved_script_sha256): script_raw,
             ("source_content_timeline", approval["source_content_timeline_sha256"]): timeline_raw,
+            ("performance_audio_source_contract", hashlib.sha256(source_audio_raw).hexdigest()): source_audio_raw,
+            ("audio_lyrics_beat_contract", hashlib.sha256(lyrics_raw).hexdigest()): lyrics_raw,
         }
         self.artifacts = (
             {"kind": "script_revision", "sha256": self.snapshot.approved_script_sha256},
             {"kind": "source_content_timeline", "sha256": approval["source_content_timeline_sha256"]},
-            {"kind": "performance_audio_source_contract", "sha256": "1" * 64},
-            {"kind": "audio_lyrics_beat_contract", "sha256": "2" * 64},
+            {"kind": "performance_audio_source_contract", "sha256": hashlib.sha256(source_audio_raw).hexdigest()},
+            {"kind": "audio_lyrics_beat_contract", "sha256": hashlib.sha256(lyrics_raw).hexdigest()},
         )
         self.published = []
 
@@ -96,6 +110,7 @@ def _recovery_fixture():
             "contract": "performance-line-candidate/v1",
             "status": "PENDING_CONFIRMATION",
             "source_audio_sha256": "4" * 64,
+            "source_duration_ms": 16_033,
             "cuts": candidate_cuts,
         }
     }
@@ -192,3 +207,54 @@ def test_recovery_rejects_pending_or_changed_timeline_before_publishing():
     with pytest.raises(ReplicationError, match="timeline SHA"):
         performance_audio_contracts.recover_confirmed_script_contracts(changed_context)
     assert changed_context.published == []
+
+
+def test_recovery_rejects_a_pending_lyric_candidate_before_publishing():
+    approval, script_payload, timeline_payload = _recovery_fixture()
+    script_payload["performance_line_candidates"]["cuts"][0]["lyric_status"] = "PENDING_CONFIRMATION"
+    approval["script_sha256"] = hashlib.sha256(_canonical(script_payload)).hexdigest()
+    context = _Context(
+        approval=approval,
+        script_payload=script_payload,
+        timeline_payload=timeline_payload,
+    )
+
+    with pytest.raises(ReplicationError, match="lyric_status"):
+        performance_audio_contracts.recover_confirmed_script_contracts(context)
+
+    assert context.published == []
+
+
+def test_recovery_rejects_a_cross_segment_local_time_candidate_before_publishing():
+    approval, script_payload, timeline_payload = _recovery_fixture()
+    script_payload["performance_line_candidates"]["cuts"][0]["segment_time"] = {
+        "start_ms": 0,
+        "end_ms": 4_001,
+    }
+    approval["script_sha256"] = hashlib.sha256(_canonical(script_payload)).hexdigest()
+    context = _Context(
+        approval=approval,
+        script_payload=script_payload,
+        timeline_payload=timeline_payload,
+    )
+
+    with pytest.raises(ReplicationError, match="segment-time"):
+        performance_audio_contracts.recover_confirmed_script_contracts(context)
+
+    assert context.published == []
+
+
+def test_recovery_rejects_a_performance_mode_that_differs_from_confirmed_content_type():
+    approval, script_payload, timeline_payload = _recovery_fixture()
+    script_payload["performance_line_candidates"]["cuts"][0]["performance_mode"] = "spoken"
+    approval["script_sha256"] = hashlib.sha256(_canonical(script_payload)).hexdigest()
+    context = _Context(
+        approval=approval,
+        script_payload=script_payload,
+        timeline_payload=timeline_payload,
+    )
+
+    with pytest.raises(ReplicationError, match="performance_mode must match content_type"):
+        performance_audio_contracts.recover_confirmed_script_contracts(context)
+
+    assert context.published == []

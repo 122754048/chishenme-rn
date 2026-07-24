@@ -504,10 +504,18 @@ class HighFidelityStageAdapter:
             )
         for line_id, approved in approved_by_line_id.items():
             performance = cuts_by_line_id[line_id]
+            lyric_status = str(performance.get("lyric_status") or "").lower()
+            expected_content_type = {
+                "spoken": "spoken",
+                "sung": "sung",
+                "singing": "sung",
+                "instrumental": "instrumental",
+                "inaudible": "inaudible",
+            }.get(str(performance.get("performance_mode") or "").lower())
             expected_text = (
                 approved["text"]["exact"]
                 if approved["content_type"] in {"spoken", "sung"}
-                else str(performance.get("lyric_status") or "").lower()
+                else lyric_status
             )
             if (
                 performance.get("cut_id") != approved["cut_id"]
@@ -518,11 +526,17 @@ class HighFidelityStageAdapter:
                     "start_ms": approved["time"]["start_ms"],
                     "end_ms": approved["time"]["end_ms"],
                 }
+                or performance.get("segment_time") != {
+                    "start_ms": 0,
+                    "end_ms": approved["time"]["end_ms"] - approved["time"]["start_ms"],
+                }
+                or lyric_status not in {"verified", "instrumental", "inaudible"}
+                or expected_content_type != approved["content_type"]
                 or performance.get("exact_sung_text") != expected_text
             ):
                 raise ReplicationError(
                     "PROMPT_INTEGRITY_FAILED",
-                    "approved performance line differs from the confirmed script-line binding",
+                    "approved performance line fails final source-audio validation",
                     category="contract",
                     user_action_required=True,
                     details={"line_id": line_id},
@@ -556,6 +570,16 @@ class HighFidelityStageAdapter:
     ) -> dict[str, Any]:
         result = result or {}
         performance_line_contract_sha256 = request.get("performance_line_contract_sha256")
+        source_content_timeline_sha256 = request.get("source_content_timeline_sha256")
+        if (performance_line_contract_sha256 is None) != (source_content_timeline_sha256 is None):
+            raise ReplicationError(
+                "PROMPT_INTEGRITY_FAILED",
+                "Invocation B source-audio binding requires both performance and timeline digests",
+                category="contract",
+                user_action_required=True,
+                details={"segment_id": segment_id},
+                http_status=422,
+            )
         if performance_line_contract_sha256 is not None:
             if (
                 not isinstance(performance_line_contract_sha256, str)
@@ -569,11 +593,33 @@ class HighFidelityStageAdapter:
                     details={"segment_id": segment_id},
                     http_status=422,
                 )
-            observed_digest = result.get("performance_line_contract_sha256")
-            if observed_digest is not None and observed_digest != performance_line_contract_sha256:
+            if (
+                not isinstance(source_content_timeline_sha256, str)
+                or _SHA256.fullmatch(source_content_timeline_sha256) is None
+            ):
                 raise ReplicationError(
                     "PROMPT_INTEGRITY_FAILED",
-                    "Provider result performance line contract digest differs from Invocation B",
+                    "Invocation B source-content timeline digest must be a lowercase SHA-256",
+                    category="contract",
+                    user_action_required=True,
+                    details={"segment_id": segment_id},
+                    http_status=422,
+                )
+            observed_digest = result.get("performance_line_contract_sha256")
+            if observed_digest != performance_line_contract_sha256:
+                raise ReplicationError(
+                    "PROMPT_INTEGRITY_FAILED",
+                    "Provider result performance line contract digest is missing or differs from Invocation B",
+                    category="contract",
+                    user_action_required=True,
+                    details={"segment_id": segment_id},
+                    http_status=422,
+                )
+            observed_timeline = result.get("source_content_timeline_sha256")
+            if observed_timeline != source_content_timeline_sha256:
+                raise ReplicationError(
+                    "PROMPT_INTEGRITY_FAILED",
+                    "Provider result source-content timeline digest is missing or differs from Invocation B",
                     category="contract",
                     user_action_required=True,
                     details={"segment_id": segment_id},
@@ -665,6 +711,7 @@ class HighFidelityStageAdapter:
         }
         if performance_line_contract_sha256 is not None:
             binding["performance_line_contract_sha256"] = performance_line_contract_sha256
+            binding["source_content_timeline_sha256"] = source_content_timeline_sha256
         return binding
 
     @staticmethod
@@ -889,6 +936,7 @@ class HighFidelityStageAdapter:
                 )
             segment_plan, segment_plan_sha256 = frozen
             frozen_performance = self._frozen_performance_line_contract(context)
+            source_audio_required = self._source_audio_contracts_required(context)
 
             raw_segments = segment_plan.get("segments")
             if not isinstance(raw_segments, list) or not 1 <= len(raw_segments) <= 2:
@@ -1009,7 +1057,19 @@ class HighFidelityStageAdapter:
                         )
                     prompt_request["performance_lines"] = lines
                     normalized["prompt_request"] = prompt_request
-                    normalized["performance_line_contract_sha256"] = contract_sha256
+                    if source_audio_required:
+                        timeline_sha = contract.get("source_content_timeline_sha256")
+                        if not isinstance(timeline_sha, str) or _SHA256.fullmatch(timeline_sha) is None:
+                            raise ReplicationError(
+                                "PROMPT_INTEGRITY_FAILED",
+                                "approved performance line contract is missing the frozen timeline digest",
+                                category="contract",
+                                user_action_required=True,
+                                details={"segment_id": segment_id},
+                                http_status=422,
+                            )
+                        normalized["performance_line_contract_sha256"] = contract_sha256
+                        normalized["source_content_timeline_sha256"] = timeline_sha
                 observed_segment_ids.append(segment_id)
                 normalized_payloads.append(normalized)
             if observed_segment_ids != expected_segment_ids:
@@ -1032,7 +1092,6 @@ class HighFidelityStageAdapter:
                     "provider_payload_template",
                     "request_sha256",
                     "seedance_input_contract",
-                    "performance_line_contract_sha256",
                 ):
                     invocation_payload.pop(stage9_key, None)
                 value = self.invocation_adapter.invoke_b(
@@ -1096,6 +1155,9 @@ class HighFidelityStageAdapter:
                     provider_payload=binding["provider_payload"],
                     request_sha256=binding["request_sha256"],
                 )
+                if "performance_line_contract_sha256" in binding:
+                    result["performance_line_contract_sha256"] = binding["performance_line_contract_sha256"]
+                    result["source_content_timeline_sha256"] = binding["source_content_timeline_sha256"]
                 normalized_results.append(result)
                 provider_bindings.append(binding)
 

@@ -658,10 +658,63 @@ def _confirmed_recovery_sidecar(context: Any) -> tuple[dict[str, Any], int, str]
     }, revision, script_sha
 
 
+def _recovery_source_audio_evidence(
+    context: Any,
+    *,
+    candidate: Mapping[str, Any],
+) -> tuple[int, list[dict[str, Any]]]:
+    """Load the existing source-audio evidence used to validate a GPT draft."""
+
+    descriptors = getattr(context, "artifacts", ()) or ()
+
+    def materialize(kind: str) -> dict[str, Any]:
+        matches = [
+            item
+            for item in descriptors
+            if isinstance(item, Mapping) and item.get("kind") == kind
+        ]
+        if len(matches) != 1:
+            _recovery_block(
+                "APPROVED_LINE_CONTRACT_REQUIRED",
+                f"confirmed script recovery requires exactly one {kind} artifact",
+            )
+        digest = str(matches[0].get("sha256") or "").lower()
+        if _SHA256.fullmatch(digest) is None:
+            _recovery_block(
+                "APPROVED_LINE_CONTRACT_REQUIRED",
+                f"confirmed script recovery {kind} artifact SHA is invalid",
+            )
+        return _recovery_artifact_json(context, kind=kind, sha256=digest)
+
+    source = materialize("performance_audio_source_contract")
+    lyrics = materialize("audio_lyrics_beat_contract")
+    source_sha = _sha256(candidate.get("source_audio_sha256"), field="candidate source_audio_sha256")
+    if (
+        source.get("contract") != "performance-audio-source/v1"
+        or source.get("mode") != SOURCE_AUDIO_REPLICATE_V1
+        or source.get("source_audio_sha256") != source_sha
+        or lyrics.get("contract") != "audio-lyrics-beat/v1"
+        or lyrics.get("source_audio_sha256") != source_sha
+    ):
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "source-audio performance candidates are not bound to the frozen audio evidence",
+        )
+    duration = _ms(candidate.get("source_duration_ms"), field="candidate source_duration_ms")
+    if duration <= 0:
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "candidate source_duration_ms must be positive",
+        )
+    return duration, _audio_segments(lyrics, source_duration_ms=duration)
+
+
 def _materialize_confirmed_performance_lines(
     *,
     candidate: Mapping[str, Any],
     approval: Mapping[str, Any],
+    source_duration_ms: int,
+    audio_segments: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
     if candidate.get("contract") != "performance-line-candidate/v1" or candidate.get("status") != "PENDING_CONFIRMATION":
         _recovery_block(
@@ -720,28 +773,44 @@ def _materialize_confirmed_performance_lines(
             else str(lyric_status).lower()
         )
         result.append(
-            {
-                "line_id": approved["line_id"],
-                "cut_id": approved["cut_id"],
-                "source_content_timeline_sha256": approval["source_content_timeline_sha256"],
-                "content_type": content_type,
-                "speaker_assignment": dict(approved["speaker_assignment"]),
-                "source_time": source_time,
-                "segment_time": dict(raw["segment_time"]),
-                "performance_mode": raw["performance_mode"],
-                "exact_sung_text": exact_text,
-                "lyric_status": lyric_status,
-                "beat_anchors_ms": list(raw["beat_anchors_ms"]),
-                "no_beat_reason": raw.get("no_beat_reason"),
-                "lip_sync": dict(raw["lip_sync"]),
-                "action": dict(raw["action"]),
-                "expression": dict(raw["expression"]),
-                "emotion": raw["emotion"],
-                "end_pose": raw["end_pose"],
-                "criticality": raw["criticality"],
-                "final_audio_carrier": "source_audio_global_window_postproduction",
-            }
+            _validate_performance_line(
+                {
+                    "line_id": approved["line_id"],
+                    "cut_id": approved["cut_id"],
+                    "source_content_timeline_sha256": approval["source_content_timeline_sha256"],
+                    "content_type": content_type,
+                    "speaker_assignment": approved["speaker_assignment"],
+                    "source_time": source_time,
+                    "segment_time": raw["segment_time"],
+                    "performance_mode": raw["performance_mode"],
+                    "exact_sung_text": exact_text,
+                    "lyric_status": lyric_status,
+                    "beat_anchors_ms": raw["beat_anchors_ms"],
+                    "no_beat_reason": raw.get("no_beat_reason"),
+                    "lip_sync": raw["lip_sync"],
+                    "action": raw["action"],
+                    "expression": raw["expression"],
+                    "emotion": raw["emotion"],
+                    "end_pose": raw["end_pose"],
+                    "criticality": raw["criticality"],
+                },
+                source_duration_ms=source_duration_ms,
+                audio_segments=audio_segments,
+            )
         )
+    _validate_approved_line_bindings(
+        result,
+        approved_lines=approved_lines,
+        source_content_timeline_sha256=approval["source_content_timeline_sha256"],
+        generated_regions=[
+            {
+                "region_id": line["cut_id"],
+                "source_start_ms": line["time"]["start_ms"],
+                "source_end_ms": line["time"]["end_ms"],
+            }
+            for line in approved_lines
+        ],
+    )
     return result
 
 
@@ -790,6 +859,10 @@ def recover_confirmed_script_contracts(context: Any) -> dict[str, Any]:
         source_audio_sha = str(candidate.get("source_audio_sha256") or "").lower()
         if not _SHA256.fullmatch(source_audio_sha):
             _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "GPT performance candidate source-audio SHA is invalid")
+        source_duration_ms, audio_segments = _recovery_source_audio_evidence(
+            context,
+            candidate=candidate,
+        )
         performance_contract = {
             "contract": "performance-line/v1",
             "script_revision": revision,
@@ -797,7 +870,12 @@ def recover_confirmed_script_contracts(context: Any) -> dict[str, Any]:
             "source_audio_sha256": source_audio_sha,
             "source_content_timeline_sha256": timeline_sha,
             "line_contracts_sha256": approval["line_contracts_sha256"],
-            "cuts": _materialize_confirmed_performance_lines(candidate=candidate, approval=approval),
+            "cuts": _materialize_confirmed_performance_lines(
+                candidate=candidate,
+                approval=approval,
+                source_duration_ms=source_duration_ms,
+                audio_segments=audio_segments,
+            ),
         }
     publisher = getattr(context, "publish_bytes", None)
     if not callable(publisher):

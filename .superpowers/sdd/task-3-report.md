@@ -90,3 +90,15 @@ python -m pytest tests/test_redis_job_store.py tests/test_revision_cas.py tests/
 
 - A duplicate delivery carrying the same already-completed recovery digest under a different owner is now rejected. Redis authorizes re-claim only when the calculated sidecar recovery digest is both valid and different from the succeeded checkpoint digest (the draft-to-recovery transition).
 - Final focused verification after this guard: the same 140-test suite passed in `5.45s`; `git diff --check` passed with only CRLF conversion warnings.
+
+## Post-review integrity correction
+
+- Source-audio script approval now detects the existing `performance_audio_source_contract` and `audio_lyrics_beat_contract` artifact pair through the JobStore, rejects an incomplete pair, and rejects approval when its canonical line sidecar and frozen timeline SHA are both omitted. The existing Redis approval CAS remains the atomic writer for the revision/script-SHA/timeline/line-list-SHA-bound sidecar.
+- Confirmation recovery now materializes the existing immutable source-audio evidence and passes a constructed, approved-line-bound row through `_validate_performance_line` and `_validate_approved_line_bindings`. This blocks pending lyric states, content-type/performance-mode mismatches, invalid source-audio evidence, and cross-region local `segment_time` values before either final contract is published.
+- Invocation B repeats the final lyric-status, performance-mode/content-type, and exact local-window checks before it can invoke the Provider. For source-audio jobs it now carries both `performance_line_contract_sha256` and `source_content_timeline_sha256` into the invocation, requires both values in the Provider result, and records both in the verified provider binding.
+- New RED cases were observed independently for omitted source-audio approval sidecar, pending lyric status, cross-segment local time, performance-mode mismatch, and omitted Provider digest/timeline receipt. Each is green after the corresponding boundary validation.
+
+```text
+python -m pytest tests/test_redis_job_store.py tests/test_revision_cas.py tests/test_review_service.py tests/test_server_api_contract.py tests/test_ephemeral_runtime.py tests/test_approved_script_contracts.py tests/test_high_fidelity_ports.py tests/test_performance_audio_contracts.py tests/test_production_ports.py -p no:cacheprovider -q
+145 passed in 5.50s
+```
