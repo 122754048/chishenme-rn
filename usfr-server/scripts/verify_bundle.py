@@ -181,7 +181,7 @@ REQUIRED_DEPLOYMENT_FILES = (
 )
 
 
-def _runtime_skill_sha256(path: Path) -> str:
+def runtime_skill_sha256(path: Path) -> str:
     """Hash a packaged UTF-8 Skill using its repository newline convention.
 
     The runtime Skill manifest is produced from the immutable bundle bytes,
@@ -268,7 +268,7 @@ def verify_bundle(root: Path) -> list[str]:
                     if not path.is_file():
                         failures.append(f"missing runtime Skill dependency: {relative}")
                         continue
-                    actual_sha = _runtime_skill_sha256(path)
+                    actual_sha = runtime_skill_sha256(path)
                     if not isinstance(expected_sha, str) or _SHA256.fullmatch(expected_sha) is None or expected_sha != actual_sha:
                         failures.append(f"runtime Skill dependency SHA mismatch: {name}")
                     if record.get("version") != "6.6.0":

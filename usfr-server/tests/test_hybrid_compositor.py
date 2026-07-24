@@ -75,7 +75,34 @@ class HybridCompositorTest(unittest.TestCase):
                     }
                 },
             ),
-            "remotion_react_ui",
+            "ffmpeg",
+        )
+
+    def test_remotion_ui_is_selected_only_for_a_benchmarked_deterministic_ui_interval(self):
+        report_sha = "b" * 64
+        requirements = {
+            "route": "generated_ui_demo",
+            "target_ui_evidence_sha256": "c" * 64,
+            "deterministic_ui_rebuild_allowed": True,
+            "ui_truth_card_sha256": "d" * 64,
+            "ui_render_contract_sha256": "e" * 64,
+            "source_interval_contract_sha256": "f" * 64,
+            "motion_actions": ["perspective", "parallax"],
+            "existing_renderer_equivalent": False,
+            "benchmark_activation_report_sha256": report_sha,
+        }
+        capabilities = {
+            "remotion_react_ui": {
+                "status": "enabled",
+                "domain": "programmable_overlays",
+                "activation_report_sha256": report_sha,
+            }
+        }
+
+        self.assertEqual(choose_backend(requirements, capabilities), "remotion_react_ui")
+        self.assertEqual(
+            choose_backend({**requirements, "route": "opaque_ui_demo"}, capabilities),
+            "ffmpeg",
         )
 
     def test_backend_policy_rejects_enabled_record_without_immutable_report(self):

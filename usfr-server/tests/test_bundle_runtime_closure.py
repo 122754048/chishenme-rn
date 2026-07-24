@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import hashlib
 from pathlib import Path
 import sys
 import unittest
@@ -12,6 +11,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from verify_bundle import (  # noqa: E402
     REQUIRED_MODULE_FILES,
     REQUIRED_SERVER_FILES,
+    runtime_skill_sha256,
     verify_bundle,
 )
 
@@ -103,8 +103,7 @@ class BundleRuntimeClosureTest(unittest.TestCase):
         for name, record in records.items():
             package_path = record["package_path"]
             self.assertTrue(package_path.startswith("runtime-skills/seedance-20/"))
-            payload = (ROOT / package_path).read_bytes()
-            self.assertEqual(hashlib.sha256(payload).hexdigest(), record["sha256"])
+            self.assertEqual(runtime_skill_sha256(ROOT / package_path), record["sha256"])
             self.assertEqual(record["version"], "6.6.0")
 
         self.assertTrue((ROOT / "runtime-skills" / "seedance-20" / "LICENSE").is_file())

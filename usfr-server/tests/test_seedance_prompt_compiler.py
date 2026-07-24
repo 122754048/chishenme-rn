@@ -133,6 +133,25 @@ def test_compiler_renders_and_freezes_source_audio_performance_contract(tmp_path
     )
 
 
+def test_compiler_renders_verified_spoken_performance_as_speech_not_singing(tmp_path):
+    files = _skill_files(tmp_path)
+    performance = _performance_line()
+    performance["performance_mode"] = "spoken"
+    performance["exact_sung_text"] = "Open it slowly."
+
+    artifact = module.compile_prompt(
+        segment=_segment(),
+        line_contracts=[_line()],
+        performance_lines=[performance],
+        factors={"audio": True, "performance": True},
+        skill_files=files,
+        compiler_checks={name: True for name in module.COMPILER_CHECKS},
+    )
+
+    assert 'speaks exactly, "Open it slowly."' in artifact["prompt"]
+    assert 'sings exactly, "Open it slowly."' not in artifact["prompt"]
+
+
 def _review_bindings():
     return {
         "output_language": "en",

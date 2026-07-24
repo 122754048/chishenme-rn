@@ -71,6 +71,7 @@ ROUTE_LEAKAGE_EXACT_KEYS = {
     "ui_qc",
     "tail_qc",
 }
+_PERFORMANCE_MODES = {"spoken", "sung", "singing", "instrumental", "inaudible"}
 COMPILER_CHECKS = (
     "professional_gate",
     "capability_check",
@@ -819,6 +820,13 @@ def _validate_performance_lines(
         lyric = item.get("exact_sung_text")
         if lyric_status not in {"verified", "instrumental", "inaudible"} or not isinstance(lyric, str) or not lyric.strip():
             raise ValueError("performance line lyric contract is invalid")
+        performance_mode = item.get("performance_mode")
+        if performance_mode not in _PERFORMANCE_MODES:
+            raise ValueError("performance line performance_mode is invalid")
+        if performance_mode in {"spoken", "sung", "singing"} and lyric_status != "verified":
+            raise ValueError("spoken or sung performance requires verified exact text")
+        if performance_mode in {"instrumental", "inaudible"} and lyric_status != performance_mode:
+            raise ValueError("non-verbal performance mode must match lyric_status")
         beats = item.get("beat_anchors_ms")
         if not isinstance(beats, list) or any(isinstance(beat, bool) or not isinstance(beat, int) for beat in beats):
             raise ValueError("performance line beat anchors are invalid")
@@ -845,11 +853,12 @@ def _render_performance_line(line: Mapping[str, Any]) -> str:
     source = line["source_time"]
     local = line["segment_time"]
     lyric = line["exact_sung_text"]
-    speech = (
-        f'sings exactly, "{lyric}"'
-        if line["lyric_status"] == "verified"
-        else f"performs {line['lyric_status']} with no invented words"
-    )
+    performance_mode = line["performance_mode"]
+    if line["lyric_status"] == "verified":
+        verb = "speaks" if performance_mode == "spoken" else "sings"
+        speech = f'{verb} exactly, "{lyric}"'
+    else:
+        speech = f"performs {line['lyric_status']} with no invented words"
     beat = ", ".join(f"{item / 1000:.2f}s" for item in line["beat_anchors_ms"]) or str(line["no_beat_reason"])
     return (
         f"Performance Cut {line['cut_id']}, source-audio global {source['start_ms'] / 1000:.2f}-{source['end_ms'] / 1000:.2f}s, "

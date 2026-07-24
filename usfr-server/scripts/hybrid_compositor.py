@@ -17,6 +17,9 @@ from typing import Any, Mapping, Sequence
 
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _ROUTES = {"KEEP", "REPLACE", "COMPOSITE", "REMOVE", "REINTERPRET", "OPAQUE_SPLICE"}
+_REMOTION_UI_MOTION_WHITELIST = frozenset(
+    {"perspective", "parallax", "translate", "scale"}
+)
 
 
 def _canonical(value: Any) -> bytes:
@@ -41,15 +44,59 @@ def choose_backend(requirements: Mapping[str, Any], capabilities: Mapping[str, A
             and _HEX64.fullmatch(record["activation_report_sha256"]) is not None
         )
 
+    if _remotion_ui_eligible(requirements, capabilities):
+        return "remotion_react_ui"
     if requirements.get("complex_ui") and activated(
         "hyperframes_html_ui", "complex_html_ui"
     ):
         return "hyperframes_html_ui"
-    if requirements.get("prefer_remotion") and activated(
-        "remotion_react_ui", "programmable_overlays"
-    ):
-        return "remotion_react_ui"
     return "ffmpeg"
+
+
+def _remotion_ui_eligible(
+    requirements: Mapping[str, Any], capabilities: Mapping[str, Any]
+) -> bool:
+    """Return whether this exact UI interval may use the Remotion adapter.
+
+    ``remotion_react_ui`` is not a general video backend.  A stage must bind
+    its target evidence and every frozen source/UI contract before this
+    selector can choose it.  The immutable activation receipt prevents a
+    merely installed adapter from being treated as production-ready.
+    """
+
+    record = capabilities.get("remotion_react_ui")
+    if not (
+        isinstance(record, Mapping)
+        and record.get("status") == "enabled"
+        and record.get("domain") == "programmable_overlays"
+    ):
+        return False
+    activation_sha = record.get("activation_report_sha256")
+    if not isinstance(activation_sha, str) or _HEX64.fullmatch(activation_sha) is None:
+        return False
+    if (
+        requirements.get("route") != "generated_ui_demo"
+        or requirements.get("deterministic_ui_rebuild_allowed") is not True
+        or requirements.get("existing_renderer_equivalent") is not False
+        or requirements.get("benchmark_activation_report_sha256") != activation_sha
+    ):
+        return False
+    for field in (
+        "target_ui_evidence_sha256",
+        "ui_truth_card_sha256",
+        "ui_render_contract_sha256",
+        "source_interval_contract_sha256",
+    ):
+        value = requirements.get(field)
+        if not isinstance(value, str) or _HEX64.fullmatch(value) is None:
+            return False
+    motions = requirements.get("motion_actions")
+    return (
+        isinstance(motions, Sequence)
+        and not isinstance(motions, (str, bytes, bytearray))
+        and bool(motions)
+        and all(isinstance(action, str) and action in _REMOTION_UI_MOTION_WHITELIST for action in motions)
+    )
 
 
 def _require_object(value: Any, field: str) -> Mapping[str, Any]:
