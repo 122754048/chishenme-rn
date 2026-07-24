@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 from .errors import ReplicationError
@@ -521,10 +522,319 @@ def build_source_audio_contracts(
     return contracts
 
 
+def _recovery_block(code: str, message: str, **details: Any) -> None:
+    raise ReplicationError(
+        code,
+        message,
+        category="contract",
+        user_action_required=True,
+        details=details or None,
+        http_status=422,
+    )
+
+
+def _recovery_artifact_json(
+    context: Any,
+    *,
+    kind: str,
+    sha256: str,
+) -> dict[str, Any]:
+    """Materialize one exact, canonical worker artifact without re-analysis."""
+
+    descriptors = [
+        item
+        for item in (getattr(context, "artifacts", ()) or ())
+        if isinstance(item, Mapping)
+        and item.get("kind") == kind
+        and item.get("sha256") == sha256
+    ]
+    if len(descriptors) != 1:
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            (
+                "frozen source-content timeline SHA differs from the approval sidecar"
+                if kind == "source_content_timeline"
+                else f"confirmed script recovery requires exactly one {kind} artifact"
+            ),
+        )
+    materialize = getattr(context, "materialize_artifact", None)
+    if not callable(materialize):
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            f"confirmed script recovery cannot materialize {kind}",
+        )
+    try:
+        with materialize(kind, sha256=sha256) as media:
+            raw = Path(media.path).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != sha256:
+            raise ValueError("materialized bytes do not match the declared SHA-256")
+        value = json.loads(raw.decode("utf-8"))
+        canonical = json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        if canonical != raw or not isinstance(value, Mapping):
+            raise ValueError("artifact must be canonical JSON object bytes")
+        return dict(value)
+    except ReplicationError:
+        raise
+    except Exception as exc:
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            f"confirmed script recovery {kind} artifact is invalid",
+            reason=str(exc),
+        )
+
+
+def _confirmed_recovery_sidecar(context: Any) -> tuple[dict[str, Any], int, str]:
+    snapshot = getattr(context, "snapshot", None)
+    revision = getattr(snapshot, "current_script_revision", None)
+    script_sha = str(getattr(snapshot, "approved_script_sha256", "") or "").lower()
+    if isinstance(revision, bool) or not isinstance(revision, int) or revision < 1 or not _SHA256.fullmatch(script_sha):
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "confirmed script recovery requires an approved current script revision",
+        )
+    getter = getattr(getattr(context, "job_store", None), "get_script_approval", None)
+    if not callable(getter):
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "confirmed script recovery requires the JobStore approval sidecar",
+        )
+    sidecar = getter(getattr(context, "job_id", ""), revision)
+    if not isinstance(sidecar, Mapping):
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "confirmed script recovery requires user-confirmed line contracts",
+        )
+    if (
+        sidecar.get("contract") != "approved-script-lines/v1"
+        or sidecar.get("revision") != revision
+        or sidecar.get("script_sha256") != script_sha
+    ):
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "approval sidecar is not bound to the exact approved script revision",
+        )
+    timeline_sha = str(sidecar.get("source_content_timeline_sha256") or "").lower()
+    if not _SHA256.fullmatch(timeline_sha):
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "approval sidecar source-content timeline SHA is invalid",
+        )
+    lines = sidecar.get("line_contracts")
+    if not isinstance(lines, Sequence) or isinstance(lines, (str, bytes, bytearray)):
+        _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "approval sidecar line contracts are invalid")
+    try:
+        from scripts.line_contract import validate_line_contracts
+
+        canonical_lines = validate_line_contracts(lines)
+    except Exception as exc:
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "PENDING_ASSIGNMENT or invalid confirmed line contracts block script recovery",
+            reason=str(exc),
+        )
+    canonical_sha = canonical_json_sha256(canonical_lines)
+    if sidecar.get("line_contracts_sha256") != canonical_sha:
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "approval sidecar line contract SHA differs from canonical lines",
+        )
+    if any(line.get("source_content_timeline_sha256") != timeline_sha for line in canonical_lines):
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "approved line source-content timeline SHA changed",
+        )
+    return {
+        "contract": "approved-script-lines/v1",
+        "revision": revision,
+        "script_sha256": script_sha,
+        "source_content_timeline_sha256": timeline_sha,
+        "line_contracts": canonical_lines,
+        "line_contracts_sha256": canonical_sha,
+    }, revision, script_sha
+
+
+def _materialize_confirmed_performance_lines(
+    *,
+    candidate: Mapping[str, Any],
+    approval: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    if candidate.get("contract") != "performance-line-candidate/v1" or candidate.get("status") != "PENDING_CONFIRMATION":
+        _recovery_block(
+            "APPROVED_LINE_CONTRACT_REQUIRED",
+            "GPT performance draft must remain a PENDING_CONFIRMATION candidate",
+        )
+    raw_cuts = candidate.get("cuts")
+    approved_lines = approval["line_contracts"]
+    if not isinstance(raw_cuts, Sequence) or isinstance(raw_cuts, (str, bytes, bytearray)):
+        _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "GPT performance candidates are invalid")
+    candidates_by_cut: dict[str, Mapping[str, Any]] = {}
+    for raw in raw_cuts:
+        if not isinstance(raw, Mapping) or not isinstance(raw.get("cut_id"), str) or not raw["cut_id"]:
+            _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "GPT performance candidate Cut is invalid")
+        cut_id = raw["cut_id"]
+        if cut_id in candidates_by_cut:
+            _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "GPT performance candidates repeat a Cut")
+        candidates_by_cut[cut_id] = raw
+    if len({line["cut_id"] for line in approved_lines}) != len(approved_lines):
+        _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "approved performance lines must map one-to-one to Cuts")
+    if set(candidates_by_cut) != {line["cut_id"] for line in approved_lines}:
+        _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "approved performance Cut coverage differs from the GPT draft")
+    result: list[dict[str, Any]] = []
+    for approved in approved_lines:
+        raw = candidates_by_cut[approved["cut_id"]]
+        source_time = {
+            "start_ms": approved["time"]["start_ms"],
+            "end_ms": approved["time"]["end_ms"],
+        }
+        if raw.get("source_time") != source_time:
+            _recovery_block(
+                "APPROVED_LINE_CONTRACT_REQUIRED",
+                "GPT performance candidate source window differs from the confirmed line",
+                line_id=approved["line_id"],
+            )
+        required = (
+            "segment_time",
+            "performance_mode",
+            "lyric_status",
+            "beat_anchors_ms",
+            "lip_sync",
+            "action",
+            "expression",
+            "emotion",
+            "end_pose",
+            "criticality",
+        )
+        missing = [field for field in required if field not in raw]
+        if missing:
+            _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "GPT performance candidate fields are incomplete", missing=missing)
+        content_type = approved.get("content_type")
+        lyric_status = raw["lyric_status"]
+        exact_text = (
+            approved["text"]["exact"]
+            if content_type in {"spoken", "sung"}
+            else str(lyric_status).lower()
+        )
+        result.append(
+            {
+                "line_id": approved["line_id"],
+                "cut_id": approved["cut_id"],
+                "source_content_timeline_sha256": approval["source_content_timeline_sha256"],
+                "content_type": content_type,
+                "speaker_assignment": dict(approved["speaker_assignment"]),
+                "source_time": source_time,
+                "segment_time": dict(raw["segment_time"]),
+                "performance_mode": raw["performance_mode"],
+                "exact_sung_text": exact_text,
+                "lyric_status": lyric_status,
+                "beat_anchors_ms": list(raw["beat_anchors_ms"]),
+                "no_beat_reason": raw.get("no_beat_reason"),
+                "lip_sync": dict(raw["lip_sync"]),
+                "action": dict(raw["action"]),
+                "expression": dict(raw["expression"]),
+                "emotion": raw["emotion"],
+                "end_pose": raw["end_pose"],
+                "criticality": raw["criticality"],
+                "final_audio_carrier": "source_audio_global_window_postproduction",
+            }
+        )
+    return result
+
+
+def recover_confirmed_script_contracts(context: Any) -> dict[str, Any]:
+    """Publish final line/performance artifacts in the existing script lease.
+
+    This recovery consumes only the immutable script revision, source timeline,
+    and JobStore approval sidecar.  It never runs GPT, source analysis, a
+    Provider, or a new workflow stage.
+    """
+
+    approval, revision, script_sha = _confirmed_recovery_sidecar(context)
+    timeline_sha = approval["source_content_timeline_sha256"]
+    timeline = _recovery_artifact_json(
+        context,
+        kind="source_content_timeline",
+        sha256=timeline_sha,
+    )
+    if timeline.get("contract") != "source-content-timeline/v1":
+        _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "frozen source-content timeline artifact is invalid")
+    script_revision = _recovery_artifact_json(
+        context,
+        kind="script_revision",
+        sha256=script_sha,
+    )
+    exact_contract = {
+        "schema_version": "exact-line-contract/v1",
+        "script_revision": revision,
+        "script_sha256": script_sha,
+        "source_content_timeline_sha256": timeline_sha,
+        "line_contracts_sha256": approval["line_contracts_sha256"],
+        "lines": approval["line_contracts"],
+    }
+    has_source_audio = {
+        str(item.get("kind") or "")
+        for item in (getattr(context, "artifacts", ()) or ())
+        if isinstance(item, Mapping)
+    } & {"performance_audio_source_contract", "audio_lyrics_beat_contract"}
+    if has_source_audio and has_source_audio != {"performance_audio_source_contract", "audio_lyrics_beat_contract"}:
+        _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "source-audio evidence artifacts are incomplete")
+    performance_contract: dict[str, Any] | None = None
+    if has_source_audio:
+        candidate = script_revision.get("performance_line_candidates")
+        if not isinstance(candidate, Mapping):
+            _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "source-audio recovery requires GPT performance candidates")
+        source_audio_sha = str(candidate.get("source_audio_sha256") or "").lower()
+        if not _SHA256.fullmatch(source_audio_sha):
+            _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "GPT performance candidate source-audio SHA is invalid")
+        performance_contract = {
+            "contract": "performance-line/v1",
+            "script_revision": revision,
+            "script_sha256": script_sha,
+            "source_audio_sha256": source_audio_sha,
+            "source_content_timeline_sha256": timeline_sha,
+            "line_contracts_sha256": approval["line_contracts_sha256"],
+            "cuts": _materialize_confirmed_performance_lines(candidate=candidate, approval=approval),
+        }
+    publisher = getattr(context, "publish_bytes", None)
+    if not callable(publisher):
+        _recovery_block("APPROVED_LINE_CONTRACT_REQUIRED", "confirmed script recovery requires the worker artifact publisher")
+    published: list[dict[str, Any]] = []
+    for kind, value in (
+        ("exact_line_contract", exact_contract),
+        ("performance_line_contract", performance_contract),
+    ):
+        if value is None:
+            continue
+        raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        published.append(
+            dict(
+                publisher(
+                    kind=kind,
+                    data=raw,
+                    content_type="application/json",
+                    expected_sha256=hashlib.sha256(raw).hexdigest(),
+                )
+            )
+        )
+    result: dict[str, Any] = {
+        "exact_line_contract": exact_contract,
+        "published_artifacts": published,
+    }
+    if performance_contract is not None:
+        result["performance_line_contract"] = performance_contract
+        result["performance_line_contract_sha256"] = published[-1]["sha256"]
+    return result
+
+
 __all__ = [
     "REFERENCE_AUDIO_MIGRATE_V1",
     "SOURCE_AUDIO_REPLICATE_V1",
     "build_audio_evidence_contracts",
     "build_source_audio_contracts",
     "canonical_json_sha256",
+    "recover_confirmed_script_contracts",
 ]

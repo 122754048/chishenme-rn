@@ -29,6 +29,21 @@ def manifest(revision: int, sha: str = "b" * 64, **extra):
     return value
 
 
+def script_approval(revision: int = 1, sha: str = "b" * 64, timeline_sha: str = "a" * 64):
+    lines = []
+    lines_sha = __import__("hashlib").sha256(
+        json.dumps(lines, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return {
+        "contract": "approved-script-lines/v1",
+        "revision": revision,
+        "script_sha256": sha,
+        "source_content_timeline_sha256": timeline_sha,
+        "line_contracts": lines,
+        "line_contracts_sha256": lines_sha,
+    }
+
+
 def test_script_append_installs_revision_and_deterministic_invalidations():
     store, redis_client = make_store()
     job = create_job(store)
@@ -99,6 +114,56 @@ def test_approve_requires_current_revision_and_exact_hash():
         store.approve_revision(job_id=job.job_id, kind="script", revision=1, expected_version=approved.version, expected_sha256="c" * 64, ttl_seconds=3600)
     with pytest.raises(ApprovalStaleError):
         store.approve_revision(job_id=job.job_id, kind="script", revision=2, expected_version=approved.version, expected_sha256="b" * 64, ttl_seconds=3600)
+
+
+def test_script_approval_cas_persists_canonical_lines_bound_to_exact_revision_and_timeline():
+    store, _ = make_store()
+    job = create_job(store)
+    appended = store.append_revision(
+        job_id=job.job_id,
+        kind="script",
+        expected_version=job.version,
+        manifest=manifest(1),
+        invalidate_downstream=False,
+        ttl_seconds=3600,
+    )
+
+    approved = store.approve_revision(
+        job_id=job.job_id,
+        kind="script",
+        revision=1,
+        expected_version=appended.version,
+        expected_sha256="b" * 64,
+        script_approval=script_approval(),
+        ttl_seconds=3600,
+    )
+
+    assert approved.approved_script_sha256 == "b" * 64
+    assert store.get_script_approval(job.job_id, 1) == script_approval()
+
+
+def test_script_approval_cas_rejects_sidecar_bound_to_another_revision():
+    store, _ = make_store()
+    job = create_job(store)
+    appended = store.append_revision(
+        job_id=job.job_id,
+        kind="script",
+        expected_version=job.version,
+        manifest=manifest(1),
+        invalidate_downstream=False,
+        ttl_seconds=3600,
+    )
+
+    with pytest.raises(ReplicationError, match="script_approval.revision"):
+        store.approve_revision(
+            job_id=job.job_id,
+            kind="script",
+            revision=1,
+            expected_version=appended.version,
+            expected_sha256="b" * 64,
+            script_approval=script_approval(revision=2),
+            ttl_seconds=3600,
+        )
 
 
 def test_approval_uses_top_level_revision_not_nested_slots_manifest():

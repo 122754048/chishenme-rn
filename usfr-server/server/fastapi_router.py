@@ -41,6 +41,8 @@ class RevisionRequestModel(VersionModel):
 
 class RevisionApprovalModel(VersionModel):
     expected_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    line_contracts: list[dict[str, Any]] | None = None
+    source_content_timeline_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
 
 class ReconcileModel(VersionModel):
@@ -145,7 +147,14 @@ def create_app(*, job_store: Any | None = None, review_service: ReplicationServi
     @app.post("/api/v1/jobs/{job_id}/scripts/{revision}/approve", status_code=202)
     async def approve_script(payload: RevisionApprovalModel, request: Request, job_id: str = Path(min_length=1), revision: int = Path(ge=1)):
         auth(request, job_id)
-        snapshot = service.approve_script_revision(job_id, revision=revision, expected_version=payload.expected_version, expected_sha256=payload.expected_sha256)
+        snapshot = service.approve_script_revision(
+            job_id,
+            revision=revision,
+            expected_version=payload.expected_version,
+            expected_sha256=payload.expected_sha256,
+            line_contracts=payload.line_contracts,
+            source_content_timeline_sha256=payload.source_content_timeline_sha256,
+        )
         advance(job_id)
         return dump(snapshot)
 
