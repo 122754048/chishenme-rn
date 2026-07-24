@@ -54,8 +54,12 @@ class EphemeralJobStore(Protocol):
         revision: int,
         expected_version: int,
         expected_sha256: str,
+        script_approval: Mapping[str, Any] | None = None,
         ttl_seconds: int,
     ) -> JobSnapshot:
+        raise NotImplementedError
+
+    def get_script_approval(self, job_id: str, revision: int) -> Mapping[str, Any] | None:
         raise NotImplementedError
 
     def list_revisions(self, job_id: str, kind: Literal["script", "storyboard"]) -> tuple[RevisionManifest, ...]:

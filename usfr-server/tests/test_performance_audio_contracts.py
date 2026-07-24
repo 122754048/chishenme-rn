@@ -79,7 +79,18 @@ def _audio_contract(*, confidence: float = 0.99):
 def _lines():
     return (
         {
+            "line_id": "A01",
             "cut_id": "C01",
+            "source_content_timeline_sha256": "a" * 64,
+            "content_type": "sung",
+            "speaker_assignment": {
+                "status": "CONFIRMED",
+                "speaker_id": "CHARACTER_A",
+                "role": "creator",
+                "visibility": "on_camera",
+                "confidence": 0.94,
+                "evidence_sha256": "b" * 64,
+            },
             "source_time": {"start_ms": 0, "end_ms": 4_000},
             "segment_time": {"start_ms": 0, "end_ms": 4_000},
             "performance_mode": "singing",
@@ -106,7 +117,18 @@ def _lines():
             "criticality": "H",
         },
         {
+            "line_id": "A02",
             "cut_id": "C02",
+            "source_content_timeline_sha256": "a" * 64,
+            "content_type": "sung",
+            "speaker_assignment": {
+                "status": "CONFIRMED",
+                "speaker_id": "CHARACTER_A",
+                "role": "creator",
+                "visibility": "on_camera",
+                "confidence": 0.94,
+                "evidence_sha256": "b" * 64,
+            },
             "source_time": {"start_ms": 8_400, "end_ms": 14_000},
             "segment_time": {"start_ms": 0, "end_ms": 5_600},
             "performance_mode": "singing",
@@ -135,7 +157,117 @@ def _lines():
     )
 
 
+def _approved_lines():
+    rows = []
+    for performance in _lines():
+        text = performance["exact_sung_text"]
+        rows.append(
+            {
+                "line_id": performance["line_id"],
+                "cut_id": performance["cut_id"],
+                "source_content_timeline_sha256": "a" * 64,
+                "content_type": "sung",
+                "speaker_assignment": dict(performance["speaker_assignment"]),
+                "speaker": {
+                    "id": "CHARACTER_A",
+                    "role": "creator",
+                    "visibility": "on_camera",
+                    "voice_policy": "generic rights-cleared target voice",
+                },
+                "language": {"bcp47": "en", "script": "Latn"},
+                "time": {
+                    "time_base": "output_global_ms",
+                    "start_ms": performance["source_time"]["start_ms"],
+                    "end_ms": performance["source_time"]["end_ms"],
+                    "duration_ms": performance["source_time"]["end_ms"] - performance["source_time"]["start_ms"],
+                    "duration_is_derived": True,
+                    "cut_ids": [performance["cut_id"]],
+                    "cross_cut_reason": None,
+                    "planned_safe_margin_ms": 0,
+                },
+                "text": {"exact": text, "normalized": text.lower(), "pronunciation_notes": []},
+                "delivery": {"tone": "natural", "pace": "steady", "emphasis": [], "volume": "natural", "breath": "controlled", "mic_distance": "close", "accent_or_locale": "en"},
+                "lip_sync": {"priority": "high", "face_visibility": "front visible", "occlusion": "none", "head_motion_limit": "small", "articulation": "clear lyric mouth shapes", "allowed_tolerance_ms": 100, "speaker_face_ref": "CHARACTER_A"},
+                "proof_events": [],
+                "foley_events": [],
+                "silence_windows": [],
+                "music_policy": {"mode": "none", "windows": []},
+                "claim_ids": [],
+                "qc_contract": {"asr_profile": "en", "speaker_check": "role", "language_check": "en", "line_tolerance_ms": 100, "proof_sync_tolerance_ms": 100, "foley_sync_tolerance_ms": 100, "hard_fail_flags": ["word_change"]},
+                "criticality": performance["criticality"],
+            }
+        )
+    return tuple(rows)
+
+
 class SourceAudioReplicateContractsTests(unittest.TestCase):
+    def test_rejects_performance_line_with_altered_approved_speaker_before_invocation(self):
+        altered = dict(_lines()[0])
+        altered["speaker_assignment"] = {
+            **altered["speaker_assignment"],
+            "speaker_id": "CHARACTER_B",
+        }
+
+        with self.assertRaisesRegex(ReplicationError, "PERFORMANCE_LINE_BINDING_REQUIRED"):
+            build_source_audio_contracts(
+                source_audio_sha256=SOURCE_AUDIO_SHA,
+                source_duration_ms=16_033,
+                audio_contract=_audio_contract(),
+                timeline_regions=_regions(),
+                performance_lines=(altered, _lines()[1]),
+                line_contracts=_approved_lines(),
+                source_content_timeline_sha256="a" * 64,
+            )
+
+    def test_rejects_pending_speaker_assignment_before_invocation(self):
+        pending = dict(_lines()[0])
+        pending["speaker_assignment"] = {
+            "status": "PENDING_ASSIGNMENT",
+            "reason": "multiple_visible_lip_sync_candidates",
+            "candidate_speaker_ids": ["CHARACTER_A", "CHARACTER_B"],
+        }
+
+        with self.assertRaisesRegex(ReplicationError, "PENDING_ASSIGNMENT"):
+            build_source_audio_contracts(
+                source_audio_sha256=SOURCE_AUDIO_SHA,
+                source_duration_ms=16_033,
+                audio_contract=_audio_contract(),
+                timeline_regions=_regions(),
+                performance_lines=(pending, _lines()[1]),
+                line_contracts=_approved_lines(),
+                source_content_timeline_sha256="a" * 64,
+            )
+
+    def test_rejects_unconfirmed_lyric_before_invocation(self):
+        unconfirmed = dict(_lines()[0])
+        unconfirmed["lyric_status"] = "PENDING_CONFIRMATION"
+
+        with self.assertRaisesRegex(ReplicationError, "PERFORMANCE_LINE_CONTRACT_REQUIRED"):
+            build_source_audio_contracts(
+                source_audio_sha256=SOURCE_AUDIO_SHA,
+                source_duration_ms=16_033,
+                audio_contract=_audio_contract(),
+                timeline_regions=_regions(),
+                performance_lines=(unconfirmed, _lines()[1]),
+                line_contracts=_approved_lines(),
+                source_content_timeline_sha256="a" * 64,
+            )
+
+    def test_rejects_performance_lines_from_different_source_content_timelines(self):
+        changed_timeline = dict(_lines()[1])
+        changed_timeline["source_content_timeline_sha256"] = "c" * 64
+
+        with self.assertRaisesRegex(ReplicationError, "source-content timeline"):
+            build_source_audio_contracts(
+                source_audio_sha256=SOURCE_AUDIO_SHA,
+                source_duration_ms=16_033,
+                audio_contract=_audio_contract(),
+                timeline_regions=_regions(),
+                performance_lines=(_lines()[0], changed_timeline),
+                line_contracts=_approved_lines(),
+                source_content_timeline_sha256="a" * 64,
+            )
+
     def test_provider_callable_binding_keeps_validated_bound_method(self):
         class Provider:
             def create_video(self):
@@ -158,7 +290,7 @@ class SourceAudioReplicateContractsTests(unittest.TestCase):
     def test_existing_dynamics_stage_publishes_source_audio_sidecars(self):
         class Dynamics:
             def analyze(self, **_kwargs):
-                return {"status": "ready", "source_dynamics_analysis": {"contract": "reference-video-dynamics", "source_cuts": [{"cut_id": "C01", "start_us": 0, "end_us": 16_033_000}]}}
+                return {"status": "ready", "source_video_sha256": "a" * 64, "source_dynamics_analysis": {"contract": "reference-video-dynamics", "source_cuts": [{"cut_id": "C01", "start_us": 0, "end_us": 16_033_000}]}}
 
         class Asr:
             def transcribe(self, **_kwargs):
@@ -186,8 +318,9 @@ class SourceAudioReplicateContractsTests(unittest.TestCase):
         self.assertEqual(result["source_audio_mode"], "source_audio_replicate_v1")
         self.assertEqual(
             [item["kind"] for item in context.published],
-            ["performance_audio_source_contract", "audio_lyrics_beat_contract"],
+            ["performance_audio_source_contract", "audio_lyrics_beat_contract", "source_content_timeline"],
         )
+        self.assertEqual(result["source_content_timeline"]["analysis_passes"]["asr"], 1)
 
     def test_stage_three_contracts_require_extracted_source_audio_digest(self):
         result = build_audio_evidence_contracts(
@@ -207,7 +340,7 @@ class SourceAudioReplicateContractsTests(unittest.TestCase):
     def test_registers_contracts_as_internal_existing_stage_artifacts(self):
         self.assertEqual(
             [item["kind"] for item in HIGH_FIDELITY_STAGE_ARTIFACTS["analyze_dynamics"]],
-            ["performance_audio_source_contract", "audio_lyrics_beat_contract"],
+            ["performance_audio_source_contract", "audio_lyrics_beat_contract", "source_content_timeline"],
         )
         self.assertIn(
             "performance_line_contract",
@@ -234,6 +367,8 @@ class SourceAudioReplicateContractsTests(unittest.TestCase):
             audio_contract=_audio_contract(),
             timeline_regions=_regions(),
             performance_lines=_lines(),
+            line_contracts=_approved_lines(),
+            source_content_timeline_sha256="a" * 64,
         )
 
         source = result["performance_audio_source_contract"]
@@ -261,6 +396,8 @@ class SourceAudioReplicateContractsTests(unittest.TestCase):
                 audio_contract=_audio_contract(),
                 timeline_regions=_regions(),
                 performance_lines=(incomplete, _lines()[1]),
+                line_contracts=_approved_lines(),
+                source_content_timeline_sha256="a" * 64,
             )
 
     def test_rejects_unresolved_low_confidence_critical_lyric(self):
@@ -271,6 +408,8 @@ class SourceAudioReplicateContractsTests(unittest.TestCase):
                 audio_contract=_audio_contract(confidence=0.31),
                 timeline_regions=_regions(),
                 performance_lines=_lines(),
+                line_contracts=_approved_lines(),
+                source_content_timeline_sha256="a" * 64,
             )
 
     def test_rejects_verified_lyric_that_differs_from_source_audio_evidence(self):
@@ -283,6 +422,8 @@ class SourceAudioReplicateContractsTests(unittest.TestCase):
                 audio_contract=_audio_contract(),
                 timeline_regions=_regions(),
                 performance_lines=(_lines()[0], forged),
+                line_contracts=_approved_lines(),
+                source_content_timeline_sha256="a" * 64,
             )
 
 

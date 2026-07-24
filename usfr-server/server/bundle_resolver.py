@@ -61,6 +61,19 @@ def _frontmatter_version(name: str, payload: bytes) -> str:
     return version
 
 
+def _packaged_skill_bytes(path: Path, payload: bytes) -> bytes:
+    """Return the canonical bytes for a text Skill in a source checkout.
+
+    Runtime Skill manifests are generated from LF package bytes.  Windows Git
+    checkouts may materialize the same UTF-8 Markdown with CRLF, so package
+    loading normalizes only newline pairs for ``.md`` Skill files before the
+    immutable resolver verifies and snapshots them.  Object-store bundles stay
+    byte-exact through :meth:`from_object_resolver`.
+    """
+
+    return payload.replace(b"\r\n", b"\n") if path.suffix.lower() == ".md" else payload
+
+
 @dataclass(frozen=True)
 class BundleEntry:
     """Read-only virtual file backed by immutable bytes, never a host path."""
@@ -188,6 +201,7 @@ class ImmutableBundleResolver:
                 payload = payload_path.read_bytes()
             except OSError as exc:
                 raise BundleResolverError(f"runtime Skill dependency cannot be read: {name}") from exc
+            payload = _packaged_skill_bytes(payload_path, payload)
             entries[name] = {
                 "bytes": payload,
                 "version": record.get("version"),

@@ -737,6 +737,67 @@ class EvidenceBoundGptPlanner:
         }
 
     @classmethod
+    def _source_content_timeline_evidence(
+        cls,
+        context: Any,
+        artifacts: Sequence[Mapping[str, str]],
+        *,
+        source_video_sha256: str,
+    ) -> dict[str, Any] | None:
+        """Expose one immutable source-content timeline to the script reviewer.
+
+        The timeline is created inside the existing dynamics stage.  This
+        reader deliberately accepts only its immutable artifact, never the
+        handler's in-memory analysis result, preventing a script revision from
+        causing another ASR/OCR/source-inspection pass.
+        """
+
+        rows = [item for item in artifacts if item["kind"] == "source_content_timeline"]
+        if not rows:
+            return None
+        if len(rows) != 1:
+            raise ProductionPortsError("current job requires exactly one source content timeline artifact")
+        artifact = rows[0]
+        value = cls._materialized_json(
+            context,
+            kind=artifact["kind"],
+            sha256=artifact["sha256"],
+            artifact_id=artifact["artifact_id"],
+        )
+        cls._reject_unsafe_draft_data(value, field="source content timeline")
+        if value.get("contract") != "source-content-timeline/v1":
+            raise ProductionPortsError("source content timeline contract is invalid")
+        if cls._sha256_field(value.get("source_video_sha256"), "source content timeline source SHA") != source_video_sha256:
+            raise ProductionPortsError("source content timeline is not bound to the current source video")
+        declared = cls._sha256_field(value.get("contract_sha256"), "source content timeline contract SHA")
+        canonical = dict(value)
+        canonical.pop("contract_sha256", None)
+        if _sha256(canonical) != declared:
+            raise ProductionPortsError("source content timeline contract SHA does not match")
+        analysis_passes = value.get("analysis_passes")
+        if not isinstance(analysis_passes, Mapping) or analysis_passes.get("dynamics") != 1 or analysis_passes.get("asr") != 1:
+            raise ProductionPortsError("source content timeline must bind one dynamics and ASR pass")
+        if value.get("reanalysis_forbidden") is not True:
+            raise ProductionPortsError("source content timeline must forbid secondary source analysis")
+        output: dict[str, Any] = {
+            "artifact_sha256": artifact["sha256"],
+            "source_dynamics_sha256": cls._sha256_field(value.get("source_dynamics_sha256"), "source content dynamics SHA"),
+            "audio_contract_sha256": cls._sha256_field(value.get("audio_contract_sha256"), "source content audio SHA"),
+            "analysis_passes": dict(analysis_passes),
+            "visible_text": list(value.get("visible_text") or []),
+            "audio_lines": list(value.get("audio_lines") or []),
+            "music_events": list(value.get("music_events") or []),
+            "uncertainties": list(value.get("uncertainties") or []),
+            "instruction": (
+                "Use this frozen source text/audio/music evidence to draft editable replacement copy. "
+                "Never re-inspect the source video. Keep PENDING_ASSIGNMENT speaker rows pending for existing script review."
+            ),
+        }
+        if any(not isinstance(output[key], list) for key in ("visible_text", "audio_lines", "music_events", "uncertainties")):
+            raise ProductionPortsError("source content timeline lists are invalid")
+        return output
+
+    @classmethod
     def _storyboard_performance_evidence(
         cls,
         context: Any,
@@ -814,6 +875,11 @@ class EvidenceBoundGptPlanner:
         artifacts = cls._safe_artifacts(context)
         source_dynamics_sha256, source_cuts = cls._source_cut_evidence(context, artifacts)
         performance_audio = cls._performance_audio_evidence(context, artifacts)
+        source_content_timeline = cls._source_content_timeline_evidence(
+            context,
+            artifacts,
+            source_video_sha256=source_sha256s[0],
+        )
         storyboard_performance = (
             cls._storyboard_performance_evidence(
                 context,
@@ -867,6 +933,8 @@ class EvidenceBoundGptPlanner:
         }
         if performance_audio is not None:
             base["performance_audio"] = performance_audio
+        if kind == "script" and source_content_timeline is not None:
+            base["source_content_timeline"] = source_content_timeline
         if storyboard_performance is not None:
             base["approved_performance_lines"] = storyboard_performance
         return {**base, "request_evidence_sha256": _sha256(base)}
@@ -912,23 +980,14 @@ class EvidenceBoundGptPlanner:
         try:
             source_duration_ms = max(int(item["end_ms"]) for item in source_cuts)
             lines = [{"cut_id": cut["cut_id"], **dict(cut["performance"])} for cut in cuts]
-            regions = [
-                {
-                    "region_id": str(source_cut["cut_id"]),
-                    "region_type": "generated",
-                    "segment_id": str(source_cut["cut_id"]),
-                    "source_start_ms": int(source_cut["start_ms"]),
-                    "source_end_ms": int(source_cut["end_ms"]),
-                }
-                for source_cut in source_cuts
-            ]
-            return build_source_audio_contracts(
-                source_audio_sha256=str(audio["source_audio_sha256"]),
-                source_duration_ms=source_duration_ms,
-                audio_contract={"audio_language": audio["audio_language"], "segments": audio["segments"]},
-                timeline_regions=regions,
-                performance_lines=lines,
-            )
+            return {
+                "contract": "performance-line-candidate/v1",
+                "status": "PENDING_CONFIRMATION",
+                "source_audio_sha256": str(audio["source_audio_sha256"]),
+                "source_duration_ms": source_duration_ms,
+                "audio_language": str(audio["audio_language"]),
+                "cuts": lines,
+            }
         except (KeyError, TypeError, ValueError) as exc:
             raise ProductionPortsError("GPT performance contract is structurally invalid") from exc
         except Exception as exc:
@@ -1007,7 +1066,7 @@ class EvidenceBoundGptPlanner:
                 bound_ids = list(references) if isinstance(references, list) else []
             if not bound_ids or any(not isinstance(item, str) or item not in known_target_evidence_ids for item in bound_ids):
                 raise ProductionPortsError("GPT creative response Cut target evidence does not match the current job")
-        performance_contract = (
+        performance_candidate = (
             self._source_audio_performance_contract(evidence=evidence, cuts=cuts)
             if kind == "script"
             else None
@@ -1047,8 +1106,8 @@ class EvidenceBoundGptPlanner:
                 "response_sha256": response_sha256,
             },
         }
-        if performance_contract is not None:
-            result["source_audio_contracts"] = dict(performance_contract)
+        if performance_candidate is not None:
+            result["performance_line_candidates"] = dict(performance_candidate)
         return result
 
     def _draft(self, *, context: Any, input_artifacts: Sequence[Mapping[str, Any]], kind: str) -> Mapping[str, Any]:
@@ -1296,21 +1355,13 @@ class _CreativeRevisionStage:
         )
         revision = self._next_revision(context)
         evidence = self._planner._revision_evidence(context, kind=self._kind)
-        performance_line_contract: Mapping[str, Any] | None = None
-        performance_line_sha256: str | None = None
-        source_audio_contracts: Mapping[str, Any] | None = None
+        performance_candidates: Mapping[str, Any] | None = None
         if self._kind == "script":
-            source_audio_contracts = draft.get("source_audio_contracts")
-            if source_audio_contracts is not None:
-                if not isinstance(source_audio_contracts, Mapping):
-                    raise ProductionPortsError("script source-audio contracts are invalid")
-                candidate = source_audio_contracts.get("performance_line_contract")
-                if not isinstance(candidate, Mapping):
-                    raise ProductionPortsError("script source-audio performance line contract is missing")
-                performance_line_contract = dict(candidate)
-                performance_line_sha256 = hashlib.sha256(
-                    _canonical_json(performance_line_contract)
-                ).hexdigest()
+            candidate = draft.get("performance_line_candidates")
+            if candidate is not None:
+                if not isinstance(candidate, Mapping) or candidate.get("status") != "PENDING_CONFIRMATION":
+                    raise ProductionPortsError("script performance candidates are invalid")
+                performance_candidates = dict(candidate)
         payload = {
             "schema_version": _REVISION_SCHEMA_VERSION,
             "kind": self._kind,
@@ -1328,8 +1379,8 @@ class _CreativeRevisionStage:
             "cuts": draft["value"]["cuts"],
             "gpt_receipt": draft["receipt"],
         }
-        if performance_line_sha256 is not None:
-            payload["performance_line_contract_sha256"] = performance_line_sha256
+        if performance_candidates is not None:
+            payload["performance_line_candidates"] = performance_candidates
         data = _canonical_json(payload)
         sha256 = hashlib.sha256(data).hexdigest()
         publisher = getattr(context, "publish_bytes", None)
@@ -1353,37 +1404,6 @@ class _CreativeRevisionStage:
             raise ProductionPortsError("published revision SHA does not match the validated draft")
         object_key = self._planner._safe_text(published.get("object_key"), "published revision object key")
         published_artifacts = [dict(published)]
-        if performance_line_contract is not None and performance_line_sha256 is not None:
-            line_bytes = _canonical_json(performance_line_contract)
-            line_artifact = publisher(
-                kind="performance_line_contract",
-                data=line_bytes,
-                content_type="application/json",
-                expected_sha256=performance_line_sha256,
-            )
-            if not isinstance(line_artifact, Mapping) or self._planner._sha256_field(
-                line_artifact.get("sha256"), "published performance line contract SHA"
-            ) != performance_line_sha256:
-                raise ProductionPortsError("published performance line contract SHA does not match")
-            published_artifacts.append(dict(line_artifact))
-        if source_audio_contracts is not None:
-            for kind in ("performance_timeline_contract", "audio_splice_policy"):
-                value = source_audio_contracts.get(kind)
-                if not isinstance(value, Mapping):
-                    raise ProductionPortsError(f"script source-audio {kind} is missing")
-                contract_bytes = _canonical_json(dict(value))
-                contract_sha256 = hashlib.sha256(contract_bytes).hexdigest()
-                contract_artifact = publisher(
-                    kind=kind,
-                    data=contract_bytes,
-                    content_type="application/json",
-                    expected_sha256=contract_sha256,
-                )
-                if not isinstance(contract_artifact, Mapping) or self._planner._sha256_field(
-                    contract_artifact.get("sha256"), f"published {kind} SHA"
-                ) != contract_sha256:
-                    raise ProductionPortsError(f"published {kind} SHA does not match")
-                published_artifacts.append(dict(contract_artifact))
         parent_script_sha256 = evidence["parent_revision_sha256"] if self._kind == "storyboard" else None
         manifest = RevisionManifest(
             kind=self._kind,

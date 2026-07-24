@@ -4,6 +4,8 @@ import sys
 import tempfile
 import unittest
 
+import jsonschema
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -28,6 +30,7 @@ class FixedInputSlotContractTest(unittest.TestCase):
         (root / "screen.png").write_bytes(b"ui-image")
         (root / "ui.mp4").write_bytes(b"ui-video")
         (root / "tail.mp4").write_bytes(b"tail-video")
+        (root / "song.mp3").write_bytes(b"uploaded-song")
         return tmp, root
 
     def test_source_only_is_blocked_before_formal_manifest(self):
@@ -58,6 +61,29 @@ class FixedInputSlotContractTest(unittest.TestCase):
         self.assertEqual(manifest["routes"]["character"], "source_preserve")
         self.assertEqual(manifest["routes"]["ui"], "source_ui_keep")
         self.assertEqual(manifest["routes"]["tail"], "omit_source_end_card")
+
+    def test_background_music_is_an_optional_extension_not_an_eighth_slot(self):
+        tmp, root = self._files()
+        self.addCleanup(tmp.cleanup)
+
+        manifest = bind_slots(
+            {"source_video": root / "source.mp4"},
+            background_music=root / "song.mp3",
+        )
+
+        self.assertTrue(manifest["admission"]["can_proceed"])
+        self.assertFalse(manifest["admission"]["language_only"])
+        self.assertEqual(manifest["slot_order"], list(SLOT_ORDER))
+        self.assertNotIn("background_music", manifest["slots"])
+        music = manifest["extensions"]["background_music"]
+        self.assertEqual(music["extension_id"], "input_contract_v2.background_music")
+        self.assertEqual(music["provider_route"], "seedance_audio_reference")
+        self.assertTrue(music["sha256"])
+        self.assertEqual(manifest["routes"]["background_music"], "seedance_audio_reference")
+        schema = json.loads(
+            (ROOT / "schemas" / "input_slots.schema.json").read_text(encoding="utf-8")
+        )
+        jsonschema.validate(manifest, schema)
 
     def test_invalid_output_language_is_rejected(self):
         tmp, root = self._files()

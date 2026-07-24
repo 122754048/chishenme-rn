@@ -24,6 +24,7 @@ from typing import Any
 
 from .capabilities import REQUIRED_CAPABILITIES, validate_stage_capability_manifest
 from .performance_audio_contracts import build_audio_evidence_contracts
+from .source_content_timeline import SourceContentTimelineError, build_source_content_timeline
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -309,6 +310,33 @@ def _publish_internal_json_contract(
     if getattr(context, "allow_local_paths", True) is False:
         raise ValueError(f"{kind} requires the worker artifact publisher")
     return None
+
+
+def _source_video_sha256(context: Any, dynamics: Mapping[str, Any]) -> str:
+    """Resolve the one immutable source digest already admitted for this Job."""
+
+    candidates: list[Any] = [
+        dynamics.get("source_video_sha256"),
+        dynamics.get("source_sha256"),
+    ]
+    evidence = dynamics.get("evidence")
+    if isinstance(evidence, Mapping):
+        probe = evidence.get("probe")
+        if isinstance(probe, Mapping):
+            candidates.append(probe.get("source_sha256"))
+    snapshot = getattr(context, "snapshot", None)
+    manifest = getattr(snapshot, "slots_manifest", None)
+    if isinstance(manifest, Mapping):
+        slots = manifest.get("slots")
+        source_slot = slots.get("source_video") if isinstance(slots, Mapping) else None
+        values = source_slot.get("sha256") if isinstance(source_slot, Mapping) else None
+        if isinstance(values, Sequence) and not isinstance(values, (str, bytes, bytearray)) and len(values) == 1:
+            candidates.append(values[0])
+    for candidate in candidates:
+        value = str(candidate or "").strip().lower()
+        if _SHA256.fullmatch(value) is not None:
+            return value
+    raise ValueError("analyze_dynamics requires exactly one immutable source_video SHA-256")
 
 
 def _declared_capability_names(stage_port: Any) -> tuple[str, ...]:
@@ -1052,6 +1080,15 @@ class CapabilityStagePort:
             if self.profile_active:
                 _require_high_fidelity_dynamics_extension(dynamics)
             audio_contract = dict(audio["audio_contract"])
+            source_dynamics_analysis = dict(dynamics["source_dynamics_analysis"])
+            try:
+                source_content_timeline = build_source_content_timeline(
+                    source_video_sha256=_source_video_sha256(context, dynamics),
+                    source_dynamics_analysis=source_dynamics_analysis,
+                    audio_contract=audio_contract,
+                )
+            except SourceContentTimelineError as exc:
+                raise ValueError(f"source content timeline is invalid: {exc}") from exc
             performance_audio: dict[str, Any] | None = None
             published_artifacts: list[dict[str, Any]] = []
             source_audio_sha256 = audio_contract.get("source_audio_sha256")
@@ -1076,11 +1113,19 @@ class CapabilityStagePort:
                 raise ValueError(
                     "active source-audio replication requires an extracted source_audio_sha256"
                 )
+            published_timeline = _publish_internal_json_contract(
+                context=context,
+                kind="source_content_timeline",
+                value=source_content_timeline,
+            )
+            if published_timeline is not None:
+                published_artifacts.append(published_timeline)
             result = {
                 "status": "ready",
                 "capabilities": list(sorted(self.capability_names)),
-                "source_dynamics_analysis": dict(dynamics["source_dynamics_analysis"]),
+                "source_dynamics_analysis": source_dynamics_analysis,
                 "audio_contract": audio_contract,
+                "source_content_timeline": source_content_timeline,
                 "capability_receipts": {
                     "dynamics_analyzer": dict(dynamics),
                     "asr_transcriber": dict(audio),

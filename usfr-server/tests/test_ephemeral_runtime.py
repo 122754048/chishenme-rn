@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
 import fakeredis
+import pytest
 
+from server.errors import StateConflictError
 from server.ephemeral_driver import EphemeralStageDriver
 from server.ephemeral_worker import EphemeralWorkerManager
 from server.job_models import WorkMessage
@@ -170,6 +173,241 @@ def test_worker_appends_script_revision_before_driver_reaches_approval() -> None
     snapshot = store.get_job(job.job_id)
     assert snapshot is not None and snapshot.current_script_revision == 1
     assert store.get_current_revision(job.job_id, "script").sha256 == hashlib.sha256(b'{"cuts":[{"cut_id":"c1"}]}').hexdigest()
+
+
+def test_driver_recovers_existing_script_stage_once_after_confirmed_line_sidecar() -> None:
+    redis = fakeredis.FakeRedis(decode_responses=False)
+    store = RedisEphemeralJobStore(redis, prefix="script-recovery-runtime")
+    job = store.create_job(
+        slots_manifest={
+            "slots": {},
+            "routes": {"product": "replace_from_slot"},
+            "review_route": "route_2",
+        },
+        capability_token_hash="a" * 64,
+        ttl_seconds=3600,
+    )
+    for stage in (
+        "bind_inputs",
+        "probe_source",
+        "analyze_dynamics",
+        "route_regions",
+        "parse_app_store_evidence",
+        "resolve_ui_evidence",
+        "build_script",
+    ):
+        checkpoint = store.claim_stage(
+            job_id=job.job_id,
+            stage=stage,
+            dedupe_key=f"draft-{stage}",
+            owner="worker",
+            ttl_seconds=60,
+        )
+        store.complete_stage(
+            job_id=job.job_id,
+            stage=stage,
+            dedupe_key=checkpoint.dedupe_key,
+            owner="worker",
+            output_artifact_ids=(),
+            ttl_seconds=3600,
+        )
+    script_sha = "b" * 64
+    current = store.get_job(job.job_id)
+    assert current is not None
+    appended = store.append_revision(
+        job_id=job.job_id,
+        kind="script",
+        expected_version=current.version,
+        manifest={"revision": 1, "sha256": script_sha},
+        invalidate_downstream=False,
+        ttl_seconds=3600,
+    )
+    lines = []
+    line_sha = hashlib.sha256(
+        json.dumps(lines, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    approved = store.approve_revision(
+        job_id=job.job_id,
+        kind="script",
+        revision=1,
+        expected_version=appended.version,
+        expected_sha256=script_sha,
+        script_approval={
+            "contract": "approved-script-lines/v1",
+            "revision": 1,
+            "script_sha256": script_sha,
+            "source_content_timeline_sha256": "c" * 64,
+            "line_contracts": lines,
+            "line_contracts_sha256": line_sha,
+        },
+        ttl_seconds=3600,
+    )
+    queue = SimpleNamespace(messages=[], enqueue=lambda **kwargs: queue.messages.append(WorkMessage(**kwargs)) or "1-0")
+
+    message = EphemeralStageDriver(store, queue).enqueue_next(job.job_id)
+
+    assert message is not None
+    assert message.stage == "build_script"
+    assert message.expected_version == approved.version
+
+
+def test_driver_recovers_new_script_revision_when_script_sha_is_unchanged() -> None:
+    redis = fakeredis.FakeRedis(decode_responses=False)
+    store = RedisEphemeralJobStore(redis, prefix="same-sha-script-recovery-runtime")
+    job = store.create_job(
+        slots_manifest={
+            "slots": {},
+            "routes": {"product": "replace_from_slot"},
+            "review_route": "route_2",
+        },
+        capability_token_hash="a" * 64,
+        ttl_seconds=3600,
+    )
+    for stage in (
+        "bind_inputs",
+        "probe_source",
+        "analyze_dynamics",
+        "route_regions",
+        "parse_app_store_evidence",
+        "resolve_ui_evidence",
+        "build_script",
+    ):
+        checkpoint = store.claim_stage(
+            job_id=job.job_id,
+            stage=stage,
+            dedupe_key=f"draft-{stage}",
+            owner="worker",
+            ttl_seconds=60,
+        )
+        store.complete_stage(
+            job_id=job.job_id,
+            stage=stage,
+            dedupe_key=checkpoint.dedupe_key,
+            owner="worker",
+            output_artifact_ids=(),
+            ttl_seconds=3600,
+        )
+    script_sha = "b" * 64
+    lines = []
+    line_sha = hashlib.sha256(
+        json.dumps(lines, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    first = store.get_job(job.job_id)
+    assert first is not None
+    first_revision = store.append_revision(
+        job_id=job.job_id,
+        kind="script",
+        expected_version=first.version,
+        manifest={"revision": 1, "sha256": script_sha},
+        invalidate_downstream=False,
+        ttl_seconds=3600,
+    )
+    first_approval = store.approve_revision(
+        job_id=job.job_id,
+        kind="script",
+        revision=1,
+        expected_version=first_revision.version,
+        expected_sha256=script_sha,
+        script_approval={
+            "contract": "approved-script-lines/v1",
+            "revision": 1,
+            "script_sha256": script_sha,
+            "source_content_timeline_sha256": "c" * 64,
+            "line_contracts": lines,
+            "line_contracts_sha256": line_sha,
+        },
+        ttl_seconds=3600,
+    )
+    queue = SimpleNamespace(messages=[], enqueue=lambda **kwargs: queue.messages.append(WorkMessage(**kwargs)) or "1-0")
+    driver = EphemeralStageDriver(store, queue)
+    recovery_one = driver.enqueue_next(job.job_id)
+    assert recovery_one is not None and recovery_one.stage == "build_script"
+    checkpoint = store.claim_stage(
+        job_id=job.job_id,
+        stage="build_script",
+        dedupe_key=recovery_one.dedupe_key,
+        owner="worker",
+        ttl_seconds=60,
+    )
+    store.complete_stage(
+        job_id=job.job_id,
+        stage="build_script",
+        dedupe_key=checkpoint.dedupe_key,
+        owner="worker",
+        output_artifact_ids=(),
+        ttl_seconds=3600,
+    )
+    after_first_recovery = store.get_job(job.job_id)
+    assert after_first_recovery is not None
+    with pytest.raises(StateConflictError):
+        store.claim_stage(
+            job_id=job.job_id,
+            stage="build_script",
+            dedupe_key=recovery_one.dedupe_key,
+            owner="duplicate-worker",
+            ttl_seconds=60,
+        )
+    with pytest.raises(StateConflictError):
+        store.claim_stage(
+            job_id=job.job_id,
+            stage="build_script",
+            dedupe_key="f" * 64,
+            owner="worker",
+            ttl_seconds=60,
+        )
+    storyboard_revision = store.append_revision(
+        job_id=job.job_id,
+        kind="storyboard",
+        expected_version=after_first_recovery.version,
+        manifest={"revision": 1, "sha256": "e" * 64},
+        invalidate_downstream=False,
+        ttl_seconds=3600,
+    )
+    storyboard_approval = store.approve_revision(
+        job_id=job.job_id,
+        kind="storyboard",
+        revision=1,
+        expected_version=storyboard_revision.version,
+        expected_sha256="e" * 64,
+        ttl_seconds=3600,
+    )
+
+    after_storyboard_change = driver.enqueue_next(job.job_id)
+
+    assert after_storyboard_change is not None
+    assert after_storyboard_change.stage == "generate_storyboards"
+    assert after_storyboard_change.expected_version == storyboard_approval.version
+    second_revision = store.append_revision(
+        job_id=job.job_id,
+        kind="script",
+        expected_version=storyboard_approval.version,
+        manifest={"revision": 2, "sha256": script_sha},
+        invalidate_downstream=False,
+        ttl_seconds=3600,
+    )
+    second_approval = store.approve_revision(
+        job_id=job.job_id,
+        kind="script",
+        revision=2,
+        expected_version=second_revision.version,
+        expected_sha256=script_sha,
+        script_approval={
+            "contract": "approved-script-lines/v1",
+            "revision": 2,
+            "script_sha256": script_sha,
+            "source_content_timeline_sha256": "d" * 64,
+            "line_contracts": lines,
+            "line_contracts_sha256": line_sha,
+        },
+        ttl_seconds=3600,
+    )
+
+    recovery_two = driver.enqueue_next(job.job_id)
+
+    assert recovery_two is not None
+    assert recovery_two.stage == "build_script"
+    assert recovery_two.expected_version == second_approval.version
+    assert recovery_two.dedupe_key != recovery_one.dedupe_key
 
 
 def test_worker_promotes_only_qc_passed_mp4_to_exact_final_key() -> None:

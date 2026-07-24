@@ -49,7 +49,8 @@
         "minimum_optional_slots": {"enum": [0, 1]},
         "optional_present_count": {"type": "integer", "minimum": 0},
         "can_proceed": {"const": true},
-        "language_only": {"type": "boolean"}
+        "language_only": {"type": "boolean"},
+        "enabled_extension_present": {"type": "boolean"}
       },
       "allOf": [
         {
@@ -65,9 +66,15 @@
           },
           "else": {
             "properties": {
-              "minimum_optional_slots": {"const": 1},
-              "optional_present_count": {"minimum": 1}
-            }
+              "minimum_optional_slots": {"const": 1}
+            },
+            "anyOf": [
+              {"properties": {"optional_present_count": {"minimum": 1}}},
+              {
+                "required": ["enabled_extension_present"],
+                "properties": {"enabled_extension_present": {"const": true}}
+              }
+            ]
           }
         }
       ]
@@ -94,7 +101,8 @@
         "product": {"enum": ["replace_from_slot", "source_preserve"]},
         "character": {"enum": ["replace_from_slot", "source_preserve"]},
         "ui": {"enum": ["opaque_ui_demo", "generated_ui_demo", "source_ui_keep"]},
-        "tail": {"enum": ["opaque_app_tail_card", "omit_source_end_card"]}
+        "tail": {"enum": ["opaque_app_tail_card", "omit_source_end_card"]},
+        "background_music": {"enum": ["seedance_audio_reference", "none"]}
       }
     },
     "output_language": {
@@ -119,6 +127,19 @@
       "properties": {
         "high_fidelity_profile": {
           "$ref": "./high_fidelity_profile.schema.json"
+        },
+        "background_music": {
+          "type": "object",
+          "required": ["extension_id", "source", "values", "sha256", "content_type", "provider_route"],
+          "additionalProperties": false,
+          "properties": {
+            "extension_id": {"const": "input_contract_v2.background_music"},
+            "source": {"const": "supplied"},
+            "values": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"type": "string"}},
+            "sha256": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+            "content_type": {"type": "string", "pattern": "^audio/"},
+            "provider_route": {"const": "seedance_audio_reference"}
+          }
         }
       }
     }

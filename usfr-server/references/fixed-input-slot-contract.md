@@ -42,6 +42,17 @@ only, and becomes a valid source-plus-change admission. The selected language
 changes generated dialogue/text/audio while preserving source meaning, tone,
 delivery, timing, and all absent-slot preservation routes.
 
+`background_music` is the sole public `input-contract-v2` extension. It is not
+an eighth fixed slot: it never changes fixed-slot ordering or asset-role
+classification, and is recorded only in `extensions.background_music`. A valid
+audio upload is a source-plus-change admission, uses the
+`seedance_audio_reference` route, and must be executed only by a deployment
+that binds `background_music_execution/v1`. It is never `language_only`.
+The final fixed-B request may register it only as a Youdao `Audio` asset and
+may refer to it only through one content `audio_url` item with
+`role=reference_audio` and `@Audio1`; top-level `reference_audios` remains
+forbidden.
+
 Store evidence is parsed once per run in a server Worker and persisted as a
 tenant-scoped private evidence bundle plus verified media references. The URL,
 page HTML, and local staging directory are not generator inputs or production
@@ -55,6 +66,7 @@ The formal run gate is:
 source_video valid
 AND (
   at least one of the six optional slots valid
+  OR at least one enabled input-contract-v2 extension valid
   OR output_language valid
 )
 ```
@@ -62,9 +74,10 @@ AND (
 Source-only input without a replacement slot and without `output_language`
 returns `MIN_ONE_OPTIONAL_INPUT_REQUIRED`; it must not create a formal run,
 storyboard, Seedance task, or paid request. A valid optional slot in any one
-position admits the run. A valid `output_language` admits a language-only run
-even when all six optional slots are absent. Preferences and an approved script
-do not count as optional media slots.
+position admits the run. A valid enabled extension admits the run without
+changing the seven-slot manifest. A valid `output_language` admits a
+language-only run even when all six optional slots are absent. Preferences and
+an approved script do not count as optional media slots.
 
 ## Manifest
 
@@ -73,6 +86,8 @@ Run `scripts/bind_input_slots.py` once and persist its output as
 Each slot records `slot_id`, fixed `role`, `kind`, `present`, `valid`,
 `source`, normalized `values`, and SHA-256 values. The manifest also records
 `admission`, deterministic `routes`, and `output_language` when supplied.
+Enabled extensions are carried separately in `extensions`, including their
+provider route, MIME type and immutable upload digest.
 For production, the job-scoped Redis `slots_manifest` snapshot and
 immutable object references are authoritative; `analysis/input_slots.json` is
 an export snapshot or worker staging artifact only.

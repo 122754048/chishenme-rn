@@ -24,6 +24,7 @@ from server.production_ports import (
     _StoryboardRevisionStage,
 )
 from server.review_models import RevisionManifest
+from server.source_content_timeline import build_source_content_timeline
 
 
 def _set_complete_environment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -306,6 +307,51 @@ def _add_source_audio_evidence(context: _CreativeContext) -> None:
         )
 
 
+def _add_source_content_timeline(context: _CreativeContext) -> str:
+    analysis = {
+        "source_cuts": [
+            {"cut_id": "C01", "start_us": 0, "end_us": 1_000_000, "scene": "bathroom", "action": "product pickup", "camera": "close-up"},
+            {"cut_id": "C02", "start_us": 1_000_000, "end_us": 2_000_000, "scene": "counter", "action": "product demonstration", "camera": "medium shot"},
+        ],
+        "ocr_intervals": [],
+        "visible_person_tracks": [],
+    }
+    audio = {
+        "source_duration_ms": 2_000,
+        "source_audio_sha256": "4" * 64,
+        "language": "en",
+        "segments": [{"segment_id": "A01", "start_ms": 0, "end_ms": 900, "text": "Use it daily.", "kind": "speech", "confidence": 0.92}],
+        "audio_events": [],
+        "meaningful_silence": [],
+    }
+    timeline = build_source_content_timeline(
+        source_video_sha256="1" * 64,
+        source_dynamics_analysis=analysis,
+        audio_contract=audio,
+    )
+    payload = json.dumps(timeline, sort_keys=True).encode("utf-8")
+    sha256 = hashlib.sha256(payload).hexdigest()
+    context._artifact_payloads[("source_content_timeline", sha256)] = payload
+    context.artifacts.append(
+        {"artifact_id": "source-content-timeline-1", "kind": "source_content_timeline", "object_key": f"temporary/{context.job_id}/source-content-timeline.json", "sha256": sha256, "content_type": "application/json", "size_bytes": len(payload)}
+    )
+    return sha256
+
+
+def test_creative_planner_carries_the_frozen_source_content_timeline_into_script_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _set_complete_environment(monkeypatch)
+    context = _CreativeContext()
+    timeline_sha256 = _add_source_content_timeline(context)
+    planner = EvidenceBoundGptPlanner(ProductionEnvironment.from_environ(), request_json=_creative_response)
+
+    evidence = planner._revision_evidence(context, kind="script")
+
+    assert evidence["source_content_timeline"]["artifact_sha256"] == timeline_sha256
+    assert evidence["source_content_timeline"]["audio_lines"][0]["speaker_assignment"]["status"] == "PENDING_ASSIGNMENT"
+
+
 def _performance_cut(*, index: int) -> dict[str, Any]:
     text = "first exact lyric" if index == 0 else "second exact lyric"
     start_ms = index * 1000
@@ -326,7 +372,7 @@ def _performance_cut(*, index: int) -> dict[str, Any]:
     }
 
 
-def test_creative_planner_requires_evidence_bound_source_audio_performance_contract(
+def test_creative_planner_keeps_source_audio_performance_as_pending_script_candidates(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _set_complete_environment(monkeypatch)
@@ -342,14 +388,10 @@ def test_creative_planner_requires_evidence_bound_source_audio_performance_contr
     planner = EvidenceBoundGptPlanner(ProductionEnvironment.from_environ(), request_json=response)
     draft = planner.draft_script(context, [])
 
-    assert draft["value"]["cuts"][1]["performance"]["exact_sung_text"] == "second exact lyric"
+    assert draft["performance_line_candidates"]["status"] == "PENDING_CONFIRMATION"
+    assert draft["performance_line_candidates"]["cuts"][1]["exact_sung_text"] == "second exact lyric"
     result = _ScriptRevisionStage(planner).run(context=context, input_artifacts=[])
-    assert [artifact["kind"] for artifact in result["published_artifacts"]] == [
-        "script_revision",
-        "performance_line_contract",
-        "performance_timeline_contract",
-        "audio_splice_policy",
-    ]
+    assert [artifact["kind"] for artifact in result["published_artifacts"]] == ["script_revision"]
 
     def missing_response(**request: Any) -> dict[str, Any]:
         value = json.loads(_creative_response(**request)["output_text"])

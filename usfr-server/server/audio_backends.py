@@ -39,7 +39,7 @@ class AudioBackendUnavailable(ReplicationError):
 
 
 class OptionalInputExtension(Protocol):
-    """Reserved input-contract-v2 extension; disabled in the public contract."""
+    """A capability-gated public input-contract-v2 extension."""
 
     @property
     def extension_id(self) -> str: ...
@@ -49,7 +49,7 @@ class OptionalInputExtension(Protocol):
 
 
 class MusicTimelineAnalyzer(Protocol):
-    """Reserved analyzer interface; no implementation is registered yet."""
+    """Evidence-bound analyzer for the uploaded music timeline."""
 
     def analyze_music_timeline(
         self,
@@ -60,7 +60,7 @@ class MusicTimelineAnalyzer(Protocol):
 
 
 class BackgroundMusicCompositor(Protocol):
-    """Reserved compositor interface; public music upload remains disabled."""
+    """Evidence-bound compositor for validated uploaded music windows."""
 
     def compose_background_music(
         self,
@@ -71,13 +71,26 @@ class BackgroundMusicCompositor(Protocol):
     ) -> Mapping[str, Any]: ...
 
 
-def disabled_input_contract_v2_extensions() -> Mapping[str, Mapping[str, Any]]:
+def input_contract_v2_extensions(
+    *,
+    music_execution_available: bool,
+) -> Mapping[str, Mapping[str, Any]]:
+    """Describe public optional extensions without claiming an unavailable port.
+
+    Intake may accept a background-music file independently of deployment
+    readiness.  The execution driver checks this capability before attempting
+    any provider or compositor work, so an unavailable adapter is a truthful
+    fail-closed state rather than a hidden global feature switch.
+    """
+
+    availability = "enabled" if music_execution_available else "capability_unavailable"
     return {
         "background_music": {
             "extension_id": "input_contract_v2.background_music",
-            "enabled": False,
-            "public_input": False,
-            "required_capability": None,
+            "enabled": music_execution_available,
+            "public_input": True,
+            "required_capability": "background_music_execution/v1",
+            "availability": availability,
         }
     }
 
@@ -547,6 +560,6 @@ __all__ = [
     "EvidenceBoundHttpAudioEventBackend",
     "MusicTimelineAnalyzer",
     "OptionalInputExtension",
-    "disabled_input_contract_v2_extensions",
+    "input_contract_v2_extensions",
     "validate_final_audio_qc",
 ]

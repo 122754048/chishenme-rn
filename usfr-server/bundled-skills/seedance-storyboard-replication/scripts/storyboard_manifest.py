@@ -153,6 +153,186 @@ def validate_storyboard_manifest(manifest: Mapping[str, Any]) -> None:
         raise ValueError("overview is not authoritative")
 
 
+_PAIR_CONTINUITY_FIELDS = (
+    "character_identity_lock",
+    "wardrobe_lock",
+    "product_interaction_lock",
+    "segment_01_final_state",
+    "segment_02_opening_state",
+)
+_PAIR_QA_FIELDS = {
+    "character_identity_lock",
+    "wardrobe_lock",
+    "product_interaction_lock",
+    "screen_direction",
+}
+
+
+def _non_empty_mapping(value: Any, field: str) -> dict[str, Any]:
+    if not isinstance(value, Mapping) or not value:
+        raise ValueError(f"{field} must be a non-empty object")
+    return dict(value)
+
+
+def _normalise_segment_board(item: Mapping[str, Any], *, expected_segment_id: str | None = None) -> dict[str, Any]:
+    if not isinstance(item, Mapping):
+        raise ValueError("segment board must be an object")
+    segment_id = item.get("segment_id")
+    if not isinstance(segment_id, str) or not segment_id:
+        raise ValueError("segment_id is required")
+    if expected_segment_id is not None and segment_id != expected_segment_id:
+        raise ValueError("segment boards are reordered")
+    object_key = item.get("object_key")
+    if not isinstance(object_key, str) or not object_key:
+        raise ValueError(f"segment {segment_id} object_key is required")
+    width = item.get("width")
+    height = item.get("height")
+    if not isinstance(width, int) or width < 1 or not isinstance(height, int) or height < 1:
+        raise ValueError(f"segment {segment_id} dimensions are invalid")
+    result = {
+        "segment_id": segment_id,
+        "object_key": object_key,
+        "sha256": _sha(item.get("sha256"), f"segment {segment_id} sha256"),
+        "width": width,
+        "height": height,
+    }
+    if "previous_board_sha256" in item:
+        result["previous_board_sha256"] = _sha(
+            item.get("previous_board_sha256"),
+            f"segment {segment_id} previous_board_sha256",
+        )
+    return result
+
+
+def _normalise_pair_continuity(value: Mapping[str, Any]) -> dict[str, Any]:
+    if not isinstance(value, Mapping) or value.get("schema_version") != "storyboard-continuity/v1":
+        raise ValueError("continuity_manifest schema is invalid")
+    result = {"schema_version": "storyboard-continuity/v1"}
+    for field in _PAIR_CONTINUITY_FIELDS:
+        result[field] = _non_empty_mapping(value.get(field), f"continuity_manifest.{field}")
+    return result
+
+
+def _normalise_pair_qa(value: Mapping[str, Any]) -> dict[str, Any]:
+    if not isinstance(value, Mapping) or value.get("status") != "passed":
+        raise ValueError("continuity_qa must have status=passed")
+    fields = value.get("checked_fields")
+    if not isinstance(fields, Sequence) or isinstance(fields, (str, bytes, bytearray)):
+        raise ValueError("continuity_qa.checked_fields must be an array")
+    checked = [str(item) for item in fields if isinstance(item, str) and item]
+    if len(checked) != len(fields) or not _PAIR_QA_FIELDS.issubset(set(checked)):
+        raise ValueError("continuity_qa.checked_fields is incomplete")
+    return {"status": "passed", "checked_fields": checked}
+
+
+def _pair_core(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    result = dict(manifest)
+    result.pop("manifest_sha256", None)
+    return result
+
+
+def build_paired_storyboard_manifest(
+    *,
+    revision_number: int,
+    approved_script_sha256: str,
+    segment_boards: Sequence[Mapping[str, Any]],
+    continuity_manifest: Mapping[str, Any],
+    continuity_qa: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Freeze two dependent segment boards behind one storyboard review.
+
+    Segment two is not allowed to be an independently generated board.  Its
+    immutable board descriptor must prove that the exact segment-one board was
+    supplied as its continuity reference before the pair can reach the single
+    existing storyboard approval gate.
+    """
+
+    if not isinstance(revision_number, int) or revision_number < 1:
+        raise ValueError("revision_number must be >= 1")
+    if not isinstance(segment_boards, Sequence) or isinstance(segment_boards, (str, bytes, bytearray)):
+        raise ValueError("segment_boards must be an array")
+    if len(segment_boards) != 2:
+        raise ValueError("paired storyboard manifests require exactly two segment boards")
+    first = _normalise_segment_board(segment_boards[0])
+    second = _normalise_segment_board(segment_boards[1])
+    if first["segment_id"] == second["segment_id"]:
+        raise ValueError("paired storyboard segments must be unique")
+    if second.get("previous_board_sha256") != first["sha256"]:
+        raise ValueError("second segment previous_board_sha256 must bind the first board")
+    manifest: dict[str, Any] = {
+        "kind": "storyboard",
+        "schema_version": "storyboard-pair-manifest/v1",
+        "revision": revision_number,
+        "approved_script_sha256": _sha(approved_script_sha256, "approved_script_sha256"),
+        "segments": [first, second],
+        "continuity_manifest": _normalise_pair_continuity(continuity_manifest),
+        "continuity_qa": _normalise_pair_qa(continuity_qa),
+        "review": {
+            "approval_scope": "all_segments_together",
+            "generation_policy": "pair_generate_before_review",
+            "user_approval_count": 1,
+        },
+    }
+    manifest["manifest_sha256"] = _digest(_pair_core(manifest))
+    return manifest
+
+
+def validate_paired_storyboard_manifest(manifest: Mapping[str, Any]) -> None:
+    if not isinstance(manifest, Mapping) or manifest.get("kind") != "storyboard":
+        raise ValueError("invalid paired storyboard manifest")
+    if manifest.get("schema_version") != "storyboard-pair-manifest/v1":
+        raise ValueError("paired storyboard manifest schema is stale")
+    revision = manifest.get("revision")
+    if not isinstance(revision, int) or revision < 1:
+        raise ValueError("paired storyboard revision is invalid")
+    _sha(manifest.get("approved_script_sha256"), "approved_script_sha256")
+    segments = manifest.get("segments")
+    if not isinstance(segments, list) or len(segments) != 2:
+        raise ValueError("paired storyboard manifest requires two segments")
+    first = _normalise_segment_board(segments[0])
+    second = _normalise_segment_board(segments[1])
+    if first["segment_id"] == second["segment_id"]:
+        raise ValueError("paired storyboard segments must be unique")
+    if second.get("previous_board_sha256") != first["sha256"]:
+        raise ValueError("second segment previous_board_sha256 must bind the first board")
+    _normalise_pair_continuity(manifest.get("continuity_manifest"))
+    _normalise_pair_qa(manifest.get("continuity_qa"))
+    review = manifest.get("review")
+    expected_review = {
+        "approval_scope": "all_segments_together",
+        "generation_policy": "pair_generate_before_review",
+        "user_approval_count": 1,
+    }
+    if review != expected_review:
+        raise ValueError("paired storyboard review policy is invalid")
+    if manifest.get("manifest_sha256") != _digest(_pair_core(manifest)):
+        raise ValueError("paired storyboard manifest digest mismatch")
+
+
+def select_paired_storyboard_regeneration(
+    *,
+    ordered_segment_ids: Sequence[str],
+    failed_segment_ids: Sequence[str],
+) -> list[str]:
+    """Return failed boards plus only dependent downstream boards.
+
+    A correction to segment one invalidates segment two's incoming-state
+    reference.  A correction confined to segment two does not regenerate the
+    already-accepted first board.
+    """
+
+    ordered = list(ordered_segment_ids)
+    failed = list(failed_segment_ids)
+    if len(ordered) != 2 or any(not isinstance(item, str) or not item for item in ordered):
+        raise ValueError("paired storyboard regeneration requires two ordered segment IDs")
+    if len(set(ordered)) != len(ordered) or any(item not in ordered for item in failed):
+        raise ValueError("failed_segment_ids are invalid")
+    if not failed:
+        return []
+    earliest = min(ordered.index(item) for item in failed)
+    return ordered[earliest:]
+
+
 def render_overview_grid(manifest: Mapping[str, Any], output_path: Path) -> Path:
     """Render a review-only overview; per-Cut refs remain authoritative."""
     validate_storyboard_manifest(manifest)
@@ -164,4 +344,11 @@ def render_overview_grid(manifest: Mapping[str, Any], output_path: Path) -> Path
     return output_path
 
 
-__all__ = ["build_storyboard_manifest", "validate_storyboard_manifest", "render_overview_grid"]
+__all__ = [
+    "build_paired_storyboard_manifest",
+    "build_storyboard_manifest",
+    "render_overview_grid",
+    "select_paired_storyboard_regeneration",
+    "validate_paired_storyboard_manifest",
+    "validate_storyboard_manifest",
+]

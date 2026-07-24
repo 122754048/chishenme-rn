@@ -181,6 +181,19 @@ REQUIRED_DEPLOYMENT_FILES = (
 )
 
 
+def runtime_skill_sha256(path: Path) -> str:
+    """Hash a packaged UTF-8 Skill using its repository newline convention.
+
+    The runtime Skill manifest is produced from the immutable bundle bytes,
+    which use LF line endings.  A Windows checkout with ``core.autocrlf=true``
+    materializes the same textual Skill as CRLF; that must not make a local
+    bundle-integrity check report sixteen unrelated dependency mutations.
+    Only CRLF pairs are normalized, preserving all other bytes and content.
+    """
+
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def verify_bundle(root: Path) -> list[str]:
     failures: list[str] = list(verify_lightweight_bundle(root))
     manifest_path = root / "references" / "bundle_manifest.json"
@@ -255,7 +268,7 @@ def verify_bundle(root: Path) -> list[str]:
                     if not path.is_file():
                         failures.append(f"missing runtime Skill dependency: {relative}")
                         continue
-                    actual_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+                    actual_sha = runtime_skill_sha256(path)
                     if not isinstance(expected_sha, str) or _SHA256.fullmatch(expected_sha) is None or expected_sha != actual_sha:
                         failures.append(f"runtime Skill dependency SHA mismatch: {name}")
                     if record.get("version") != "6.6.0":

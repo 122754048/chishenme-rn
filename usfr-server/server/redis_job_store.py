@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import time
@@ -125,6 +126,81 @@ def _snapshot_json(snapshot: JobSnapshot) -> str:
 
 def _snapshot_meta(snapshot: JobSnapshot) -> tuple[str, str]:
     return (str(snapshot.current_script_revision or ""), str(snapshot.current_storyboard_revision or ""))
+
+
+def _canonical_script_approval(
+    value: Mapping[str, Any],
+    *,
+    revision: int,
+    script_sha256: str,
+) -> dict[str, Any]:
+    """Freeze the user-confirmed exact lines in the script-approval CAS."""
+
+    if not isinstance(value, Mapping):
+        raise ReplicationError("INVALID_INPUT", "script_approval must be a mapping")
+    required = {
+        "contract",
+        "revision",
+        "script_sha256",
+        "source_content_timeline_sha256",
+        "line_contracts",
+        "line_contracts_sha256",
+    }
+    missing = sorted(required - set(value))
+    unknown = sorted(set(value) - required)
+    if missing or unknown:
+        raise ReplicationError(
+            "INVALID_INPUT",
+            "script_approval has an invalid shape",
+            details={"missing": missing, "unknown": unknown},
+        )
+    if value.get("contract") != "approved-script-lines/v1":
+        raise ReplicationError("INVALID_INPUT", "script_approval.contract is invalid")
+    if value.get("revision") != revision:
+        raise ReplicationError("INVALID_INPUT", "script_approval.revision must match revision")
+    if value.get("script_sha256") != script_sha256:
+        raise ReplicationError("INVALID_INPUT", "script_approval.script_sha256 must match expected_sha256")
+    timeline_sha = _require_sha(
+        value.get("source_content_timeline_sha256"),
+        field="script_approval.source_content_timeline_sha256",
+    )
+    assert timeline_sha is not None
+    lines = value.get("line_contracts")
+    if not isinstance(lines, Sequence) or isinstance(lines, (str, bytes, bytearray)):
+        raise ReplicationError("INVALID_INPUT", "script_approval.line_contracts must be an array")
+    try:
+        from scripts.line_contract import validate_line_contracts
+
+        canonical_lines = validate_line_contracts(lines)
+    except Exception as exc:
+        raise ReplicationError(
+            "INVALID_INPUT",
+            "script_approval.line_contracts must be canonical confirmed line contracts",
+            details={"reason": str(exc)},
+        ) from exc
+    for line in canonical_lines:
+        if line.get("source_content_timeline_sha256") != timeline_sha:
+            raise ReplicationError(
+                "INVALID_INPUT",
+                "script_approval line timeline SHA differs from the frozen source timeline",
+                details={"line_id": line.get("line_id")},
+            )
+    lines_sha = hashlib.sha256(
+        _canonical_json(canonical_lines).encode("utf-8")
+    ).hexdigest()
+    if value.get("line_contracts_sha256") != lines_sha:
+        raise ReplicationError(
+            "INVALID_INPUT",
+            "script_approval.line_contracts_sha256 does not match canonical line_contracts",
+        )
+    return {
+        "contract": "approved-script-lines/v1",
+        "revision": revision,
+        "script_sha256": script_sha256,
+        "source_content_timeline_sha256": timeline_sha,
+        "line_contracts": canonical_lines,
+        "line_contracts_sha256": lines_sha,
+    }
 
 
 _COMMON_LUA = r"""
@@ -335,6 +411,14 @@ end
 if redis.call('HGET', KEYS[2], revision) == false or redis.call('HGET', KEYS[2], '@sha:' .. revision) ~= ARGV[5] then
     return {'APPROVAL_STALE'}
 end
+if ARGV[11] ~= '' then
+    local approval_field = '@approval:' .. revision
+    local existing_approval = redis.call('HGET', KEYS[2], approval_field)
+    if existing_approval and existing_approval ~= ARGV[11] then
+        return {'APPROVAL_SIDECAR_CONFLICT'}
+    end
+    redis.call('HSET', KEYS[2], approval_field, ARGV[11])
+end
 persist_snapshot(KEYS[1], ARGV[1], candidate_version, ARGV[9], ARGV[10])
 touch_keys(tonumber(ARGV[6]), KEYS[3], KEYS[5], ARGV[7], {KEYS[1], KEYS[2], KEYS[4], KEYS[5], KEYS[7], KEYS[8], KEYS[9]})
 refresh_provider_due(KEYS[4], KEYS[6], ARGV[7], tonumber(ARGV[6]))
@@ -458,7 +542,14 @@ if lease and deadline > now_ms then
     if lease == ARGV[8] and checkpoint then
         return {'NOOP', checkpoint}
     end
-    return {'CONFLICT'}
+    -- A user-confirmed script sidecar is an immutable input to the existing
+    -- build_script stage.  It may legitimately re-enter after the draft
+    -- attempt succeeded, even while that completed attempt's lease remains
+    -- alive for duplicate-delivery fencing.  No other active stage may do so.
+    if stage ~= 'build_script' or redis.call('HGET', KEYS[3], '@meta:' .. stage .. ':status') ~= 'SUCCEEDED' or ARGV[15] ~= '1' then
+        return {'CONFLICT'}
+    end
+    redis.call('DEL', KEYS[2])
 end
 local old_owner = redis.call('HGET', KEYS[3], '@meta:' .. stage .. ':owner')
 local old_dedupe = redis.call('HGET', KEYS[3], '@meta:' .. stage .. ':dedupe')
@@ -914,6 +1005,32 @@ class RedisEphemeralJobStore(EphemeralJobStore):
         raw = self.redis.hget(key, str(revision))
         return self._revision_from_dict(_json_load(raw)) if raw is not None else None
 
+    def get_script_approval(self, job_id: str, revision: int) -> Mapping[str, Any] | None:
+        if isinstance(revision, bool) or not isinstance(revision, int) or revision < 1:
+            raise ReplicationError("INVALID_INPUT", "revision must be a positive integer")
+        snapshot = self._require_snapshot(job_id)
+        raw = self.redis.hget(self._scripts_key(job_id), f"@approval:{revision}")
+        if raw is None:
+            return None
+        try:
+            value = _json_load(raw)
+            if not isinstance(value, Mapping):
+                raise TypeError("script approval must be an object")
+            script_sha = _require_sha(value.get("script_sha256"), field="script_approval.script_sha256")
+            assert script_sha is not None
+            approved = _canonical_script_approval(
+                value,
+                revision=revision,
+                script_sha256=script_sha,
+            )
+        except (ReplicationError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            if isinstance(exc, ReplicationError):
+                raise ReplicationError("STATE_CORRUPT", "stored script approval is invalid") from exc
+            raise ReplicationError("STATE_CORRUPT", "stored script approval is invalid") from exc
+        if snapshot.current_script_revision == revision and snapshot.approved_script_sha256 != approved["script_sha256"]:
+            raise ReplicationError("STATE_CORRUPT", "stored script approval is not bound to the approved revision")
+        return approved
+
     def touch_review_ttl(self, job_id: str, ttl_seconds: int) -> JobSnapshot:
         current = self._require_snapshot(job_id)
         expiry = self._expiry(ttl_seconds, current.expires_at_ms)
@@ -1099,6 +1216,7 @@ class RedisEphemeralJobStore(EphemeralJobStore):
         revision: int,
         expected_version: int,
         expected_sha256: str,
+        script_approval: Mapping[str, Any] | None = None,
         ttl_seconds: int,
     ) -> JobSnapshot:
         if kind not in {"script", "storyboard"}:
@@ -1106,6 +1224,17 @@ class RedisEphemeralJobStore(EphemeralJobStore):
         if isinstance(revision, bool) or not isinstance(revision, int) or revision < 1:
             raise ReplicationError("INVALID_INPUT", "revision must be a positive integer")
         _require_sha(expected_sha256, field="expected_sha256")
+        if script_approval is not None and kind != "script":
+            raise ReplicationError("INVALID_INPUT", "script_approval is valid only for script revisions")
+        canonical_approval = (
+            _canonical_script_approval(
+                script_approval,
+                revision=revision,
+                script_sha256=expected_sha256,
+            )
+            if script_approval is not None
+            else None
+        )
         _require_ttl(ttl_seconds)
         _require_expected_version(expected_version)
         current = self._require_snapshot(job_id)
@@ -1145,6 +1274,7 @@ class RedisEphemeralJobStore(EphemeralJobStore):
                 field_revision,
                 script_revision,
                 storyboard_revision,
+                _canonical_json(canonical_approval) if canonical_approval is not None else "",
             ],
         )
         status = self._status(result)
@@ -1154,6 +1284,8 @@ class RedisEphemeralJobStore(EphemeralJobStore):
             raise StateConflictError(details={"expected_version": expected_version, "actual_version": self._result_value(result)})
         if status == "APPROVAL_STALE":
             raise ApprovalStaleError(details={"revision": revision})
+        if status == "APPROVAL_SIDECAR_CONFLICT":
+            raise StateConflictError("script approval sidecar is immutable")
         if status != "OK":
             raise ReplicationError("STORE_ERROR", "revision approval failed")
         raw_manifest = self.redis.hget(revisions_key, str(revision))
@@ -1371,6 +1503,13 @@ class RedisEphemeralJobStore(EphemeralJobStore):
         stage_key = self._stages_key(job_id)
         existing_raw = self.redis.hget(stage_key, stage)
         existing = self._checkpoint_from_raw(existing_raw) if existing_raw else None
+        recovery_reclaim = self._is_verified_script_recovery_claim(
+            job_id=job_id,
+            stage=stage,
+            dedupe_key=dedupe_key,
+            snapshot=current,
+            existing=existing,
+        )
         now_ms = _now_ms()
         logical_deadline = int(self.redis.hget(stage_key, f"@meta:{stage}:lease_expires_at_ms") or 0)
         lease_is_active = bool(self.redis.exists(self._lease_key(job_id, stage))) and logical_deadline > now_ms
@@ -1411,6 +1550,7 @@ class RedisEphemeralJobStore(EphemeralJobStore):
                 job_id,
                 script_revision,
                 storyboard_revision,
+                "1" if recovery_reclaim else "0",
             ],
         )
         status = self._status(result)
@@ -1427,6 +1567,33 @@ class RedisEphemeralJobStore(EphemeralJobStore):
         if status != "OK":
             raise ReplicationError("STORE_ERROR", "stage claim failed")
         return checkpoint
+
+    def _is_verified_script_recovery_claim(
+        self,
+        *,
+        job_id: str,
+        stage: str,
+        dedupe_key: str,
+        snapshot: JobSnapshot,
+        existing: StageCheckpoint | None,
+    ) -> bool:
+        """Authorize only a current CAS-sidecar recovery of build_script."""
+
+        if (
+            stage != "build_script"
+            or existing is None
+            or existing.status != "SUCCEEDED"
+            or existing.dedupe_key == dedupe_key
+            or snapshot.current_script_revision is None
+            or not snapshot.approved_script_sha256
+        ):
+            return False
+        approval = self.get_script_approval(job_id, snapshot.current_script_revision)
+        if approval is None:
+            return False
+        from .ephemeral_driver import script_recovery_dedupe
+
+        return dedupe_key == script_recovery_dedupe(job_id, snapshot, approval)
 
     def complete_stage(
         self,

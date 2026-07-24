@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+from collections.abc import Sequence
 from typing import Any, Mapping
 
 from .errors import ReplicationError, ReviewNotApplicableError
@@ -68,14 +71,74 @@ class ReplicationService:
             ttl_seconds=self.review_ttl_seconds,
         )
 
-    def approve_script_revision(self, job_id: str, *, revision: int, expected_version: int, expected_sha256: str):
+    def approve_script_revision(
+        self,
+        job_id: str,
+        *,
+        revision: int,
+        expected_version: int,
+        expected_sha256: str,
+        line_contracts: Sequence[Mapping[str, Any]] | None = None,
+        source_content_timeline_sha256: str | None = None,
+    ):
         self._review_snapshot(job_id)
+        if (line_contracts is None) != (source_content_timeline_sha256 is None):
+            raise ReplicationError(
+                "INVALID_INPUT",
+                "line_contracts and source_content_timeline_sha256 must be supplied together",
+            )
+        list_artifacts = getattr(self.job_store, "list_artifacts", None)
+        artifacts = list_artifacts(job_id) if callable(list_artifacts) else ()
+        source_audio_kinds = {
+            str(getattr(item, "kind", "") or "")
+            for item in artifacts
+        } & {"performance_audio_source_contract", "audio_lyrics_beat_contract"}
+        if source_audio_kinds and source_audio_kinds != {
+            "performance_audio_source_contract",
+            "audio_lyrics_beat_contract",
+        }:
+            raise ReplicationError(
+                "INVALID_INPUT",
+                "source-audio evidence artifacts must be present as an atomic pair",
+            )
+        if source_audio_kinds and line_contracts is None:
+            raise ReplicationError(
+                "INVALID_INPUT",
+                "source-audio script approval requires line_contracts and source_content_timeline_sha256",
+            )
+        script_approval = None
+        if line_contracts is not None:
+            try:
+                from scripts.line_contract import validate_line_contracts
+
+                canonical_lines = validate_line_contracts(line_contracts)
+                raw = json.dumps(
+                    canonical_lines,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            except Exception as exc:
+                raise ReplicationError(
+                    "INVALID_INPUT",
+                    "line_contracts must be canonical confirmed line contracts",
+                    details={"reason": str(exc)},
+                ) from exc
+            script_approval = {
+                "contract": "approved-script-lines/v1",
+                "revision": revision,
+                "script_sha256": expected_sha256,
+                "source_content_timeline_sha256": source_content_timeline_sha256,
+                "line_contracts": canonical_lines,
+                "line_contracts_sha256": hashlib.sha256(raw).hexdigest(),
+            }
         return self.job_store.approve_revision(
             job_id=job_id,
             kind="script",
             revision=revision,
             expected_version=expected_version,
             expected_sha256=expected_sha256,
+            script_approval=script_approval,
             ttl_seconds=self.review_ttl_seconds,
         )
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from typing import Any
 
 from .job_models import WorkMessage
@@ -40,6 +41,34 @@ def _dedupe(job_id: str, stage: str, snapshot: Any) -> str:
             "approved_script_sha256": snapshot.approved_script_sha256,
             "approved_storyboard_sha256": snapshot.approved_storyboard_sha256,
             "slots_manifest": snapshot.slots_manifest,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def script_recovery_dedupe(
+    job_id: str,
+    snapshot: Any,
+    script_approval: Mapping[str, Any],
+) -> str:
+    """Return the immutable input identity for build-script confirmation recovery."""
+
+    payload = json.dumps(
+        {
+            "job_id": job_id,
+            "stage": "build_script",
+            "current_script_revision": snapshot.current_script_revision,
+            "approved_script_sha256": snapshot.approved_script_sha256,
+            "script_approval": {
+                "revision": script_approval.get("revision"),
+                "script_sha256": script_approval.get("script_sha256"),
+                "source_content_timeline_sha256": script_approval.get(
+                    "source_content_timeline_sha256"
+                ),
+                "line_contracts_sha256": script_approval.get("line_contracts_sha256"),
+            },
         },
         sort_keys=True,
         separators=(",", ":"),
@@ -85,6 +114,38 @@ class EphemeralStageDriver:
                 return None
             checkpoint = self.job_store.get_stage_checkpoint(job_id, stage)
             if checkpoint is not None and checkpoint.status == "SUCCEEDED":
+                # Script confirmation is a CAS-bound input to the existing
+                # script semantic stage.  Its first lease produced only the
+                # editable draft; after confirmation re-enter that same stage
+                # exactly once so the worker can materialize final contracts
+                # without adding another RunState stage or approval boundary.
+                approval = None
+                if (
+                    stage == "build_script"
+                    and snapshot.approved_script_sha256
+                    and snapshot.current_script_revision is not None
+                ):
+                    getter = getattr(self.job_store, "get_script_approval", None)
+                    if callable(getter):
+                        approval = getter(job_id, snapshot.current_script_revision)
+                recovery_dedupe = (
+                    script_recovery_dedupe(job_id, snapshot, approval)
+                    if stage == "build_script" and isinstance(approval, Mapping)
+                    else _dedupe(job_id, stage, snapshot)
+                )
+                if (
+                    stage == "build_script"
+                    and approval is not None
+                    and checkpoint.dedupe_key != recovery_dedupe
+                ):
+                    message = WorkMessage(job_id, stage, snapshot.version, recovery_dedupe)
+                    self.work_queue.enqueue(
+                        job_id=message.job_id,
+                        stage=message.stage,
+                        expected_version=message.expected_version,
+                        dedupe_key=message.dedupe_key,
+                    )
+                    return message
                 continue
             if checkpoint is not None and checkpoint.status == "CLAIMED":
                 return None

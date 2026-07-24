@@ -8,7 +8,10 @@ import tempfile
 import unittest
 
 from server.high_fidelity_ports import HighFidelityStageAdapter
+from server.errors import ReplicationError
 from server.seedance_invocations import SeedanceInvocationAdapter
+
+from test_performance_audio_contracts import _approved_lines, _lines
 
 
 def _candidate() -> dict:
@@ -66,6 +69,237 @@ def _request_sha(payload: dict) -> str:
 
 
 class HighFidelityPortsTest(unittest.TestCase):
+    def test_invocation_b_blocks_source_audio_when_confirmed_performance_artifact_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan = {"segments": [{"segment_id": "S01", "start_ms": 0, "end_ms": 8_000, "duration_ms": 8_000, "cut_ids": ["C01"]}]}
+            plan_path = root / "segment_plan.json"
+            plan_path.write_bytes(json.dumps(plan, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+            plan_sha = hashlib.sha256(plan_path.read_bytes()).hexdigest()
+
+            class Invocation:
+                def invoke_b(self, **_kwargs):
+                    raise AssertionError("Invocation B must not run without the confirmed performance artifact")
+
+            class Context:
+                stage = "compile_seedance20_prompt"
+                profile_snapshot = {"profile": "high_fidelity_hybrid_v1"}
+                artifacts = (
+                    {"kind": "segment_plan", "sha256": plan_sha},
+                    {"kind": "performance_audio_source_contract", "sha256": "a" * 64},
+                    {"kind": "audio_lyrics_beat_contract", "sha256": "b" * 64},
+                )
+
+                @contextmanager
+                def materialize_artifact(self, kind, **_kwargs):
+                    assert kind == "segment_plan"
+                    yield type("Media", (), {"path": plan_path})()
+
+            with self.assertRaisesRegex(ReplicationError, "approved performance line contract"):
+                HighFidelityStageAdapter(Invocation()).run_stage(
+                    context=Context(),
+                    handler=lambda **_: {
+                        "invocation_b_request": {
+                            "segment_id": "S01",
+                            "provider_payload": _provider_payload("Prompt for S01"),
+                            "seedance_input_contract": {"contract": "S01"},
+                        }
+                    },
+                )
+
+    def test_invocation_b_rejects_a_performance_artifact_with_a_changed_confirmed_timeline(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan = {"segments": [{"segment_id": "S01", "start_ms": 0, "end_ms": 4_000, "duration_ms": 4_000, "cut_ids": ["C01"]}]}
+            approved_sha = "c" * 64
+            published_timeline_sha = "d" * 64
+            sidecar_timeline_sha = "e" * 64
+            line = {**_approved_lines()[0], "source_content_timeline_sha256": sidecar_timeline_sha}
+            sidecar = {
+                "contract": "approved-script-lines/v1",
+                "revision": 1,
+                "script_sha256": approved_sha,
+                "source_content_timeline_sha256": sidecar_timeline_sha,
+                "line_contracts": [line],
+                "line_contracts_sha256": hashlib.sha256(json.dumps([line], ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest(),
+            }
+            performance_line = {
+                **_lines()[0],
+                "source_content_timeline_sha256": published_timeline_sha,
+            }
+            performance = {
+                "contract": "performance-line/v1",
+                "script_revision": 1,
+                "script_sha256": approved_sha,
+                "source_content_timeline_sha256": published_timeline_sha,
+                "line_contracts_sha256": sidecar["line_contracts_sha256"],
+                "cuts": [performance_line],
+            }
+            paths = {}
+            artifacts = []
+            for kind, value in (("segment_plan", plan), ("performance_line_contract", performance)):
+                path = root / f"{kind}.json"
+                raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                path.write_bytes(raw)
+                sha = hashlib.sha256(raw).hexdigest()
+                paths[kind] = path
+                artifacts.append({"kind": kind, "sha256": sha})
+            artifacts.extend(
+                [
+                    {"kind": "performance_audio_source_contract", "sha256": "a" * 64},
+                    {"kind": "audio_lyrics_beat_contract", "sha256": "b" * 64},
+                ]
+            )
+
+            class Invocation:
+                def invoke_b(self, **_kwargs):
+                    raise AssertionError("Invocation B must not run with a changed timeline")
+
+            class Context:
+                stage = "compile_seedance20_prompt"
+                profile_snapshot = {"profile": "high_fidelity_hybrid_v1"}
+                snapshot = type("Snapshot", (), {"current_script_revision": 1, "approved_script_sha256": approved_sha})()
+                job_id = "timeline-gate"
+                job_store = type("Store", (), {"get_script_approval": lambda _self, _job, _revision: sidecar})()
+
+                def __init__(self):
+                    self.artifacts = tuple(artifacts)
+
+                @contextmanager
+                def materialize_artifact(self, kind, **_kwargs):
+                    yield type("Media", (), {"path": paths[kind]})()
+
+            with self.assertRaisesRegex(ReplicationError, "timeline SHA"):
+                HighFidelityStageAdapter(Invocation()).run_stage(
+                    context=Context(),
+                    handler=lambda **_: {
+                        "invocation_b_request": {
+                            "segment_id": "S01",
+                            "prompt_request": {
+                                "segment": {
+                                    "segment_id": "S01",
+                                    "duration_ms": 4_000,
+                                    "cut_ids": ["C01"],
+                                }
+                            },
+                            "provider_payload": _provider_payload("Prompt for S01"),
+                            "seedance_input_contract": {"contract": "S01"},
+                        }
+                    },
+                )
+
+    def test_provider_binding_preserves_the_frozen_performance_contract_digest(self):
+        performance_sha = "f" * 64
+        timeline_sha = "e" * 64
+
+        binding = HighFidelityStageAdapter._provider_binding(
+            segment_id="S01",
+            segment_plan_sha256="a" * 64,
+            request={
+                "provider_payload": _provider_payload("Prompt for S01"),
+                "performance_line_contract_sha256": performance_sha,
+                "source_content_timeline_sha256": timeline_sha,
+            },
+            result={
+                "performance_line_contract_sha256": performance_sha,
+                "source_content_timeline_sha256": timeline_sha,
+            },
+        )
+
+        self.assertEqual(
+            binding["performance_line_contract_sha256"],
+            performance_sha,
+        )
+        self.assertEqual(binding["source_content_timeline_sha256"], timeline_sha)
+
+    def test_invocation_b_requires_a_source_audio_provider_digest_and_timeline_receipt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            timeline_sha = "c" * 64
+            script_sha = "d" * 64
+            approved_line = {**_approved_lines()[0], "source_content_timeline_sha256": timeline_sha}
+            sidecar = {
+                "contract": "approved-script-lines/v1",
+                "revision": 1,
+                "script_sha256": script_sha,
+                "source_content_timeline_sha256": timeline_sha,
+                "line_contracts": [approved_line],
+                "line_contracts_sha256": hashlib.sha256(
+                    json.dumps([approved_line], ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                ).hexdigest(),
+            }
+            performance = {
+                "contract": "performance-line/v1",
+                "script_revision": 1,
+                "script_sha256": script_sha,
+                "source_content_timeline_sha256": timeline_sha,
+                "line_contracts_sha256": sidecar["line_contracts_sha256"],
+                "cuts": [{**_lines()[0], "source_content_timeline_sha256": timeline_sha}],
+            }
+            plan = {"segments": [{"segment_id": "S01", "start_ms": 0, "end_ms": 4_000, "duration_ms": 4_000, "cut_ids": ["C01"]}]}
+            paths = {}
+            artifacts = []
+            for kind, value in (("segment_plan", plan), ("performance_line_contract", performance)):
+                path = root / f"{kind}.json"
+                raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                path.write_bytes(raw)
+                sha256 = hashlib.sha256(raw).hexdigest()
+                paths[kind] = path
+                artifacts.append({"kind": kind, "sha256": sha256})
+            artifacts.extend(
+                [
+                    {"kind": "performance_audio_source_contract", "sha256": "a" * 64},
+                    {"kind": "audio_lyrics_beat_contract", "sha256": "b" * 64},
+                ]
+            )
+
+            class Invocation:
+                received = None
+
+                def invoke_b(self, *, context, **payload):
+                    self.received = payload
+                    prompt = "Prompt for S01"
+                    return {
+                        "status": "ready",
+                        "segment_id": "S01",
+                        "segment_plan_sha256": artifacts[0]["sha256"],
+                        "compiled_prompt": prompt,
+                        "compiled_prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+                    }
+
+            class Context:
+                stage = "compile_seedance20_prompt"
+                profile_snapshot = {"profile": "high_fidelity_hybrid_v1"}
+                snapshot = type("Snapshot", (), {"current_script_revision": 1, "approved_script_sha256": script_sha})()
+                job_id = "provider-digest-gate"
+                job_store = type("Store", (), {"get_script_approval": lambda _self, _job, _revision: sidecar})()
+
+                def __init__(self):
+                    self.artifacts = tuple(artifacts)
+
+                @contextmanager
+                def materialize_artifact(self, kind, **_kwargs):
+                    yield type("Media", (), {"path": paths[kind]})()
+
+            invocation = Invocation()
+            with self.assertRaisesRegex(ReplicationError, "performance line contract digest"):
+                HighFidelityStageAdapter(invocation).run_stage(
+                    context=Context(),
+                    handler=lambda **_: {
+                        "invocation_b_request": {
+                            "segment_id": "S01",
+                            "prompt_request": {"segment": {"segment_id": "S01", "duration_ms": 4_000, "cut_ids": ["C01"]}},
+                            "provider_payload": _provider_payload("Prompt for S01", duration=4),
+                            "seedance_input_contract": {"contract": "S01"},
+                        }
+                    },
+                )
+            self.assertEqual(
+                invocation.received["performance_line_contract_sha256"],
+                artifacts[1]["sha256"],
+            )
+            self.assertEqual(invocation.received["source_content_timeline_sha256"], timeline_sha)
+
     def test_invocation_b_injects_approved_performance_lines_without_provider_audio(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

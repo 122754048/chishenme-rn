@@ -71,6 +71,8 @@ ROUTE_LEAKAGE_EXACT_KEYS = {
     "ui_qc",
     "tail_qc",
 }
+_PERFORMANCE_MODES = {"spoken", "sung", "singing", "instrumental", "inaudible"}
+_CONTENT_TYPES = {"spoken", "sung", "instrumental", "inaudible"}
 COMPILER_CHECKS = (
     "professional_gate",
     "capability_check",
@@ -784,6 +786,7 @@ def _validate_performance_lines(
     value: Sequence[Mapping[str, Any]] | None,
     *,
     segment: Mapping[str, Any],
+    canonical_lines: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
     if value is None:
         return []
@@ -795,8 +798,10 @@ def _validate_performance_lines(
     if not allowed_cut_ids:
         raise ValueError("performance_lines require segment Cut IDs")
     by_cut: dict[str, dict[str, Any]] = {}
+    lines_by_id = {str(line["line_id"]): line for line in canonical_lines}
     required = {
-        "cut_id", "source_time", "segment_time", "performance_mode",
+        "line_id", "cut_id", "source_content_timeline_sha256", "content_type", "speaker_assignment",
+        "source_time", "segment_time", "performance_mode",
         "exact_sung_text", "lyric_status", "beat_anchors_ms", "no_beat_reason",
         "lip_sync", "action", "expression", "emotion", "end_pose",
         "criticality", "final_audio_carrier",
@@ -807,6 +812,25 @@ def _validate_performance_lines(
         cut_id = item.get("cut_id")
         if not isinstance(cut_id, str) or cut_id not in allowed_cut_ids or cut_id in by_cut:
             raise ValueError("performance line Cut coverage is invalid")
+        line_id = item.get("line_id")
+        line = lines_by_id.get(str(line_id))
+        if line is None or line.get("cut_id") != cut_id:
+            raise ValueError("performance line line_id/Cut binding is invalid")
+        timeline_sha = item.get("source_content_timeline_sha256")
+        if not isinstance(timeline_sha, str) or _SHA256.fullmatch(timeline_sha) is None:
+            raise ValueError("performance line source_content_timeline_sha256 is invalid")
+        if timeline_sha != line.get("source_content_timeline_sha256"):
+            raise ValueError("performance line source-content timeline binding changed")
+        content_type = item.get("content_type")
+        if content_type not in _CONTENT_TYPES or content_type != line.get("content_type"):
+            raise ValueError("performance line content-type binding changed")
+        assignment = item.get("speaker_assignment")
+        if not isinstance(assignment, Mapping):
+            raise ValueError("performance line speaker_assignment is invalid")
+        if assignment.get("status") == "PENDING_ASSIGNMENT":
+            raise ValueError("PENDING_ASSIGNMENT must be resolved before Invocation B")
+        if dict(assignment) != dict(line.get("speaker_assignment") or {}):
+            raise ValueError("performance line speaker binding changed")
         for label in ("source_time", "segment_time"):
             window = item.get(label)
             if not isinstance(window, Mapping) or set(window) != {"start_ms", "end_ms"}:
@@ -819,6 +843,18 @@ def _validate_performance_lines(
         lyric = item.get("exact_sung_text")
         if lyric_status not in {"verified", "instrumental", "inaudible"} or not isinstance(lyric, str) or not lyric.strip():
             raise ValueError("performance line lyric contract is invalid")
+        performance_mode = item.get("performance_mode")
+        if performance_mode not in _PERFORMANCE_MODES:
+            raise ValueError("performance line performance_mode is invalid")
+        if performance_mode in {"spoken", "sung", "singing"} and lyric_status != "verified":
+            raise ValueError("spoken or sung performance requires verified exact text")
+        if performance_mode in {"instrumental", "inaudible"} and lyric_status != performance_mode:
+            raise ValueError("non-verbal performance mode must match lyric_status")
+        expected_content_type = "sung" if performance_mode in {"sung", "singing"} else performance_mode
+        if content_type != expected_content_type:
+            raise ValueError("performance line performance_mode/content_type binding is invalid")
+        if lyric != line["text"]["exact"]:
+            raise ValueError("performance line text binding changed")
         beats = item.get("beat_anchors_ms")
         if not isinstance(beats, list) or any(isinstance(beat, bool) or not isinstance(beat, int) for beat in beats):
             raise ValueError("performance line beat anchors are invalid")
@@ -835,6 +871,15 @@ def _validate_performance_lines(
         for label in ("performance_mode", "emotion", "end_pose", "criticality", "final_audio_carrier"):
             if not isinstance(item.get(label), str) or not item[label].strip():
                 raise ValueError(f"performance line {label} is invalid")
+        expected_source = {"start_ms": line["time"]["start_ms"], "end_ms": line["time"]["end_ms"]}
+        expected_segment = {
+            "start_ms": line["time"].get("segment_start_ms") if line["time"].get("time_base") == "segment_local_ms" else line["time"]["start_ms"],
+            "end_ms": line["time"].get("segment_end_ms") if line["time"].get("time_base") == "segment_local_ms" else line["time"]["end_ms"],
+        }
+        if dict(item["source_time"]) != expected_source:
+            raise ValueError("performance line source-time binding changed")
+        if dict(item["segment_time"]) != expected_segment:
+            raise ValueError("performance line segment-time binding changed")
         by_cut[cut_id] = deepcopy(dict(item))
     if set(by_cut) != set(allowed_cut_ids):
         raise ValueError("performance line Cut coverage is incomplete")
@@ -845,11 +890,12 @@ def _render_performance_line(line: Mapping[str, Any]) -> str:
     source = line["source_time"]
     local = line["segment_time"]
     lyric = line["exact_sung_text"]
-    speech = (
-        f'sings exactly, "{lyric}"'
-        if line["lyric_status"] == "verified"
-        else f"performs {line['lyric_status']} with no invented words"
-    )
+    performance_mode = line["performance_mode"]
+    if line["lyric_status"] == "verified":
+        verb = "speaks" if performance_mode == "spoken" else "sings"
+        speech = f'{verb} exactly, "{lyric}"'
+    else:
+        speech = f"performs {line['lyric_status']} with no invented words"
     beat = ", ".join(f"{item / 1000:.2f}s" for item in line["beat_anchors_ms"]) or str(line["no_beat_reason"])
     return (
         f"Performance Cut {line['cut_id']}, source-audio global {source['start_ms'] / 1000:.2f}-{source['end_ms'] / 1000:.2f}s, "
@@ -959,6 +1005,7 @@ def compile_prompt(
     canonical_performance_lines = _validate_performance_lines(
         performance_lines,
         segment=segment,
+        canonical_lines=canonical_lines,
     )
     normalized_review_bindings = None
     if review_bindings is not None:
@@ -1151,11 +1198,13 @@ def validate_compiled_prompt(
     canonical_performance_lines = _validate_performance_lines(
         source_contract.get("performance_lines"),
         segment=source_segment,
+        canonical_lines=canonical_lines,
     )
     if expected_performance_lines is not None:
         expected_performance = _validate_performance_lines(
             expected_performance_lines,
             segment=source_segment,
+            canonical_lines=canonical_lines,
         )
         if canonical_performance_lines != expected_performance:
             raise ValueError("compiled prompt performance contract does not match approved evidence")
