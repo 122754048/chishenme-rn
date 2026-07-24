@@ -787,14 +787,18 @@ class SeedanceInvocationAdapter:
                 "Invocation B source-audio binding requires both performance and timeline digests",
             )
         if performance_line_contract_sha256 is not None:
-            performance_line_contract_sha256 = str(performance_line_contract_sha256).lower()
-            source_content_timeline_sha256 = str(source_content_timeline_sha256).lower()
-            if _SHA256.fullmatch(performance_line_contract_sha256) is None:
+            if (
+                not isinstance(performance_line_contract_sha256, str)
+                or _SHA256.fullmatch(performance_line_contract_sha256) is None
+            ):
                 self._raise(
                     "PROMPT_INTEGRITY_FAILED",
                     "Invocation B performance line contract digest must be a lowercase SHA-256",
                 )
-            if _SHA256.fullmatch(source_content_timeline_sha256) is None:
+            if (
+                not isinstance(source_content_timeline_sha256, str)
+                or _SHA256.fullmatch(source_content_timeline_sha256) is None
+            ):
                 self._raise(
                     "PROMPT_INTEGRITY_FAILED",
                     "Invocation B source-content timeline digest must be a lowercase SHA-256",

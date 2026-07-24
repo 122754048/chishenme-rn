@@ -114,3 +114,14 @@ python -m pytest tests/test_redis_job_store.py tests/test_revision_cas.py tests/
 python -m pytest tests/test_redis_job_store.py tests/test_revision_cas.py tests/test_review_service.py tests/test_server_api_contract.py tests/test_ephemeral_runtime.py tests/test_approved_script_contracts.py tests/test_high_fidelity_ports.py tests/test_performance_audio_contracts.py tests/test_production_ports.py tests/test_server_seedance_invocations.py -p no:cacheprovider -q
 162 passed in 6.11s
 ```
+
+## Canonical-digest correction
+
+- A second review found that the adapter had normalized incoming digest strings before validation, which could silently accept uppercase input. It now validates the original values as lowercase SHA-256 strings before returning the exact same values.
+- RED: the real adapter accepted an uppercase performance digest.
+- GREEN: `test_active_invocation_b_rejects_noncanonical_source_audio_binding_digests` rejects the noncanonical input before prompt compilation.
+
+```text
+python -m pytest tests/test_redis_job_store.py tests/test_revision_cas.py tests/test_review_service.py tests/test_server_api_contract.py tests/test_ephemeral_runtime.py tests/test_approved_script_contracts.py tests/test_high_fidelity_ports.py tests/test_performance_audio_contracts.py tests/test_production_ports.py tests/test_server_seedance_invocations.py -p no:cacheprovider -q
+163 passed in 6.10s
+```

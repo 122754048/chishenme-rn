@@ -386,6 +386,41 @@ class SeedanceInvocationAdapterTest(unittest.TestCase):
         self.assertEqual(result["performance_line_contract_sha256"], performance_sha)
         self.assertEqual(result["source_content_timeline_sha256"], timeline_sha)
 
+    def test_active_invocation_b_rejects_noncanonical_source_audio_binding_digests(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            adapter, prescript, context = self._active_adapter_and_prescript(
+                root,
+                line_offset_ms=5000,
+            )
+
+            with self.assertRaisesRegex(ReplicationError, "lowercase SHA-256"):
+                adapter.invoke_b(
+                    context=context,
+                    prescript_artifact=prescript,
+                    input_digests={"source": "a" * 64},
+                    segment_plan={
+                        "segments": [
+                            {
+                                "segment_id": "S01",
+                                "start_ms": 5000,
+                                "end_ms": 13000,
+                                "duration_ms": 8000,
+                                "cut_ids": ["C01"],
+                            }
+                        ]
+                    },
+                    prompt_request={
+                        "segment": _segment_request(),
+                        "line_contracts": None,
+                        "factors": {},
+                        "compiler_checks": _compiler_checks(),
+                    },
+                    final_cut_ids=["C01"],
+                    performance_line_contract_sha256="B" * 64,
+                    source_content_timeline_sha256="c" * 64,
+                )
+
     def test_invocation_a_and_b_share_pinned_skill_and_preserve_line_contract(self):
         with tempfile.TemporaryDirectory() as tmp:
             skill = Path(tmp) / "SKILL.md"
