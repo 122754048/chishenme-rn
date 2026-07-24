@@ -297,6 +297,35 @@ def test_commercial_deployment_rejects_a_background_music_adapter_that_does_not_
         )
 
 
+def test_commercial_deployment_rejects_a_music_adapter_with_the_wrong_execution_contract():
+    base = _Runtime(
+        job_store=_JobStore(),
+        work_queue=_Queue("usfr:work", "workers"),
+        object_store=object(),
+        worker_manager=_WorkerManager(),
+        service="old-service",
+    )
+    invalid_adapter = type(
+        "WrongContractMusicAdapter",
+        (),
+        {
+            "install": lambda self, **kwargs: _StageDriver(kwargs["job_store"], kwargs["work_queue"]),
+            "validate_startup": lambda self: None,
+            "validate_manifest": lambda self, **kwargs: None,
+        },
+    )()
+
+    with pytest.raises(CommercialDeploymentError, match="BACKGROUND_MUSIC_EXECUTION_ADAPTER_INVALID"):
+        build_commercial_deployment_runtime(
+            base,
+            capability_secret=b"x" * 32,
+            queue_factory=lambda *_, **kwargs: _Queue(kwargs["prefix"], kwargs["group"]),
+            stage_driver_factory=_StageDriver,
+            service_factory=lambda **_: object(),
+            background_music_execution_adapter=invalid_adapter,
+        )
+
+
 def test_background_music_adapter_factory_receives_the_built_deployment_runtime_and_returns_its_adapter():
     module_name = "test_background_music_adapter_factory"
     module = ModuleType(module_name)

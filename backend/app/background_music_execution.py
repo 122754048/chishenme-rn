@@ -15,8 +15,10 @@ import json
 from typing import Any
 
 from server.ephemeral_driver import EXECUTABLE_STAGES, _dedupe
+from server.errors import ReplicationError
 from server.job_models import WorkMessage
 from server.orchestrator import build_stage_plan
+from server.performance_audio_contracts import build_background_music_performance_contract
 
 
 MUSIC_EXECUTION_CONTRACT = "background_music_execution/v1"
@@ -41,6 +43,9 @@ REQUIRED_MUSIC_CAPABILITIES = frozenset(
     }
 )
 MUSIC_TIMELINE_CONTRACT_ARTIFACT_KIND = "music_timeline_contract"
+PERFORMANCE_LINE_CONTRACT_ARTIFACT_KIND = "performance_line_contract"
+BACKGROUND_MUSIC_EXECUTION_RECEIPT_V1 = "background_music_execution_receipt/v1"
+FORBIDDEN_MUSIC_OPERATIONS = ("loop", "atempo", "stretch", "pitch_shift", "silence_padding")
 
 
 def _is_sha256(value: object) -> bool:
@@ -56,6 +61,253 @@ def is_background_music_manifest(manifest: object) -> bool:
         return False
     extensions = manifest.get("extensions")
     return isinstance(extensions, Mapping) and extensions.get("background_music") is not None
+
+
+def _background_music_error(error: Exception) -> ValueError:
+    if isinstance(error, ReplicationError):
+        return ValueError(f"{error.code}: {error.message}")
+    return ValueError(str(error))
+
+
+def _validated_uploaded_music(uploaded_audio: Mapping[str, object]) -> dict[str, object]:
+    if (
+        not isinstance(uploaded_audio, Mapping)
+        or not _is_sha256(uploaded_audio.get("sha256"))
+        or not isinstance(uploaded_audio.get("content_type"), str)
+        or not uploaded_audio["content_type"].casefold().startswith("audio/")
+    ):
+        raise ValueError("BACKGROUND_MUSIC_MANIFEST_INVALID")
+    return dict(uploaded_audio)
+
+
+def _validated_audio_asset_receipt(
+    receipt: Mapping[str, object],
+    *,
+    uploaded_audio_sha256: str,
+) -> dict[str, object]:
+    uri = receipt.get("asset_uri") if isinstance(receipt, Mapping) else None
+    if (
+        not isinstance(receipt, Mapping)
+        or receipt.get("asset_type") != "Audio"
+        or receipt.get("status") != "active"
+        or receipt.get("uploaded_audio_sha256") != uploaded_audio_sha256
+        or not isinstance(uri, str)
+        or not uri.startswith("asset://asset-")
+    ):
+        raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
+    return dict(receipt)
+
+
+def _validated_music_windows(
+    music_timeline_contract: Mapping[str, object],
+    *,
+    uploaded_audio: Mapping[str, object],
+) -> list[dict[str, object]]:
+    """Validate exact uploaded-song ranges while retaining source event facts."""
+
+    if not isinstance(music_timeline_contract, Mapping):
+        raise ValueError("MUSIC_TIMELINE_CONTRACT_REQUIRED")
+    BackgroundMusicStagePort._validate_music_timeline(
+        contract=music_timeline_contract,
+        uploaded=uploaded_audio,
+    )
+    windows = music_timeline_contract.get("windows")
+    if not isinstance(windows, list):  # protected by _validate_music_timeline; keeps the return typed.
+        raise ValueError("MUSIC_TIMELINE_CONTRACT_REQUIRED")
+    return [dict(window) for window in windows if isinstance(window, Mapping)]
+
+
+def _provider_payload(*, asset_uri: str, performance: Mapping[str, object]) -> dict[str, object]:
+    mode = performance.get("mode")
+    if mode == "verified_singing":
+        lines = performance.get("singing_lines")
+        if not isinstance(lines, list) or not lines:
+            raise ValueError("VERIFIED_SINGING_EVIDENCE_REQUIRED")
+        exact_lines = " | ".join(str(line["exact_sung_text"]) for line in lines)
+        text = (
+            "Use @Audio1 as the uploaded-song reference. Perform only these verified lyrics exactly: "
+            f"{exact_lines}. Preserve the frozen source music windows, entries, exits, fades, silences, and transitions."
+        )
+    elif mode == "background_music_replacement":
+        text = (
+            "Use @Audio1 as the uploaded-song background-music reference. No lyric lip-sync. "
+            "Preserve the frozen source music windows, entries, exits, fades, silences, and transitions."
+        )
+    else:
+        raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_INVALID")
+    return {
+        "model": "seedance-2.0",
+        "content": [
+            {"type": "text", "text": text},
+            {"type": "audio_url", "role": "reference_audio", "audio_url": {"url": asset_uri}},
+        ],
+    }
+
+
+def _validate_verified_singing_windows(
+    *,
+    performance: Mapping[str, object],
+    music_windows: list[dict[str, object]],
+) -> None:
+    if performance.get("mode") != "verified_singing":
+        return
+    lines = performance.get("singing_lines")
+    if not isinstance(lines, list) or not lines:
+        raise ValueError("VERIFIED_SINGING_EVIDENCE_REQUIRED")
+    source_windows: list[tuple[int, int]] = []
+    for window in music_windows:
+        start = window.get("source_start_ms")
+        end = window.get("source_end_ms")
+        if isinstance(start, bool) or isinstance(end, bool) or not isinstance(start, int) or not isinstance(end, int) or end <= start:
+            raise ValueError("VERIFIED_SINGING_WINDOW_REQUIRED")
+        source_windows.append((start, end))
+    for line in lines:
+        source_time = line.get("source_time") if isinstance(line, Mapping) else None
+        if not isinstance(source_time, Mapping):
+            raise ValueError("VERIFIED_SINGING_WINDOW_REQUIRED")
+        start = source_time.get("start_ms")
+        end = source_time.get("end_ms")
+        if isinstance(start, bool) or isinstance(end, bool) or not isinstance(start, int) or not isinstance(end, int):
+            raise ValueError("VERIFIED_SINGING_WINDOW_REQUIRED")
+        if not any(window_start <= start and end <= window_end for window_start, window_end in source_windows):
+            raise ValueError("VERIFIED_SINGING_WINDOW_REQUIRED")
+
+
+def compile_background_music_execution_contract(
+    *,
+    uploaded_audio: Mapping[str, object],
+    music_timeline_contract: Mapping[str, object],
+    audio_asset_receipt: Mapping[str, object],
+    user_confirmed_intent: str,
+    performance_line_contract: Mapping[str, object] | None,
+) -> dict[str, object]:
+    """Compile a conditional Seedance ``@Audio1`` request without new stages.
+
+    Singing is selected only by immutable confirmed performance evidence.  The
+    fallback is an explicit BGM replacement, never a guessed lyric performance.
+    """
+
+    uploaded = _validated_uploaded_music(uploaded_audio)
+    windows = _validated_music_windows(music_timeline_contract, uploaded_audio=uploaded)
+    asset_receipt = _validated_audio_asset_receipt(
+        audio_asset_receipt,
+        uploaded_audio_sha256=str(uploaded["sha256"]),
+    )
+    try:
+        performance = build_background_music_performance_contract(
+            user_confirmed_intent=user_confirmed_intent,
+            performance_line_contract=performance_line_contract,
+        )
+    except ReplicationError as error:
+        raise _background_music_error(error) from error
+    _validate_verified_singing_windows(performance=performance, music_windows=windows)
+    payload = _provider_payload(asset_uri=str(asset_receipt["asset_uri"]), performance=performance)
+    return {
+        "contract": BACKGROUND_MUSIC_EXECUTION_RECEIPT_V1,
+        "mode": performance["mode"],
+        "lyric_lip_sync_policy": performance["lyric_lip_sync_policy"],
+        "performance_line_contract_sha256": performance["performance_line_contract_sha256"],
+        "uploaded_audio_sha256": uploaded["sha256"],
+        "uploaded_audio": uploaded,
+        "music_timeline_contract": dict(music_timeline_contract),
+        "user_confirmed_intent": user_confirmed_intent,
+        "performance_line_contract": (
+            None if performance_line_contract is None else dict(performance_line_contract)
+        ),
+        "source_music_windows": windows,
+        "forbidden_operations": list(FORBIDDEN_MUSIC_OPERATIONS),
+        "audio_asset_receipt": asset_receipt,
+        "performance": performance,
+        "provider_payload": payload,
+    }
+
+
+def _validate_frozen_execution_contract(execution_contract: Mapping[str, object]) -> None:
+    try:
+        expected = compile_background_music_execution_contract(
+            uploaded_audio=execution_contract["uploaded_audio"],
+            music_timeline_contract=execution_contract["music_timeline_contract"],
+            audio_asset_receipt=execution_contract["audio_asset_receipt"],
+            user_confirmed_intent=str(execution_contract["user_confirmed_intent"]),
+            performance_line_contract=execution_contract.get("performance_line_contract"),
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_INVALID") from error
+    if dict(execution_contract) != expected:
+        raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_INVALID")
+
+
+def execute_background_music(
+    *,
+    execution_contract: Mapping[str, object],
+    final_mix_receipt: Mapping[str, object],
+) -> dict[str, object]:
+    """Accept only a final receipt that proves exact uploaded-song fragments.
+
+    This is a verification boundary, not a media transformation: it binds the
+    uploaded SHA, every source window and final MP4 SHA to the final mix.
+    """
+
+    if (
+        not isinstance(execution_contract, Mapping)
+        or execution_contract.get("contract") != BACKGROUND_MUSIC_EXECUTION_RECEIPT_V1
+        or execution_contract.get("mode") not in {"verified_singing", "background_music_replacement"}
+        or execution_contract.get("forbidden_operations") != list(FORBIDDEN_MUSIC_OPERATIONS)
+        or not _is_sha256(execution_contract.get("uploaded_audio_sha256"))
+        or (
+            execution_contract.get("mode") == "verified_singing"
+            and not _is_sha256(execution_contract.get("performance_line_contract_sha256"))
+        )
+        or (
+            execution_contract.get("mode") == "background_music_replacement"
+            and execution_contract.get("performance_line_contract_sha256") is not None
+        )
+    ):
+        raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_INVALID")
+    _validate_frozen_execution_contract(execution_contract)
+    expected_windows = execution_contract.get("source_music_windows")
+    if not isinstance(expected_windows, list) or not expected_windows or any(
+        not isinstance(window, Mapping) for window in expected_windows
+    ):
+        raise ValueError("MUSIC_TIMELINE_CONTRACT_REQUIRED")
+    if (
+        not isinstance(final_mix_receipt, Mapping)
+        or final_mix_receipt.get("passed") is not True
+        or final_mix_receipt.get("mode") != execution_contract.get("mode")
+        or final_mix_receipt.get("uploaded_audio_sha256") != execution_contract.get("uploaded_audio_sha256")
+        or final_mix_receipt.get("forbidden_operations") != list(FORBIDDEN_MUSIC_OPERATIONS)
+        or not _is_sha256(final_mix_receipt.get("final_audio_sha256"))
+        or not _is_sha256(final_mix_receipt.get("final_video_sha256"))
+    ):
+        raise ValueError("BACKGROUND_MUSIC_MIX_RECEIPT_REQUIRED")
+    observed_windows = final_mix_receipt.get("window_receipts")
+    if not isinstance(observed_windows, list) or len(observed_windows) != len(expected_windows):
+        raise ValueError("BACKGROUND_MUSIC_FRAGMENT_RECEIPT_REQUIRED")
+    required_flags = (
+        "looped",
+        "atempo_applied",
+        "speed_changed",
+        "time_stretched",
+        "pitch_shifted",
+        "silence_padded",
+        "generated_substitute",
+    )
+    for expected, observed in zip(expected_windows, observed_windows):
+        if (
+            not isinstance(observed, Mapping)
+            or any(observed.get(field) != value for field, value in expected.items())
+            or not _is_sha256(observed.get("fragment_sha256"))
+            or observed.get("uploaded_fragment_sha256") != observed.get("fragment_sha256")
+            or observed.get("final_audio_fragment_sha256") != observed.get("fragment_sha256")
+        ):
+            raise ValueError("BACKGROUND_MUSIC_FRAGMENT_RECEIPT_REQUIRED")
+        if any(observed.get(flag) is not False for flag in required_flags):
+            raise ValueError("BACKGROUND_MUSIC_TRANSFORM_FORBIDDEN")
+    return {
+        **dict(final_mix_receipt),
+        "source_music_windows": [dict(window) for window in expected_windows],
+        "lyric_lip_sync_policy": execution_contract["lyric_lip_sync_policy"],
+    }
 
 
 def build_background_music_stage_plan(
@@ -156,7 +408,7 @@ class BackgroundMusicStagePort:
             return self._run(self.delegate, context=context, input_artifacts=input_artifacts)
         frozen_contract = (
             self._materialize_frozen_timeline_contract(context)
-            if self.stage in {"splice_timeline", "run_qc"}
+            if self.stage in {"audit_seedance_request", "splice_timeline", "run_qc"}
             else None
         )
         augmented_artifacts = list(input_artifacts)
@@ -205,13 +457,20 @@ class BackgroundMusicStagePort:
             evidence = result.get("background_music_evidence")
             contract = evidence.get("music_timeline_contract") if isinstance(evidence, Mapping) else None
             receipt = evidence.get("mix_receipt") if isinstance(evidence, Mapping) else None
+            execution_contract = evidence.get("music_execution_contract") if isinstance(evidence, Mapping) else None
             manifest = getattr(getattr(context, "snapshot", None), "slots_manifest", None)
             extensions = manifest.get("extensions") if isinstance(manifest, Mapping) else None
             uploaded = extensions.get("background_music") if isinstance(extensions, Mapping) else None
             if not isinstance(contract, Mapping) or not isinstance(receipt, Mapping) or not isinstance(uploaded, Mapping):
                 raise ValueError("BACKGROUND_MUSIC_MIX_RECEIPT_REQUIRED")
+            if not isinstance(execution_contract, Mapping):
+                raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_REQUIRED")
             self._validate_music_timeline(contract=contract, uploaded=uploaded)
             self._validate_mix_receipt(contract=contract, uploaded=uploaded, receipt=receipt)
+            execute_background_music(
+                execution_contract=execution_contract,
+                final_mix_receipt=receipt,
+            )
             self._validate_frozen_timeline_reference(
                 result=result,
                 contract=contract,
@@ -223,14 +482,24 @@ class BackgroundMusicStagePort:
             contract = evidence.get("music_timeline_contract") if isinstance(evidence, Mapping) else None
             receipt = evidence.get("mix_receipt") if isinstance(evidence, Mapping) else None
             singing_qa = evidence.get("singing_qa") if isinstance(evidence, Mapping) else None
+            execution_contract = evidence.get("music_execution_contract") if isinstance(evidence, Mapping) else None
             manifest = getattr(getattr(context, "snapshot", None), "slots_manifest", None)
             extensions = manifest.get("extensions") if isinstance(manifest, Mapping) else None
             uploaded = extensions.get("background_music") if isinstance(extensions, Mapping) else None
             if not isinstance(contract, Mapping) or not isinstance(receipt, Mapping) or not isinstance(uploaded, Mapping):
                 raise ValueError("BACKGROUND_MUSIC_MIX_RECEIPT_REQUIRED")
+            if not isinstance(execution_contract, Mapping):
+                raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_REQUIRED")
             self._validate_music_timeline(contract=contract, uploaded=uploaded)
             self._validate_mix_receipt(contract=contract, uploaded=uploaded, receipt=receipt)
-            self._validate_singing_qa(contract=contract, singing_qa=singing_qa)
+            execute_background_music(
+                execution_contract=execution_contract,
+                final_mix_receipt=receipt,
+            )
+            if execution_contract.get("mode") == "background_music_replacement":
+                self._validate_no_lyric_lip_sync(singing_qa=singing_qa)
+            else:
+                self._validate_singing_qa(contract=contract, singing_qa=singing_qa)
             self._validate_frozen_timeline_reference(
                 result=result,
                 contract=contract,
@@ -244,11 +513,49 @@ class BackgroundMusicStagePort:
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
         receipt = evidence.get("audio_asset_receipt")
         payload = evidence.get("provider_payload")
+        execution_contract = evidence.get("music_execution_contract")
         manifest = getattr(getattr(context, "snapshot", None), "slots_manifest", None)
         extensions = manifest.get("extensions") if isinstance(manifest, Mapping) else None
         uploaded = extensions.get("background_music") if isinstance(extensions, Mapping) else None
-        if not isinstance(receipt, Mapping) or not isinstance(payload, Mapping) or not isinstance(uploaded, Mapping):
+        if (
+            not isinstance(receipt, Mapping)
+            or not isinstance(payload, Mapping)
+            or not isinstance(uploaded, Mapping)
+            or not isinstance(execution_contract, Mapping)
+        ):
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
+        if (
+            execution_contract.get("contract") != BACKGROUND_MUSIC_EXECUTION_RECEIPT_V1
+            or execution_contract.get("uploaded_audio_sha256") != uploaded.get("sha256")
+            or execution_contract.get("audio_asset_receipt") != receipt
+            or execution_contract.get("provider_payload") != payload
+            or execution_contract.get("mode") not in {"verified_singing", "background_music_replacement"}
+        ):
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
+        try:
+            _validate_frozen_execution_contract(execution_contract)
+        except ValueError as error:
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID") from error
+        if frozen_contract is None:
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
+        frozen_timeline, _ = frozen_contract
+        execution_timeline = execution_contract.get("music_timeline_contract")
+        if (
+            not isinstance(execution_timeline, Mapping)
+            or _canonical_json_bytes(execution_timeline) != _canonical_json_bytes(frozen_timeline)
+        ):
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
+        if execution_contract.get("mode") == "verified_singing":
+            frozen_performance = self._materialize_frozen_performance_line_contract(context)
+            declared_performance_sha = execution_contract.get("performance_line_contract_sha256")
+            execution_performance = execution_contract.get("performance_line_contract")
+            if (
+                not isinstance(execution_performance, Mapping)
+                or not _is_sha256(declared_performance_sha)
+                or declared_performance_sha != frozen_performance[1]["sha256"]
+                or _canonical_json_bytes(execution_performance) != _canonical_json_bytes(frozen_performance[0])
+            ):
+                raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
         asset_uri = receipt.get("asset_uri")
         if (
             receipt.get("asset_type") != "Audio"
@@ -309,6 +616,43 @@ class BackgroundMusicStagePort:
             raise ValueError("MUSIC_TIMELINE_CONTRACT_ARTIFACT_MISMATCH") from error
         if not isinstance(decoded, Mapping):
             raise ValueError("MUSIC_TIMELINE_CONTRACT_ARTIFACT_MISMATCH")
+        return dict(decoded), reference
+
+    @staticmethod
+    def _materialize_frozen_performance_line_contract(
+        context: Any,
+    ) -> tuple[Mapping[str, Any], dict[str, str]]:
+        try:
+            artifacts = context.artifacts
+        except AttributeError as error:
+            raise ValueError("PERFORMANCE_LINE_CONTRACT_ARTIFACT_REQUIRED") from error
+        if not isinstance(artifacts, (tuple, list)):
+            raise ValueError("PERFORMANCE_LINE_CONTRACT_ARTIFACT_REQUIRED")
+        matches = [
+            artifact
+            for artifact in artifacts
+            if isinstance(artifact, Mapping) and artifact.get("kind") == PERFORMANCE_LINE_CONTRACT_ARTIFACT_KIND
+        ]
+        if len(matches) != 1 or not callable(getattr(context, "materialize_artifact", None)):
+            raise ValueError("PERFORMANCE_LINE_CONTRACT_ARTIFACT_REQUIRED")
+        reference = BackgroundMusicStagePort._contract_artifact_reference(matches[0])
+        try:
+            with context.materialize_artifact(
+                PERFORMANCE_LINE_CONTRACT_ARTIFACT_KIND,
+                artifact_id=reference["artifact_id"],
+                sha256=reference["sha256"],
+            ) as materialized:
+                encoded = materialized.path.read_bytes()
+        except Exception as error:
+            raise ValueError("PERFORMANCE_LINE_CONTRACT_ARTIFACT_REQUIRED") from error
+        if hashlib.sha256(encoded).hexdigest() != reference["sha256"]:
+            raise ValueError("PERFORMANCE_LINE_CONTRACT_ARTIFACT_MISMATCH")
+        try:
+            decoded = json.loads(encoded)
+        except (TypeError, ValueError, json.JSONDecodeError) as error:
+            raise ValueError("PERFORMANCE_LINE_CONTRACT_ARTIFACT_MISMATCH") from error
+        if not isinstance(decoded, Mapping):
+            raise ValueError("PERFORMANCE_LINE_CONTRACT_ARTIFACT_MISMATCH")
         return dict(decoded), reference
 
     @staticmethod
@@ -490,6 +834,16 @@ class BackgroundMusicStagePort:
                 or not _is_sha256(lip_sync.get("receipt_sha256"))
             ):
                 raise ValueError("SINGING_LIP_SYNC_QA_REQUIRED")
+
+    @staticmethod
+    def _validate_no_lyric_lip_sync(*, singing_qa: object) -> None:
+        if (
+            not isinstance(singing_qa, Mapping)
+            or singing_qa.get("status") != "skipped"
+            or singing_qa.get("reason") != "no_lyric_lip_sync"
+            or singing_qa.get("regions") != []
+        ):
+            raise ValueError("NO_LYRIC_LIP_SYNC_REQUIRED")
 
 
 class DeploymentBackgroundMusicExecutionAdapter:

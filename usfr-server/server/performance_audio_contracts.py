@@ -20,6 +20,8 @@ from .errors import ReplicationError
 
 SOURCE_AUDIO_REPLICATE_V1 = "source_audio_replicate_v1"
 REFERENCE_AUDIO_MIGRATE_V1 = "reference_audio_migrate_v1"
+BACKGROUND_MUSIC_VERIFIED_SINGING_V1 = "background_music_verified_singing/v1"
+BACKGROUND_MUSIC_REPLACEMENT_V1 = "background_music_replacement/v1"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _OPAQUE_REGION_TYPES = frozenset(
     {
@@ -812,6 +814,103 @@ def _materialize_confirmed_performance_lines(
         ],
     )
     return result
+
+
+def build_background_music_performance_contract(
+    *,
+    user_confirmed_intent: str,
+    performance_line_contract: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Choose the only two evidence-bound modes for an uploaded song.
+
+    A caller that explicitly asks for singing must supply complete immutable
+    performance evidence.  A background-music replacement intentionally does
+    not consume lyric text or make a lip-sync claim.
+    """
+
+    intent = str(user_confirmed_intent or "").strip()
+    if intent == "background_music_replacement":
+        return {
+            "contract": BACKGROUND_MUSIC_REPLACEMENT_V1,
+            "mode": "background_music_replacement",
+            "lyric_lip_sync_policy": "No lyric lip-sync",
+            "performance_line_contract_sha256": None,
+            "singing_lines": [],
+        }
+    if intent != "verified_singing":
+        _blocked(
+            "BACKGROUND_MUSIC_INTENT_REQUIRED",
+            "user_confirmed_intent must be verified_singing or background_music_replacement",
+        )
+    if not isinstance(performance_line_contract, Mapping):
+        _blocked("VERIFIED_SINGING_EVIDENCE_REQUIRED", "performance_line_contract is required")
+    if performance_line_contract.get("contract") != "performance-line/v1":
+        _blocked("VERIFIED_SINGING_EVIDENCE_REQUIRED", "performance_line_contract is invalid")
+    cuts = performance_line_contract.get("cuts")
+    if not isinstance(cuts, Sequence) or isinstance(cuts, (str, bytes, bytearray)) or not cuts:
+        _blocked("VERIFIED_SINGING_EVIDENCE_REQUIRED", "verified singing requires at least one performance line")
+
+    singing_lines: list[dict[str, Any]] = []
+    for index, raw in enumerate(cuts, start=1):
+        if not isinstance(raw, Mapping):
+            _blocked("VERIFIED_SINGING_EVIDENCE_REQUIRED", "performance line must be an object", index=index)
+        assignment = raw.get("speaker_assignment")
+        source_time = raw.get("source_time")
+        segment_time = raw.get("segment_time")
+        anchors = raw.get("beat_anchors_ms")
+        lyric = str(raw.get("exact_sung_text") or "").strip()
+        if (
+            raw.get("content_type") != "sung"
+            or str(raw.get("performance_mode") or "").strip().casefold() not in {"singing", "sung"}
+            or raw.get("lyric_status") != "verified"
+            or not lyric
+            or not isinstance(assignment, Mapping)
+            or assignment.get("status") != "CONFIRMED"
+            or not isinstance(assignment.get("speaker_id"), str)
+            or not assignment.get("speaker_id", "").strip()
+            or not _SHA256.fullmatch(str(assignment.get("evidence_sha256") or ""))
+            or not isinstance(source_time, Mapping)
+            or not isinstance(segment_time, Mapping)
+            or not isinstance(anchors, Sequence)
+            or isinstance(anchors, (str, bytes, bytearray))
+            or not anchors
+        ):
+            _blocked(
+                "VERIFIED_SINGING_EVIDENCE_REQUIRED",
+                "verified singing requires confirmed performer, exact lyrics, windows, and beat evidence",
+                index=index,
+            )
+        source_window = _window(source_time, field=f"verified singing line {index}.source_time")
+        segment_window = _window(segment_time, field=f"verified singing line {index}.segment_time")
+        normalized_anchors = [_ms(anchor, field=f"verified singing line {index}.beat_anchor") for anchor in anchors]
+        if any(
+            anchor < segment_window["start_ms"] or anchor >= segment_window["end_ms"]
+            for anchor in normalized_anchors
+        ):
+            _blocked(
+                "VERIFIED_SINGING_EVIDENCE_REQUIRED",
+                "verified singing beat anchors must fall inside the confirmed segment window",
+                index=index,
+            )
+        singing_lines.append(
+            {
+                "line_id": _require_nonempty_string(raw.get("line_id"), field=f"verified singing line {index}.line_id"),
+                "cut_id": _require_nonempty_string(raw.get("cut_id"), field=f"verified singing line {index}.cut_id"),
+                "speaker_id": str(assignment["speaker_id"]).strip(),
+                "speaker_evidence_sha256": str(assignment["evidence_sha256"]),
+                "exact_sung_text": lyric,
+                "source_time": source_window,
+                "segment_time": segment_window,
+                "beat_anchors_ms": normalized_anchors,
+            }
+        )
+    return {
+        "contract": BACKGROUND_MUSIC_VERIFIED_SINGING_V1,
+        "mode": "verified_singing",
+        "lyric_lip_sync_policy": "Verified lyric lip-sync required",
+        "performance_line_contract_sha256": canonical_json_sha256(performance_line_contract),
+        "singing_lines": singing_lines,
+    }
 
 
 def recover_confirmed_script_contracts(context: Any) -> dict[str, Any]:

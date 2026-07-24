@@ -18,6 +18,7 @@ from app.background_music_execution import (  # noqa: E402
     BackgroundMusicStagePort,
     build_background_music_stage_plan,
 )
+import app.background_music_execution as background_music_execution  # noqa: E402
 
 
 class _Checkpoint:
@@ -109,6 +110,30 @@ class _ArtifactPortContext:
         yield SimpleNamespace(path=self.artifact_path)
 
 
+@dataclass(frozen=True)
+class _MultiArtifactPortContext:
+    snapshot: _PortSnapshot
+    artifact_entries: tuple[tuple[dict[str, object], Path], ...]
+
+    @property
+    def artifacts(self):
+        return tuple(reference for reference, _ in self.artifact_entries)
+
+    @contextmanager
+    def materialize_artifact(self, kind, *, sha256=None, artifact_id=None):
+        reference = next(
+            (
+                item
+                for item in self.artifacts
+                if item["artifact_id"] == artifact_id and item["kind"] == kind and item["sha256"] == sha256
+            ),
+            None,
+        )
+        assert reference is not None
+        path = next(path for item, path in self.artifact_entries if item["artifact_id"] == artifact_id)
+        yield SimpleNamespace(path=path)
+
+
 class _Port:
     def __init__(self, name):
         self.name = name
@@ -134,22 +159,24 @@ class _MusicPort:
 
 
 class _AuditedMusicPort:
-    def __init__(self, payload):
+    def __init__(self, payload, *, execution_contract=None):
         self.payload = payload
+        self.execution_contract = execution_contract
 
     def run(self, *, context, input_artifacts):
         del context, input_artifacts
-        return {
-            "background_music_evidence": {
-                "audio_asset_receipt": {
-                    "asset_type": "Audio",
-                    "asset_uri": "asset://asset-song",
-                    "uploaded_audio_sha256": "b" * 64,
-                    "status": "active",
-                },
-                "provider_payload": self.payload,
-            }
+        evidence = {
+            "audio_asset_receipt": {
+                "asset_type": "Audio",
+                "asset_uri": "asset://asset-song",
+                "uploaded_audio_sha256": "b" * 64,
+                "status": "active",
+            },
+            "provider_payload": self.payload,
         }
+        if self.execution_contract is not None:
+            evidence["music_execution_contract"] = self.execution_contract
+        return {"background_music_evidence": evidence}
 
 
 class _TimelineMusicPort:
@@ -172,6 +199,229 @@ class _MixMusicPort:
 
 class _QcMusicPort(_MixMusicPort):
     pass
+
+
+def _uploaded_music() -> dict[str, object]:
+    return {
+        "object_key": "uploads/batch-scope/song.mp3",
+        "sha256": "b" * 64,
+        "size_bytes": 128,
+        "content_type": "audio/mpeg",
+        "duration_seconds": 30.0,
+        "status": "completed",
+    }
+
+
+def _music_timeline() -> dict[str, object]:
+    return {
+        "windows": [
+            {
+                "source_start_frame": 0,
+                "source_end_frame": 30,
+                "output_start_frame": 0,
+                "output_end_frame": 30,
+                "uploaded_start_ms": 0,
+                "uploaded_end_ms": 1000,
+                "source_start_ms": 0,
+                "source_end_ms": 1000,
+                "source_entry": "hard_cut",
+                "source_exit": "dissolve",
+                "fade_in_ms": 0,
+                "fade_out_ms": 120,
+                "silence_before": False,
+                "silence_after": True,
+                "transition": "cross_dissolve",
+            }
+        ],
+        "visible_singer_regions": [],
+    }
+
+
+def _verified_performance_line_contract() -> dict[str, object]:
+    return {
+        "contract": "performance-line/v1",
+        "cuts": [
+            {
+                "line_id": "L01",
+                "cut_id": "C01",
+                "content_type": "sung",
+                "speaker_assignment": {
+                    "status": "CONFIRMED",
+                    "speaker_id": "CHARACTER_A",
+                    "evidence_sha256": "a" * 64,
+                },
+                "source_time": {"start_ms": 0, "end_ms": 1000},
+                "segment_time": {"start_ms": 0, "end_ms": 1000},
+                "performance_mode": "singing",
+                "lyric_status": "verified",
+                "exact_sung_text": "Hold on",
+                "beat_anchors_ms": [240],
+            }
+        ],
+    }
+
+
+def _audio_asset_receipt() -> dict[str, object]:
+    return {
+        "asset_type": "Audio",
+        "asset_uri": "asset://asset-song",
+        "status": "active",
+        "uploaded_audio_sha256": "b" * 64,
+    }
+
+
+def _execution_contract_for(
+    music_timeline_contract: dict[str, object],
+    *,
+    intent: str = "background_music_replacement",
+) -> dict[str, object]:
+    return background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=music_timeline_contract,
+        audio_asset_receipt=_audio_asset_receipt(),
+        user_confirmed_intent=intent,
+        performance_line_contract=_verified_performance_line_contract() if intent == "verified_singing" else None,
+    )
+
+
+def _music_audit_context(tmp_path: Path, *, timeline: dict[str, object] | None = None) -> _ArtifactPortContext:
+    contract = timeline or _music_timeline()
+    encoded = json.dumps(contract, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    path = tmp_path / "music_timeline_contract.json"
+    path.write_bytes(encoded)
+    return _ArtifactPortContext(
+        _PortSnapshot({"slots": {}, "extensions": {"background_music": _uploaded_music()}}),
+        artifact_path=path,
+        artifact_ref={
+            "artifact_id": "music-contract",
+            "kind": "music_timeline_contract",
+            "sha256": hashlib.sha256(encoded).hexdigest(),
+        },
+    )
+
+
+def _final_mix_receipt(*, execution_contract: dict[str, object]) -> dict[str, object]:
+    window = execution_contract["source_music_windows"][0]
+    return {
+        "passed": True,
+        "mode": execution_contract["mode"],
+        "uploaded_audio_sha256": "b" * 64,
+        "final_audio_sha256": "c" * 64,
+        "final_video_sha256": "d" * 64,
+        "forbidden_operations": ["loop", "atempo", "stretch", "pitch_shift", "silence_padding"],
+        "window_receipts": [
+            {
+                **window,
+                "fragment_sha256": "e" * 64,
+                "uploaded_fragment_sha256": "e" * 64,
+                "final_audio_fragment_sha256": "e" * 64,
+                "looped": False,
+                "atempo_applied": False,
+                "speed_changed": False,
+                "time_stretched": False,
+                "pitch_shifted": False,
+                "silence_padded": False,
+                "generated_substitute": False,
+            }
+        ],
+    }
+
+
+def test_uploaded_song_is_the_final_audio_authority_without_time_or_pitch_transform():
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=_music_timeline(),
+        audio_asset_receipt=_audio_asset_receipt(),
+        user_confirmed_intent="verified_singing",
+        performance_line_contract=_verified_performance_line_contract(),
+    )
+
+    receipt = background_music_execution.execute_background_music(
+        execution_contract=execution,
+        final_mix_receipt=_final_mix_receipt(execution_contract=execution),
+    )
+
+    assert receipt["forbidden_operations"] == ["loop", "atempo", "stretch", "pitch_shift", "silence_padding"]
+    assert receipt["uploaded_audio_sha256"] == "b" * 64
+    assert receipt["final_video_sha256"] == "d" * 64
+    assert receipt["source_music_windows"] == _music_timeline()["windows"]
+    text = execution["provider_payload"]["content"][0]["text"]
+    assert "@Audio1" in text
+    assert "Hold on" in text
+    assert execution["performance_line_contract_sha256"] == hashlib.sha256(
+        json.dumps(_verified_performance_line_contract(), sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def test_background_music_execution_rejects_a_final_segment_sha_that_does_not_match_the_uploaded_segment():
+    execution = _execution_contract_for(_music_timeline())
+    receipt = _final_mix_receipt(execution_contract=execution)
+    receipt["window_receipts"][0]["final_audio_fragment_sha256"] = "f" * 64
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_FRAGMENT_RECEIPT_REQUIRED"):
+        background_music_execution.execute_background_music(
+            execution_contract=execution,
+            final_mix_receipt=receipt,
+        )
+
+
+def test_background_music_execution_rejects_any_atempo_or_speed_change():
+    execution = _execution_contract_for(_music_timeline())
+    receipt = _final_mix_receipt(execution_contract=execution)
+    receipt["window_receipts"][0]["speed_changed"] = True
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_TRANSFORM_FORBIDDEN"):
+        background_music_execution.execute_background_music(
+            execution_contract=execution,
+            final_mix_receipt=receipt,
+        )
+
+
+def test_verified_singing_fails_closed_when_a_line_or_beat_falls_outside_its_frozen_music_window():
+    line_outside_window = _verified_performance_line_contract()
+    line_outside_window["cuts"][0]["source_time"] = {"start_ms": 200, "end_ms": 1200}
+    with pytest.raises(ValueError, match="VERIFIED_SINGING_WINDOW_REQUIRED"):
+        background_music_execution.compile_background_music_execution_contract(
+            uploaded_audio=_uploaded_music(),
+            music_timeline_contract=_music_timeline(),
+            audio_asset_receipt=_audio_asset_receipt(),
+            user_confirmed_intent="verified_singing",
+            performance_line_contract=line_outside_window,
+        )
+
+    beat_outside_line = _verified_performance_line_contract()
+    beat_outside_line["cuts"][0]["beat_anchors_ms"] = [1_000]
+    with pytest.raises(ValueError, match="VERIFIED_SINGING_EVIDENCE_REQUIRED"):
+        background_music_execution.compile_background_music_execution_contract(
+            uploaded_audio=_uploaded_music(),
+            music_timeline_contract=_music_timeline(),
+            audio_asset_receipt=_audio_asset_receipt(),
+            user_confirmed_intent="verified_singing",
+            performance_line_contract=beat_outside_line,
+        )
+
+
+def test_background_music_mode_has_explicit_no_lyric_lip_sync_and_singing_fails_closed_without_verified_evidence():
+    with pytest.raises(ValueError, match="VERIFIED_SINGING_EVIDENCE_REQUIRED"):
+        background_music_execution.compile_background_music_execution_contract(
+            uploaded_audio=_uploaded_music(),
+            music_timeline_contract=_music_timeline(),
+            audio_asset_receipt=_audio_asset_receipt(),
+            user_confirmed_intent="verified_singing",
+            performance_line_contract=None,
+        )
+
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=_music_timeline(),
+        audio_asset_receipt=_audio_asset_receipt(),
+        user_confirmed_intent="background_music_replacement",
+        performance_line_contract=None,
+    )
+
+    assert execution["mode"] == "background_music_replacement"
+    assert execution["lyric_lip_sync_policy"] == "No lyric lip-sync"
+    assert "No lyric lip-sync" in execution["provider_payload"]["content"][0]["text"]
 
 
 def test_background_music_stage_driver_runs_the_existing_generation_chain_and_preserves_approvals():
@@ -268,39 +518,20 @@ def test_background_music_stage_port_exposes_only_a_worker_scoped_materializable
     assert "background_music" not in context.snapshot.slots_manifest["slots"]
 
 
-def test_background_music_provider_audit_requires_the_uploaded_audio_asset_and_exactly_one_audio1_content_item():
-    context = _PortContext(
-        _PortSnapshot(
-            {
-                "slots": {},
-                "extensions": {
-                    "background_music": {
-                        "object_key": "uploads/batch-scope/song.mp3",
-                        "sha256": "b" * 64,
-                        "size_bytes": 128,
-                        "content_type": "audio/mpeg",
-                        "duration_seconds": 30.0,
-                        "status": "completed",
-                    }
-                },
-            }
-        )
+def test_background_music_provider_audit_requires_the_uploaded_audio_asset_and_exactly_one_audio1_content_item(tmp_path):
+    context = _music_audit_context(tmp_path)
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=_music_timeline(),
+        audio_asset_receipt=_audio_asset_receipt(),
+        user_confirmed_intent="background_music_replacement",
+        performance_line_contract=None,
     )
-    valid_payload = {
-        "model": "seedance-2.0",
-        "content": [
-            {"type": "text", "text": "Use @Audio1 for the uploaded song."},
-            {
-                "type": "audio_url",
-                "role": "reference_audio",
-                "audio_url": {"url": "asset://asset-song"},
-            },
-        ],
-    }
+    valid_payload = execution["provider_payload"]
     port = BackgroundMusicStagePort(
         stage="audit_seedance_request",
         delegate=_Port("canonical"),
-        music_delegate=_AuditedMusicPort(valid_payload),
+        music_delegate=_AuditedMusicPort(valid_payload, execution_contract=execution),
     )
 
     assert port.run(context=context, input_artifacts=[])["background_music_evidence"]["provider_payload"] == valid_payload
@@ -309,10 +540,101 @@ def test_background_music_provider_audit_requires_the_uploaded_audio_asset_and_e
     invalid_port = BackgroundMusicStagePort(
         stage="audit_seedance_request",
         delegate=_Port("canonical"),
-        music_delegate=_AuditedMusicPort(invalid_payload),
+        music_delegate=_AuditedMusicPort(invalid_payload, execution_contract=execution),
     )
     with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID"):
         invalid_port.run(context=context, input_artifacts=[])
+
+
+def test_background_music_provider_audit_rejects_a_payload_that_differs_from_the_frozen_execution_contract():
+    context = _PortContext(
+        _PortSnapshot({"slots": {}, "extensions": {"background_music": _uploaded_music()}})
+    )
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=_music_timeline(),
+        audio_asset_receipt=_audio_asset_receipt(),
+        user_confirmed_intent="verified_singing",
+        performance_line_contract=_verified_performance_line_contract(),
+    )
+    altered_payload = {
+        **execution["provider_payload"],
+        "content": [
+            {"type": "text", "text": "Use @Audio1 and invent a new lyric."},
+            execution["provider_payload"]["content"][1],
+        ],
+    }
+    port = BackgroundMusicStagePort(
+        stage="audit_seedance_request",
+        delegate=_Port("canonical"),
+        music_delegate=_AuditedMusicPort(altered_payload, execution_contract=execution),
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID"):
+        port.run(context=context, input_artifacts=[])
+
+
+def test_background_music_provider_audit_revalidates_the_mode_contract_instead_of_trusting_delegate_text(tmp_path):
+    context = _music_audit_context(tmp_path)
+    execution = _execution_contract_for(_music_timeline())
+    unsafe_payload = {
+        **execution["provider_payload"],
+        "content": [
+            {"type": "text", "text": "Use @Audio1 and make the performer lyric lip-sync every word."},
+            execution["provider_payload"]["content"][1],
+        ],
+    }
+    forged_execution = {**execution, "provider_payload": unsafe_payload}
+    port = BackgroundMusicStagePort(
+        stage="audit_seedance_request",
+        delegate=_Port("canonical"),
+        music_delegate=_AuditedMusicPort(unsafe_payload, execution_contract=forged_execution),
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID"):
+        port.run(context=context, input_artifacts=[])
+
+
+def test_background_music_provider_audit_rejects_a_self_consistent_forged_singing_contract_without_matching_frozen_artifacts(tmp_path):
+    music_timeline = _music_timeline()
+    confirmed_performance = _verified_performance_line_contract()
+    forged_performance = _verified_performance_line_contract()
+    forged_performance["cuts"][0]["exact_sung_text"] = "Invented lyric"
+    music_bytes = json.dumps(music_timeline, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    performance_bytes = json.dumps(confirmed_performance, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    music_path = tmp_path / "music_timeline_contract.json"
+    performance_path = tmp_path / "performance_line_contract.json"
+    music_path.write_bytes(music_bytes)
+    performance_path.write_bytes(performance_bytes)
+    music_reference = {
+        "artifact_id": "music-contract",
+        "kind": "music_timeline_contract",
+        "sha256": hashlib.sha256(music_bytes).hexdigest(),
+    }
+    performance_reference = {
+        "artifact_id": "performance-contract",
+        "kind": "performance_line_contract",
+        "sha256": hashlib.sha256(performance_bytes).hexdigest(),
+    }
+    context = _MultiArtifactPortContext(
+        _PortSnapshot({"slots": {}, "extensions": {"background_music": _uploaded_music()}}),
+        artifact_entries=((music_reference, music_path), (performance_reference, performance_path)),
+    )
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=music_timeline,
+        audio_asset_receipt=_audio_asset_receipt(),
+        user_confirmed_intent="verified_singing",
+        performance_line_contract=forged_performance,
+    )
+    port = BackgroundMusicStagePort(
+        stage="audit_seedance_request",
+        delegate=_Port("canonical"),
+        music_delegate=_AuditedMusicPort(execution["provider_payload"], execution_contract=execution),
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID"):
+        port.run(context=context, input_artifacts=[])
 
 
 def test_background_music_dynamics_requires_frame_exact_timeline_windows_with_continuous_uploaded_audio_ranges():
@@ -437,25 +759,14 @@ def test_background_music_splice_requires_exact_uploaded_fragments_and_rejects_a
         ],
         "visible_singer_regions": [],
     }
-    receipt = {
-        "passed": True,
-        "uploaded_audio_sha256": "b" * 64,
-        "final_audio_sha256": "c" * 64,
-        "window_receipts": [
-            {
-                **contract["windows"][0],
-                "fragment_sha256": "d" * 64,
-                "looped": False,
-                "time_stretched": False,
-                "pitch_shifted": False,
-                "generated_substitute": False,
-            }
-        ],
-    }
+    execution = _execution_contract_for(contract)
+    receipt = _final_mix_receipt(execution_contract=execution)
     port = BackgroundMusicStagePort(
         stage="splice_timeline",
         delegate=_Port("canonical"),
-        music_delegate=_MixMusicPort({"music_timeline_contract": contract, "mix_receipt": receipt}),
+        music_delegate=_MixMusicPort(
+            {"music_timeline_contract": contract, "music_execution_contract": execution, "mix_receipt": receipt}
+        ),
     )
 
     assert port.run(context=context, input_artifacts=[])["background_music_evidence"]["mix_receipt"] == receipt
@@ -467,7 +778,9 @@ def test_background_music_splice_requires_exact_uploaded_fragments_and_rejects_a
     invalid_port = BackgroundMusicStagePort(
         stage="splice_timeline",
         delegate=_Port("canonical"),
-        music_delegate=_MixMusicPort({"music_timeline_contract": contract, "mix_receipt": transformed}),
+        music_delegate=_MixMusicPort(
+            {"music_timeline_contract": contract, "music_execution_contract": execution, "mix_receipt": transformed}
+        ),
     )
     with pytest.raises(ValueError, match="BACKGROUND_MUSIC_TRANSFORM_FORBIDDEN"):
         invalid_port.run(context=context, input_artifacts=[])
@@ -508,21 +821,8 @@ def test_background_music_splice_rejects_a_contract_that_differs_from_the_materi
         **frozen_contract,
         "windows": [{**frozen_contract["windows"][0], "uploaded_start_ms": 1000, "uploaded_end_ms": 2000}],
     }
-    receipt = {
-        "passed": True,
-        "uploaded_audio_sha256": "b" * 64,
-        "final_audio_sha256": "c" * 64,
-        "window_receipts": [
-            {
-                **altered_contract["windows"][0],
-                "fragment_sha256": "d" * 64,
-                "looped": False,
-                "time_stretched": False,
-                "pitch_shifted": False,
-                "generated_substitute": False,
-            }
-        ],
-    }
+    execution = _execution_contract_for(altered_contract)
+    receipt = _final_mix_receipt(execution_contract=execution)
     context = _ArtifactPortContext(
         _PortSnapshot({"slots": {}, "extensions": {"background_music": background_music}}),
         artifact_path=artifact_path,
@@ -535,6 +835,7 @@ def test_background_music_splice_rejects_a_contract_that_differs_from_the_materi
             {
                 "music_timeline_contract": altered_contract,
                 "music_timeline_contract_artifact": artifact_ref,
+                "music_execution_contract": execution,
                 "mix_receipt": receipt,
             }
         ),
@@ -563,32 +864,22 @@ def test_background_music_qc_requires_singing_alignment_and_lip_sync_or_an_expli
                 "output_end_frame": 30,
                 "uploaded_start_ms": 0,
                 "uploaded_end_ms": 1000,
+                "source_start_ms": 0,
+                "source_end_ms": 1000,
             }
         ],
         "visible_singer_regions": [],
     }
-    receipt = {
-        "passed": True,
-        "uploaded_audio_sha256": "b" * 64,
-        "final_audio_sha256": "c" * 64,
-        "window_receipts": [
-            {
-                **base_contract["windows"][0],
-                "fragment_sha256": "d" * 64,
-                "looped": False,
-                "time_stretched": False,
-                "pitch_shifted": False,
-                "generated_substitute": False,
-            }
-        ],
-    }
-    skipped = {"status": "skipped", "reason": "no_visible_singing_person", "regions": []}
+    execution = _execution_contract_for(base_contract)
+    receipt = _final_mix_receipt(execution_contract=execution)
+    skipped = {"status": "skipped", "reason": "no_lyric_lip_sync", "regions": []}
     port = BackgroundMusicStagePort(
         stage="run_qc",
         delegate=_Port("canonical"),
         music_delegate=_QcMusicPort(
             {
                 "music_timeline_contract": base_contract,
+                "music_execution_contract": execution,
                 "mix_receipt": receipt,
                 "singing_qa": skipped,
             }
@@ -598,19 +889,52 @@ def test_background_music_qc_requires_singing_alignment_and_lip_sync_or_an_expli
     assert port.run(context=context, input_artifacts=[])["background_music_evidence"]["singing_qa"] == skipped
 
     visible_contract = {**base_contract, "visible_singer_regions": [{"region_id": "s1", "visible": True}]}
+    visible_execution = _execution_contract_for(visible_contract, intent="verified_singing")
+    visible_receipt = _final_mix_receipt(execution_contract=visible_execution)
     missing_singing_qa = BackgroundMusicStagePort(
         stage="run_qc",
         delegate=_Port("canonical"),
         music_delegate=_QcMusicPort(
             {
                 "music_timeline_contract": visible_contract,
-                "mix_receipt": receipt,
+                "music_execution_contract": visible_execution,
+                "mix_receipt": visible_receipt,
                 "singing_qa": skipped,
             }
         ),
     )
     with pytest.raises(ValueError, match="SINGING_ALIGNMENT_REQUIRED"):
         missing_singing_qa.run(context=context, input_artifacts=[])
+
+
+def test_background_music_splice_fails_closed_without_the_frozen_execution_contract():
+    contract = {
+        "windows": [
+            {
+                "source_start_frame": 0,
+                "source_end_frame": 30,
+                "output_start_frame": 0,
+                "output_end_frame": 30,
+                "uploaded_start_ms": 0,
+                "uploaded_end_ms": 1000,
+                "source_start_ms": 0,
+                "source_end_ms": 1000,
+            }
+        ],
+        "visible_singer_regions": [],
+    }
+    execution = _execution_contract_for(contract)
+    context = _PortContext(_PortSnapshot({"slots": {}, "extensions": {"background_music": _uploaded_music()}}))
+    port = BackgroundMusicStagePort(
+        stage="splice_timeline",
+        delegate=_Port("canonical"),
+        music_delegate=_MixMusicPort(
+            {"music_timeline_contract": contract, "mix_receipt": _final_mix_receipt(execution_contract=execution)}
+        ),
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_EXECUTION_CONTRACT_REQUIRED"):
+        port.run(context=context, input_artifacts=[])
 
 
 def test_deployment_music_adapter_wraps_only_existing_stage_ports_and_requires_real_music_capability_declarations():

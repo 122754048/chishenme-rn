@@ -152,6 +152,21 @@ def test_commercial_batch_runtime_rejects_background_music_during_preflight_with
     assert created == []
 
 
+def test_commercial_batch_runtime_fails_closed_before_job_creation_when_a_music_manifest_has_no_execution_adapter():
+    queues = {name: _Queue() for name in CommercialBatchRuntime.CAPABILITY_QUEUES}
+    runtime = CommercialBatchRuntime(
+        create_standard_job=lambda row: (_ for _ in ()).throw(AssertionError(f"unexpected job creation: {row.row_id}")),
+        resume_known_job=lambda _: None,
+        capability_queues=queues,
+        batch_state_store=_StateStore(),
+    )
+    row = _row("music-fail-closed")
+    row["output_language"] = None
+    row["extensions"] = {"background_music": {"object_key": "uploads/music-fail-closed/song.mp3"}}
+
+    assert runtime.preflight([row])[0]["error"] == "BACKGROUND_MUSIC_EXECUTION_ADAPTER_REQUIRED"
+
+
 def test_commercial_batch_runtime_admits_background_music_only_with_a_validated_execution_adapter():
     queues = {name: _Queue() for name in CommercialBatchRuntime.CAPABILITY_QUEUES}
     created = []
