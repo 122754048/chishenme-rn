@@ -243,6 +243,27 @@ class _QcMusicPort(_MixMusicPort):
     pass
 
 
+class _CopiedReceiptSubmitPort:
+    def run(self, *, context, input_artifacts):
+        del context, input_artifacts
+        raise AssertionError("submit must use trusted frozen provider method")
+
+    def submit_frozen_background_music(self, *, context, input_artifacts, execution_contract, provider_payload):
+        del context
+        request = next(item for item in input_artifacts if item.get("kind") == "background_music_execution_request")
+        return {
+            "background_music_evidence": {
+                "music_execution_contract": execution_contract,
+                "provider_payload": provider_payload,
+                "music_execution_audit_receipt_artifact": next(
+                    item for item in input_artifacts if item.get("kind") == "background_music_audit_receipt"
+                ),
+                "music_execution_audit_binding": background_music_execution._execution_binding(execution_contract),
+                "provider_submission_receipt": request["request_binding"],
+            }
+        }
+
+
 def _uploaded_music() -> dict[str, object]:
     return {
         "object_key": "uploads/batch-scope/song.mp3",
@@ -454,7 +475,7 @@ def _materialized_music_case(
         "music_execution_contract": execution,
         "provider_payload": execution["provider_payload"],
         "audit_receipt_artifact": audit_reference,
-        "provider_submission_receipt": {
+        "request_binding": {
             **background_music_execution._execution_binding(execution),
             "provider_payload": execution["provider_payload"],
         },
@@ -603,15 +624,12 @@ def test_uploaded_song_is_the_final_audio_authority_without_time_or_pitch_transf
         performance_line_contract=_verified_performance_line_contract(),
     )
 
-    receipt = background_music_execution.execute_background_music(
-        execution_contract=execution,
-        final_mix_receipt=_final_mix_receipt(execution_contract=execution),
-    )
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_MEDIA_MATERIALIZATION_REQUIRED"):
+        background_music_execution.execute_background_music(
+            execution_contract=execution,
+            final_mix_receipt=_final_mix_receipt(execution_contract=execution),
+        )
 
-    assert receipt["forbidden_operations"] == ["loop", "atempo", "stretch", "pitch_shift", "silence_padding"]
-    assert receipt["uploaded_audio_sha256"] == "b" * 64
-    assert receipt["final_video_sha256"] == "d" * 64
-    assert receipt["source_music_windows"] == _music_timeline()["windows"]
     text = execution["provider_payload"]["content"][0]["text"]
     assert "@Audio1" in text
     assert "Hold on" in text
@@ -683,7 +701,7 @@ def test_background_music_execution_rejects_random_self_consistent_sha_claims_wi
             "final_video": final_video_bytes,
         }[kind]
 
-    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_MEDIA_HASH_MISMATCH"):
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_MEDIA_MATERIALIZATION_REQUIRED"):
         background_music_execution.execute_background_music(
             execution_contract=execution,
             final_mix_receipt=receipt,
@@ -1024,6 +1042,18 @@ def test_provider_submit_requires_a_receipt_echoing_the_pre_submit_frozen_payloa
                 "music_execution_audit_receipt_artifact": audit_reference,
             }
         ),
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED"):
+        port.run(context=context, input_artifacts=[])
+
+
+def test_provider_submit_rejects_a_copied_pre_submit_binding_without_provider_task_receipt(tmp_path):
+    execution, _, context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
+    port = BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
     )
 
     with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED"):
