@@ -26,6 +26,8 @@ _FORBIDDEN_VOICE_TERMS = (
 _VISIBILITIES = {"on_camera", "off_camera", "voiceover"}
 _LIP_SYNC_PRIORITIES = {"high", "medium", "low", "none"}
 _MUSIC_MODES = {"none", "preserve_source", "approved"}
+_CONTENT_TYPES = {"spoken", "sung", "instrumental", "inaudible"}
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -65,6 +67,53 @@ def _non_empty(name: str, value: Any) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{name} is required")
     return value
+
+
+def _validate_source_content_binding(result: Mapping[str, Any]) -> None:
+    """Validate the optional, immutable link to one frozen source timeline.
+
+    Legacy exact-line contracts remain readable, but once a source timeline is
+    supplied all binding fields are mandatory and cannot be only partly set.
+    """
+
+    fields = {"source_content_timeline_sha256", "content_type", "speaker_assignment"}
+    present = fields & set(result)
+    if not present:
+        return
+    missing = sorted(fields - set(result))
+    if missing:
+        raise ValueError(f"source-content line binding missing: {', '.join(missing)}")
+    timeline_sha = result["source_content_timeline_sha256"]
+    if not isinstance(timeline_sha, str) or _SHA256.fullmatch(timeline_sha) is None:
+        raise ValueError("source_content_timeline_sha256 must be a lowercase SHA-256")
+    content_type = result["content_type"]
+    if content_type not in _CONTENT_TYPES:
+        raise ValueError("content_type is invalid")
+    assignment = result["speaker_assignment"]
+    if not isinstance(assignment, Mapping):
+        raise ValueError("speaker_assignment must be an object")
+    status = assignment.get("status")
+    if status == "PENDING_ASSIGNMENT":
+        raise ValueError("PENDING_ASSIGNMENT must be resolved before Invocation B")
+    if content_type in {"spoken", "sung"}:
+        required = {"status", "speaker_id", "role", "visibility", "confidence", "evidence_sha256"}
+        missing = sorted(required - set(assignment))
+        if missing or status != "CONFIRMED":
+            raise ValueError("speaker_assignment must be CONFIRMED for spoken or sung content")
+        if assignment["speaker_id"] != result["speaker"]["id"]:
+            raise ValueError("speaker_assignment.speaker_id must match speaker.id")
+        if assignment["role"] != result["speaker"]["role"]:
+            raise ValueError("speaker_assignment.role must match speaker.role")
+        if assignment["visibility"] != result["speaker"]["visibility"]:
+            raise ValueError("speaker_assignment.visibility must match speaker.visibility")
+        confidence = assignment["confidence"]
+        if isinstance(confidence, bool) or not isinstance(confidence, (int, float)) or not 0.0 <= confidence <= 1.0:
+            raise ValueError("speaker_assignment.confidence must be between 0 and 1")
+        evidence_sha = assignment["evidence_sha256"]
+        if not isinstance(evidence_sha, str) or _SHA256.fullmatch(evidence_sha) is None:
+            raise ValueError("speaker_assignment.evidence_sha256 must be a lowercase SHA-256")
+    elif status != "NOT_APPLICABLE":
+        raise ValueError("speaker_assignment must be NOT_APPLICABLE for non-verbal content")
 
 
 def _string_list(name: str, value: Any, *, allow_empty: bool = True) -> list[str]:
@@ -208,6 +257,7 @@ def canonical_line(value: Mapping[str, Any]) -> dict[str, Any]:
     _non_empty("speaker.voice_policy", speaker.get("voice_policy"))
     if _contains_forbidden_voice_reference(speaker):
         raise ValueError("unauthorised voiceprint or source-voice reference")
+    _validate_source_content_binding(result)
     language = result["language"]
     if not isinstance(language, Mapping) or not language.get("bcp47") or not language.get("script"):
         raise ValueError("language bcp47 and script are required")
@@ -326,6 +376,9 @@ def validate_line_contracts(
             if frozen_line != frozen_prior:
                 for field in (
                     "cut_id",
+                    "source_content_timeline_sha256",
+                    "content_type",
+                    "speaker_assignment",
                     "speaker",
                     "language",
                     "time",

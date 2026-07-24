@@ -372,7 +372,7 @@ def _performance_cut(*, index: int) -> dict[str, Any]:
     }
 
 
-def test_creative_planner_requires_evidence_bound_source_audio_performance_contract(
+def test_creative_planner_keeps_source_audio_performance_as_pending_script_candidates(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _set_complete_environment(monkeypatch)
@@ -388,14 +388,10 @@ def test_creative_planner_requires_evidence_bound_source_audio_performance_contr
     planner = EvidenceBoundGptPlanner(ProductionEnvironment.from_environ(), request_json=response)
     draft = planner.draft_script(context, [])
 
-    assert draft["value"]["cuts"][1]["performance"]["exact_sung_text"] == "second exact lyric"
+    assert draft["performance_line_candidates"]["status"] == "PENDING_CONFIRMATION"
+    assert draft["performance_line_candidates"]["cuts"][1]["exact_sung_text"] == "second exact lyric"
     result = _ScriptRevisionStage(planner).run(context=context, input_artifacts=[])
-    assert [artifact["kind"] for artifact in result["published_artifacts"]] == [
-        "script_revision",
-        "performance_line_contract",
-        "performance_timeline_contract",
-        "audio_splice_policy",
-    ]
+    assert [artifact["kind"] for artifact in result["published_artifacts"]] == ["script_revision"]
 
     def missing_response(**request: Any) -> dict[str, Any]:
         value = json.loads(_creative_response(**request)["output_text"])

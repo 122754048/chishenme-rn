@@ -20,6 +20,16 @@ def _line():
     return {
         "line_id": "VO-001",
         "cut_id": "C01",
+        "source_content_timeline_sha256": "a" * 64,
+        "content_type": "spoken",
+        "speaker_assignment": {
+            "status": "CONFIRMED",
+            "speaker_id": "CHARACTER_A",
+            "role": "creator",
+            "visibility": "on_camera",
+            "confidence": 0.94,
+            "evidence_sha256": "b" * 64,
+        },
         "candidate_region_id": "CR-01",
         "segment_id": None,
         "speaker": {
@@ -86,6 +96,24 @@ def _line():
 
 
 class LineContractTest(unittest.TestCase):
+    def test_rejects_pending_speaker_assignment_from_source_content_timeline(self):
+        value = _line()
+        value["speaker_assignment"] = {
+            "status": "PENDING_ASSIGNMENT",
+            "reason": "multiple_visible_lip_sync_candidates",
+            "candidate_speaker_ids": ["CHARACTER_A", "CHARACTER_B"],
+        }
+
+        with self.assertRaisesRegex(ValueError, "PENDING_ASSIGNMENT"):
+            canonical_line(value)
+
+    def test_rejects_confirmed_assignment_that_changes_the_approved_speaker(self):
+        value = _line()
+        value["speaker_assignment"]["speaker_id"] = "CHARACTER_B"
+
+        with self.assertRaisesRegex(ValueError, "speaker_assignment.*speaker.id"):
+            canonical_line(value)
+
     def test_duration_is_derived_and_prompt_repeats_exact_text(self):
         line = canonical_line(_line())
         self.assertEqual(line["time"]["duration_ms"], 1650)

@@ -16,6 +16,16 @@ def _line():
     return {
         "line_id": "VO-001",
         "cut_id": "C01",
+        "source_content_timeline_sha256": "a" * 64,
+        "content_type": "spoken",
+        "speaker_assignment": {
+            "status": "CONFIRMED",
+            "speaker_id": "CHARACTER_A",
+            "role": "creator",
+            "visibility": "on_camera",
+            "confidence": 0.94,
+            "evidence_sha256": "b" * 64,
+        },
         "speaker": {"id": "CHARACTER_A", "role": "creator", "visibility": "on_camera", "voice_policy": "generic rights-cleared target voice"},
         "language": {"bcp47": "en-US", "script": "Latn"},
         "time": {"time_base": "output_global_ms", "start_ms": 200, "end_ms": 1500, "duration_ms": 1300, "duration_is_derived": True, "cut_ids": ["C01"], "cross_cut_reason": None, "planned_safe_margin_ms": 200},
@@ -93,11 +103,22 @@ def _segment():
 
 def _performance_line():
     return {
+        "line_id": "VO-001",
         "cut_id": "C01",
-        "source_time": {"start_ms": 0, "end_ms": 5000},
-        "segment_time": {"start_ms": 0, "end_ms": 5000},
-        "performance_mode": "singing",
-        "exact_sung_text": "Carry the song forward.",
+        "source_content_timeline_sha256": "a" * 64,
+        "content_type": "spoken",
+        "speaker_assignment": {
+            "status": "CONFIRMED",
+            "speaker_id": "CHARACTER_A",
+            "role": "creator",
+            "visibility": "on_camera",
+            "confidence": 0.94,
+            "evidence_sha256": "b" * 64,
+        },
+        "source_time": {"start_ms": 200, "end_ms": 1500},
+        "segment_time": {"start_ms": 200, "end_ms": 1500},
+        "performance_mode": "spoken",
+        "exact_sung_text": "Open it slowly.",
         "lyric_status": "verified",
         "beat_anchors_ms": [300, 1200],
         "no_beat_reason": None,
@@ -111,6 +132,41 @@ def _performance_line():
     }
 
 
+def test_compiler_rejects_pending_speaker_assignment(tmp_path):
+    files = _skill_files(tmp_path)
+    line = _line()
+    line["speaker_assignment"] = {
+        "status": "PENDING_ASSIGNMENT",
+        "reason": "multiple_visible_lip_sync_candidates",
+        "candidate_speaker_ids": ["CHARACTER_A", "CHARACTER_B"],
+    }
+
+    with pytest.raises(ValueError, match="PENDING_ASSIGNMENT"):
+        module.compile_prompt(
+            segment=_segment(),
+            line_contracts=[line],
+            factors={"audio": True},
+            skill_files=files,
+            compiler_checks={name: True for name in module.COMPILER_CHECKS},
+        )
+
+
+def test_compiler_rejects_performance_line_with_altered_approved_text(tmp_path):
+    files = _skill_files(tmp_path)
+    performance = _performance_line()
+    performance["exact_sung_text"] = "Replace the approved words."
+
+    with pytest.raises(ValueError, match="performance line text binding"):
+        module.compile_prompt(
+            segment=_segment(),
+            line_contracts=[_line()],
+            performance_lines=[performance],
+            factors={"audio": True, "performance": True},
+            skill_files=files,
+            compiler_checks={name: True for name in module.COMPILER_CHECKS},
+        )
+
+
 def test_compiler_renders_and_freezes_source_audio_performance_contract(tmp_path):
     files = _skill_files(tmp_path)
     performance = _performance_line()
@@ -122,7 +178,7 @@ def test_compiler_renders_and_freezes_source_audio_performance_contract(tmp_path
         skill_files=files,
         compiler_checks={name: True for name in module.COMPILER_CHECKS},
     )
-    assert 'sings exactly, "Carry the song forward."' in artifact["prompt"]
+    assert 'speaks exactly, "Open it slowly."' in artifact["prompt"]
     assert "open palm outward" in artifact["prompt"]
     assert artifact["performance_line_contracts"] == [performance]
     module.validate_compiled_prompt(
@@ -136,9 +192,6 @@ def test_compiler_renders_and_freezes_source_audio_performance_contract(tmp_path
 def test_compiler_renders_verified_spoken_performance_as_speech_not_singing(tmp_path):
     files = _skill_files(tmp_path)
     performance = _performance_line()
-    performance["performance_mode"] = "spoken"
-    performance["exact_sung_text"] = "Open it slowly."
-
     artifact = module.compile_prompt(
         segment=_segment(),
         line_contracts=[_line()],

@@ -32,7 +32,11 @@ _OPAQUE_REGION_TYPES = frozenset(
 )
 _PERFORMANCE_FIELDS = frozenset(
     {
+        "line_id",
         "cut_id",
+        "source_content_timeline_sha256",
+        "content_type",
+        "speaker_assignment",
         "source_time",
         "segment_time",
         "performance_mode",
@@ -46,6 +50,7 @@ _PERFORMANCE_FIELDS = frozenset(
         "criticality",
     }
 )
+_CONTENT_TYPES = frozenset({"spoken", "sung", "instrumental", "inaudible"})
 _FORBIDDEN_SPLICE_OPERATIONS = (
     "atempo",
     "loop",
@@ -177,6 +182,111 @@ def _require_nonempty_string(value: Any, *, field: str) -> str:
     return text
 
 
+def _validated_speaker_assignment(line: Mapping[str, Any]) -> dict[str, Any]:
+    assignment = line.get("speaker_assignment")
+    if not isinstance(assignment, Mapping):
+        _blocked("PERFORMANCE_LINE_CONTRACT_REQUIRED", "speaker_assignment must be an object")
+    if assignment.get("status") == "PENDING_ASSIGNMENT":
+        _blocked("PENDING_ASSIGNMENT", "speaker assignment must be confirmed before Invocation A")
+    content_type = line.get("content_type")
+    if content_type not in _CONTENT_TYPES:
+        _blocked("PERFORMANCE_LINE_CONTRACT_REQUIRED", "performance line content_type is invalid")
+    if content_type in {"spoken", "sung"}:
+        required = {"status", "speaker_id", "role", "visibility", "confidence", "evidence_sha256"}
+        missing = sorted(required - set(assignment))
+        if missing or assignment.get("status") != "CONFIRMED":
+            _blocked("PERFORMANCE_LINE_CONTRACT_REQUIRED", "spoken or sung performance requires CONFIRMED speaker_assignment", missing=missing)
+        confidence = assignment.get("confidence")
+        if isinstance(confidence, bool) or not isinstance(confidence, (int, float)) or not 0.0 <= confidence <= 1.0:
+            _blocked("PERFORMANCE_LINE_CONTRACT_REQUIRED", "speaker_assignment.confidence is invalid")
+        evidence_sha = str(assignment.get("evidence_sha256") or "").lower()
+        if not _SHA256.fullmatch(evidence_sha):
+            _blocked("PERFORMANCE_LINE_CONTRACT_REQUIRED", "speaker_assignment.evidence_sha256 must be a SHA-256")
+        return {
+            "status": "CONFIRMED",
+            "speaker_id": _require_nonempty_string(assignment.get("speaker_id"), field="speaker_assignment.speaker_id"),
+            "role": _require_nonempty_string(assignment.get("role"), field="speaker_assignment.role"),
+            "visibility": _require_nonempty_string(assignment.get("visibility"), field="speaker_assignment.visibility"),
+            "confidence": float(confidence),
+            "evidence_sha256": evidence_sha,
+        }
+    if assignment.get("status") != "NOT_APPLICABLE":
+        _blocked("PERFORMANCE_LINE_CONTRACT_REQUIRED", "non-verbal performance requires NOT_APPLICABLE speaker_assignment")
+    return {"status": "NOT_APPLICABLE"}
+
+
+def _validate_approved_line_bindings(
+    lines: Sequence[Mapping[str, Any]],
+    *,
+    approved_lines: Sequence[Mapping[str, Any]],
+    source_content_timeline_sha256: str,
+    generated_regions: Sequence[Mapping[str, Any]],
+) -> None:
+    """Bind Invocation-A performance rows to immutable approved line rows."""
+
+    if not isinstance(approved_lines, Sequence) or isinstance(approved_lines, (str, bytes, bytearray)):
+        _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "approved line contracts must be an array")
+    try:
+        from scripts.line_contract import canonical_line
+    except ImportError as exc:  # pragma: no cover - deployment packaging failure
+        _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "canonical line contract validator is unavailable", reason=str(exc))
+    canonical_approved = [canonical_line(line) for line in approved_lines]
+    approved_by_id = {str(line["line_id"]): line for line in canonical_approved}
+    if len(approved_by_id) != len(canonical_approved):
+        _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "approved line_id values must be unique")
+    timeline_sha = str(source_content_timeline_sha256 or "").lower()
+    if not _SHA256.fullmatch(timeline_sha):
+        _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "source_content_timeline_sha256 must be a SHA-256")
+    regions_by_window = {
+        (int(region["source_start_ms"]), int(region["source_end_ms"])): region
+        for region in generated_regions
+    }
+    if len(regions_by_window) != len(generated_regions):
+        _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "generated regions must have unique source windows")
+    bound_line_ids: set[str] = set()
+    bound_region_windows: set[tuple[int, int]] = set()
+    for performance in lines:
+        line_id = str(performance["line_id"])
+        approved = approved_by_id.get(line_id)
+        if approved is None:
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "performance line has no approved line", line_id=line_id)
+        if line_id in bound_line_ids:
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "approved line is bound more than once", line_id=line_id)
+        bound_line_ids.add(line_id)
+        if performance["source_content_timeline_sha256"] != timeline_sha or approved.get("source_content_timeline_sha256") != timeline_sha:
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "source-content timeline SHA changed", line_id=line_id)
+        if performance["cut_id"] != approved["cut_id"]:
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "performance line Cut binding changed", line_id=line_id)
+        if performance["content_type"] != approved.get("content_type"):
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "performance line content type changed", line_id=line_id)
+        if performance["speaker_assignment"] != approved.get("speaker_assignment"):
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "performance line speaker assignment changed", line_id=line_id)
+        if performance["exact_sung_text"] != approved["text"]["exact"]:
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "performance line text changed", line_id=line_id)
+        expected_source = {"start_ms": approved["time"]["start_ms"], "end_ms": approved["time"]["end_ms"]}
+        if performance["source_time"] != expected_source:
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "performance line source-time changed", line_id=line_id)
+        region = regions_by_window.get((expected_source["start_ms"], expected_source["end_ms"]))
+        if region is None:
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "performance line crosses or falls outside a generated region", line_id=line_id)
+        region_window = (expected_source["start_ms"], expected_source["end_ms"])
+        if region_window in bound_region_windows:
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "generated region is bound more than once", line_id=line_id)
+        bound_region_windows.add(region_window)
+        expected_segment = {
+            "start_ms": expected_source["start_ms"] - int(region["source_start_ms"]),
+            "end_ms": expected_source["end_ms"] - int(region["source_start_ms"]),
+        }
+        if performance["segment_time"] != expected_segment:
+            _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "performance line segment-time changed", line_id=line_id)
+    if set(approved_by_id) != bound_line_ids:
+        _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "approved line coverage is incomplete")
+    if len(lines) != len(generated_regions):
+        _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "generated region performance coverage is incomplete")
+    if set(regions_by_window) != bound_region_windows:
+        _blocked("PERFORMANCE_LINE_BINDING_REQUIRED", "generated region performance coverage is incomplete")
+
+
 def _validate_performance_line(
     line: Mapping[str, Any],
     *,
@@ -188,6 +298,11 @@ def _validate_performance_line(
         _blocked("PERFORMANCE_LINE_CONTRACT_REQUIRED", "per-Cut performance fields are missing", missing=missing)
     source_time = _window(line["source_time"], field="performance line source_time", upper_bound_ms=source_duration_ms)
     segment_time = _window(line["segment_time"], field="performance line segment_time")
+    timeline_sha = str(line.get("source_content_timeline_sha256") or "").lower()
+    if not _SHA256.fullmatch(timeline_sha):
+        _blocked("PERFORMANCE_LINE_CONTRACT_REQUIRED", "source_content_timeline_sha256 must be a SHA-256")
+    content_type = line.get("content_type")
+    assignment = _validated_speaker_assignment(line)
     lyric_status = _require_nonempty_string(line["lyric_status"], field="performance line lyric_status").lower()
     lyric = str(line.get("exact_sung_text") or "").strip()
     if lyric_status not in {"verified", "instrumental", "inaudible"}:
@@ -213,6 +328,15 @@ def _validate_performance_line(
         for key in keys:
             _require_nonempty_string(value.get(key), field=f"{nested}.{key}")
     criticality = _require_nonempty_string(line["criticality"], field="performance line criticality").upper()
+    expected_content_type = {
+        "spoken": "spoken",
+        "sung": "sung",
+        "singing": "sung",
+        "instrumental": "instrumental",
+        "inaudible": "inaudible",
+    }.get(str(line.get("performance_mode") or "").lower())
+    if expected_content_type != content_type:
+        _blocked("PERFORMANCE_LINE_CONTRACT_REQUIRED", "performance_mode must match content_type")
     overlaps = [
         item for item in audio_segments
         if max(source_time["start_ms"], int(item["start_ms"])) < min(source_time["end_ms"], int(item["end_ms"]))
@@ -238,7 +362,11 @@ def _validate_performance_line(
     if criticality == "H" and lyric_status == "verified" and any(float(item["confidence"]) < 0.80 for item in overlaps):
         _blocked("AUDIO_LYRIC_EVIDENCE_REQUIRED", "high-criticality lyric confidence is below 0.80", cut_id=line.get("cut_id"))
     return {
+        "line_id": _require_nonempty_string(line["line_id"], field="performance line line_id"),
         "cut_id": _require_nonempty_string(line["cut_id"], field="performance line cut_id"),
+        "source_content_timeline_sha256": timeline_sha,
+        "content_type": content_type,
+        "speaker_assignment": assignment,
         "source_time": source_time,
         "segment_time": segment_time,
         "performance_mode": _require_nonempty_string(line["performance_mode"], field="performance line performance_mode"),
@@ -308,6 +436,8 @@ def build_source_audio_contracts(
     audio_contract: Mapping[str, Any],
     timeline_regions: Sequence[Mapping[str, Any]],
     performance_lines: Sequence[Mapping[str, Any]],
+    line_contracts: Sequence[Mapping[str, Any]],
+    source_content_timeline_sha256: str,
 ) -> dict[str, Any]:
     """Create validated current-run source-audio performance contracts.
 
@@ -347,6 +477,22 @@ def build_source_audio_contracts(
     ]
     if len(lines) != len(performance_lines):
         _blocked("PERFORMANCE_LINE_CONTRACT_REQUIRED", "performance_lines must contain only objects")
+    source_timeline_shas = {
+        str(line["source_content_timeline_sha256"])
+        for line in lines
+    }
+    if len(source_timeline_shas) != 1:
+        _blocked(
+            "PERFORMANCE_LINE_CONTRACT_REQUIRED",
+            "performance lines must bind one source-content timeline SHA",
+        )
+    source_timeline_sha = next(iter(source_timeline_shas))
+    _validate_approved_line_bindings(
+        lines,
+        approved_lines=line_contracts,
+        source_content_timeline_sha256=source_content_timeline_sha256,
+        generated_regions=generated,
+    )
     contracts = {
         "performance_audio_source_contract": dict(evidence["performance_audio_source_contract"]),
         "performance_timeline_contract": {
@@ -359,6 +505,7 @@ def build_source_audio_contracts(
         "performance_line_contract": {
             "contract": "performance-line/v1",
             "source_audio_sha256": source_sha,
+            "source_content_timeline_sha256": source_timeline_sha,
             "cuts": lines,
         },
         "audio_splice_policy": {
