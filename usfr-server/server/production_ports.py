@@ -737,6 +737,67 @@ class EvidenceBoundGptPlanner:
         }
 
     @classmethod
+    def _source_content_timeline_evidence(
+        cls,
+        context: Any,
+        artifacts: Sequence[Mapping[str, str]],
+        *,
+        source_video_sha256: str,
+    ) -> dict[str, Any] | None:
+        """Expose one immutable source-content timeline to the script reviewer.
+
+        The timeline is created inside the existing dynamics stage.  This
+        reader deliberately accepts only its immutable artifact, never the
+        handler's in-memory analysis result, preventing a script revision from
+        causing another ASR/OCR/source-inspection pass.
+        """
+
+        rows = [item for item in artifacts if item["kind"] == "source_content_timeline"]
+        if not rows:
+            return None
+        if len(rows) != 1:
+            raise ProductionPortsError("current job requires exactly one source content timeline artifact")
+        artifact = rows[0]
+        value = cls._materialized_json(
+            context,
+            kind=artifact["kind"],
+            sha256=artifact["sha256"],
+            artifact_id=artifact["artifact_id"],
+        )
+        cls._reject_unsafe_draft_data(value, field="source content timeline")
+        if value.get("contract") != "source-content-timeline/v1":
+            raise ProductionPortsError("source content timeline contract is invalid")
+        if cls._sha256_field(value.get("source_video_sha256"), "source content timeline source SHA") != source_video_sha256:
+            raise ProductionPortsError("source content timeline is not bound to the current source video")
+        declared = cls._sha256_field(value.get("contract_sha256"), "source content timeline contract SHA")
+        canonical = dict(value)
+        canonical.pop("contract_sha256", None)
+        if _sha256(canonical) != declared:
+            raise ProductionPortsError("source content timeline contract SHA does not match")
+        analysis_passes = value.get("analysis_passes")
+        if not isinstance(analysis_passes, Mapping) or analysis_passes.get("dynamics") != 1 or analysis_passes.get("asr") != 1:
+            raise ProductionPortsError("source content timeline must bind one dynamics and ASR pass")
+        if value.get("reanalysis_forbidden") is not True:
+            raise ProductionPortsError("source content timeline must forbid secondary source analysis")
+        output: dict[str, Any] = {
+            "artifact_sha256": artifact["sha256"],
+            "source_dynamics_sha256": cls._sha256_field(value.get("source_dynamics_sha256"), "source content dynamics SHA"),
+            "audio_contract_sha256": cls._sha256_field(value.get("audio_contract_sha256"), "source content audio SHA"),
+            "analysis_passes": dict(analysis_passes),
+            "visible_text": list(value.get("visible_text") or []),
+            "audio_lines": list(value.get("audio_lines") or []),
+            "music_events": list(value.get("music_events") or []),
+            "uncertainties": list(value.get("uncertainties") or []),
+            "instruction": (
+                "Use this frozen source text/audio/music evidence to draft editable replacement copy. "
+                "Never re-inspect the source video. Keep PENDING_ASSIGNMENT speaker rows pending for existing script review."
+            ),
+        }
+        if any(not isinstance(output[key], list) for key in ("visible_text", "audio_lines", "music_events", "uncertainties")):
+            raise ProductionPortsError("source content timeline lists are invalid")
+        return output
+
+    @classmethod
     def _storyboard_performance_evidence(
         cls,
         context: Any,
@@ -814,6 +875,11 @@ class EvidenceBoundGptPlanner:
         artifacts = cls._safe_artifacts(context)
         source_dynamics_sha256, source_cuts = cls._source_cut_evidence(context, artifacts)
         performance_audio = cls._performance_audio_evidence(context, artifacts)
+        source_content_timeline = cls._source_content_timeline_evidence(
+            context,
+            artifacts,
+            source_video_sha256=source_sha256s[0],
+        )
         storyboard_performance = (
             cls._storyboard_performance_evidence(
                 context,
@@ -867,6 +933,8 @@ class EvidenceBoundGptPlanner:
         }
         if performance_audio is not None:
             base["performance_audio"] = performance_audio
+        if kind == "script" and source_content_timeline is not None:
+            base["source_content_timeline"] = source_content_timeline
         if storyboard_performance is not None:
             base["approved_performance_lines"] = storyboard_performance
         return {**base, "request_evidence_sha256": _sha256(base)}

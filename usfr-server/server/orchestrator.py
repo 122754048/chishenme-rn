@@ -222,6 +222,7 @@ HIGH_FIDELITY_STAGE_ARTIFACTS: dict[str, tuple[dict[str, str], ...]] = {
     "analyze_dynamics": (
         {"kind": "performance_audio_source_contract", "logical_path": "analysis/performance_audio_source_contract.json"},
         {"kind": "audio_lyrics_beat_contract", "logical_path": "analysis/audio_lyrics_beat_contract.json"},
+        {"kind": "source_content_timeline", "logical_path": "analysis/source_content_timeline.json"},
     ),
     "build_script": (
         {"kind": "high_fidelity_analysis", "logical_path": "analysis/high_fidelity_analysis.json"},

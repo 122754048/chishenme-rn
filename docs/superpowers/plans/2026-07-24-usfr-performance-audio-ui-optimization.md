@@ -35,7 +35,7 @@
 - Produces: `extensions.background_music`、`admission.enabled_extension_present`、`routes.background_music`。
 - Invariant: `slot_order` 和 `slots` 中永远不能出现第八槽位；没有合规适配器时只能拒绝音乐执行，不能伪称“默认关闭上传功能”。
 
-- [ ] **Step 1: 写入并运行失败测试**
+- [x] **Step 1: 写入并运行失败测试**
 
 ```python
 def test_music_extension_is_admissible_without_an_eighth_slot():
@@ -48,7 +48,7 @@ def test_music_extension_is_admissible_without_an_eighth_slot():
 Run: `python -m pytest tests/test_fixed_input_slot_contract.py -p no:cacheprovider -q`
 Expected: FAIL before extension support exists.
 
-- [ ] **Step 2: 只实现固定槽位外的扩展归一化**
+- [x] **Step 2: 只实现固定槽位外的扩展归一化**
 
 ```python
 manifest["extensions"] = {"background_music": extension}
@@ -56,7 +56,7 @@ manifest["routes"]["background_music"] = "seedance_audio_reference"
 manifest["admission"]["enabled_extension_present"] = True
 ```
 
-- [ ] **Step 3: 校验 schema 和快速通道路由**
+- [x] **Step 3: 校验 schema 和快速通道路由**
 
 ```python
 language_only = output_language is not None and optional_count == 0 and extension is None
@@ -66,7 +66,7 @@ can_proceed = optional_count >= 1 or extension is not None or language_only
 Run: `python -m pytest tests/test_fixed_input_slot_contract.py tests/test_server_intake_artifacts.py tests/test_api_upload_lifecycle.py -p no:cacheprovider -q`
 Expected: PASS。
 
-- [ ] **Step 4: 用能力状态替代遗留“永久禁用”表述**
+- [x] **Step 4: 用能力状态替代遗留“永久禁用”表述**
 
 ```python
 def input_contract_v2_extensions(*, music_execution_available: bool) -> Mapping[str, Mapping[str, Any]]:
@@ -75,7 +75,7 @@ def input_contract_v2_extensions(*, music_execution_available: bool) -> Mapping[
                                   "required_capability": "background_music_execution/v1"}}
 ```
 
-- [ ] **Step 5: 更新操作合同并提交**
+- [x] **Step 5: 更新操作合同并提交**
 
 Run: `git diff --check && git add usfr-server && git commit -m "feat: admit background music as an input extension"`
 Expected: 仅音乐输入合同、文档和测试进入该提交。
@@ -94,7 +94,7 @@ Expected: 仅音乐输入合同、文档和测试进入该提交。
 - Produces: `source_content_timeline/v1`，每条记录含 source 时间窗、内容类别、文字、证据 SHA、置信度、`speaker_assignment` 或 `PENDING_ASSIGNMENT`。
 - Invariant: 只在有语音且多人/归属不确定的 Cut 运行分离；低置信度记录不能到达 Provider。
 
-- [ ] **Step 1: 写入时间轴归并的失败测试**
+- [x] **Step 1: 写入时间轴归并的失败测试**
 
 ```python
 def test_timeline_merges_cut_bound_ocr_asr_music_and_speaker_evidence_once():
@@ -107,7 +107,7 @@ def test_timeline_merges_cut_bound_ocr_asr_music_and_speaker_evidence_once():
 Run: `python -m pytest tests/test_source_content_timeline.py -p no:cacheprovider -q`
 Expected: FAIL because the module does not exist.
 
-- [ ] **Step 2: 实现纯合同构造器和 SHA 绑定**
+- [x] **Step 2: 实现纯合同构造器和 SHA 绑定**
 
 ```python
 def build_source_content_timeline(*, source_video_sha256: str, source_duration_ms: int,
@@ -117,7 +117,7 @@ def build_source_content_timeline(*, source_video_sha256: str, source_duration_m
     # 只归并已存在证据；不读取媒体、不调用模型。
 ```
 
-- [ ] **Step 3: 实现按需说话人门禁**
+- [x] **Step 3: 实现按需说话人门禁**
 
 ```python
 def speaker_assignment_for_line(line: Mapping[str, Any], visible_tracks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -127,14 +127,14 @@ def speaker_assignment_for_line(line: Mapping[str, Any], visible_tracks: Sequenc
 Run: `python -m pytest tests/test_source_content_timeline.py -p no:cacheprovider -q`
 Expected: PASS。
 
-- [ ] **Step 4: 在既有 dynamics/script 间发布并复用制品**
+- [x] **Step 4: 在既有 dynamics/script 间发布并复用制品**
 
 ```python
 context.publish_artifact(kind="source_content_timeline", payload=timeline)
 # build_script 只 materialize 已发布 SHA；不得再次调用 ASR/OCR/VLM。
 ```
 
-- [ ] **Step 5: 跑端口回归并提交**
+- [x] **Step 5: 跑端口回归并提交**
 
 Run: `python -m pytest tests/test_real_media_ports.py tests/test_production_ports.py tests/test_source_content_timeline.py -p no:cacheprovider -q`
 Expected: PASS。

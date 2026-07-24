@@ -158,7 +158,7 @@ class SourceAudioReplicateContractsTests(unittest.TestCase):
     def test_existing_dynamics_stage_publishes_source_audio_sidecars(self):
         class Dynamics:
             def analyze(self, **_kwargs):
-                return {"status": "ready", "source_dynamics_analysis": {"contract": "reference-video-dynamics", "source_cuts": [{"cut_id": "C01", "start_us": 0, "end_us": 16_033_000}]}}
+                return {"status": "ready", "source_video_sha256": "a" * 64, "source_dynamics_analysis": {"contract": "reference-video-dynamics", "source_cuts": [{"cut_id": "C01", "start_us": 0, "end_us": 16_033_000}]}}
 
         class Asr:
             def transcribe(self, **_kwargs):
@@ -186,8 +186,9 @@ class SourceAudioReplicateContractsTests(unittest.TestCase):
         self.assertEqual(result["source_audio_mode"], "source_audio_replicate_v1")
         self.assertEqual(
             [item["kind"] for item in context.published],
-            ["performance_audio_source_contract", "audio_lyrics_beat_contract"],
+            ["performance_audio_source_contract", "audio_lyrics_beat_contract", "source_content_timeline"],
         )
+        self.assertEqual(result["source_content_timeline"]["analysis_passes"]["asr"], 1)
 
     def test_stage_three_contracts_require_extracted_source_audio_digest(self):
         result = build_audio_evidence_contracts(
@@ -207,7 +208,7 @@ class SourceAudioReplicateContractsTests(unittest.TestCase):
     def test_registers_contracts_as_internal_existing_stage_artifacts(self):
         self.assertEqual(
             [item["kind"] for item in HIGH_FIDELITY_STAGE_ARTIFACTS["analyze_dynamics"]],
-            ["performance_audio_source_contract", "audio_lyrics_beat_contract"],
+            ["performance_audio_source_contract", "audio_lyrics_beat_contract", "source_content_timeline"],
         )
         self.assertIn(
             "performance_line_contract",

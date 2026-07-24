@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -401,7 +403,25 @@ class RuntimeCapabilityPortsTest(unittest.TestCase):
     def test_stage_port_adapter_executes_bound_dynamics_and_audio_ports(self):
         from server.capability_ports import CapabilityStagePort
 
+        class Context:
+            snapshot = SimpleNamespace(
+                slots_manifest={"slots": {"source_video": {"sha256": ["a" * 64]}}}
+            )
+
+            def __init__(self) -> None:
+                self.published: list[dict] = []
+
+            def publish_bytes(self, *, kind, data, content_type, expected_sha256):
+                self.assertEqual(expected_sha256, hashlib.sha256(data).hexdigest())
+                self.assertEqual(content_type, "application/json")
+                self.published.append({"kind": kind, "data": data, "sha256": expected_sha256})
+                return {"kind": kind, "sha256": expected_sha256, "artifact_id": f"{kind}-1"}
+
+            def assertEqual(self, actual, expected):
+                testcase.assertEqual(actual, expected)
+
         manifest, ports = _manifest_and_ports()
+        testcase = self
         stage = CapabilityStagePort(
             "analyze_dynamics",
             ports,
@@ -409,11 +429,17 @@ class RuntimeCapabilityPortsTest(unittest.TestCase):
             production=True,
             profile_active=True,
         )
-        output = stage.run(context=object(), input_artifacts=[])
+        context = Context()
+        output = stage.run(context=context, input_artifacts=[])
         self.assertEqual(output["status"], "ready")
         self.assertEqual(output["capabilities"], ["asr_transcriber", "dynamics_analyzer"])
         self.assertIn("source_dynamics_analysis", output)
         self.assertIn("audio_contract", output)
+        self.assertEqual(output["source_content_timeline"]["contract"], "source-content-timeline/v1")
+        self.assertEqual(output["source_content_timeline"]["source_video_sha256"], "a" * 64)
+        self.assertIn("source_content_timeline", [item["kind"] for item in output["published_artifacts"]])
+        published_timeline = next(item["data"] for item in context.published if item["kind"] == "source_content_timeline")
+        self.assertEqual(json.loads(published_timeline)["contract"], "source-content-timeline/v1")
 
     def test_active_dynamics_stage_rejects_missing_high_fidelity_extension(self):
         from server.capability_ports import CapabilityStagePort
