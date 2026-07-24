@@ -777,8 +777,28 @@ class SeedanceInvocationAdapter:
         compiled_prompt_artifact: Mapping[str, Any] | None = None,
         approved_prompt_request: Mapping[str, Any] | None = None,
         projection_sha256: str | None = None,
+        performance_line_contract_sha256: str | None = None,
+        source_content_timeline_sha256: str | None = None,
     ) -> dict[str, Any]:
         self._profile_guard(context)
+        if (performance_line_contract_sha256 is None) != (source_content_timeline_sha256 is None):
+            self._raise(
+                "PROMPT_INTEGRITY_FAILED",
+                "Invocation B source-audio binding requires both performance and timeline digests",
+            )
+        if performance_line_contract_sha256 is not None:
+            performance_line_contract_sha256 = str(performance_line_contract_sha256).lower()
+            source_content_timeline_sha256 = str(source_content_timeline_sha256).lower()
+            if _SHA256.fullmatch(performance_line_contract_sha256) is None:
+                self._raise(
+                    "PROMPT_INTEGRITY_FAILED",
+                    "Invocation B performance line contract digest must be a lowercase SHA-256",
+                )
+            if _SHA256.fullmatch(source_content_timeline_sha256) is None:
+                self._raise(
+                    "PROMPT_INTEGRITY_FAILED",
+                    "Invocation B source-content timeline digest must be a lowercase SHA-256",
+                )
         module = _load_script_module("seedance_prescript.py", "replication_seedance_prescript_b")
         context_profile = getattr(context, "profile_snapshot", None) if context is not None else None
         strict_factor_coverage = bool(
@@ -1114,6 +1134,9 @@ class SeedanceInvocationAdapter:
         }
         if prescript_artifact.get("projection_sha256") is not None:
             result["projection_sha256"] = str(prescript_artifact["projection_sha256"])
+        if performance_line_contract_sha256 is not None:
+            result["performance_line_contract_sha256"] = performance_line_contract_sha256
+            result["source_content_timeline_sha256"] = source_content_timeline_sha256
         if active_profile:
             assert current_segment is not None and segment_plan_sha256 is not None
             result["segment_id"] = current_segment["segment_id"]

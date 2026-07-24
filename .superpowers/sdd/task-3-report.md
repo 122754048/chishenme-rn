@@ -102,3 +102,15 @@ python -m pytest tests/test_redis_job_store.py tests/test_revision_cas.py tests/
 python -m pytest tests/test_redis_job_store.py tests/test_revision_cas.py tests/test_review_service.py tests/test_server_api_contract.py tests/test_ephemeral_runtime.py tests/test_approved_script_contracts.py tests/test_high_fidelity_ports.py tests/test_performance_audio_contracts.py tests/test_production_ports.py -p no:cacheprovider -q
 145 passed in 5.50s
 ```
+
+## Provider-adapter follow-up
+
+- The independent review found that the real `SeedanceInvocationAdapter.invoke_b` still had an explicit signature that rejected the new source-audio digest/timeline fields and therefore could not produce the required verified receipt.
+- The adapter now accepts the two fields only as an atomic pair, validates both as lowercase SHA-256 values, and echoes both into its deterministic result. This preserves the existing Invocation B call while allowing the outer Provider binding to require an exact receipt.
+- RED: the real active-profile adapter raised `TypeError: unexpected keyword argument 'performance_line_contract_sha256'`.
+- GREEN: `test_active_invocation_b_echoes_the_verified_source_audio_bindings` invokes the real adapter and verifies both accepted bindings are returned unchanged.
+
+```text
+python -m pytest tests/test_redis_job_store.py tests/test_revision_cas.py tests/test_review_service.py tests/test_server_api_contract.py tests/test_ephemeral_runtime.py tests/test_approved_script_contracts.py tests/test_high_fidelity_ports.py tests/test_performance_audio_contracts.py tests/test_production_ports.py tests/test_server_seedance_invocations.py -p no:cacheprovider -q
+162 passed in 6.11s
+```
