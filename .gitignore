@@ -1,0 +1,33 @@
+node_modules/
+.expo/
+dist/
+*.tsbuildinfo
+.env
+.env.local
+.qa-venv/
+.venv/
+__pycache__/
+*.pyc
+*.db
+ios/
+android/
+expo-start.log
+.worktrees/
+
+# USFR generated media, jobs, reports, and local operator state
+replication-runs/
+validation_runs/
+video_replication_runs/
+outputs/
+exports/
+backend/app/runtime_uploads/
+usfr-local-console/data/
+*.log
+
+# Python test/build caches in the canonical package and local services
+**/__pycache__/
+**/__pycache__.*/
+**/.pytest_cache/
+**/.pytest_cache.*/
+**/.ruff_cache/
+**/.ruff_cache.*/

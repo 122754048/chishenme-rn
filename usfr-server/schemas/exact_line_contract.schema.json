@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codex.local/universal-source-fidelity/exact_line_contract.schema.json",
+  "title": "Exact spoken-line and audio-window contract",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["line_id", "cut_id", "speaker", "language", "time", "text", "delivery", "lip_sync", "proof_events", "foley_events", "silence_windows", "music_policy", "claim_ids", "qc_contract", "criticality"],
+  "properties": {
+    "line_id": {"type": "string", "minLength": 1},
+    "cut_id": {"type": "string", "minLength": 1},
+    "candidate_region_id": {"type": "string", "minLength": 1},
+    "segment_id": {"type": ["string", "null"]},
+    "speaker": {
+      "type": "object",
+      "required": ["id", "role", "visibility", "voice_policy"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1},
+        "visibility": {"enum": ["on_camera", "off_camera", "voiceover"]},
+        "voice_policy": {"type": "string", "minLength": 1}
+      }
+    },
+    "language": {
+      "type": "object",
+      "required": ["bcp47", "script"],
+      "additionalProperties": true,
+      "properties": {
+        "bcp47": {"type": "string", "minLength": 1},
+        "script": {"type": "string", "minLength": 1}
+      }
+    },
+    "time": {
+      "type": "object",
+      "required": ["time_base", "start_ms", "end_ms", "duration_ms", "duration_is_derived", "cut_ids", "cross_cut_reason", "planned_safe_margin_ms"],
+      "additionalProperties": true,
+      "properties": {
+        "time_base": {"enum": ["output_global_ms", "segment_local_ms"]},
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 1},
+        "duration_ms": {"type": "integer", "minimum": 1},
+        "duration_is_derived": {"const": true},
+        "cut_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "cross_cut_reason": {"type": ["string", "null"]},
+        "planned_safe_margin_ms": {"type": "integer", "minimum": 0}
+      }
+    },
+    "text": {
+      "type": "object",
+      "required": ["exact", "normalized", "pronunciation_notes"],
+      "additionalProperties": true,
+      "properties": {
+        "exact": {"type": "string", "minLength": 1},
+        "normalized": {"type": "string", "minLength": 1},
+        "pronunciation_notes": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "required": ["tone", "pace", "emphasis", "volume", "breath", "mic_distance", "accent_or_locale"],
+      "additionalProperties": true,
+      "properties": {
+        "tone": {"type": "string", "minLength": 1},
+        "pace": {"type": "string", "minLength": 1},
+        "emphasis": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "volume": {"type": "string", "minLength": 1},
+        "breath": {"type": "string", "minLength": 1},
+        "mic_distance": {"type": "string", "minLength": 1},
+        "accent_or_locale": {"type": "string", "minLength": 1}
+      }
+    },
+    "lip_sync": {
+      "type": "object",
+      "required": ["priority", "face_visibility", "occlusion", "head_motion_limit", "articulation", "allowed_tolerance_ms", "speaker_face_ref"],
+      "additionalProperties": true,
+      "properties": {
+        "priority": {"enum": ["high", "medium", "low", "none"]},
+        "face_visibility": {"type": "string", "minLength": 1},
+        "occlusion": {"type": "string", "minLength": 1},
+        "head_motion_limit": {"type": "string", "minLength": 1},
+        "articulation": {"type": "string", "minLength": 1},
+        "allowed_tolerance_ms": {"type": "integer", "minimum": 0},
+        "speaker_face_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "proof_events": {"type": "array", "items": {"$ref": "#/$defs/proofEvent"}},
+    "foley_events": {"type": "array", "items": {"$ref": "#/$defs/foleyEvent"}},
+    "silence_windows": {"type": "array", "items": {"$ref": "#/$defs/silenceWindow"}},
+    "music_policy": {
+      "type": "object",
+      "required": ["mode", "windows"],
+      "additionalProperties": true,
+      "properties": {
+        "mode": {"enum": ["none", "preserve_source", "approved"]},
+        "windows": {"type": "array", "items": {"$ref": "#/$defs/window"}}
+      }
+    },
+    "claim_ids": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "qc_contract": {
+      "type": "object",
+      "required": ["asr_profile", "speaker_check", "language_check", "line_tolerance_ms", "proof_sync_tolerance_ms", "foley_sync_tolerance_ms", "hard_fail_flags"],
+      "additionalProperties": true,
+      "properties": {
+        "asr_profile": {"type": "string", "minLength": 1},
+        "speaker_check": {"type": "string", "minLength": 1},
+        "language_check": {"type": "string", "minLength": 1},
+        "line_tolerance_ms": {"type": "integer", "minimum": 0},
+        "proof_sync_tolerance_ms": {"type": "integer", "minimum": 0},
+        "foley_sync_tolerance_ms": {"type": "integer", "minimum": 0},
+        "hard_fail_flags": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "criticality": {"enum": ["H", "M", "L"]}
+  },
+  "$defs": {
+    "window": {
+      "type": "object",
+      "required": ["start_ms", "end_ms"],
+      "properties": {
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": true
+    },
+    "proofEvent": {
+      "allOf": [
+        {"$ref": "#/$defs/window"},
+        {
+          "type": "object",
+          "required": ["id", "kind", "modality", "claim_ids", "required", "hard_fail"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "kind": {"type": "string", "minLength": 1},
+            "modality": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "claim_ids": {"type": "array", "items": {"type": "string", "minLength": 1}},
+            "required": {"type": "boolean"},
+            "hard_fail": {"type": "boolean"}
+          }
+        }
+      ]
+    },
+    "foleyEvent": {
+      "allOf": [
+        {"$ref": "#/$defs/window"},
+        {
+          "type": "object",
+          "required": ["id", "kind", "relation", "onset_tolerance_ms", "required", "loudness_policy"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "kind": {"type": "string", "minLength": 1},
+            "relation": {"type": "string", "minLength": 1},
+            "onset_tolerance_ms": {"type": "integer", "minimum": 0},
+            "required": {"type": "boolean"},
+            "loudness_policy": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
+    },
+    "silenceWindow": {
+      "allOf": [
+        {"$ref": "#/$defs/window"},
+        {
+          "type": "object",
+          "required": ["id", "kind", "min_quiet_dbfs", "required"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "kind": {"type": "string", "minLength": 1},
+            "min_quiet_dbfs": {"type": "number"},
+            "required": {"type": "boolean"}
+          }
+        }
+      ]
+    }
+  }
+}

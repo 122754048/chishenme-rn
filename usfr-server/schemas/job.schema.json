@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codex.local/universal-source-fidelity/job.schema.json",
+  "title": "Ephemeral job snapshot",
+  "type": "object",
+  "required": [
+    "job_id",
+    "state",
+    "version",
+    "capability_token_hash",
+    "capability_token_version",
+    "slots_manifest",
+    "expires_at_ms"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "job_id": {"type": "string", "minLength": 1},
+    "state": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "capability_token_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "capability_token_version": {"type": "integer", "minimum": 1},
+    "slots_manifest": {"type": "object"},
+    "expires_at_ms": {"type": "integer", "minimum": 0},
+    "review_route": {
+      "anyOf": [{"type": "string"}, {"type": "null"}]
+    },
+    "current_script_revision": {
+      "anyOf": [
+        {"type": "integer", "minimum": 1},
+        {"type": "null"}
+      ]
+    },
+    "approved_script_sha256": {
+      "anyOf": [
+        {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "current_storyboard_revision": {
+      "anyOf": [
+        {"type": "integer", "minimum": 1},
+        {"type": "null"}
+      ]
+    },
+    "approved_storyboard_sha256": {
+      "anyOf": [
+        {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "final_ref": {
+      "anyOf": [{"type": "object"}, {"type": "null"}]
+    },
+    "invalidated": {
+      "type": "array",
+      "items": {"type": "string"}
+    }
+  }
+}

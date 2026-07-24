@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "shadow_execution": {
+    "provider_mode": "observe_existing_only",
+    "approval_mode": "none"
+  },
+  "release_policy": {
+    "initial_rollout_percent": 10,
+    "required_timing_metrics": [
+      "probe_dynamics",
+      "context_compile",
+      "provider_wait",
+      "assembly_qc"
+    ]
+  },
+  "cases": [
+    {
+      "case_id": "physical-language-only-en",
+      "category": "physical_product",
+      "inputs": {"source_video": "fixture:physical-01.mp4", "output_language": "en"},
+      "expected_route": "language_only",
+      "required_qa": ["source_visual_integrity", "asr_timing", "tts_timing", "lip_sync"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "physical-background-music-sing",
+      "category": "physical_product",
+      "inputs": {"source_video": "fixture:physical-02.mp4", "extensions": {"background_music": "fixture:track-02.wav"}},
+      "expected_route": "background_music_replace_sing",
+      "required_qa": ["music_timeline_contract", "uploaded_music_exact_fragment", "singing_alignment", "lip_sync", "final_mix_receipt"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "physical-model-language-ja",
+      "category": "physical_product",
+      "inputs": {"source_video": "fixture:physical-03.mp4", "new_model_image": "fixture:model-03.png", "output_language": "ja"},
+      "expected_route": "composite_model_language",
+      "required_qa": ["source_fidelity_contract", "model_identity", "localized_audio", "final_qa"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "app-ui-tail-language-de",
+      "category": "app",
+      "inputs": {"source_video": "fixture:app-01.mp4", "app_store_url": "https://apps.apple.com/example", "ui_operation_video": "fixture:app-ui-01.mp4", "tail_video": "fixture:app-tail-01.mp4", "output_language": "de"},
+      "expected_route": "composite_app_opaque_ui_tail_language",
+      "required_qa": ["app_evidence", "opaque_ui_technical", "opaque_tail_technical", "audio_policy", "final_qa"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:ui_operation_video", "seedance2:tail_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "service-language-only-es",
+      "category": "service",
+      "inputs": {"source_video": "fixture:service-01.mp4", "output_language": "es"},
+      "expected_route": "language_only",
+      "required_qa": ["source_visual_integrity", "asr_timing", "tts_timing", "lip_sync"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "service-background-music-sing",
+      "category": "service",
+      "inputs": {"source_video": "fixture:service-02.mp4", "extensions": {"background_music": "fixture:track-06.wav"}},
+      "expected_route": "background_music_replace_sing",
+      "required_qa": ["music_timeline_contract", "uploaded_music_exact_fragment", "singing_alignment", "lip_sync", "final_mix_receipt"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "service-model-language-fr",
+      "category": "service",
+      "inputs": {"source_video": "fixture:service-03.mp4", "new_model_image": "fixture:model-07.png", "output_language": "fr"},
+      "expected_route": "composite_model_language",
+      "required_qa": ["source_fidelity_contract", "model_identity", "localized_audio", "final_qa"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "brand-language-only-pt",
+      "category": "brand",
+      "inputs": {"source_video": "fixture:brand-01.mp4", "output_language": "pt"},
+      "expected_route": "language_only",
+      "required_qa": ["source_visual_integrity", "asr_timing", "tts_timing", "lip_sync"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "brand-background-music-sing",
+      "category": "brand",
+      "inputs": {"source_video": "fixture:brand-02.mp4", "extensions": {"background_music": "fixture:track-09.wav"}},
+      "expected_route": "background_music_replace_sing",
+      "required_qa": ["music_timeline_contract", "uploaded_music_exact_fragment", "singing_alignment", "lip_sync", "final_mix_receipt"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "brand-model-language-ko",
+      "category": "brand",
+      "inputs": {"source_video": "fixture:brand-03.mp4", "new_model_image": "fixture:model-10.png", "output_language": "ko"},
+      "expected_route": "composite_model_language",
+      "required_qa": ["source_fidelity_contract", "model_identity", "localized_audio", "final_qa"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "creator-language-only-zh",
+      "category": "creator",
+      "inputs": {"source_video": "fixture:creator-01.mp4", "output_language": "zh"},
+      "expected_route": "language_only",
+      "required_qa": ["source_visual_integrity", "asr_timing", "tts_timing", "lip_sync"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "creator-background-music-sing",
+      "category": "creator",
+      "inputs": {"source_video": "fixture:creator-02.mp4", "extensions": {"background_music": "fixture:track-12.wav"}},
+      "expected_route": "background_music_replace_sing",
+      "required_qa": ["music_timeline_contract", "uploaded_music_exact_fragment", "singing_alignment", "lip_sync", "final_mix_receipt"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "creator-model-language-id",
+      "category": "creator",
+      "inputs": {"source_video": "fixture:creator-03.mp4", "new_model_image": "fixture:model-13.png", "output_language": "id"},
+      "expected_route": "composite_model_language",
+      "required_qa": ["source_fidelity_contract", "model_identity", "localized_audio", "final_qa"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "mixed-language-only-en",
+      "category": "mixed_media",
+      "inputs": {"source_video": "fixture:mixed-01.mp4", "output_language": "en"},
+      "expected_route": "language_only",
+      "required_qa": ["source_visual_integrity", "asr_timing", "tts_timing", "lip_sync"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "mixed-background-music-sing",
+      "category": "mixed_media",
+      "inputs": {"source_video": "fixture:mixed-02.mp4", "extensions": {"background_music": "fixture:track-15.wav"}},
+      "expected_route": "background_music_replace_sing",
+      "required_qa": ["music_timeline_contract", "uploaded_music_exact_fragment", "singing_alignment", "lip_sync", "final_mix_receipt"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "mixed-model-language-es",
+      "category": "mixed_media",
+      "inputs": {"source_video": "fixture:mixed-03.mp4", "new_model_image": "fixture:model-16.png", "output_language": "es"},
+      "expected_route": "composite_model_language",
+      "required_qa": ["source_fidelity_contract", "model_identity", "localized_audio", "final_qa"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "app-mixed-ui-tail-language-fr",
+      "category": "app",
+      "inputs": {"source_video": "fixture:app-02.mp4", "app_store_url": "https://play.google.com/store/apps/details?id=example", "ui_operation_video": "fixture:app-ui-02.mp4", "tail_video": "fixture:app-tail-02.mp4", "output_language": "fr"},
+      "expected_route": "composite_app_opaque_ui_tail_language",
+      "required_qa": ["app_evidence", "opaque_ui_technical", "opaque_tail_technical", "audio_policy", "final_qa"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:ui_operation_video", "seedance2:tail_video", "seedance2:reference_audios"]
+    },
+    {
+      "case_id": "physical-model-language-de",
+      "category": "physical_product",
+      "inputs": {"source_video": "fixture:physical-18.mp4", "new_model_image": "fixture:model-18.png", "output_language": "de"},
+      "expected_route": "composite_model_language",
+      "required_qa": ["source_fidelity_contract", "model_identity", "localized_audio", "final_qa"],
+      "forbidden_provider_inputs": ["seedance2:source_video", "seedance2:reference_audios"]
+    }
+  ]
+}

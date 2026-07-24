@@ -1,0 +1,26 @@
+{
+  "schema_version": "usfr-backend-policy/v1",
+  "default_backend": "ffmpeg",
+  "candidates": {
+    "hyperframes_html_ui": {
+      "domain": "complex_html_ui",
+      "status": "disabled",
+      "activation_report_sha256": null
+    },
+    "remotion_react_ui": {
+      "domain": "programmable_overlays",
+      "status": "disabled",
+      "activation_report_sha256": null
+    },
+    "video_use_boundary_qc": {
+      "domain": "boundary_qc",
+      "status": "disabled",
+      "activation_report_sha256": null
+    },
+    "mediabunny_preflight": {
+      "domain": "upload_preflight",
+      "status": "disabled",
+      "activation_report_sha256": null
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codex.local/universal-source-fidelity/input_slots.schema.json",
+  "title": "Fixed input slot manifest",
+  "type": "object",
+  "required": ["schema_version", "slot_order", "admission", "slots", "routes"],
+  "additionalProperties": false,
+  "$defs": {
+    "slot": {
+      "type": "object",
+      "required": ["slot_id", "role", "kind", "present", "valid", "source", "values", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "slot_id": {"type": "string"},
+        "role": {"type": "string"},
+        "kind": {"enum": ["video", "image", "url"]},
+        "present": {"type": "boolean"},
+        "valid": {"const": true},
+        "source": {"enum": ["supplied", "absent"]},
+        "values": {"type": "array", "items": {"type": "string"}},
+        "sha256": {"type": "array", "items": {"pattern": "^[0-9a-f]{64}$"}},
+        "metadata": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "object_completion": {
+      "type": "object",
+      "required": ["object_key", "sha256", "size_bytes", "content_type", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "object_key": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,511}$"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "content_type": {"type": "string"},
+        "duration_seconds": {"type": "number", "minimum": 0},
+        "etag": {"type": "string"},
+        "status": {"const": "completed"}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "fixed-input-slots/v1"},
+    "slot_order": {"type": "array", "const": ["source_video", "new_product_image", "new_model_image", "ui_screenshot", "app_store_url", "ui_operation_video", "tail_video"]},
+    "admission": {
+      "type": "object",
+      "required": ["source_present", "minimum_optional_slots", "optional_present_count", "can_proceed"],
+      "additionalProperties": true,
+      "properties": {
+        "source_present": {"const": true},
+        "minimum_optional_slots": {"enum": [0, 1]},
+        "optional_present_count": {"type": "integer", "minimum": 0},
+        "can_proceed": {"const": true},
+        "language_only": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["language_only"],
+            "properties": {"language_only": {"const": true}}
+          },
+          "then": {
+            "properties": {
+              "minimum_optional_slots": {"const": 0},
+              "optional_present_count": {"const": 0}
+            }
+          },
+          "else": {
+            "properties": {
+              "minimum_optional_slots": {"const": 1},
+              "optional_present_count": {"minimum": 1}
+            }
+          }
+        }
+      ]
+    },
+    "slots": {
+      "type": "object",
+      "required": ["source_video", "new_product_image", "new_model_image", "ui_screenshot", "app_store_url", "ui_operation_video", "tail_video"],
+      "additionalProperties": false,
+      "properties": {
+        "source_video": {"$ref": "#/$defs/slot", "properties": {"values": {"maxItems": 1}}},
+        "new_product_image": {"$ref": "#/$defs/slot"},
+        "new_model_image": {"$ref": "#/$defs/slot"},
+        "ui_screenshot": {"$ref": "#/$defs/slot"},
+        "app_store_url": {"$ref": "#/$defs/slot", "properties": {"values": {"maxItems": 1}}},
+        "ui_operation_video": {"$ref": "#/$defs/slot", "properties": {"values": {"maxItems": 1}}},
+        "tail_video": {"$ref": "#/$defs/slot", "properties": {"values": {"maxItems": 1}}}
+      }
+    },
+    "routes": {
+      "type": "object",
+      "required": ["product", "character", "ui", "tail"],
+      "additionalProperties": false,
+      "properties": {
+        "product": {"enum": ["replace_from_slot", "source_preserve"]},
+        "character": {"enum": ["replace_from_slot", "source_preserve"]},
+        "ui": {"enum": ["opaque_ui_demo", "generated_ui_demo", "source_ui_keep"]},
+        "tail": {"enum": ["opaque_app_tail_card", "omit_source_end_card"]}
+      }
+    },
+    "output_language": {
+      "anyOf": [
+        {"enum": ["en", "ja", "ko", "fr", "de", "es", "pt", "id", "zh"]},
+        {"type": "null"}
+      ]
+    },
+    "review_route": {
+      "anyOf": [
+        {"enum": ["route_1", "route_2", "local_only"]},
+        {"type": "null"}
+      ]
+    },
+    "upload_scope": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "high_fidelity_profile": {
+          "$ref": "./high_fidelity_profile.schema.json"
+        }
+      }
+    }
+  }
+}
