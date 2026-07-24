@@ -186,6 +186,8 @@ class _MusicPort:
             "seedance_audio_reference",
             "exact_fragment_mix",
             "singing_qa",
+            "frozen_provider_submit",
+            "provider_task_lineage_lookup",
         }
 
     def run(self, *, context, input_artifacts):
@@ -276,6 +278,7 @@ def _uploaded_music() -> dict[str, object]:
 
 
 def _complete_music_timing(contract: dict[str, object]) -> None:
+    contract.setdefault("meaningful_silence_output_intervals", [])
     windows = contract.get("windows")
     if not isinstance(windows, list):
         return
@@ -322,6 +325,7 @@ def _music_timeline() -> dict[str, object]:
             }
         ],
         "visible_singer_regions": [],
+        "meaningful_silence_output_intervals": [],
     }
 
 

@@ -42,6 +42,8 @@ REQUIRED_MUSIC_CAPABILITIES = frozenset(
         "seedance_audio_reference",
         "exact_fragment_mix",
         "singing_qa",
+        "frozen_provider_submit",
+        "provider_task_lineage_lookup",
     }
 )
 MUSIC_TIMELINE_CONTRACT_ARTIFACT_KIND = "music_timeline_contract"
@@ -49,6 +51,7 @@ PERFORMANCE_LINE_CONTRACT_ARTIFACT_KIND = "performance_line_contract"
 BACKGROUND_MUSIC_AUDIT_RECEIPT_ARTIFACT_KIND = "background_music_audit_receipt"
 BACKGROUND_MUSIC_EXECUTION_REQUEST_ARTIFACT_KIND = "background_music_execution_request"
 BACKGROUND_MUSIC_PROVIDER_SUBMISSION_ARTIFACT_KIND = "background_music_provider_submission"
+BACKGROUND_MUSIC_PROVIDER_RAW_RESPONSE_ARTIFACT_KIND = "background_music_provider_raw_response"
 BACKGROUND_MUSIC_EXECUTION_RECEIPT_V1 = "background_music_execution_receipt/v1"
 BACKGROUND_MUSIC_AUDIT_RECEIPT_V1 = "background_music_audit_receipt/v1"
 FORBIDDEN_MUSIC_OPERATIONS = ("loop", "atempo", "stretch", "pitch_shift", "silence_padding")
@@ -449,7 +452,7 @@ def _validate_materialized_mix_media(
         output_start = min(int(window["output_start_ms"]) for window in windows if isinstance(window, Mapping))
         output_end = max(int(window["output_end_ms"]) for window in windows if isinstance(window, Mapping))
         if (
-            abs(video_timing.get("start_ms", -1) - output_start) > 1
+            abs(video_timing.get("start_ms", -1)) > 1
             or abs(video_timing.get("duration_ms", -1) - (output_end - output_start)) > 1
         ):
             raise ValueError("BACKGROUND_MUSIC_VIDEO_TIMELINE_MISMATCH")
@@ -469,9 +472,21 @@ def _validate_pcm_timeline(
     receipts = final_mix_receipt.get("window_receipts")
     if not isinstance(windows, list) or not isinstance(receipts, list) or len(windows) != len(receipts):
         raise ValueError("BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH")
+    origin = min(int(window["output_start_ms"]) for window in windows if isinstance(window, Mapping))
     expected_end = 0
     covered: list[tuple[int, int]] = []
+    timeline = execution_contract.get("music_timeline_contract")
+    silence_intervals = timeline.get("meaningful_silence_output_intervals") if isinstance(timeline, Mapping) else None
+    if not isinstance(silence_intervals, list):
+        raise ValueError("BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH")
     declared_silence: set[tuple[int, int]] = set()
+    for silence in silence_intervals:
+        if not isinstance(silence, Mapping):
+            raise ValueError("BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH")
+        start, end = silence.get("output_start_ms"), silence.get("output_end_ms")
+        if isinstance(start, bool) or isinstance(end, bool) or not isinstance(start, int) or not isinstance(end, int) or end <= start:
+            raise ValueError("BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH")
+        declared_silence.add((start, end))
     for window, receipt in zip(windows, receipts):
         if not isinstance(window, Mapping) or not isinstance(receipt, Mapping):
             raise ValueError("BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH")
@@ -480,7 +495,7 @@ def _validate_pcm_timeline(
             raise ValueError("BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH")
         uploaded_start, uploaded_end, output_start, output_end = values
         source = uploaded_pcm[uploaded_start * bytes_per_ms : uploaded_end * bytes_per_ms]
-        observed = final_audio_pcm[output_start * bytes_per_ms : output_end * bytes_per_ms]
+        observed = final_audio_pcm[(output_start - origin) * bytes_per_ms : (output_end - origin) * bytes_per_ms]
         digest = hashlib.sha256(source).hexdigest()
         if (
             uploaded_end <= uploaded_start
@@ -490,22 +505,15 @@ def _validate_pcm_timeline(
             or receipt.get("pcm_fragment_sha256") != digest
         ):
             raise ValueError("BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH")
-        expected_end = max(expected_end, output_end)
+        expected_end = max(expected_end, output_end - origin)
         covered.append((output_start, output_end))
-        for field in ("silence_before", "silence_after"):
-            silence = window.get(field)
-            if isinstance(silence, Mapping):
-                start = silence.get("output_start_ms")
-                end = silence.get("output_end_ms")
-                if isinstance(start, int) and isinstance(end, int) and end > start:
-                    declared_silence.add((start, end))
     if len(final_audio_pcm) != expected_end * bytes_per_ms:
         raise ValueError("BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH")
     for (start, end), (next_start, _) in zip(covered, covered[1:]):
         if (
             next_start < end
             or (next_start > end and (end, next_start) not in declared_silence)
-            or any(final_audio_pcm[end * bytes_per_ms : next_start * bytes_per_ms])
+            or any(final_audio_pcm[(end - origin) * bytes_per_ms : (next_start - origin) * bytes_per_ms])
         ):
             raise ValueError("BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH")
 
@@ -815,6 +823,7 @@ class BackgroundMusicStagePort:
             evidence = result.get("background_music_evidence")
             execution_contract = evidence.get("music_execution_contract") if isinstance(evidence, Mapping) else None
             receipt = evidence.get("provider_submission_receipt") if isinstance(evidence, Mapping) else None
+            raw_response = evidence.get("provider_raw_response") if isinstance(evidence, Mapping) else None
             if not isinstance(execution_contract, Mapping) or not isinstance(receipt, Mapping):
                 raise ValueError("BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED")
             if frozen_execution_request is None or execution_contract != frozen_execution_request[0]["music_execution_contract"]:
@@ -827,9 +836,17 @@ class BackgroundMusicStagePort:
                 or not isinstance(receipt.get("provider_task_id"), str)
                 or not receipt["provider_task_id"]
                 or not _is_sha256(receipt.get("provider_raw_response_sha256"))
+                or not isinstance(raw_response, bytes)
+                or hashlib.sha256(raw_response).hexdigest() != receipt.get("provider_raw_response_sha256")
             ):
                 raise ValueError("BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED")
-            return self._publish_provider_submission(context=context, result=result, receipt=receipt)
+            return self._publish_provider_submission(
+                context=context,
+                result=result,
+                receipt=receipt,
+                raw_response=raw_response,
+                audit_receipt=frozen_execution_request[0]["audit_receipt_artifact"],
+            )
         if self.stage == "wait_provider_video":
             evidence = result.get("background_music_evidence")
             receipt = evidence.get("provider_submission_receipt") if isinstance(evidence, Mapping) else None
@@ -1091,12 +1108,48 @@ class BackgroundMusicStagePort:
         return dict(decoded), reference
 
     @staticmethod
-    def _publish_provider_submission(*, context: Any, result: Mapping[str, Any], receipt: Mapping[str, object]) -> Mapping[str, Any]:
-        encoded = _canonical_json_bytes(receipt)
-        digest = hashlib.sha256(encoded).hexdigest()
+    def _publish_provider_submission(
+        *,
+        context: Any,
+        result: Mapping[str, Any],
+        receipt: Mapping[str, object],
+        raw_response: bytes,
+        audit_receipt: Mapping[str, object],
+    ) -> Mapping[str, Any]:
+        try:
+            raw = json.loads(raw_response)
+        except (TypeError, ValueError, json.JSONDecodeError) as error:
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED") from error
+        if (
+            not isinstance(raw, Mapping)
+            or raw.get("task_id") != receipt.get("provider_task_id")
+            or raw.get("execution_contract_sha256") != receipt.get("execution_contract_sha256")
+            or raw.get("seedance_payload_sha256") != receipt.get("seedance_payload_sha256")
+        ):
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED")
         publish = getattr(context, "publish_bytes", None)
         if not callable(publish):
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED")
+        raw_digest = hashlib.sha256(raw_response).hexdigest()
+        try:
+            raw_published = publish(
+                kind=BACKGROUND_MUSIC_PROVIDER_RAW_RESPONSE_ARTIFACT_KIND,
+                data=raw_response,
+                content_type="application/json",
+                expected_sha256=raw_digest,
+            )
+        except Exception as error:
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED") from error
+        if not isinstance(raw_published, Mapping):
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED")
+        raw_reference = BackgroundMusicStagePort._contract_artifact_reference(raw_published)
+        payload = {
+            **dict(receipt),
+            "provider_raw_response_artifact": {**raw_reference, "kind": BACKGROUND_MUSIC_PROVIDER_RAW_RESPONSE_ARTIFACT_KIND},
+            "audit_receipt_artifact": dict(audit_receipt),
+        }
+        encoded = _canonical_json_bytes(payload)
+        digest = hashlib.sha256(encoded).hexdigest()
         try:
             published = publish(
                 kind=BACKGROUND_MUSIC_PROVIDER_SUBMISSION_ARTIFACT_KIND,
@@ -1114,6 +1167,7 @@ class BackgroundMusicStagePort:
         enriched["background_music_evidence"] = {
             **(dict(evidence) if isinstance(evidence, Mapping) else {}),
             "provider_submission_artifact": {**reference, "kind": BACKGROUND_MUSIC_PROVIDER_SUBMISSION_ARTIFACT_KIND},
+            "provider_submission_receipt": payload,
         }
         return enriched
 
@@ -1138,6 +1192,8 @@ class BackgroundMusicStagePort:
             or not isinstance(decoded, Mapping)
             or not isinstance(decoded.get("provider_task_id"), str)
             or not _is_sha256(decoded.get("provider_raw_response_sha256"))
+            or not isinstance(decoded.get("provider_raw_response_artifact"), Mapping)
+            or not isinstance(decoded.get("audit_receipt_artifact"), Mapping)
         ):
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED")
         return dict(decoded), reference
@@ -1531,11 +1587,12 @@ class BackgroundMusicStagePort:
     def _validate_music_timeline(*, contract: Mapping[str, Any], uploaded: Mapping[str, Any]) -> None:
         windows = contract.get("windows")
         singers = contract.get("visible_singer_regions")
+        meaningful_silence = contract.get("meaningful_silence_output_intervals")
         try:
             available_ms = round(float(uploaded.get("duration_seconds")) * 1000)
         except (TypeError, ValueError) as error:
             raise ValueError("BACKGROUND_MUSIC_DURATION_INSUFFICIENT") from error
-        if available_ms <= 0 or not isinstance(windows, list) or not windows or not isinstance(singers, list):
+        if available_ms <= 0 or not isinstance(windows, list) or not windows or not isinstance(singers, list) or not isinstance(meaningful_silence, list):
             raise ValueError("MUSIC_TIMELINE_CONTRACT_REQUIRED")
         prior_source_end = -1
         prior_uploaded_end: int | None = None
