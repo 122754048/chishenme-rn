@@ -88,7 +88,7 @@ class _ArtifactPortContext:
         return self.snapshot.slots_manifest["slots"][slot_id]["metadata"][0]
 
     def publish_bytes(self, *, kind, data, content_type, expected_sha256):
-        assert kind in {"music_timeline_contract", "background_music_audit_receipt"}
+        assert kind in {"music_timeline_contract", "background_music_audit_receipt", "background_music_execution_request"}
         assert content_type == "application/json"
         assert hashlib.sha256(data).hexdigest() == expected_sha256
         artifact_id = f"{kind}-{expected_sha256[:12]}"
@@ -261,15 +261,20 @@ def _complete_music_timing(contract: dict[str, object]) -> None:
     for window in windows:
         if not isinstance(window, dict):
             continue
-        window.setdefault("source_entry", "hard_cut")
-        window.setdefault("source_exit", "hard_cut")
-        window.setdefault("fade_in_ms", 0)
-        window.setdefault("fade_out_ms", 0)
-        window.setdefault("silence_before", False)
-        window.setdefault("silence_after", False)
-        window.setdefault("transition", "cut")
-        window.setdefault("transition_start_ms", int(window.get("uploaded_start_ms") or 0))
-        window.setdefault("transition_end_ms", int(window.get("uploaded_end_ms") or 0))
+        source_start = int(window.get("uploaded_start_ms") or 0)
+        source_end = int(window.get("uploaded_end_ms") or 0)
+        output_start = int(window.get("output_start_ms") or source_start)
+        output_end = int(window.get("output_end_ms") or source_end)
+        window.setdefault("output_start_ms", output_start)
+        window.setdefault("output_end_ms", output_end)
+        bounds = {
+            "source_start_ms": source_start,
+            "source_end_ms": source_end,
+            "output_start_ms": output_start,
+            "output_end_ms": output_end,
+        }
+        for field in ("source_entry", "source_exit", "fade_in", "fade_out", "silence_before", "silence_after", "transition"):
+            window.setdefault(field, dict(bounds))
 
 
 def _music_timeline() -> dict[str, object]:
@@ -284,15 +289,15 @@ def _music_timeline() -> dict[str, object]:
                 "uploaded_end_ms": 1000,
                 "source_start_ms": 0,
                 "source_end_ms": 1000,
-                "source_entry": "hard_cut",
-                "source_exit": "dissolve",
-                "fade_in_ms": 0,
-                "fade_out_ms": 120,
-                "silence_before": False,
-                "silence_after": True,
-                "transition": "cross_dissolve",
-                "transition_start_ms": 880,
-                "transition_end_ms": 1000,
+                "output_start_ms": 0,
+                "output_end_ms": 1000,
+                "source_entry": {"source_start_ms": 0, "source_end_ms": 0, "output_start_ms": 0, "output_end_ms": 0},
+                "source_exit": {"source_start_ms": 1000, "source_end_ms": 1000, "output_start_ms": 1000, "output_end_ms": 1000},
+                "fade_in": {"source_start_ms": 0, "source_end_ms": 0, "output_start_ms": 0, "output_end_ms": 0},
+                "fade_out": {"source_start_ms": 880, "source_end_ms": 1000, "output_start_ms": 880, "output_end_ms": 1000},
+                "silence_before": {"source_start_ms": 0, "source_end_ms": 0, "output_start_ms": 0, "output_end_ms": 0},
+                "silence_after": {"source_start_ms": 1000, "source_end_ms": 1000, "output_start_ms": 1000, "output_end_ms": 1000},
+                "transition": {"source_start_ms": 880, "source_end_ms": 1000, "output_start_ms": 880, "output_end_ms": 1000},
             }
         ],
         "visible_singer_regions": [],
@@ -407,10 +412,12 @@ def _materialized_music_case(
     intent: str = "background_music_replacement",
     video_audio_bytes: bytes | None = None,
     extra_video_audio_bytes: bytes | None = None,
+    video_audio_offset_seconds: float = 0.0,
 ) -> tuple[dict[str, object], dict[str, object], _MediaPortContext, dict[str, object], dict[str, object]]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     _complete_music_timing(contract)
-    uploaded_bytes = _pcm_wav_bytes(b"\x01\x00\x01\x00" * 4_800)
+    uploaded_pcm = b"\x01\x00\x01\x00" * 48_000
+    uploaded_bytes = _pcm_wav_bytes(uploaded_pcm)
     final_audio_bytes = uploaded_bytes
     uploaded = {
         **_uploaded_music(),
@@ -442,6 +449,22 @@ def _materialized_music_case(
         "kind": "background_music_audit_receipt",
         "sha256": hashlib.sha256(audit_bytes).hexdigest(),
     }
+    request_payload = {
+        "contract": "background_music_execution_request/v1",
+        "music_execution_contract": execution,
+        "provider_payload": execution["provider_payload"],
+        "audit_receipt_artifact": audit_reference,
+        "provider_submission_receipt": {
+            **background_music_execution._execution_binding(execution),
+            "provider_payload": execution["provider_payload"],
+        },
+    }
+    request_bytes = json.dumps(request_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    request_reference = {
+        "artifact_id": "music-request",
+        "kind": "background_music_execution_request",
+        "sha256": hashlib.sha256(request_bytes).hexdigest(),
+    }
     performance_entry: tuple[dict[str, object], Path] | None = None
     if intent == "verified_singing":
         performance_bytes = json.dumps(
@@ -458,11 +481,13 @@ def _materialized_music_case(
     uploaded_path = tmp_path / "uploaded.mp3"
     timeline_path = tmp_path / "timeline.json"
     audit_path = tmp_path / "audit.json"
+    request_path = tmp_path / "request.json"
     final_audio_path = tmp_path / "mix.wav"
     final_video_path = tmp_path / "final.mp4"
     uploaded_path.write_bytes(uploaded_bytes)
     timeline_path.write_bytes(timeline_bytes)
     audit_path.write_bytes(audit_bytes)
+    request_path.write_bytes(request_bytes)
     final_audio_path.write_bytes(final_audio_bytes)
     video_audio_path = tmp_path / "video-audio.wav"
     video_audio_path.write_bytes(final_audio_bytes if video_audio_bytes is None else video_audio_bytes)
@@ -475,6 +500,7 @@ def _materialized_music_case(
         extra_input = ["-i", str(extra_audio_path)]
         extra_mapping = ["-map", "2:a:0"]
         extra_disposition = ["-disposition:a:0", "0", "-disposition:a:1", "default"]
+    offset_args = ["-itsoffset", str(video_audio_offset_seconds)] if video_audio_offset_seconds else []
     generated = subprocess.run(
         [
             "ffmpeg",
@@ -485,7 +511,8 @@ def _materialized_music_case(
             "-f",
             "lavfi",
             "-i",
-            "color=c=black:s=16x16:r=30:d=0.1",
+            "color=c=black:s=16x16:r=30:d=1",
+            *offset_args,
             "-i",
             str(video_audio_path),
             *extra_input,
@@ -527,11 +554,13 @@ def _materialized_music_case(
         + ((performance_entry,) if performance_entry is not None else ())
         + (
             (audit_reference, audit_path),
+            (request_reference, request_path),
             (final_audio_reference, final_audio_path),
             (final_video_reference, final_video_path),
         ),
     )
     fragment_sha = hashlib.sha256(uploaded_bytes).hexdigest()
+    pcm_fragment_sha = hashlib.sha256(uploaded_pcm).hexdigest()
     receipt = {
         "passed": True,
         "mode": execution["mode"],
@@ -547,6 +576,7 @@ def _materialized_music_case(
                 "fragment_sha256": fragment_sha,
                 "uploaded_fragment_sha256": fragment_sha,
                 "final_audio_fragment_sha256": fragment_sha,
+                "pcm_fragment_sha256": pcm_fragment_sha,
                 "uploaded_byte_offset": 0,
                 "uploaded_byte_length": len(uploaded_bytes),
                 "final_audio_byte_offset": 0,
@@ -688,7 +718,10 @@ def test_frozen_music_timing_evidence_is_mandatory_and_final_receipts_must_echo_
 
     execution = _execution_contract_for(_music_timeline())
     receipt = _final_mix_receipt(execution_contract=execution)
-    receipt["window_receipts"][0]["transition_end_ms"] = 999
+    receipt["window_receipts"][0]["transition"] = {
+        **receipt["window_receipts"][0]["transition"],
+        "output_end_ms": 999,
+    }
     with pytest.raises(ValueError, match="BACKGROUND_MUSIC_FRAGMENT_RECEIPT_REQUIRED"):
         background_music_execution.execute_background_music(
             execution_contract=execution,
@@ -881,6 +914,35 @@ def test_seedance_compile_stage_requires_the_canonical_background_music_executio
         port.run(context=context, input_artifacts=[])
 
 
+def test_seedance_compile_requires_materialized_frozen_timeline_provenance_before_delegate_runs():
+    execution = _execution_contract_for(_music_timeline())
+    port = BackgroundMusicStagePort(
+        stage="compile_seedance20_prompt",
+        delegate=_Port("canonical"),
+        music_delegate=_MixMusicPort(
+            {"music_execution_contract": execution, "provider_payload": execution["provider_payload"]}
+        ),
+    )
+    context = _PortContext(_PortSnapshot({"slots": {}, "extensions": {"background_music": _uploaded_music()}}))
+
+    with pytest.raises(ValueError, match="MUSIC_TIMELINE_CONTRACT_ARTIFACT_REQUIRED"):
+        port.run(context=context, input_artifacts=[])
+
+
+def test_music_timing_requires_structured_source_and_output_boundaries():
+    timeline = _music_timeline()
+    timeline["windows"][0]["source_entry"] = "hard_cut"
+
+    with pytest.raises(ValueError, match="MUSIC_TIMING_EVIDENCE_REQUIRED"):
+        background_music_execution.compile_background_music_execution_contract(
+            uploaded_audio=_uploaded_music(),
+            music_timeline_contract=timeline,
+            audio_asset_receipt=_audio_asset_receipt(),
+            user_confirmed_intent="background_music_replacement",
+            performance_line_contract=None,
+        )
+
+
 def test_background_music_provider_audit_rejects_a_payload_that_differs_from_the_frozen_execution_contract():
     context = _PortContext(
         _PortSnapshot({"slots": {}, "extensions": {"background_music": _uploaded_music()}})
@@ -947,6 +1009,24 @@ def test_provider_submission_rejects_a_post_audit_self_consistent_contract_swap(
     )
 
     with pytest.raises(ValueError, match="BACKGROUND_MUSIC_AUDIT_RECEIPT_MISMATCH"):
+        port.run(context=context, input_artifacts=[])
+
+
+def test_provider_submit_requires_a_receipt_echoing_the_pre_submit_frozen_payload(tmp_path):
+    execution, _, context, _, audit_reference = _materialized_music_case(tmp_path, _music_timeline())
+    port = BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_MixMusicPort(
+            {
+                "music_execution_contract": execution,
+                "provider_payload": execution["provider_payload"],
+                "music_execution_audit_receipt_artifact": audit_reference,
+            }
+        ),
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED"):
         port.run(context=context, input_artifacts=[])
 
 
@@ -1264,6 +1344,55 @@ def test_background_music_splice_rejects_a_final_video_with_an_unverified_defaul
 
     with pytest.raises(ValueError, match="BACKGROUND_MUSIC_MEDIA_MATERIALIZATION_REQUIRED"):
         port.run(context=context, input_artifacts=[])
+
+
+@pytest.mark.parametrize("offset", [0.2, -0.1])
+def test_background_music_splice_rejects_delayed_or_advanced_final_video_audio_pts(tmp_path, offset):
+    contract = _music_timeline()
+    execution, receipt, context, timeline_reference, audit_reference = _materialized_music_case(
+        tmp_path,
+        contract,
+        video_audio_offset_seconds=offset,
+    )
+    port = BackgroundMusicStagePort(
+        stage="splice_timeline",
+        delegate=_Port("canonical"),
+        music_delegate=_MixMusicPort(
+            {
+                "music_timeline_contract": contract,
+                "music_timeline_contract_artifact": timeline_reference,
+                "music_execution_contract": execution,
+                "provider_payload": execution["provider_payload"],
+                "music_execution_audit_receipt_artifact": audit_reference,
+                "mix_receipt": receipt,
+            }
+        ),
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_(VIDEO_AUDIO|VIDEO_TIMELINE)_MISMATCH"):
+        port.run(context=context, input_artifacts=[])
+
+
+@pytest.mark.parametrize("variant", ["gap", "outside", "repeat"])
+def test_frozen_milliseconds_reject_gap_window_outside_audio_and_repeated_pcm(variant):
+    execution = _execution_contract_for(_music_timeline())
+    source_pcm = b"\x01\x00\x01\x00" * 48_000
+    digest = hashlib.sha256(source_pcm).hexdigest()
+    receipt = {"window_receipts": [{"pcm_fragment_sha256": digest}]}
+    if variant == "gap":
+        final_pcm = source_pcm[:96_000] + (b"\0" * 96_000)
+    elif variant == "outside":
+        final_pcm = source_pcm + (b"\0" * 192)
+    else:
+        final_pcm = source_pcm + source_pcm
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH"):
+        background_music_execution._validate_pcm_timeline(
+            execution_contract=execution,
+            final_mix_receipt=receipt,
+            uploaded_pcm=source_pcm,
+            final_audio_pcm=final_pcm,
+        )
 
 
 def test_background_music_splice_rejects_a_contract_that_differs_from_the_materialized_frozen_artifact(tmp_path):
