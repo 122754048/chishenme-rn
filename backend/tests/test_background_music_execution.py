@@ -142,10 +142,23 @@ class _MediaPortContext:
     snapshot: _PortSnapshot
     uploaded_path: Path
     artifact_entries: tuple[tuple[dict[str, object], Path], ...]
+    published_entries: dict[str, tuple[dict[str, object], Path]] = field(default_factory=dict)
 
     @property
     def artifacts(self):
-        return tuple(reference for reference, _ in self.artifact_entries)
+        return tuple(reference for reference, _ in self.artifact_entries) + tuple(
+            reference for reference, _ in self.published_entries.values()
+        )
+
+    def publish_bytes(self, *, kind, data, content_type, expected_sha256):
+        assert content_type == "application/json"
+        assert hashlib.sha256(data).hexdigest() == expected_sha256
+        artifact_id = f"{kind}-{expected_sha256[:12]}"
+        path = self.uploaded_path.parent / f"{artifact_id}.json"
+        path.write_bytes(data)
+        reference = {"artifact_id": artifact_id, "kind": kind, "sha256": expected_sha256}
+        self.published_entries[artifact_id] = (reference, path)
+        return reference
 
     @contextmanager
     def materialize_slot(self, slot_id, *, index=0):
@@ -158,7 +171,7 @@ class _MediaPortContext:
         entry = next(
             (
                 (reference, path)
-                for reference, path in self.artifact_entries
+                for reference, path in self.artifact_entries + tuple(self.published_entries.values())
                 if reference["kind"] == kind
                 and reference["sha256"] == sha256
                 and reference["artifact_id"] == artifact_id
@@ -266,6 +279,38 @@ class _CopiedReceiptSubmitPort:
         }
 
 
+class _VerifiedProviderAdapter:
+    def __init__(self):
+        self.create_requests = []
+        self.lookup_intents = []
+
+    def capability_identity(self):
+        return {
+            "capability": "provider_adapter",
+            "implementation": "tests.VerifiedProviderAdapter",
+            "version": "1.0.0",
+            "sha256": "f" * 64,
+        }
+
+    def create_video(self, request):
+        self.create_requests.append(request)
+        return {"task_id": "provider-task-1", "status": "submitted"}
+
+    def lookup(self, intent):
+        self.lookup_intents.append(intent)
+        return {
+            "task_id": "provider-task-1",
+            "status": "completed",
+            "output": {"kind": "provider_video", "identity": "provider-output-1"},
+        }
+
+
+class _WrongTaskProviderAdapter(_VerifiedProviderAdapter):
+    def lookup(self, intent):
+        self.lookup_intents.append(intent)
+        return {"task_id": "another-task", "status": "completed"}
+
+
 def _uploaded_music() -> dict[str, object]:
     return {
         "object_key": "uploads/batch-scope/song.mp3",
@@ -299,6 +344,10 @@ def _complete_music_timing(contract: dict[str, object]) -> None:
         }
         for field in ("source_entry", "source_exit", "fade_in", "fade_out", "silence_before", "silence_after", "transition"):
             window.setdefault(field, dict(bounds))
+    contract.setdefault(
+        "output_duration_ms",
+        max((int(window["output_end_ms"]) for window in windows if isinstance(window, dict)), default=0),
+    )
 
 
 def _music_timeline() -> dict[str, object]:
@@ -326,6 +375,7 @@ def _music_timeline() -> dict[str, object]:
         ],
         "visible_singer_regions": [],
         "meaningful_silence_output_intervals": [],
+        "output_duration_ms": 1000,
     }
 
 
@@ -446,6 +496,8 @@ def _materialized_music_case(
     final_audio_bytes = uploaded_bytes
     uploaded = {
         **_uploaded_music(),
+        "object_key": "uploads/batch-scope/song.wav",
+        "content_type": "audio/wav",
         "sha256": hashlib.sha256(uploaded_bytes).hexdigest(),
         "size_bytes": len(uploaded_bytes),
     }
@@ -503,7 +555,7 @@ def _materialized_music_case(
         performance_path = tmp_path / "performance-lines.json"
         performance_path.write_bytes(performance_bytes)
         performance_entry = (performance_reference, performance_path)
-    uploaded_path = tmp_path / "uploaded.mp3"
+    uploaded_path = tmp_path / "uploaded.wav"
     timeline_path = tmp_path / "timeline.json"
     audit_path = tmp_path / "audit.json"
     request_path = tmp_path / "request.json"
@@ -1048,7 +1100,7 @@ def test_provider_submit_requires_a_receipt_echoing_the_pre_submit_frozen_payloa
         ),
     )
 
-    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED"):
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_ADAPTER_REQUIRED"):
         port.run(context=context, input_artifacts=[])
 
 
@@ -1060,8 +1112,168 @@ def test_provider_submit_rejects_a_copied_pre_submit_binding_without_provider_ta
         music_delegate=_CopiedReceiptSubmitPort(),
     )
 
-    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED"):
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_ADAPTER_REQUIRED"):
         port.run(context=context, input_artifacts=[])
+
+
+def test_provider_adapter_submits_the_materialized_request_and_waits_for_its_exact_task(tmp_path):
+    execution, _, context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
+    provider = _VerifiedProviderAdapter()
+    submit = BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    )
+
+    submitted = submit.run(context=context, input_artifacts=[])
+
+    assert provider.create_requests == [execution["provider_payload"]]
+    evidence = submitted["background_music_evidence"]
+    receipt = evidence["provider_submission_receipt"]
+    assert receipt["provider_task_id"] == "provider-task-1"
+    assert receipt["provider_raw_response_artifact"]["kind"] == "background_music_provider_raw_response"
+    raw_reference = receipt["provider_raw_response_artifact"]
+    assert json.loads(context.published_entries[raw_reference["artifact_id"]][1].read_bytes()) == {
+        "status": "submitted",
+        "task_id": "provider-task-1",
+    }
+
+    wait = BackgroundMusicStagePort(
+        stage="wait_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    )
+    completed = wait.run(context=context, input_artifacts=[])
+
+    assert provider.lookup_intents == [{"taskId": "provider-task-1"}]
+    assert completed["background_music_evidence"]["provider_submission_receipt"] == receipt
+    output_reference = completed["background_music_evidence"]["provider_output_artifact"]
+    assert output_reference["kind"] == "background_music_provider_output"
+    output = json.loads(context.published_entries[output_reference["artifact_id"]][1].read_bytes())
+    assert output["provider_submission_artifact"] == evidence["provider_submission_artifact"]
+    assert output["execution_request_artifact"]["kind"] == "background_music_execution_request"
+    assert output["execution_contract_sha256"] == execution["execution_contract_sha256"]
+    assert output["seedance_payload_sha256"] == execution["seedance_payload_sha256"]
+
+
+def test_provider_wait_rejects_a_lookup_response_for_another_task(tmp_path):
+    _, _, context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
+    provider = _WrongTaskProviderAdapter()
+    submit = BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    )
+    submit.run(context=context, input_artifacts=[])
+    wait = BackgroundMusicStagePort(
+        stage="wait_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_LOOKUP_REQUIRED"):
+        wait.run(context=context, input_artifacts=[])
+
+
+def test_provider_wait_rejects_a_submission_that_points_to_an_unmaterialized_request(tmp_path):
+    _, _, context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
+    provider = _VerifiedProviderAdapter()
+    submit = BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    )
+    submission = submit.run(context=context, input_artifacts=[])["background_music_evidence"]["provider_submission_artifact"]
+    submission_reference, submission_path = context.published_entries.pop(submission["artifact_id"])
+    forged = json.loads(submission_path.read_bytes())
+    forged["execution_request_artifact"] = {
+        "artifact_id": "unrelated-request",
+        "kind": "background_music_execution_request",
+        "sha256": "e" * 64,
+    }
+    forged_bytes = json.dumps(forged, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    forged_reference = {**submission_reference, "sha256": hashlib.sha256(forged_bytes).hexdigest()}
+    submission_path.write_bytes(forged_bytes)
+    context.published_entries[forged_reference["artifact_id"]] = (forged_reference, submission_path)
+    wait = BackgroundMusicStagePort(
+        stage="wait_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED"):
+        wait.run(context=context, input_artifacts=[])
+
+
+def test_pcm_timeline_uses_global_zero_clock_for_declared_leading_and_trailing_silence():
+    contract = _music_timeline()
+    window = contract["windows"][0]
+    window["output_start_ms"] = 1_000
+    window["output_end_ms"] = 2_000
+    for field in ("source_entry", "source_exit", "fade_in", "fade_out", "silence_before", "silence_after", "transition"):
+        event = window[field]
+        event["output_start_ms"] += 1_000
+        event["output_end_ms"] += 1_000
+    contract["output_duration_ms"] = 3_000
+    contract["meaningful_silence_output_intervals"] = [
+        {"output_start_ms": 0, "output_end_ms": 1_000},
+        {"output_start_ms": 2_000, "output_end_ms": 3_000},
+    ]
+    execution = _execution_contract_for(contract)
+    source_pcm = b"\x01\x00\x01\x00" * 48_000
+    final_pcm = (b"\0" * len(source_pcm)) + source_pcm + (b"\0" * len(source_pcm))
+
+    background_music_execution._validate_pcm_timeline(
+        execution_contract=execution,
+        final_mix_receipt={"window_receipts": [{"pcm_fragment_sha256": hashlib.sha256(source_pcm).hexdigest()}]},
+        uploaded_pcm=source_pcm,
+        final_audio_pcm=final_pcm,
+    )
+
+
+@pytest.mark.parametrize(
+    "silence_intervals",
+    [
+        [{"output_start_ms": 2_000, "output_end_ms": 3_000}],
+        [{"output_start_ms": 0, "output_end_ms": 500}, {"output_start_ms": 2_000, "output_end_ms": 3_000}],
+        [{"output_start_ms": 0, "output_end_ms": 1_000}],
+        [{"output_start_ms": 0, "output_end_ms": 1_500}, {"output_start_ms": 2_000, "output_end_ms": 3_000}],
+    ],
+)
+def test_pcm_timeline_rejects_undeclared_or_overlapping_global_silence(silence_intervals):
+    contract = _music_timeline()
+    window = contract["windows"][0]
+    window["output_start_ms"] = 1_000
+    window["output_end_ms"] = 2_000
+    for field in ("source_entry", "source_exit", "fade_in", "fade_out", "silence_before", "silence_after", "transition"):
+        window[field]["output_start_ms"] += 1_000
+        window[field]["output_end_ms"] += 1_000
+    contract["output_duration_ms"] = 3_000
+    contract["meaningful_silence_output_intervals"] = [
+        {"output_start_ms": 0, "output_end_ms": 1_000},
+        {"output_start_ms": 2_000, "output_end_ms": 3_000},
+    ]
+    execution = _execution_contract_for(contract)
+    execution["music_timeline_contract"] = {
+        **execution["music_timeline_contract"],
+        "meaningful_silence_output_intervals": silence_intervals,
+    }
+    source_pcm = b"\x01\x00\x01\x00" * 48_000
+    final_pcm = (b"\0" * len(source_pcm)) + source_pcm + (b"\0" * len(source_pcm))
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_TIME_FRAGMENT_MISMATCH"):
+        background_music_execution._validate_pcm_timeline(
+            execution_contract=execution,
+            final_mix_receipt={"window_receipts": [{"pcm_fragment_sha256": hashlib.sha256(source_pcm).hexdigest()}]},
+            uploaded_pcm=source_pcm,
+            final_audio_pcm=final_pcm,
+        )
 
 
 def test_background_music_provider_audit_revalidates_the_mode_contract_instead_of_trusting_delegate_text(tmp_path):
@@ -1438,19 +1650,7 @@ def test_background_music_splice_rejects_a_contract_that_differs_from_the_materi
         "duration_seconds": 30.0,
         "status": "completed",
     }
-    frozen_contract = {
-        "windows": [
-            {
-                "source_start_frame": 0,
-                "source_end_frame": 30,
-                "output_start_frame": 0,
-                "output_end_frame": 30,
-                "uploaded_start_ms": 0,
-                "uploaded_end_ms": 1000,
-            }
-        ],
-        "visible_singer_regions": [],
-    }
+    frozen_contract = _music_timeline()
     frozen_bytes = json.dumps(frozen_contract, sort_keys=True, separators=(",", ":")).encode("utf-8")
     frozen_sha256 = hashlib.sha256(frozen_bytes).hexdigest()
     artifact_path = tmp_path / "music_timeline_contract.json"
@@ -1460,10 +1660,18 @@ def test_background_music_splice_rejects_a_contract_that_differs_from_the_materi
         "kind": "music_timeline_contract",
         "sha256": frozen_sha256,
     }
-    altered_contract = {
-        **frozen_contract,
-        "windows": [{**frozen_contract["windows"][0], "uploaded_start_ms": 1000, "uploaded_end_ms": 2000}],
+    altered_window = {
+        **frozen_contract["windows"][0],
+        "uploaded_start_ms": 1000,
+        "uploaded_end_ms": 2000,
     }
+    for field in ("source_entry", "source_exit", "fade_in", "fade_out", "silence_before", "silence_after", "transition"):
+        altered_window[field] = {
+            **altered_window[field],
+            "source_start_ms": altered_window[field]["source_start_ms"] + 1000,
+            "source_end_ms": altered_window[field]["source_end_ms"] + 1000,
+        }
+    altered_contract = {**frozen_contract, "windows": [altered_window]}
     execution = _execution_contract_for(altered_contract)
     receipt = _final_mix_receipt(execution_contract=execution)
     audit_receipt = {
@@ -1604,13 +1812,18 @@ def test_deployment_music_adapter_wraps_only_existing_stage_ports_and_requires_r
         "splice_timeline",
         "run_qc",
     )
+    provider = _VerifiedProviderAdapter()
     worker_manager = type(
         "WorkerManager",
         (),
-        {"stage_ports": {stage: _Port(f"canonical-{stage}") for stage in stages}},
+        {
+            "stage_ports": {stage: _Port(f"canonical-{stage}") for stage in stages},
+            "capability_ports": {"provider_adapter": provider},
+        },
     )()
     adapter = DeploymentBackgroundMusicExecutionAdapter(
-        music_stage_ports={stage: _MusicPort() for stage in stages}
+        music_stage_ports={stage: _MusicPort() for stage in stages},
+        provider_adapter=provider,
     )
     canonical_driver = type("CanonicalDriver", (), {"enqueue_next": lambda self, job_id: job_id})()
 
@@ -1624,3 +1837,58 @@ def test_deployment_music_adapter_wraps_only_existing_stage_ports_and_requires_r
 
     assert isinstance(driver, BackgroundMusicStageDriver)
     assert all(isinstance(worker_manager.stage_ports[stage], BackgroundMusicStagePort) for stage in stages)
+
+
+def test_deployment_music_adapter_rejects_a_provider_method_rebound_after_startup():
+    stages = tuple(background_music_execution.MUSIC_STAGE_PORTS)
+    provider = _VerifiedProviderAdapter()
+    worker_manager = type(
+        "WorkerManager",
+        (),
+        {
+            "stage_ports": {stage: _Port(f"canonical-{stage}") for stage in stages},
+            "capability_ports": {"provider_adapter": provider},
+        },
+    )()
+    adapter = DeploymentBackgroundMusicExecutionAdapter(
+        music_stage_ports={stage: _MusicPort() for stage in stages},
+        provider_adapter=provider,
+    )
+    adapter.install(
+        job_store=object(),
+        work_queue=object(),
+        worker_manager=worker_manager,
+        stage_driver=type("CanonicalDriver", (), {"enqueue_next": lambda self, job_id: job_id})(),
+    )
+    provider.lookup = lambda intent: {"task_id": intent["taskId"], "status": "completed"}
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_ADAPTER_INVALID"):
+        adapter.validate_startup()
+
+
+def test_deployment_music_adapter_rejects_a_capability_identity_method_rebound_after_startup():
+    stages = tuple(background_music_execution.MUSIC_STAGE_PORTS)
+    provider = _VerifiedProviderAdapter()
+    worker_manager = type(
+        "WorkerManager",
+        (),
+        {
+            "stage_ports": {stage: _Port(f"canonical-{stage}") for stage in stages},
+            "capability_ports": {"provider_adapter": provider},
+        },
+    )()
+    adapter = DeploymentBackgroundMusicExecutionAdapter(
+        music_stage_ports={stage: _MusicPort() for stage in stages},
+        provider_adapter=provider,
+    )
+    adapter.install(
+        job_store=object(),
+        work_queue=object(),
+        worker_manager=worker_manager,
+        stage_driver=type("CanonicalDriver", (), {"enqueue_next": lambda self, job_id: job_id})(),
+    )
+    original_identity = provider.capability_identity()
+    provider.capability_identity = lambda: original_identity
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_ADAPTER_INVALID"):
+        adapter.validate_startup()
