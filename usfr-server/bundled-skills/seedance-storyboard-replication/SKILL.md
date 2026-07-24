@@ -211,8 +211,8 @@ Use this route when the user already uploaded or pasted a confirmed storyboard s
 2. Analyze the confirmed script's action completions, spoken-sentence endings, story beats, and scene transitions. For more than 17 seconds, select one explicit **剧情切点** in the legal range and pass it to `scripts/segment_plan.py --split-boundary`; 禁止为了均衡时长自动选择.
 3. If no approved Cut boundary is safe, stop with a blocker requiring the user to revise or approve the storyboard script; do not create a separate boundary approval gate. Never hard-cut or create a third segment.
 4. Read `references/daohuo_storyboard_prompt.md`. Write `continuity_manifest.json`, then run `scripts/runninghub_image2.py` once per planned segment to generate `storyboards/segment_01_v1.png` and, only when required, `storyboards/segment_02_v1.png`.
-5. Stop for **确认故事板**. Show every board together with the segment durations and boundary handoff. Ask the user to approve each board and the set-wide continuity.
-6. If the user requests changes, revise only the affected board; if its incoming or outgoing boundary changes, recheck both adjacent boards and stop again for approval.
+5. Stop once for **确认故事板**. When two segments exist, generate and automatically continuity-check the complete pair before showing either board to the user. Show the pair together with the segment durations and boundary handoff; it is one storyboard-set revision and one user confirmation, never two sequential approvals.
+6. If the user requests changes, revise only the affected board. A change to segment 1 regenerates and rechecks segment 2 because its incoming state depends on segment 1; a change isolated to segment 2 does not regenerate segment 1. Return the repaired set to the same single storyboard confirmation entry.
 7. Only after all storyboard approvals, compile one complete Seedance prompt per segment through `seedance-20`, then run the internal Seedance Integrity Gate before any API submission.
 
 Do not ask the user to reconfirm the script in this route. The only creative approval loop is the storyboard image.
@@ -233,7 +233,7 @@ absent slots remain source-preserve KEEP evidence.
 5. Stop for **确认反解分镜脚本**. Do not generate storyboard images yet.
 6. After script approval, select and validate an existing approved Cut boundary with `scripts/segment_plan.py --split-boundary`; 禁止为了均衡时长自动选择. If no approved boundary is safe, stop with a blocker requiring storyboard-script revision or approval.
 7. Read `references/daohuo_storyboard_prompt.md`. Write `continuity_manifest.json`, then run `scripts/runninghub_image2.py` once per planned segment to generate one or exactly two `16:9 横版电影制作板` images.
-8. Stop for **确认故事板**. Show every saved segment board, duration, and boundary handoff together. Revise with `scripts/runninghub_image2.py` until the user approves every board and the set-wide continuity.
+8. Stop once for **确认故事板**. For two segments, first generate both boards, make segment 2 consume segment 1 plus the frozen continuity locks, and complete automatic pair QA. Then show every saved segment board, duration, and boundary handoff together as one storyboard-set revision. Revise with `scripts/runninghub_image2.py` until the user approves the set-wide continuity through this one confirmation entry.
 9. Only after all storyboard approvals, compile one complete Seedance prompt per segment through `seedance-20`, then run the internal Seedance Integrity Gate before any API submission.
 
 ## Storyboard Approval Loop
@@ -253,8 +253,8 @@ The storyboard is the main user-facing quality gate.
 - Never substitute PIL, ImageMagick, FFmpeg, HTML, canvas, or other deterministic layout code for storyboard scene generation. Deterministic tools may only assemble a product board from unchanged product pixels or add clean typography after model generation.
 - If the image-generation tool is unavailable, cannot accept the required references, or does not return an accessible artifact, stop and report the blocker. Do not silently create a collage or label it as a generated storyboard.
 - Generate one `16:9 横版电影制作板` per planned segment, not separate images per Cut and not one whole-video board reused by both tasks. Each board must include character/style reference, person detail close-ups, product reference, environment/movement plan, its own storyboard frames, lighting/mood notes, audio/tone notes, and cinematography notes.
-- Treat segment boards as one storyboard set. Keep global Cut numbers, segment-local timecodes, and shared identity/product/environment locks. Segment 2 must use segment 1 plus the original references as continuity input.
-- `continuity_manifest.json` must record character pose/expression/outfit, product location/orientation/open state, prop positions, environment, light direction, screen direction, camera state, outgoing action, incoming action, voiceover handoff, environment sound, and boundary frame intent.
+- Treat segment boards as one storyboard set. Keep global Cut numbers, segment-local timecodes, and shared identity/product/environment locks. Segment 2 must use segment 1 plus the original references as continuity input, and its generation receipt must bind the exact segment-1 board SHA-256.
+- `continuity_manifest.json` must record `character_identity_lock`, `wardrobe_lock`, `product_interaction_lock`, `segment_01_final_state`, and `segment_02_opening_state`, plus character pose/expression/outfit, product location/orientation/open state, prop positions, environment, light direction, screen direction, camera state, outgoing action, incoming action, voiceover handoff, environment sound, and boundary frame intent.
 - 故事板图片只承载视觉参考和重要事项。Each Cut card may show only its Cut number, time range, one short key action, and one critical identity/product constraint. Do not typeset the full script, long voiceover, or dense production notes into the generated image.
 - Treat the approved script as the source of truth. 完整分镜脚本必须作为文本写入 Seedance prompt, including every Cut's script description, camera/action direction, voiceover, sound, continuity, and negative constraints.
 - 不要让 Seedance 从故事板图片中识别完整脚本. The storyboard image is a visual reference, not a text transport. If image2 deforms a short label, remove it or add it later with deterministic typography; never preserve garbled text for submission.
@@ -266,7 +266,7 @@ The storyboard is the main user-facing quality gate.
 - The preceding UI/end-card storyboard rule applies only when those Cuts are being generated. `opaque_ui_demo` and `excluded_app_end_card` intervals must not appear as generated storyboard Cut cards at all.
 - Before asking for approval, visually inspect the exported board at original resolution and compare every Cut against the approved script. Reject and regenerate the board if any Cut is duplicated, half-visible, unrelated, missing the new person/product, or merely reuses a source asset without scene synthesis.
 - Save `storyboards/segment_XX_vN.meta.json` beside every generated board. Record `generator_kind: image_model`, the tool/model name when available, prompt path, reference inputs, output dimensions, generation duration, and revision reason. Missing or false generator provenance invalidates the board.
-- Every time a new storyboard image is produced, stop and ask the user to approve it before paid video generation. A changed boundary invalidates approval for both adjacent boards.
+- Do not ask for approval after the first board of a two-board set. Generate both boards, check the pair's identity, wardrobe, product interaction, screen direction, and boundary handoff, then ask for the existing single storyboard approval. A changed first-segment boundary invalidates and regenerates both boards; an isolated second-segment correction regenerates only the second board.
 
 ## Image Allocation Gate
 
