@@ -16,7 +16,7 @@ from server.audio_backends import (
     EvidenceBoundHttpAudioEventBackend,
     MusicTimelineAnalyzer,
     OptionalInputExtension,
-    disabled_input_contract_v2_extensions,
+    input_contract_v2_extensions,
     validate_final_audio_qc,
 )
 from server.audio_route_guard import validate_audio_route_contract
@@ -316,13 +316,22 @@ class EvidenceBoundAudioBackendTest(unittest.TestCase):
                     final_output_sha256="f" * 64,
                 )
 
-    def test_input_contract_v2_music_interfaces_are_reserved_and_disabled(self) -> None:
+    def test_input_contract_v2_music_extension_reports_capability_availability(self) -> None:
         self.assertTrue(hasattr(OptionalInputExtension, "extension_id"))
         self.assertTrue(hasattr(MusicTimelineAnalyzer, "analyze_music_timeline"))
         self.assertTrue(hasattr(BackgroundMusicCompositor, "compose_background_music"))
-        registry = disabled_input_contract_v2_extensions()
-        self.assertEqual(registry["background_music"]["enabled"], False)
-        self.assertNotIn("upload", registry["background_music"])
+        unavailable = input_contract_v2_extensions(music_execution_available=False)
+        self.assertTrue(unavailable["background_music"]["public_input"])
+        self.assertFalse(unavailable["background_music"]["enabled"])
+        self.assertEqual(
+            unavailable["background_music"]["required_capability"],
+            "background_music_execution/v1",
+        )
+        self.assertEqual(unavailable["background_music"]["availability"], "capability_unavailable")
+
+        available = input_contract_v2_extensions(music_execution_available=True)
+        self.assertTrue(available["background_music"]["enabled"])
+        self.assertEqual(available["background_music"]["availability"], "enabled")
 
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()

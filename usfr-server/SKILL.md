@@ -91,9 +91,9 @@ Read only the modules required by the current input:
   `capability_kind=overlay_renderer` is likewise rejected as the carrier for
   any non-source region.
 - `scripts/bind_input_slots.py` and
-  `references/fixed-input-slot-contract.md`: deterministic seven-slot intake
-  plus the fixed `output_language` parameter, admission gate, hashes, and
-  default route binding.
+  `references/fixed-input-slot-contract.md`: deterministic seven-slot intake,
+  the fixed `output_language` parameter, enabled input-contract-v2 extensions,
+  admission gate, hashes, and default route binding.
 - `scripts/skill_router.py`: deterministic selection of the bundled dynamics,
   overlay, App-evidence, Seedance-20, and factor-specific Seedance modules.
   It emits only logical package paths and a cacheable route digest; it never
@@ -225,6 +225,16 @@ decide what an uploaded asset represents:
 | `ui_operation_video` | no | video | opaque UI replacement |
 | `tail_video` | no | video | opaque App tail-card replacement |
 
+`background_music` is a public optional `input-contract-v2` extension, not an
+eighth fixed slot. It never changes the seven slot roles or ordering. A valid
+upload is written only to `extensions.background_music`, admits a
+source-plus-change run, uses `seedance_audio_reference`, and is not a
+`language_only` request. It is usable only when the deployment has bound the
+`background_music_execution/v1` adapter. The fixed-B request registers it as a
+Youdao `Audio` asset and carries exactly one content `audio_url` item with
+`role=reference_audio`; the prompt refers to it as `@Audio1`, while top-level
+`reference_audios` remains forbidden.
+
 `output_language` is a separate fixed parameter, not a media slot. Supported
 values are `en`, `ja`, `ko`, `fr`, `de`, `es`, `pt`, `id`, and `zh`. The UI
 default is unselected (`null`), not a prefilled language. When it is the only
@@ -251,6 +261,7 @@ The formal Next gate is:
 source_video valid
 AND (
   at least one of the six optional slots valid
+  OR at least one enabled public input-contract-v2 extension valid
   OR output_language valid
 )
 ```
@@ -261,8 +272,10 @@ rejected with
 do not analyze or generate, and do not create a paid task. Locale, voice,
 platform, preferences, and an approved storyboard artifact do not count as an
 optional media slot. A valid upload in any one optional slot admits the run.
-A valid `output_language` also admits the run even when all six optional slots
-are absent; this is the only zero-optional-slot formal route.
+A valid `background_music` extension also admits the run without changing the
+seven fixed-slot order. A valid `output_language` also admits the run even when
+all six optional slots are absent; this remains the only route that may use no
+replacement media or extension.
 Reject a source longer than 30 seconds with `INPUT_SOURCE_TOO_LONG` and HTTP
 422 before creating a formal run, analysis artifact, or provider intent.
 
@@ -376,8 +389,8 @@ entries, approval count, provider stage-entry count, and the fixed maximum of
 two Provider tasks for deployment audits.
 
 1. **Validate and time intake**
-   - Bind the seven fixed slots plus `output_language` and enforce the
-     source-plus-change gate.
+   - Bind the seven fixed slots, `output_language`, and enabled
+     input-contract-v2 extensions, then enforce the source-plus-change gate.
    - Probe the complete `source_video` and reject duration above 30 seconds.
    - Record input-copy, probe, and validation durations in `timing_log.json`.
 
@@ -813,9 +826,11 @@ and one semantic pass, cached contracts/assets, independent asset and segment wo
 dependency-locked work ordered. Compile once per `seedance-20` prompt version
 and run one dry-run per version; perform local deterministic parity checks
 afterward. The Youdao route is fixed to `seedance-2.0-fast`, `720p`, `9:16`,
-the fixed-B image route, no `reference_videos`, and no `reference_audios` field,
-implicit audio reference, or registered audio asset. Resume known task IDs and
-never create duplicate paid tasks.
+the fixed-B image route, no `reference_videos`, and no `reference_audios`
+field. A registered audio asset and content `audio_url` are permitted only for
+the approved `background_music` extension, which must render as `@Audio1` and
+remain bound to its music execution contract. Resume known task IDs and never
+create duplicate paid tasks.
 
 `probe_source` is the deterministic probe cache boundary. Its verified output
 must carry the source SHA-256, duration, dimensions, and frame-rate fields;

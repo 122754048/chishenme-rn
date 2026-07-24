@@ -51,6 +51,16 @@ _SLOT_KIND = {
 }
 _VIDEO_SUFFIXES = {".avi", ".m4v", ".mkv", ".mov", ".mp4", ".webm"}
 _IMAGE_SUFFIXES = {".avif", ".gif", ".jpeg", ".jpg", ".png", ".webp"}
+_AUDIO_SUFFIXES = {".aac", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav"}
+_AUDIO_CONTENT_TYPES = {
+    ".aac": "audio/aac",
+    ".flac": "audio/flac",
+    ".m4a": "audio/mp4",
+    ".mp3": "audio/mpeg",
+    ".ogg": "audio/ogg",
+    ".opus": "audio/ogg",
+    ".wav": "audio/wav",
+}
 _APP_STORE_HOSTS = {"apps.apple.com", "itunes.apple.com", "play.google.com"}
 
 
@@ -93,6 +103,21 @@ def _file_value(value: object, *, kind: str, slot_id: str) -> tuple[str, str]:
         raise InputSlotError(f"{slot_id}: expected an {label} file, got {path.name}")
     resolved = path.resolve()
     return str(resolved), _sha256_bytes(resolved.read_bytes())
+
+
+def _audio_value(value: object) -> tuple[str, str, str]:
+    path = Path(str(value)).expanduser()
+    if not path.is_file():
+        raise InputSlotError(f"background_music: file not found: {path}")
+    suffix = path.suffix.lower()
+    if suffix not in _AUDIO_SUFFIXES:
+        raise InputSlotError(f"background_music: expected an audio file, got {path.name}")
+    resolved = path.resolve()
+    return (
+        str(resolved),
+        _sha256_bytes(resolved.read_bytes()),
+        _AUDIO_CONTENT_TYPES[suffix],
+    )
 
 
 def _url_value(value: object, *, slot_id: str) -> tuple[str, str]:
@@ -140,7 +165,10 @@ def _normalize_output_language(value: object) -> str | None:
 
 
 def validate_slots(
-    slot_values: Mapping[str, object], *, output_language: object = None
+    slot_values: Mapping[str, object],
+    *,
+    output_language: object = None,
+    background_music: object = None,
 ) -> dict[str, Any]:
     """Validate fixed slots and return an admission report.
 
@@ -152,6 +180,8 @@ def validate_slots(
     slot_values = dict(slot_values)
     if output_language is None and "output_language" in slot_values:
         output_language = slot_values.pop("output_language")
+    if background_music is None and "background_music" in slot_values:
+        background_music = slot_values.pop("background_music")
     unknown = sorted(set(slot_values) - set(SLOT_ORDER))
     if unknown:
         raise InputSlotError(f"unknown input slot: {unknown[0]}")
@@ -192,8 +222,23 @@ def validate_slots(
     source_present = present["source_video"]
     if not source_present:
         raise InputSlotError("source_video is required")
-    language_only = normalized_output_language is not None and optional_count == 0
-    can_proceed = optional_count >= 1 or language_only
+    music_extension = None
+    if not _is_absent(background_music):
+        music_path, music_sha256, music_content_type = _audio_value(background_music)
+        music_extension = {
+            "extension_id": "input_contract_v2.background_music",
+            "source": "supplied",
+            "values": [music_path],
+            "sha256": [music_sha256],
+            "content_type": music_content_type,
+            "provider_route": "seedance_audio_reference",
+        }
+    language_only = (
+        normalized_output_language is not None
+        and optional_count == 0
+        and music_extension is None
+    )
+    can_proceed = optional_count >= 1 or music_extension is not None or language_only
     manifest = {
         "schema_version": "fixed-input-slots/v1",
         "slot_order": list(SLOT_ORDER),
@@ -205,11 +250,17 @@ def validate_slots(
             "can_proceed": can_proceed,
             "language_only": language_only,
             "change_input_present": can_proceed,
+            "enabled_extension_present": music_extension is not None,
             "blocker_code": None if can_proceed else "MIN_ONE_OPTIONAL_INPUT_REQUIRED",
         },
         "slots": slots,
         "routes": _route_defaults(present),
     }
+    manifest["routes"]["background_music"] = (
+        "seedance_audio_reference" if music_extension is not None else "none"
+    )
+    if music_extension is not None:
+        manifest["extensions"] = {"background_music": music_extension}
     if normalized_output_language is not None:
         manifest["output_language"] = normalized_output_language
     return manifest
@@ -236,11 +287,16 @@ def bind_slots(
     slot_values: Mapping[str, object],
     *,
     output_language: object = None,
+    background_music: object = None,
     output_path: Path | None = None,
 ) -> dict[str, Any]:
     """Freeze a formal manifest, enforcing the source-plus-change gate."""
 
-    manifest = validate_slots(slot_values, output_language=output_language)
+    manifest = validate_slots(
+        slot_values,
+        output_language=output_language,
+        background_music=background_music,
+    )
     if not manifest["admission"]["can_proceed"]:
         raise InputSlotError("MIN_ONE_OPTIONAL_INPUT_REQUIRED")
     if output_path is not None:
@@ -259,6 +315,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--app-store-url")
     parser.add_argument("--ui-operation-video", type=Path)
     parser.add_argument("--tail-video", type=Path)
+    parser.add_argument("--background-music", type=Path)
     parser.add_argument("--output-language", choices=SUPPORTED_OUTPUT_LANGUAGES)
     parser.add_argument("--output", type=Path, default=Path("analysis/input_slots.json"))
     return parser
@@ -276,7 +333,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         "tail_video": args.tail_video,
     }
     try:
-        bind_slots(values, output_language=args.output_language, output_path=args.output)
+        bind_slots(
+            values,
+            output_language=args.output_language,
+            background_music=args.background_music,
+            output_path=args.output,
+        )
     except InputSlotError as exc:
         raise SystemExit(str(exc)) from exc
     print(args.output)
