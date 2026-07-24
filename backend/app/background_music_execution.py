@@ -679,7 +679,7 @@ class BackgroundMusicStagePort:
             return self._run(self.delegate, context=context, input_artifacts=input_artifacts)
         frozen_contract = (
             self._materialize_frozen_timeline_contract(context)
-            if self.stage in {"compile_seedance20_prompt", "audit_seedance_request", "splice_timeline", "run_qc"}
+            if self.stage in {"compile_seedance20_prompt", "audit_seedance_request", "submit_provider_video", "splice_timeline", "run_qc"}
             else None
         )
         frozen_audit_receipt = (
@@ -745,7 +745,12 @@ class BackgroundMusicStagePort:
             })
         music_context = _background_music_context(context)
         if self.stage == "submit_provider_video":
-            result = self._submit_frozen_provider_request(frozen_execution_request)
+            result = self._submit_frozen_provider_request(
+                context=context,
+                frozen_execution_request=frozen_execution_request,
+                frozen_timeline=frozen_contract,
+                frozen_audit_receipt=frozen_audit_receipt,
+            )
         elif self.stage == "wait_provider_video":
             result = self._lookup_frozen_provider_task(
                 context=context,
@@ -773,9 +778,13 @@ class BackgroundMusicStagePort:
 
     def _submit_frozen_provider_request(
         self,
+        *,
+        context: Any,
         frozen_execution_request: tuple[Mapping[str, Any], dict[str, str]] | None,
+        frozen_timeline: tuple[Mapping[str, Any], dict[str, str]] | None,
+        frozen_audit_receipt: tuple[Mapping[str, Any], dict[str, str]] | None,
     ) -> Mapping[str, Any]:
-        if frozen_execution_request is None:
+        if frozen_execution_request is None or frozen_timeline is None or frozen_audit_receipt is None:
             raise ValueError("BACKGROUND_MUSIC_EXECUTION_REQUEST_REQUIRED")
         request, request_reference = frozen_execution_request
         execution_contract = request["music_execution_contract"]
@@ -789,6 +798,30 @@ class BackgroundMusicStagePort:
             or request_binding.get("provider_payload") != provider_payload
         ):
             raise ValueError("BACKGROUND_MUSIC_EXECUTION_REQUEST_REQUIRED")
+        try:
+            _validate_frozen_execution_contract(execution_contract)
+        except ValueError as error:
+            raise ValueError("BACKGROUND_MUSIC_EXECUTION_REQUEST_REQUIRED") from error
+        frozen_timeline_contract, frozen_timeline_reference = frozen_timeline
+        frozen_audit, frozen_audit_reference = frozen_audit_receipt
+        request_audit_reference = request.get("audit_receipt_artifact")
+        if (
+            request_audit_reference is None
+            or not isinstance(request_audit_reference, Mapping)
+            or self._contract_artifact_reference(request_audit_reference) != frozen_audit_reference
+            or _canonical_json_bytes(execution_contract.get("music_timeline_contract"))
+            != _canonical_json_bytes(frozen_timeline_contract)
+            or frozen_audit
+            != self._audit_receipt_payload(
+                execution_contract=execution_contract,
+                frozen_timeline_reference=frozen_timeline_reference,
+            )
+        ):
+            raise ValueError("BACKGROUND_MUSIC_AUDIT_RECEIPT_MISMATCH")
+        self._validate_frozen_verified_performance(
+            context=context,
+            execution_contract=execution_contract,
+        )
         provider_response = self._provider().create_video(provider_payload)
         if not isinstance(provider_response, Mapping):
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED")
@@ -953,6 +986,13 @@ class BackgroundMusicStagePort:
                 raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_REQUIRED")
             self._validate_audit_binding(evidence=evidence, execution_contract=execution_contract)
             self._validate_frozen_verified_performance(context=context, execution_contract=execution_contract)
+            self._validate_provider_output_lineage(
+                context=context,
+                evidence=evidence,
+                execution_contract=execution_contract,
+                mix_receipt=receipt,
+                frozen_audit_receipt=frozen_audit_receipt,
+            )
             self._validate_music_timeline(contract=contract, uploaded=uploaded)
             self._validate_mix_receipt(contract=contract, uploaded=uploaded, receipt=receipt)
             self._validate_frozen_timeline_reference(
@@ -983,6 +1023,13 @@ class BackgroundMusicStagePort:
                 raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_REQUIRED")
             self._validate_audit_binding(evidence=evidence, execution_contract=execution_contract)
             self._validate_frozen_verified_performance(context=context, execution_contract=execution_contract)
+            self._validate_provider_output_lineage(
+                context=context,
+                evidence=evidence,
+                execution_contract=execution_contract,
+                mix_receipt=receipt,
+                frozen_audit_receipt=frozen_audit_receipt,
+            )
             self._validate_music_timeline(contract=contract, uploaded=uploaded)
             self._validate_mix_receipt(contract=contract, uploaded=uploaded, receipt=receipt)
             self._validate_frozen_timeline_reference(
@@ -1160,6 +1207,76 @@ class BackgroundMusicStagePort:
         binding = evidence.get("music_execution_audit_binding")
         if not isinstance(binding, Mapping) or dict(binding) != _execution_binding(execution_contract):
             raise ValueError("BACKGROUND_MUSIC_AUDIT_BINDING_REQUIRED")
+
+    @staticmethod
+    def _validate_provider_output_lineage(
+        *,
+        context: Any,
+        evidence: Mapping[str, Any],
+        execution_contract: Mapping[str, object],
+        mix_receipt: Mapping[str, object],
+        frozen_audit_receipt: tuple[Mapping[str, Any], dict[str, str]] | None,
+    ) -> None:
+        submission_reference = evidence.get("provider_submission_artifact")
+        output_reference = evidence.get("provider_output_artifact")
+        receipt = evidence.get("provider_submission_receipt")
+        if (
+            frozen_audit_receipt is None
+            or not isinstance(submission_reference, Mapping)
+            or not isinstance(output_reference, Mapping)
+            or not isinstance(receipt, Mapping)
+        ):
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_OUTPUT_LINEAGE_REQUIRED")
+        try:
+            submission, frozen_submission_reference = BackgroundMusicStagePort._materialize_frozen_provider_submission(context)
+            observed_submission_reference = BackgroundMusicStagePort._contract_artifact_reference(submission_reference)
+            observed_output_reference = BackgroundMusicStagePort._contract_artifact_reference(output_reference)
+            output = BackgroundMusicStagePort._materialize_provider_json_artifact(
+                context=context,
+                kind=BACKGROUND_MUSIC_PROVIDER_OUTPUT_ARTIFACT_KIND,
+                reference=output_reference,
+            )
+            request_reference = submission.get("execution_request_artifact")
+            if not isinstance(request_reference, Mapping):
+                raise ValueError("execution request reference required")
+            request = BackgroundMusicStagePort._materialize_execution_request_reference(
+                context=context,
+                reference=request_reference,
+            )
+        except ValueError as error:
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_OUTPUT_LINEAGE_REQUIRED") from error
+        task_id = submission.get("provider_task_id")
+        _, frozen_audit_reference = frozen_audit_receipt
+        current_binding = _execution_binding(execution_contract)
+        if (
+            observed_submission_reference != frozen_submission_reference
+            or receipt != submission
+            or not isinstance(task_id, str)
+            or submission.get("music_execution_contract") != execution_contract
+            or submission.get("provider_payload") != execution_contract.get("provider_payload")
+            or not isinstance(submission.get("audit_receipt_artifact"), Mapping)
+            or BackgroundMusicStagePort._contract_artifact_reference(submission["audit_receipt_artifact"])
+            != frozen_audit_reference
+            or request.get("music_execution_contract") != execution_contract
+            or request.get("provider_payload") != execution_contract.get("provider_payload")
+            or request.get("audit_receipt_artifact") != submission.get("audit_receipt_artifact")
+            or request.get("request_binding")
+            != {**current_binding, "provider_payload": execution_contract.get("provider_payload")}
+            or output.get("provider_task_id") != task_id
+            or output.get("provider_submission_artifact")
+            != {**frozen_submission_reference, "kind": BACKGROUND_MUSIC_PROVIDER_SUBMISSION_ARTIFACT_KIND}
+            or output.get("execution_request_artifact") != submission.get("execution_request_artifact")
+            or output.get("audit_receipt_artifact") != submission.get("audit_receipt_artifact")
+            or output.get("execution_contract_sha256") != current_binding["execution_contract_sha256"]
+            or output.get("seedance_payload_sha256") != current_binding["seedance_payload_sha256"]
+            or output.get("provider_payload") != execution_contract.get("provider_payload")
+            or mix_receipt.get("provider_output_artifact") != {**observed_output_reference, "kind": BACKGROUND_MUSIC_PROVIDER_OUTPUT_ARTIFACT_KIND}
+            or mix_receipt.get("final_video_provider_output_artifact")
+            != {**observed_output_reference, "kind": BACKGROUND_MUSIC_PROVIDER_OUTPUT_ARTIFACT_KIND}
+            or mix_receipt.get("provider_task_id") != task_id
+            or mix_receipt.get("final_video_provider_task_id") != task_id
+        ):
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_OUTPUT_LINEAGE_REQUIRED")
 
     @staticmethod
     def _validate_frozen_verified_performance(*, context: Any, execution_contract: Mapping[str, object]) -> None:
