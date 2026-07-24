@@ -83,34 +83,55 @@ class _ArtifactPortContext:
     artifact_path: Path | None = None
     artifact_ref: dict[str, object] | None = None
     published: dict[str, bytes] = field(default_factory=dict)
+    published_paths: dict[str, tuple[dict[str, object], Path]] = field(default_factory=dict)
 
     def materialize_slot(self, slot_id):
         return self.snapshot.slots_manifest["slots"][slot_id]["metadata"][0]
 
     def publish_bytes(self, *, kind, data, content_type, expected_sha256):
-        assert kind in {"music_timeline_contract", "background_music_audit_receipt", "background_music_execution_request"}
+        assert kind in {
+            "music_timeline_contract",
+            "background_music_audit_receipt",
+            "background_music_execution_request",
+            "background_music_provider_raw_response",
+            "background_music_provider_submission",
+            "background_music_provider_output",
+        }
         assert content_type == "application/json"
         assert hashlib.sha256(data).hexdigest() == expected_sha256
         artifact_id = f"{kind}-{expected_sha256[:12]}"
         self.published[artifact_id] = data
-        return {
+        reference = {
             "artifact_id": artifact_id,
             "kind": kind,
             "sha256": expected_sha256,
         }
+        if self.artifact_path is not None:
+            path = self.artifact_path.parent / f"{artifact_id}.json"
+            path.write_bytes(data)
+            self.published_paths[artifact_id] = (reference, path)
+        return reference
 
     @property
     def artifacts(self):
-        return () if self.artifact_ref is None else (self.artifact_ref,)
+        original = () if self.artifact_ref is None else (self.artifact_ref,)
+        return original + tuple(reference for reference, _ in self.published_paths.values())
 
     @contextmanager
     def materialize_artifact(self, kind, *, sha256=None, artifact_id=None):
-        assert self.artifact_ref is not None
-        assert kind == self.artifact_ref["kind"]
-        assert sha256 == self.artifact_ref["sha256"]
-        assert artifact_id == self.artifact_ref["artifact_id"]
-        assert self.artifact_path is not None
-        yield SimpleNamespace(path=self.artifact_path)
+        if (
+            self.artifact_ref is not None
+            and kind == self.artifact_ref["kind"]
+            and sha256 == self.artifact_ref["sha256"]
+            and artifact_id == self.artifact_ref["artifact_id"]
+        ):
+            assert self.artifact_path is not None
+            yield SimpleNamespace(path=self.artifact_path)
+            return
+        reference, path = self.published_paths[artifact_id]
+        assert kind == reference["kind"]
+        assert sha256 == reference["sha256"]
+        yield SimpleNamespace(path=path)
 
 
 @dataclass(frozen=True)
@@ -152,10 +173,11 @@ class _MediaPortContext:
         )
 
     def publish_bytes(self, *, kind, data, content_type, expected_sha256):
-        assert content_type == "application/json"
+        assert content_type in {"application/json", "video/mp4"}
         assert hashlib.sha256(data).hexdigest() == expected_sha256
         artifact_id = f"{kind}-{expected_sha256[:12]}"
-        path = self.uploaded_path.parent / f"{artifact_id}.json"
+        suffix = ".mp4" if content_type == "video/mp4" else ".json"
+        path = self.uploaded_path.parent / f"{artifact_id}{suffix}"
         path.write_bytes(data)
         reference = {"artifact_id": artifact_id, "kind": kind, "sha256": expected_sha256}
         self.published_entries[artifact_id] = (reference, path)
@@ -281,9 +303,11 @@ class _CopiedReceiptSubmitPort:
 
 
 class _VerifiedProviderAdapter:
-    def __init__(self):
+    def __init__(self, *, video_bytes: bytes | None = None):
         self.create_requests = []
         self.lookup_intents = []
+        self.download_intents = []
+        self.video_bytes = video_bytes
 
     def capability_identity(self):
         return {
@@ -303,6 +327,17 @@ class _VerifiedProviderAdapter:
             "task_id": "provider-task-1",
             "status": "completed",
             "output": {"kind": "provider_video", "identity": "provider-output-1"},
+        }
+
+    def download(self, task_id, destination):
+        self.download_intents.append(task_id)
+        if self.video_bytes is None:
+            raise ValueError("provider video bytes unavailable")
+        Path(destination).write_bytes(self.video_bytes)
+        return {
+            "provider": "test-provider",
+            "sha256": hashlib.sha256(self.video_bytes).hexdigest(),
+            "size_bytes": len(self.video_bytes),
         }
 
 
@@ -676,7 +711,13 @@ def _materialized_music_case(
 
 
 def _completed_provider_lineage(*, context, receipt):
-    provider = _VerifiedProviderAdapter()
+    final_video_reference = receipt["final_video_artifact"]
+    with context.materialize_artifact(
+        final_video_reference["kind"],
+        artifact_id=final_video_reference["artifact_id"],
+        sha256=final_video_reference["sha256"],
+    ) as final_video:
+        provider = _VerifiedProviderAdapter(video_bytes=final_video.path.read_bytes())
     submit = BackgroundMusicStagePort(
         stage="submit_provider_video",
         delegate=_Port("canonical"),
@@ -1011,6 +1052,32 @@ def test_background_music_provider_audit_requires_the_uploaded_audio_asset_and_e
         invalid_port.run(context=context, input_artifacts=[])
 
 
+def test_real_audit_execution_request_submits_once_with_its_canonical_payload(tmp_path):
+    context = _music_audit_context(tmp_path)
+    execution = _execution_contract_for(_music_timeline())
+    audited = BackgroundMusicStagePort(
+        stage="audit_seedance_request",
+        delegate=_Port("canonical"),
+        music_delegate=_AuditedMusicPort(execution["provider_payload"], execution_contract=execution),
+    ).run(context=context, input_artifacts=[])
+    request_reference = audited["background_music_evidence"]["music_execution_request_artifact"]
+    published_request = json.loads(context.published[request_reference["artifact_id"]])
+    assert published_request["request_binding"] == {
+        **background_music_execution._execution_binding(execution),
+        "provider_payload": execution["provider_payload"],
+    }
+    provider = _VerifiedProviderAdapter()
+
+    BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    ).run(context=context, input_artifacts=[])
+
+    assert provider.create_requests == [execution["provider_payload"]]
+
+
 def test_seedance_compile_stage_requires_the_canonical_background_music_execution_contract():
     context = _PortContext(_PortSnapshot({"slots": {}, "extensions": {"background_music": _uploaded_music()}}))
     execution = _execution_contract_for(_music_timeline())
@@ -1162,8 +1229,12 @@ def test_provider_submit_rejects_a_copied_pre_submit_binding_without_provider_ta
 
 
 def test_provider_adapter_submits_the_materialized_request_and_waits_for_its_exact_task(tmp_path):
-    execution, _, context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
-    provider = _VerifiedProviderAdapter()
+    execution, receipt, context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
+    final_video = receipt["final_video_artifact"]
+    with context.materialize_artifact(
+        final_video["kind"], artifact_id=final_video["artifact_id"], sha256=final_video["sha256"]
+    ) as materialized:
+        provider = _VerifiedProviderAdapter(video_bytes=materialized.path.read_bytes())
     submit = BackgroundMusicStagePort(
         stage="submit_provider_video",
         delegate=_Port("canonical"),
@@ -1201,6 +1272,168 @@ def test_provider_adapter_submits_the_materialized_request_and_waits_for_its_exa
     assert output["execution_request_artifact"]["kind"] == "background_music_execution_request"
     assert output["execution_contract_sha256"] == execution["execution_contract_sha256"]
     assert output["seedance_payload_sha256"] == execution["seedance_payload_sha256"]
+
+
+def test_provider_lookup_materializes_the_exact_provider_video_before_publishing_output(tmp_path):
+    _, receipt, context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
+    final_video = receipt["final_video_artifact"]
+    with context.materialize_artifact(
+        final_video["kind"], artifact_id=final_video["artifact_id"], sha256=final_video["sha256"]
+    ) as materialized:
+        provider_video_bytes = materialized.path.read_bytes()
+    provider = _VerifiedProviderAdapter(video_bytes=provider_video_bytes)
+    submit = BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    )
+    submit.run(context=context, input_artifacts=[])
+
+    completed = BackgroundMusicStagePort(
+        stage="wait_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    ).run(context=context, input_artifacts=[])["background_music_evidence"]
+
+    output_reference = completed["provider_output_artifact"]
+    output = json.loads(context.published_entries[output_reference["artifact_id"]][1].read_bytes())
+    provider_video_reference = output["provider_video_artifact"]
+    assert provider.download_intents == ["provider-task-1"]
+    assert provider_video_reference["kind"] == "background_music_provider_video"
+    assert provider_video_reference["sha256"] == hashlib.sha256(provider_video_bytes).hexdigest()
+    assert context.published_entries[provider_video_reference["artifact_id"]][1].read_bytes() == provider_video_bytes
+
+
+def test_provider_adapter_without_a_bound_media_download_fails_closed():
+    class _MetadataOnlyProvider(_VerifiedProviderAdapter):
+        download = None
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_ADAPTER_INVALID"):
+        BackgroundMusicStagePort(
+            stage="wait_provider_video",
+            delegate=_Port("canonical"),
+            music_delegate=_CopiedReceiptSubmitPort(),
+            provider_adapter=_MetadataOnlyProvider(),
+        )
+
+
+def test_provider_submit_rejects_an_execution_request_with_a_noncanonical_extra_binding_field(tmp_path):
+    execution, _, context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
+    request_reference, request_path = next(
+        entry for entry in context.artifact_entries if entry[0]["kind"] == "background_music_execution_request"
+    )
+    request = json.loads(request_path.read_bytes())
+    request["request_binding"]["untrusted_extra"] = "must-not-reach-provider"
+    encoded = json.dumps(request, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    request_path.write_bytes(encoded)
+    request_reference["sha256"] = hashlib.sha256(encoded).hexdigest()
+    provider = _VerifiedProviderAdapter()
+    port = BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_EXECUTION_REQUEST_REQUIRED"):
+        port.run(context=context, input_artifacts=[])
+
+    assert provider.create_requests == []
+
+
+def test_video_visual_receipt_rejects_matching_pixels_with_retimed_frame_pts(tmp_path):
+    frames = (("red", bytes((255, 0, 0))), ("green", bytes((0, 255, 0))), ("blue", bytes((0, 0, 255))))
+    for name, pixel in frames:
+        (tmp_path / f"{name}.ppm").write_bytes(b"P6\n16 16\n255\n" + pixel * (16 * 16))
+
+    def render(name, durations):
+        manifest = tmp_path / f"{name}.ffconcat"
+        entries = ["ffconcat version 1.0"]
+        for frame, duration in zip(("red", "green", "blue"), durations):
+            entries.extend((f"file '{tmp_path / f'{frame}.ppm'}'", f"duration {duration}"))
+        entries.append(f"file '{tmp_path / 'blue.ppm'}'")
+        manifest.write_text("\n".join(entries), encoding="utf-8")
+        output = tmp_path / f"{name}.mp4"
+        generated = subprocess.run(
+            [
+                "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                "-f", "concat", "-safe", "0", "-i", str(manifest),
+                "-vsync", "vfr", "-c:v", "libx264", "-crf", "0", "-bf", "0",
+                "-video_track_timescale", "1000", "-f", "mov", str(output),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        assert generated.returncode == 0, generated.stderr.decode("utf-8", errors="replace")
+        return output
+
+    source_receipt = BackgroundMusicStagePort._decode_video_visual_receipt(
+        render("source", (0.2, 0.3, 0.5))
+    )
+    retimed_receipt = BackgroundMusicStagePort._decode_video_visual_receipt(
+        render("retimed", (0.3, 0.2, 0.5))
+    )
+    assert source_receipt["decoded_rgb24_sha256"] == retimed_receipt["decoded_rgb24_sha256"], (
+        source_receipt,
+        retimed_receipt,
+    )
+    assert source_receipt["frame_count"] == retimed_receipt["frame_count"]
+    assert source_receipt["duration_ms"] == retimed_receipt["duration_ms"]
+    assert source_receipt != retimed_receipt
+
+
+def test_background_music_splice_rejects_a_final_video_with_matching_audio_but_different_provider_visuals(tmp_path):
+    contract = _music_timeline()
+    execution, receipt, context, timeline_reference, audit_reference = _materialized_music_case(
+        tmp_path, contract, with_provider_lineage=True
+    )
+    changed_video_path = tmp_path / "changed-visuals.mp4"
+    source_video = receipt["final_video_artifact"]
+    with context.materialize_artifact(
+        source_video["kind"], artifact_id=source_video["artifact_id"], sha256=source_video["sha256"]
+    ) as materialized:
+        generated = subprocess.run(
+            [
+                "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                "-f", "lavfi", "-i", "color=c=white:s=16x16:r=30:d=1",
+                "-i", str(materialized.path),
+                "-map", "0:v:0", "-map", "1:a:0", "-c:v", "mpeg4", "-c:a", "copy",
+                "-shortest", "-f", "mov", str(changed_video_path),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    assert generated.returncode == 0, generated.stderr.decode("utf-8", errors="replace")
+    changed_video = changed_video_path.read_bytes()
+    changed_reference = context.publish_bytes(
+        kind="final_video_changed_visuals",
+        data=changed_video,
+        content_type="video/mp4",
+        expected_sha256=hashlib.sha256(changed_video).hexdigest(),
+    )
+    receipt["final_video_artifact"] = changed_reference
+    receipt["final_video_sha256"] = changed_reference["sha256"]
+    port = BackgroundMusicStagePort(
+        stage="splice_timeline",
+        delegate=_Port("canonical"),
+        music_delegate=_MixMusicPort(
+            {
+                "music_timeline_contract": contract,
+                "music_timeline_contract_artifact": timeline_reference,
+                "music_execution_contract": execution,
+                "provider_payload": execution["provider_payload"],
+                "music_execution_audit_receipt_artifact": audit_reference,
+                "mix_receipt": receipt,
+            }
+        ),
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_VIDEO_PROOF_REQUIRED"):
+        port.run(context=context, input_artifacts=[])
 
 
 def test_provider_submit_rejects_a_self_consistent_request_with_a_different_audit_before_create(tmp_path):

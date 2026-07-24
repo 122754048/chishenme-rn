@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any, Protocol
 
 from .ephemeral_worker import EphemeralStageContext
@@ -71,6 +72,7 @@ class ProviderAdapterPort(CapabilityIdentityPort, Protocol):
     def create_asset(self, request: Mapping[str, Any]) -> Mapping[str, Any]: ...
     def create_video(self, request: Mapping[str, Any]) -> Mapping[str, Any]: ...
     def lookup(self, intent: Mapping[str, Any]) -> Mapping[str, Any]: ...
+    def download(self, task_id_or_url: str, destination: str | Path) -> Mapping[str, Any]: ...
 
 
 class ArtifactPort(Protocol):

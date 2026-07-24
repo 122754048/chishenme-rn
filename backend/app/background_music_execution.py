@@ -14,6 +14,7 @@ import hashlib
 import json
 import shutil
 import subprocess
+import tempfile
 from typing import Any
 
 from server.ephemeral_driver import EXECUTABLE_STAGES, _dedupe
@@ -53,6 +54,7 @@ BACKGROUND_MUSIC_EXECUTION_REQUEST_ARTIFACT_KIND = "background_music_execution_r
 BACKGROUND_MUSIC_PROVIDER_SUBMISSION_ARTIFACT_KIND = "background_music_provider_submission"
 BACKGROUND_MUSIC_PROVIDER_RAW_RESPONSE_ARTIFACT_KIND = "background_music_provider_raw_response"
 BACKGROUND_MUSIC_PROVIDER_OUTPUT_ARTIFACT_KIND = "background_music_provider_output"
+BACKGROUND_MUSIC_PROVIDER_VIDEO_ARTIFACT_KIND = "background_music_provider_video"
 BACKGROUND_MUSIC_EXECUTION_RECEIPT_V1 = "background_music_execution_receipt/v1"
 BACKGROUND_MUSIC_AUDIT_RECEIPT_V1 = "background_music_audit_receipt/v1"
 FORBIDDEN_MUSIC_OPERATIONS = ("loop", "atempo", "stretch", "pitch_shift", "silence_padding")
@@ -610,6 +612,7 @@ class _VerifiedBackgroundMusicProviderAdapter:
         self._identity_self, self._identity_func = self._bound_method("capability_identity")
         self._create_self, self._create_func = self._bound_method("create_video")
         self._lookup_self, self._lookup_func = self._bound_method("lookup")
+        self._download_self, self._download_func = self._bound_method("download")
 
     def _bound_method(self, name: str) -> tuple[Any, Any]:
         method = getattr(self.adapter, name, None)
@@ -631,6 +634,9 @@ class _VerifiedBackgroundMusicProviderAdapter:
     def lookup(self, intent: Mapping[str, Any]) -> Mapping[str, Any]:
         return self._verified_method("lookup", self._lookup_self, self._lookup_func)(intent)
 
+    def download(self, task_id: str, destination: str) -> Mapping[str, Any]:
+        return self._verified_method("download", self._download_self, self._download_func)(task_id, destination)
+
     def validate_integrity(self) -> None:
         identity = self._verified_method(
             "capability_identity", self._identity_self, self._identity_func
@@ -639,6 +645,7 @@ class _VerifiedBackgroundMusicProviderAdapter:
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_ADAPTER_INVALID")
         self._verified_method("create_video", self._create_self, self._create_func)
         self._verified_method("lookup", self._lookup_self, self._lookup_func)
+        self._verified_method("download", self._download_self, self._download_func)
 
 
 class BackgroundMusicStagePort:
@@ -790,12 +797,11 @@ class BackgroundMusicStagePort:
         execution_contract = request["music_execution_contract"]
         provider_payload = request["provider_payload"]
         binding = _execution_binding(execution_contract)
+        expected_request_binding = {**binding, "provider_payload": provider_payload}
         request_binding = request.get("request_binding")
         if (
             not isinstance(request_binding, Mapping)
-            or request_binding.get("execution_contract_sha256") != binding["execution_contract_sha256"]
-            or request_binding.get("seedance_payload_sha256") != binding["seedance_payload_sha256"]
-            or request_binding.get("provider_payload") != provider_payload
+            or dict(request_binding) != expected_request_binding
         ):
             raise ValueError("BACKGROUND_MUSIC_EXECUTION_REQUEST_REQUIRED")
         try:
@@ -904,12 +910,18 @@ class BackgroundMusicStagePort:
         ):
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_LOOKUP_REQUIRED")
         raw_lookup = _canonical_json_bytes(dict(lookup))
+        provider_video_reference = self._download_provider_video(
+            context=context,
+            task_id=task_id,
+            provider=self._provider(),
+        )
         output_reference = self._publish_provider_output(
             context=context,
             raw_lookup=raw_lookup,
             task_id=task_id,
             submission=submission,
             submission_reference=reference,
+            provider_video_reference=provider_video_reference,
         )
         output = self._materialize_provider_json_artifact(
             context=context,
@@ -929,6 +941,9 @@ class BackgroundMusicStagePort:
             or output.get("execution_contract_sha256") != submission.get("execution_contract_sha256")
             or output.get("seedance_payload_sha256") != submission.get("seedance_payload_sha256")
             or output.get("provider_payload") != provider_payload
+            or output.get("provider_video_artifact")
+            != {**provider_video_reference, "kind": BACKGROUND_MUSIC_PROVIDER_VIDEO_ARTIFACT_KIND}
+            or output.get("provider_video_sha256") != provider_video_reference["sha256"]
         ):
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_LOOKUP_REQUIRED")
         return {
@@ -1277,6 +1292,52 @@ class BackgroundMusicStagePort:
             or mix_receipt.get("final_video_provider_task_id") != task_id
         ):
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_OUTPUT_LINEAGE_REQUIRED")
+        provider_video_reference = output.get("provider_video_artifact")
+        final_video_reference = mix_receipt.get("final_video_artifact")
+        if (
+            not isinstance(provider_video_reference, Mapping)
+            or provider_video_reference.get("kind") != BACKGROUND_MUSIC_PROVIDER_VIDEO_ARTIFACT_KIND
+            or output.get("provider_video_sha256") != provider_video_reference.get("sha256")
+            or not isinstance(final_video_reference, Mapping)
+            or final_video_reference.get("sha256") != mix_receipt.get("final_video_sha256")
+        ):
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_VIDEO_PROOF_REQUIRED")
+        try:
+            provider_video_artifact = BackgroundMusicStagePort._contract_artifact_reference(provider_video_reference)
+            final_video_artifact = BackgroundMusicStagePort._contract_artifact_reference(final_video_reference)
+            provider_visual = BackgroundMusicStagePort._materialized_video_visual_receipt(
+                context=context,
+                kind=BACKGROUND_MUSIC_PROVIDER_VIDEO_ARTIFACT_KIND,
+                reference=provider_video_artifact,
+            )
+            final_visual = BackgroundMusicStagePort._materialized_video_visual_receipt(
+                context=context,
+                kind=str(final_video_reference.get("kind") or ""),
+                reference=final_video_artifact,
+            )
+        except (OSError, ValueError, TypeError) as error:
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_VIDEO_PROOF_REQUIRED") from error
+        if provider_visual != final_visual or not isinstance(mix_receipt, dict):
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_VIDEO_PROOF_REQUIRED")
+        visual_receipt = {
+            "contract": "background_music_provider_video_visual_receipt/v1",
+            "provider_task_id": task_id,
+            "provider_video_artifact": {
+                **provider_video_artifact,
+                "kind": BACKGROUND_MUSIC_PROVIDER_VIDEO_ARTIFACT_KIND,
+            },
+            "provider_video_sha256": provider_video_artifact["sha256"],
+            "final_video_artifact": {
+                **final_video_artifact,
+                "kind": final_video_reference["kind"],
+            },
+            "final_video_sha256": final_video_artifact["sha256"],
+            "decoded_video_visual_receipt": provider_visual,
+        }
+        claimed_visual_receipt = mix_receipt.get("provider_video_visual_receipt")
+        if claimed_visual_receipt is not None and claimed_visual_receipt != visual_receipt:
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_VIDEO_PROOF_REQUIRED")
+        mix_receipt["provider_video_visual_receipt"] = visual_receipt
 
     @staticmethod
     def _validate_frozen_verified_performance(*, context: Any, execution_contract: Mapping[str, object]) -> None:
@@ -1356,7 +1417,10 @@ class BackgroundMusicStagePort:
         audit_reference = evidence.get("music_execution_audit_receipt_artifact") if isinstance(evidence, Mapping) else None
         if not isinstance(audit_reference, Mapping):
             raise ValueError("BACKGROUND_MUSIC_EXECUTION_REQUEST_REQUIRED")
-        binding = _execution_binding(execution_contract)
+        binding = {
+            **_execution_binding(execution_contract),
+            "provider_payload": execution_contract["provider_payload"],
+        }
         payload = {
             "contract": "background_music_execution_request/v1",
             "music_execution_contract": dict(execution_contract),
@@ -1555,6 +1619,43 @@ class BackgroundMusicStagePort:
         return dict(decoded)
 
     @staticmethod
+    def _download_provider_video(
+        *,
+        context: Any,
+        task_id: str,
+        provider: _VerifiedBackgroundMusicProviderAdapter,
+    ) -> dict[str, str]:
+        publish = getattr(context, "publish_bytes", None)
+        if not callable(publish):
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_LOOKUP_REQUIRED")
+        with tempfile.TemporaryDirectory(prefix="background-music-provider-") as directory:
+            destination = f"{directory}/provider-output.mp4"
+            try:
+                receipt = provider.download(task_id, destination)
+                with open(destination, "rb") as downloaded:
+                    video = downloaded.read()
+            except Exception as error:
+                raise ValueError("BACKGROUND_MUSIC_PROVIDER_LOOKUP_REQUIRED") from error
+        digest = hashlib.sha256(video).hexdigest()
+        if (
+            not video
+            or not isinstance(receipt, Mapping)
+            or receipt.get("sha256") != digest
+            or receipt.get("size_bytes") != len(video)
+        ):
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_LOOKUP_REQUIRED")
+        try:
+            published = publish(
+                kind=BACKGROUND_MUSIC_PROVIDER_VIDEO_ARTIFACT_KIND,
+                data=video,
+                content_type="video/mp4",
+                expected_sha256=digest,
+            )
+        except Exception as error:
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_LOOKUP_REQUIRED") from error
+        return BackgroundMusicStagePort._contract_artifact_reference(published)
+
+    @staticmethod
     def _publish_provider_output(
         *,
         context: Any,
@@ -1562,6 +1663,7 @@ class BackgroundMusicStagePort:
         task_id: str,
         submission: Mapping[str, Any],
         submission_reference: Mapping[str, str],
+        provider_video_reference: Mapping[str, str],
     ) -> dict[str, str]:
         try:
             decoded = json.loads(raw_lookup)
@@ -1586,6 +1688,11 @@ class BackgroundMusicStagePort:
             "seedance_payload_sha256": submission.get("seedance_payload_sha256"),
             "provider_payload": submission.get("provider_payload"),
             "audit_receipt_artifact": submission.get("audit_receipt_artifact"),
+            "provider_video_artifact": {
+                **dict(provider_video_reference),
+                "kind": BACKGROUND_MUSIC_PROVIDER_VIDEO_ARTIFACT_KIND,
+            },
+            "provider_video_sha256": provider_video_reference.get("sha256"),
         }
         encoded = _canonical_json_bytes(payload)
         digest = hashlib.sha256(encoded).hexdigest()
@@ -1812,6 +1919,153 @@ class BackgroundMusicStagePort:
                 }
 
         return materialize
+
+    @staticmethod
+    def _materialized_video_visual_receipt(
+        *, context: Any, kind: str, reference: Mapping[str, str]
+    ) -> dict[str, int | str]:
+        if not kind:
+            raise ValueError("video artifact kind required")
+        with context.materialize_artifact(
+            kind,
+            artifact_id=reference["artifact_id"],
+            sha256=reference["sha256"],
+        ) as media:
+            encoded = media.path.read_bytes()
+            if hashlib.sha256(encoded).hexdigest() != reference["sha256"]:
+                raise ValueError("video artifact hash mismatch")
+            return BackgroundMusicStagePort._decode_video_visual_receipt(media.path)
+
+    @staticmethod
+    def _decode_video_visual_receipt(path: Any) -> dict[str, int | str]:
+        """Derive a visual-track receipt from bytes held by the worker lease."""
+
+        ffmpeg = shutil.which("ffmpeg")
+        ffprobe = shutil.which("ffprobe")
+        if ffmpeg is None or ffprobe is None:
+            raise ValueError("ffmpeg required")
+        probed = subprocess.run(
+            [
+                ffprobe,
+                "-v", "error",
+                "-select_streams", "v",
+                "-show_entries", "stream=width,height,start_time,duration,time_base,start_pts,duration_ts",
+                "-of", "json",
+                str(path),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        try:
+            payload = json.loads(probed.stdout)
+            streams = payload.get("streams") if isinstance(payload, Mapping) else None
+        except (TypeError, ValueError, json.JSONDecodeError) as error:
+            raise ValueError("video stream probe failed") from error
+        if (
+            probed.returncode != 0
+            or not isinstance(streams, list)
+            or len(streams) != 1
+            or not isinstance(streams[0], Mapping)
+            or any(
+                isinstance(streams[0].get(field), bool)
+                or not isinstance(streams[0].get(field), int)
+                or streams[0][field] <= 0
+                for field in ("width", "height")
+            )
+        ):
+            raise ValueError("single video stream required")
+        decoded = subprocess.run(
+            [
+                ffmpeg,
+                "-hide_banner", "-loglevel", "error",
+                "-i", str(path),
+                "-map", "0:v:0", "-an", "-pix_fmt", "rgb24",
+                "-vsync", "0",
+                "-f", "rawvideo", "pipe:1",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        pixels = decoded.stdout
+        frame_size = streams[0]["width"] * streams[0]["height"] * 3
+        if decoded.returncode != 0 or not pixels or len(pixels) % frame_size:
+            raise ValueError("video decode failed")
+        frame_count = len(pixels) // frame_size
+        frame_probe = subprocess.run(
+            [
+                ffprobe,
+                "-v", "error",
+                "-select_streams", "v:0",
+                "-show_frames",
+                "-show_entries", "frame=best_effort_timestamp",
+                "-of", "json",
+                str(path),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        try:
+            frame_payload = json.loads(frame_probe.stdout)
+            frames = frame_payload.get("frames") if isinstance(frame_payload, Mapping) else None
+        except (TypeError, ValueError, json.JSONDecodeError) as error:
+            raise ValueError("video frame timing probe failed") from error
+        time_base = streams[0].get("time_base")
+        if (
+            frame_probe.returncode != 0
+            or not isinstance(time_base, str)
+            or not time_base
+            or isinstance(streams[0].get("start_pts"), bool)
+            or not isinstance(streams[0].get("start_pts"), int)
+            or isinstance(streams[0].get("duration_ts"), bool)
+            or not isinstance(streams[0].get("duration_ts"), int)
+            or streams[0]["duration_ts"] <= 0
+            or not isinstance(frames, list)
+            or len(frames) != frame_count
+        ):
+            raise ValueError("video frame timing unavailable")
+        frame_timing: list[dict[str, int]] = []
+        frame_pts: list[int] = []
+        for frame in frames:
+            if (
+                not isinstance(frame, Mapping)
+                or isinstance(frame.get("best_effort_timestamp"), bool)
+                or not isinstance(frame.get("best_effort_timestamp"), int)
+            ):
+                raise ValueError("video frame timing unavailable")
+            frame_pts.append(frame["best_effort_timestamp"])
+        stream_end_pts = streams[0]["start_pts"] + streams[0]["duration_ts"]
+        for index, pts in enumerate(frame_pts):
+            next_pts = frame_pts[index + 1] if index + 1 < len(frame_pts) else stream_end_pts
+            if next_pts <= pts:
+                raise ValueError("video frame timing unavailable")
+            frame_timing.append(
+                {
+                    "pts": pts,
+                    "duration": next_pts - pts,
+                }
+            )
+        try:
+            start_ms = round(float(streams[0]["start_time"]) * 1000)
+            duration_ms = round(float(streams[0]["duration"]) * 1000)
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("video timing unavailable") from error
+        if duration_ms <= 0:
+            raise ValueError("video duration unavailable")
+        return {
+            "decoded_rgb24_sha256": hashlib.sha256(pixels).hexdigest(),
+            "decoded_rgb24_size_bytes": len(pixels),
+            "frame_count": frame_count,
+            "frame_timing_sha256": hashlib.sha256(
+                _canonical_json_bytes({"time_base": time_base, "frames": frame_timing})
+            ).hexdigest(),
+            "width": streams[0]["width"],
+            "height": streams[0]["height"],
+            "start_ms": start_ms,
+            "duration_ms": duration_ms,
+        }
 
     @staticmethod
     def _decode_audio_pcm(path: Any, *, require_default_audio_stream: bool) -> bytes:
