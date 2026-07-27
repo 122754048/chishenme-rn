@@ -8,7 +8,7 @@ asset, prompt, mix, and QA evidence.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import replace
 import hashlib
 import json
@@ -22,7 +22,9 @@ from server.ephemeral_driver import EXECUTABLE_STAGES, _dedupe
 from server.errors import ReplicationError
 from server.job_models import ProviderAttempt, WorkMessage
 from server.orchestrator import build_stage_plan
-from server.performance_audio_contracts import build_background_music_performance_contract
+from server.performance_audio_contracts import build_background_music_performance_contract_from_route
+from server.runninghub_final_lip_sync import build_final_lip_sync_provider_request
+from server.singing_audio_router import route_uploaded_audio
 
 
 MUSIC_EXECUTION_CONTRACT = "background_music_execution/v1"
@@ -166,8 +168,9 @@ def _provider_payload(*, asset_uri: str, performance: Mapping[str, object]) -> d
                 raise ValueError("VERIFIED_SINGING_EVIDENCE_REQUIRED")
             try:
                 rendered_lines.append(
-                    "Line {line_id}, Cut {cut_id}: {speaker_id} sings exactly \"{lyric}\" "
-                    "at global source time {source_start}-{source_end} ms and local segment time "
+                    "Line {line_id}, Cut {cut_id}: {speaker_id} is the only on-camera singer for this line. "
+                    "{speaker_id} must sing only this exact lyric from @Audio1: \"{lyric}\". "
+                    "Perform it at global source time {source_start}-{source_end} ms and local segment time "
                     "{segment_start}-{segment_end} ms; beat anchors {anchors} ms. "
                     "Lip sync: face visibility {face_visibility}; articulation {articulation}; "
                     "end state {lip_end_state}. Action: start {action_start}; on each beat {beat_action}; "
@@ -200,9 +203,12 @@ def _provider_payload(*, asset_uri: str, performance: Mapping[str, object]) -> d
             except (KeyError, TypeError, ValueError) as error:
                 raise ValueError("VERIFIED_SINGING_EVIDENCE_REQUIRED") from error
         text = (
+            "Song to perform: the exact uploaded track @Audio1. "
+            "@Audio1 is the only song that may be performed. "
             "Use @Audio1 as the uploaded-song timing and vocal-performance reference. "
             f"Immutable Invocation B performance contract SHA-256: {performance_sha256}. "
-            "Follow each verified singing line below exactly; do not add, omit, move, translate, or reassign lyrics. "
+            "Follow each verified singing line below exactly. "
+            "Do not translate, paraphrase, add, omit, move, or reassign any lyric. "
             + " ".join(rendered_lines)
             + " Preserve the frozen source music windows, entries, exits, fades, silences, and transitions. "
             "The final mastered audio is composed from the verified exact uploaded-audio fragments in post."
@@ -272,13 +278,14 @@ def compile_background_music_execution_contract(
     uploaded_audio: Mapping[str, object],
     music_timeline_contract: Mapping[str, object],
     audio_asset_receipt: Mapping[str, object],
-    user_confirmed_intent: str,
-    performance_line_contract: Mapping[str, object] | None,
+    source_content_timeline: Mapping[str, object],
+    performance_line_contract: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Compile a conditional Seedance ``@Audio1`` request without new stages.
 
-    Singing is selected only by immutable confirmed performance evidence.  The
-    fallback is an explicit BGM replacement, never a guessed lyric performance.
+    Singing is selected only by frozen source evidence plus verified uploaded
+    lyrics.  The fallback is an explicit BGM replacement, never a caller-
+    selected or guessed lyric performance.
     """
 
     uploaded = _validated_uploaded_music(uploaded_audio)
@@ -288,8 +295,9 @@ def compile_background_music_execution_contract(
         uploaded_audio_sha256=str(uploaded["sha256"]),
     )
     try:
-        performance = build_background_music_performance_contract(
-            user_confirmed_intent=user_confirmed_intent,
+        uploaded_audio_route = route_uploaded_audio(source_content_timeline)
+        performance = build_background_music_performance_contract_from_route(
+            uploaded_audio_route=uploaded_audio_route,
             performance_line_contract=performance_line_contract,
         )
     except ReplicationError as error:
@@ -304,7 +312,8 @@ def compile_background_music_execution_contract(
         "uploaded_audio_sha256": uploaded["sha256"],
         "uploaded_audio": uploaded,
         "music_timeline_contract": dict(music_timeline_contract),
-        "user_confirmed_intent": user_confirmed_intent,
+        "source_content_timeline": dict(source_content_timeline),
+        "uploaded_audio_route": uploaded_audio_route,
         "performance_line_contract": (
             None if performance_line_contract is None else dict(performance_line_contract)
         ),
@@ -324,13 +333,68 @@ def _validate_frozen_execution_contract(execution_contract: Mapping[str, object]
             uploaded_audio=execution_contract["uploaded_audio"],
             music_timeline_contract=execution_contract["music_timeline_contract"],
             audio_asset_receipt=execution_contract["audio_asset_receipt"],
-            user_confirmed_intent=str(execution_contract["user_confirmed_intent"]),
+            source_content_timeline=execution_contract["source_content_timeline"],
             performance_line_contract=execution_contract.get("performance_line_contract"),
         )
     except (KeyError, TypeError, ValueError) as error:
         raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_INVALID") from error
     if dict(execution_contract) != expected:
         raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_INVALID")
+
+
+def build_verified_singing_lip_sync_requests(
+    *,
+    execution_contract: Mapping[str, object],
+    rendered_regions: Sequence[Mapping[str, object]],
+) -> list[dict[str, object]]:
+    """Build final audio-driven requests only for confirmed generated singers.
+
+    The shared RunningHub workflow is intentionally not called for BGM, UI,
+    tail, or source-preserved regions.  The caller owns upload/submission and
+    must keep the returned Provider MP4's embedded audio unchanged.
+    """
+
+    _validate_frozen_execution_contract(execution_contract)
+    if execution_contract.get("mode") == "background_music_replacement":
+        return []
+    if execution_contract.get("mode") != "verified_singing":
+        raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_INVALID")
+    if not isinstance(rendered_regions, Sequence) or isinstance(rendered_regions, (str, bytes, bytearray)):
+        raise ValueError("SINGING_LIP_SYNC_REGION_REQUIRED")
+    by_region_id = {
+        region.get("region_id"): region
+        for region in rendered_regions
+        if isinstance(region, Mapping)
+        and isinstance(region.get("region_id"), str)
+        and region.get("media_origin") == "generated"
+    }
+    performance = execution_contract.get("performance")
+    lines = performance.get("singing_lines") if isinstance(performance, Mapping) else None
+    if not isinstance(lines, list) or not lines:
+        raise ValueError("VERIFIED_SINGING_EVIDENCE_REQUIRED")
+    requests: list[dict[str, object]] = []
+    for line in lines:
+        if not isinstance(line, Mapping):
+            raise ValueError("VERIFIED_SINGING_EVIDENCE_REQUIRED")
+        cut_id = line.get("cut_id")
+        region = by_region_id.get(cut_id)
+        if not isinstance(cut_id, str) or not isinstance(region, Mapping):
+            raise ValueError("SINGING_LIP_SYNC_REGION_REQUIRED")
+        try:
+            provider_request = build_final_lip_sync_provider_request(
+                audio_input=region.get("audio_input"),
+                video_input=region.get("video_input"),
+            )
+            request = {
+                "line_id": str(line["line_id"]),
+                "cut_id": cut_id,
+                "speaker_id": str(line["speaker_id"]),
+                "provider_request": provider_request,
+            }
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("SINGING_LIP_SYNC_REGION_REQUIRED") from error
+        requests.append(request)
+    return requests
 
 
 def execute_background_music(

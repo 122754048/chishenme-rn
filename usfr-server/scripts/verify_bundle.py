@@ -113,6 +113,8 @@ REQUIRED_SERVER_FILES = (
     "server/audio_backends.py",
     "server/audio_mixer.py",
     "server/performance_audio_contracts.py",
+    "server/runninghub_final_lip_sync.py",
+    "server/singing_audio_router.py",
     "server/vision_backends.py",
     "server/object_store.py",
     "server/cleanup.py",

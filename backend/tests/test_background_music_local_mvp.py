@@ -285,6 +285,21 @@ def test_development_only_local_mvp_binds_visible_singer_alignment_and_lip_sync_
     assert result["singing_qa"]["status"] == "passed"
     assert result["singing_qa"]["mode"] == "development-only"
     assert result["music_execution_contract"]["mode"] == "verified_singing"
+    assert result["music_execution_contract"]["uploaded_audio_route"] == {
+        "contract": "uploaded-audio-route/v1",
+        "mode": "pending_uploaded_lyrics",
+        "reason": "confirmed_source_music_video_performance",
+        "eligible_source_windows": [
+            {
+                "line_id": "local-singing-1",
+                "speaker_id": "CHARACTER_1",
+                "start_ms": 0,
+                "end_ms": 1000,
+                "source_line_evidence_sha256": result["music_execution_contract"]["performance_line_contract"]["cuts"][0]["speaker_assignment"]["evidence_sha256"],
+            }
+        ],
+        "max_uploaded_lyric_transcriptions": 1,
+    }
     assert result["music_execution_contract"]["performance_line_contract_sha256"] is not None
     region = result["singing_qa"]["regions"][0]
     assert region["lyrics_phoneme_alignment"]["passed"] is True

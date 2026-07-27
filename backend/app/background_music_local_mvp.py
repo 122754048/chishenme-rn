@@ -277,14 +277,14 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
                 kind="performance_line_contract",
                 payload=performance_line_contract,
             )
-        user_confirmed_intent = (
-            "verified_singing" if performance_line_contract is not None else "background_music_replacement"
+        source_content_timeline = self._source_content_timeline(
+            performance_line_contract=performance_line_contract,
         )
         execution_contract = compile_background_music_execution_contract(
             uploaded_audio=uploaded,
             music_timeline_contract=frozen_contract,
             audio_asset_receipt=audio_asset_receipt,
-            user_confirmed_intent=user_confirmed_intent,
+            source_content_timeline=source_content_timeline,
             performance_line_contract=performance_line_contract,
         )
         provider_payload = _mapping(execution_contract, "provider_payload")
@@ -760,6 +760,58 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
                 }
             )
         return {"contract": "performance-line/v1", "cuts": cuts}
+
+    @staticmethod
+    def _source_content_timeline(
+        *,
+        performance_line_contract: Mapping[str, object] | None,
+    ) -> dict[str, object]:
+        """Expose local test evidence through the production route boundary.
+
+        The development-only harness receives pre-classified visible singer
+        regions; it converts those already-evidenced rows into the same frozen
+        source-content timeline shape that the production dynamics pass emits.
+        It does not inspect media or infer a singer.
+        """
+
+        cuts = performance_line_contract.get("cuts") if isinstance(performance_line_contract, Mapping) else []
+        if not isinstance(cuts, list):
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_PERFORMANCE_CONTRACT_INVALID")
+        audio_lines: list[dict[str, object]] = []
+        for cut in cuts:
+            if not isinstance(cut, Mapping):
+                raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_PERFORMANCE_CONTRACT_INVALID")
+            source_time = cut.get("source_time")
+            assignment = cut.get("speaker_assignment")
+            if (
+                cut.get("content_type") != "sung"
+                or not isinstance(source_time, Mapping)
+                or not isinstance(assignment, Mapping)
+                or not isinstance(source_time.get("start_ms"), int)
+                or not isinstance(source_time.get("end_ms"), int)
+                or source_time["end_ms"] <= source_time["start_ms"]
+                or not isinstance(cut.get("line_id"), str)
+                or not isinstance(assignment.get("speaker_id"), str)
+                or not isinstance(assignment.get("evidence_sha256"), str)
+            ):
+                raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_PERFORMANCE_CONTRACT_INVALID")
+            audio_lines.append(
+                {
+                    "line_id": cut["line_id"],
+                    "content_type": "sung",
+                    "start_ms": source_time["start_ms"],
+                    "end_ms": source_time["end_ms"],
+                    "confidence": 1.0,
+                    "speaker_assignment": {
+                        "status": "CONFIRMED",
+                        "speaker_id": assignment["speaker_id"],
+                        "visibility": "on_camera",
+                        "confidence": 1.0,
+                        "evidence_sha256": assignment["evidence_sha256"],
+                    },
+                }
+            )
+        return {"contract": "source-content-timeline/v1", "audio_lines": audio_lines}
 
     @staticmethod
     def _publish_json_artifact(

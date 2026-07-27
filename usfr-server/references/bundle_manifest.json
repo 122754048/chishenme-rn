@@ -262,6 +262,14 @@
       "role": "immutable source-audio performance, lyric/beat, timeline, and splice-policy contracts"
     },
     {
+      "path": "server/runninghub_final_lip_sync.py",
+      "role": "canonical pinned RunningHub request builder for final language and verified-singing lip sync"
+    },
+    {
+      "path": "server/singing_audio_router.py",
+      "role": "constant-cost source-evidence router for uploaded-song singing versus background-music replacement"
+    },
+    {
       "path": "server/audio_route_guard.py",
       "role": "fail-closed source-speech versus opaque UI/tail routing guard with explicit bundled-mixer deferred receipt admission"
     },

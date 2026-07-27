@@ -943,6 +943,61 @@ def build_background_music_performance_contract(
     }
 
 
+def build_background_music_performance_contract_from_route(
+    *,
+    uploaded_audio_route: Mapping[str, Any],
+    performance_line_contract: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Select singing from frozen source evidence, never a caller preference.
+
+    ``pending_uploaded_lyrics`` only makes singing eligible.  Complete verified
+    uploaded-lyric evidence still has to bind every line to the one confirmed
+    on-camera singer and source window.  Any missing or conflicting evidence
+    takes the exact BGM route instead of guessing a performance.
+    """
+
+    if not isinstance(uploaded_audio_route, Mapping):
+        _blocked("BACKGROUND_MUSIC_ROUTE_REQUIRED", "uploaded_audio_route is required")
+    mode = uploaded_audio_route.get("mode")
+    if mode == "background_music_replacement":
+        return build_background_music_performance_contract(
+            user_confirmed_intent="background_music_replacement",
+            performance_line_contract=None,
+        )
+    if mode != "pending_uploaded_lyrics":
+        _blocked("BACKGROUND_MUSIC_ROUTE_REQUIRED", "uploaded_audio_route mode is invalid")
+    windows = uploaded_audio_route.get("eligible_source_windows")
+    if not isinstance(windows, Sequence) or isinstance(windows, (str, bytes, bytearray)) or not windows:
+        return build_background_music_performance_contract(
+            user_confirmed_intent="background_music_replacement",
+            performance_line_contract=None,
+        )
+    try:
+        performance = build_background_music_performance_contract(
+            user_confirmed_intent="verified_singing",
+            performance_line_contract=performance_line_contract,
+        )
+    except ReplicationError:
+        return build_background_music_performance_contract(
+            user_confirmed_intent="background_music_replacement",
+            performance_line_contract=None,
+        )
+    eligible = [window for window in windows if isinstance(window, Mapping)]
+    for line in performance["singing_lines"]:
+        source_time = line["source_time"]
+        if not any(
+            window.get("speaker_id") == line["speaker_id"]
+            and window.get("start_ms") <= source_time["start_ms"]
+            and source_time["end_ms"] <= window.get("end_ms")
+            for window in eligible
+        ):
+            return build_background_music_performance_contract(
+                user_confirmed_intent="background_music_replacement",
+                performance_line_contract=None,
+            )
+    return performance
+
+
 def recover_confirmed_script_contracts(context: Any) -> dict[str, Any]:
     """Publish final line/performance artifacts in the existing script lease.
 

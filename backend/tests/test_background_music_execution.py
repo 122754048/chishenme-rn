@@ -505,6 +505,32 @@ def _verified_performance_line_contract() -> dict[str, object]:
     }
 
 
+def _confirmed_sung_source_timeline(*, confidence: float = 0.95) -> dict[str, object]:
+    return {
+        "contract": "source-content-timeline/v1",
+        "audio_lines": [
+            {
+                "line_id": "source-song-line-01",
+                "content_type": "sung",
+                "start_ms": 0,
+                "end_ms": 1000,
+                "confidence": confidence,
+                "speaker_assignment": {
+                    "status": "CONFIRMED",
+                    "speaker_id": "CHARACTER_A",
+                    "visibility": "on_camera",
+                    "confidence": confidence,
+                    "evidence_sha256": "a" * 64,
+                },
+            }
+        ],
+    }
+
+
+def _non_singing_source_timeline() -> dict[str, object]:
+    return {"contract": "source-content-timeline/v1", "audio_lines": []}
+
+
 def _audio_asset_receipt() -> dict[str, object]:
     return {
         "asset_type": "Audio",
@@ -524,7 +550,11 @@ def _execution_contract_for(
         uploaded_audio=_uploaded_music(),
         music_timeline_contract=music_timeline_contract,
         audio_asset_receipt=_audio_asset_receipt(),
-        user_confirmed_intent=intent,
+        source_content_timeline=(
+            _confirmed_sung_source_timeline()
+            if intent == "verified_singing"
+            else _non_singing_source_timeline()
+        ),
         performance_line_contract=_verified_performance_line_contract() if intent == "verified_singing" else None,
     )
 
@@ -609,7 +639,11 @@ def _materialized_music_case(
         uploaded_audio=uploaded,
         music_timeline_contract=contract,
         audio_asset_receipt={**_audio_asset_receipt(), "uploaded_audio_sha256": uploaded["sha256"]},
-        user_confirmed_intent=intent,
+        source_content_timeline=(
+            _confirmed_sung_source_timeline()
+            if intent == "verified_singing"
+            else _non_singing_source_timeline()
+        ),
         performance_line_contract=_verified_performance_line_contract() if intent == "verified_singing" else None,
     )
     timeline_bytes = json.dumps(contract, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -828,7 +862,7 @@ def test_uploaded_song_is_the_final_audio_authority_without_time_or_pitch_transf
         uploaded_audio=_uploaded_music(),
         music_timeline_contract=_music_timeline(),
         audio_asset_receipt=_audio_asset_receipt(),
-        user_confirmed_intent="verified_singing",
+        source_content_timeline=_confirmed_sung_source_timeline(),
         performance_line_contract=_verified_performance_line_contract(),
     )
 
@@ -889,7 +923,7 @@ def test_background_music_execution_rejects_random_self_consistent_sha_claims_wi
         uploaded_audio=uploaded,
         music_timeline_contract=_music_timeline(),
         audio_asset_receipt=asset,
-        user_confirmed_intent="background_music_replacement",
+        source_content_timeline=_non_singing_source_timeline(),
         performance_line_contract=None,
     )
     receipt = _final_mix_receipt(execution_contract=execution)
@@ -926,17 +960,19 @@ def test_background_music_execution_rejects_random_self_consistent_sha_claims_wi
         )
 
 
-def test_verified_singing_fails_closed_when_a_line_or_beat_falls_outside_its_frozen_music_window():
+def test_uploaded_song_falls_back_to_background_music_when_a_singing_line_falls_outside_its_frozen_music_window():
     line_outside_window = _verified_performance_line_contract()
     line_outside_window["cuts"][0]["source_time"] = {"start_ms": 200, "end_ms": 1200}
-    with pytest.raises(ValueError, match="VERIFIED_SINGING_WINDOW_REQUIRED"):
-        background_music_execution.compile_background_music_execution_contract(
-            uploaded_audio=_uploaded_music(),
-            music_timeline_contract=_music_timeline(),
-            audio_asset_receipt=_audio_asset_receipt(),
-            user_confirmed_intent="verified_singing",
-            performance_line_contract=line_outside_window,
-        )
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=_music_timeline(),
+        audio_asset_receipt=_audio_asset_receipt(),
+        source_content_timeline=_confirmed_sung_source_timeline(),
+        performance_line_contract=line_outside_window,
+    )
+
+    assert execution["mode"] == "background_music_replacement"
+    assert execution["lyric_lip_sync_policy"] == "No lyric lip-sync"
 
 
 def test_frozen_music_timing_evidence_is_mandatory_and_final_receipts_must_echo_it():
@@ -947,7 +983,7 @@ def test_frozen_music_timing_evidence_is_mandatory_and_final_receipts_must_echo_
             uploaded_audio=_uploaded_music(),
             music_timeline_contract=incomplete_timeline,
             audio_asset_receipt=_audio_asset_receipt(),
-            user_confirmed_intent="background_music_replacement",
+            source_content_timeline=_non_singing_source_timeline(),
             performance_line_contract=None,
         )
 
@@ -965,37 +1001,148 @@ def test_frozen_music_timing_evidence_is_mandatory_and_final_receipts_must_echo_
 
     beat_outside_line = _verified_performance_line_contract()
     beat_outside_line["cuts"][0]["beat_anchors_ms"] = [1_000]
-    with pytest.raises(ValueError, match="VERIFIED_SINGING_EVIDENCE_REQUIRED"):
-        background_music_execution.compile_background_music_execution_contract(
-            uploaded_audio=_uploaded_music(),
-            music_timeline_contract=_music_timeline(),
-            audio_asset_receipt=_audio_asset_receipt(),
-            user_confirmed_intent="verified_singing",
-            performance_line_contract=beat_outside_line,
-        )
-
-
-def test_background_music_mode_has_explicit_no_lyric_lip_sync_and_singing_fails_closed_without_verified_evidence():
-    with pytest.raises(ValueError, match="VERIFIED_SINGING_EVIDENCE_REQUIRED"):
-        background_music_execution.compile_background_music_execution_contract(
-            uploaded_audio=_uploaded_music(),
-            music_timeline_contract=_music_timeline(),
-            audio_asset_receipt=_audio_asset_receipt(),
-            user_confirmed_intent="verified_singing",
-            performance_line_contract=None,
-        )
-
     execution = background_music_execution.compile_background_music_execution_contract(
         uploaded_audio=_uploaded_music(),
         music_timeline_contract=_music_timeline(),
         audio_asset_receipt=_audio_asset_receipt(),
-        user_confirmed_intent="background_music_replacement",
+        source_content_timeline=_confirmed_sung_source_timeline(),
+        performance_line_contract=beat_outside_line,
+    )
+
+    assert execution["mode"] == "background_music_replacement"
+
+
+def test_background_music_mode_has_explicit_no_lyric_lip_sync_when_singing_evidence_is_unverified():
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=_music_timeline(),
+        audio_asset_receipt=_audio_asset_receipt(),
+        source_content_timeline=_confirmed_sung_source_timeline(),
         performance_line_contract=None,
     )
 
     assert execution["mode"] == "background_music_replacement"
     assert execution["lyric_lip_sync_policy"] == "No lyric lip-sync"
     assert "No lyric lip-sync" in execution["provider_payload"]["content"][0]["text"]
+
+
+def test_verified_singing_seedance_prompt_locks_the_confirmed_singer_to_the_exact_audio1_lyrics():
+    execution = _execution_contract_for(_music_timeline(), intent="verified_singing")
+
+    text = execution["provider_payload"]["content"][0]["text"]
+
+    assert "Song to perform: the exact uploaded track @Audio1." in text
+    assert "CHARACTER_A is the only on-camera singer for this line." in text
+    assert 'CHARACTER_A must sing only this exact lyric from @Audio1: "Hold on".' in text
+    assert "Do not translate, paraphrase, add, omit, move, or reassign any lyric." in text
+
+
+def test_verified_singing_seedance_prompt_forbids_any_song_except_audio1_and_assigns_exact_lyrics_to_the_singer():
+    execution = _execution_contract_for(_music_timeline(), intent="verified_singing")
+
+    text = execution["provider_payload"]["content"][0]["text"]
+
+    assert "@Audio1 is the only song that may be performed." in text
+    assert 'CHARACTER_A must sing only this exact lyric from @Audio1: "Hold on".' in text
+
+
+def test_background_music_uses_the_frozen_source_timeline_route_instead_of_caller_intent():
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=_music_timeline(),
+        audio_asset_receipt=_audio_asset_receipt(),
+        source_content_timeline=_confirmed_sung_source_timeline(),
+        performance_line_contract=_verified_performance_line_contract(),
+    )
+
+    assert execution["mode"] == "verified_singing"
+    assert execution["uploaded_audio_route"]["mode"] == "pending_uploaded_lyrics"
+    assert "user_confirmed_intent" not in execution
+
+
+def test_background_music_contract_does_not_accept_a_caller_selected_intent():
+    with pytest.raises(TypeError):
+        background_music_execution.compile_background_music_execution_contract(
+            uploaded_audio=_uploaded_music(),
+            music_timeline_contract=_music_timeline(),
+            audio_asset_receipt=_audio_asset_receipt(),
+            source_content_timeline=_confirmed_sung_source_timeline(),
+            performance_line_contract=_verified_performance_line_contract(),
+            user_confirmed_intent="background_music_replacement",
+        )
+
+
+def test_background_music_falls_back_to_bgm_when_the_eligible_song_has_no_verified_lyrics():
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=_music_timeline(),
+        audio_asset_receipt=_audio_asset_receipt(),
+        source_content_timeline=_confirmed_sung_source_timeline(),
+        performance_line_contract=None,
+    )
+
+    assert execution["mode"] == "background_music_replacement"
+    assert execution["uploaded_audio_route"]["mode"] == "pending_uploaded_lyrics"
+    assert execution["lyric_lip_sync_policy"] == "No lyric lip-sync"
+
+
+def test_verified_singing_builds_the_final_lip_sync_request_only_for_its_generated_singer_region():
+    execution = _execution_contract_for(_music_timeline(), intent="verified_singing")
+
+    requests = background_music_execution.build_verified_singing_lip_sync_requests(
+        execution_contract=execution,
+        rendered_regions=[
+            {
+                "region_id": "C01",
+                "media_origin": "generated",
+                "audio_input": "song-window.wav",
+                "video_input": "generated-singer.mp4",
+            },
+            {
+                "region_id": "source-ui",
+                "media_origin": "source_interval",
+                "audio_input": "must-not-be-used.wav",
+                "video_input": "must-not-be-used.mp4",
+            },
+        ],
+    )
+
+    assert requests == [
+        {
+            "line_id": "L01",
+            "cut_id": "C01",
+            "speaker_id": "CHARACTER_A",
+            "provider_request": {
+                "workflow_id": "2080140197518823426",
+                "payload": {
+                    "nodeInfoList": [
+                        {"nodeId": "3", "fieldName": "audio", "fieldValue": "song-window.wav", "description": "audio"},
+                        {"nodeId": "6", "fieldName": "video", "fieldValue": "generated-singer.mp4", "description": "video"},
+                    ],
+                    "instanceType": "default",
+                    "usePersonalQueue": False,
+                },
+            },
+        }
+    ]
+
+
+def test_background_music_never_builds_a_final_lip_sync_request():
+    execution = _execution_contract_for(_music_timeline())
+
+    requests = background_music_execution.build_verified_singing_lip_sync_requests(
+        execution_contract=execution,
+        rendered_regions=[
+            {
+                "region_id": "C01",
+                "media_origin": "generated",
+                "audio_input": "must-not-be-used.wav",
+                "video_input": "must-not-be-used.mp4",
+            }
+        ],
+    )
+
+    assert requests == []
 
 
 def test_background_music_stage_driver_runs_the_existing_generation_chain_and_preserves_approvals():
@@ -1098,7 +1245,7 @@ def test_background_music_provider_audit_requires_the_uploaded_audio_asset_and_e
         uploaded_audio=_uploaded_music(),
         music_timeline_contract=_music_timeline(),
         audio_asset_receipt=_audio_asset_receipt(),
-        user_confirmed_intent="background_music_replacement",
+        source_content_timeline=_non_singing_source_timeline(),
         performance_line_contract=None,
     )
     valid_payload = execution["provider_payload"]
@@ -1199,7 +1346,7 @@ def test_music_timing_requires_structured_source_and_output_boundaries():
             uploaded_audio=_uploaded_music(),
             music_timeline_contract=timeline,
             audio_asset_receipt=_audio_asset_receipt(),
-            user_confirmed_intent="background_music_replacement",
+            source_content_timeline=_non_singing_source_timeline(),
             performance_line_contract=None,
         )
 
@@ -1212,7 +1359,7 @@ def test_background_music_provider_audit_rejects_a_payload_that_differs_from_the
         uploaded_audio=_uploaded_music(),
         music_timeline_contract=_music_timeline(),
         audio_asset_receipt=_audio_asset_receipt(),
-        user_confirmed_intent="verified_singing",
+        source_content_timeline=_confirmed_sung_source_timeline(),
         performance_line_contract=_verified_performance_line_contract(),
     )
     altered_payload = {
@@ -1250,7 +1397,7 @@ def test_provider_submission_rejects_a_post_audit_self_consistent_contract_swap(
         uploaded_audio=_uploaded_music(),
         music_timeline_contract=_music_timeline(),
         audio_asset_receipt={**_audio_asset_receipt(), "asset_uri": "asset://asset-replaced-song"},
-        user_confirmed_intent="background_music_replacement",
+        source_content_timeline=_non_singing_source_timeline(),
         performance_line_contract=None,
     )
     port = BackgroundMusicStagePort(
@@ -1625,7 +1772,7 @@ def test_provider_submit_rejects_a_self_consistent_request_with_a_different_audi
             "uploaded_audio_sha256": execution["uploaded_audio_sha256"],
             "asset_uri": "asset://asset-forged",
         },
-        user_confirmed_intent="background_music_replacement",
+        source_content_timeline=_non_singing_source_timeline(),
         performance_line_contract=None,
     )
     forged_request = {
@@ -1722,7 +1869,7 @@ def test_background_music_splice_rejects_submission_not_bound_to_the_current_fro
             "uploaded_audio_sha256": execution["uploaded_audio_sha256"],
             "asset_uri": "asset://asset-another-audited-request",
         },
-        user_confirmed_intent="background_music_replacement",
+        source_content_timeline=_non_singing_source_timeline(),
         performance_line_contract=None,
     )
     submission["music_execution_contract"] = forged_execution
@@ -1936,7 +2083,7 @@ def test_background_music_provider_audit_rejects_a_self_consistent_forged_singin
         uploaded_audio=_uploaded_music(),
         music_timeline_contract=music_timeline,
         audio_asset_receipt=_audio_asset_receipt(),
-        user_confirmed_intent="verified_singing",
+        source_content_timeline=_confirmed_sung_source_timeline(),
         performance_line_contract=forged_performance,
     )
     port = BackgroundMusicStagePort(

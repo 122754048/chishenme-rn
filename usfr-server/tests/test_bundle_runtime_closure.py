@@ -44,6 +44,8 @@ class BundleRuntimeClosureTest(unittest.TestCase):
         self.assertIn("server/high_fidelity_projection.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/audio_mixer.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/performance_audio_contracts.py", REQUIRED_SERVER_FILES)
+        self.assertIn("server/runninghub_final_lip_sync.py", REQUIRED_SERVER_FILES)
+        self.assertIn("server/singing_audio_router.py", REQUIRED_SERVER_FILES)
         for relative in (
             "scripts/config.py",
             "scripts/concat_videos.py",
@@ -71,6 +73,8 @@ class BundleRuntimeClosureTest(unittest.TestCase):
             "server/capabilities.py",
             "server/audio_mixer.py",
             "server/performance_audio_contracts.py",
+            "server/runninghub_final_lip_sync.py",
+            "server/singing_audio_router.py",
             "bundled-skills/seedance-storyboard-replication/scripts/config.py",
             "bundled-skills/seedance-storyboard-replication/scripts/concat_videos.py",
             "bundled-skills/seedance-storyboard-replication/scripts/media_quality.py",
