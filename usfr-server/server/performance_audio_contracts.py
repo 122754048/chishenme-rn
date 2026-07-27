@@ -892,6 +892,24 @@ def build_background_music_performance_contract(
                 "verified singing beat anchors must fall inside the confirmed segment window",
                 index=index,
             )
+        def prompt_detail(name: str, keys: tuple[str, ...]) -> dict[str, str]:
+            value = raw.get(name)
+            if not isinstance(value, Mapping):
+                _blocked(
+                    "VERIFIED_SINGING_EVIDENCE_REQUIRED",
+                    f"verified singing line {index} requires {name} constraints",
+                    index=index,
+                )
+            return {
+                key: _require_nonempty_string(
+                    value.get(key), field=f"verified singing line {index}.{name}.{key}"
+                )
+                for key in keys
+            }
+
+        lip_sync = prompt_detail("lip_sync", ("face_visibility", "articulation", "end_state"))
+        action = prompt_detail("action", ("start", "beat_action", "end"))
+        expression = prompt_detail("expression", ("start", "peak", "end"))
         singing_lines.append(
             {
                 "line_id": _require_nonempty_string(raw.get("line_id"), field=f"verified singing line {index}.line_id"),
@@ -902,6 +920,18 @@ def build_background_music_performance_contract(
                 "source_time": source_window,
                 "segment_time": segment_window,
                 "beat_anchors_ms": normalized_anchors,
+                "lip_sync": lip_sync,
+                "action": action,
+                "expression": expression,
+                "emotion": _require_nonempty_string(
+                    raw.get("emotion"), field=f"verified singing line {index}.emotion"
+                ),
+                "end_pose": _require_nonempty_string(
+                    raw.get("end_pose"), field=f"verified singing line {index}.end_pose"
+                ),
+                "criticality": _require_nonempty_string(
+                    raw.get("criticality"), field=f"verified singing line {index}.criticality"
+                ).upper(),
             }
         )
     return {

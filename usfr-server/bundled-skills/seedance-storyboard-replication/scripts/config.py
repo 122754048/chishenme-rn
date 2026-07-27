@@ -64,6 +64,8 @@ class Settings:
             raise ConfigurationError("SEEDANCE_API_PROVIDER must be youdao")
         if not self.youdao_api_key:
             raise ConfigurationError("Missing configuration: YOUDAO_API_KEY")
+        if self.youdao_model != "seedance-2.0":
+            raise ConfigurationError("YOUDAO_SEEDANCE_MODEL must be seedance-2.0")
 
 
 def load_settings(
@@ -90,8 +92,37 @@ def load_settings(
             "YOUDAO_BASE_URL",
             default="https://openapi.youdao.com/llmgateway",
         ),
-        youdao_model=value("YOUDAO_SEEDANCE_MODEL", default="seedance-2.0-fast"),
+        youdao_model=value("YOUDAO_SEEDANCE_MODEL", default="seedance-2.0"),
         youdao_resolution=value("YOUDAO_SEEDANCE_RESOLUTION", default="720p"),
         youdao_project_name=value("YOUDAO_PROJECT_NAME", default="default"),
         seedance_api_provider=value("SEEDANCE_API_PROVIDER", default="youdao").lower(),
     )
+
+
+def build_redacted_provider_preflight(
+    path: Path | None = None,
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> dict[str, str]:
+    """Report canonical provider configuration readiness without exposing values."""
+
+    effective_env = os.environ if environ is None else environ
+    resolved = resolve_env_file(path, effective_env)
+    settings = load_settings(path, environ=effective_env)
+
+    return {
+        "env_file": (
+            "explicit"
+            if path is not None and str(path).strip()
+            else "injected"
+            if resolved is not None
+            else "none"
+        ),
+        "runninghub_api_key": "present" if settings.runninghub_api_key else "missing",
+        "youdao_api_key": "present" if settings.youdao_api_key else "missing",
+        "runninghub_base_url": "present" if settings.runninghub_base_url else "missing",
+        "youdao_base_url": "present" if settings.youdao_base_url else "missing",
+        "seedance_api_provider": (
+            "youdao" if settings.seedance_api_provider == "youdao" else "unsupported"
+        ),
+    }

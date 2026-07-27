@@ -75,6 +75,24 @@ def _decode_pcm(path: Path, *, codec: str = "pcm_s16le", sample_format: str = "s
     ).stdout
 
 
+def _encode_uploaded_audio(source: Path, destination: Path, *, codec: str) -> None:
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-i",
+        str(source),
+        "-c:a",
+        {"mp3": "libmp3lame", "aac": "aac", "flac": "flac"}[codec],
+    ]
+    if codec == "aac":
+        command.extend(("-f", "adts"))
+    command.append(str(destination))
+    subprocess.run(command, check=True)
+
+
 def _make_source_video(tmp_path: Path) -> Path:
     source_audio = tmp_path / "source_audio.wav"
     _write_tone_wave(source_audio, seconds=3, active_ranges=[(0, 1), (2, 3)], frequency=440)
@@ -150,6 +168,10 @@ def test_development_only_local_mvp_archives_routes_and_preserves_source_music_w
         "submit_provider_video": {"status": "completed", "output": "local_source_video_passthrough"},
         "wait_provider_video": {"status": "completed", "output": "local_source_video_passthrough"},
     }
+    assert result["music_execution_contract"]["mode"] == "background_music_replacement"
+    assert result["music_execution_contract"]["lyric_lip_sync_policy"] == "No lyric lip-sync"
+    assert result["music_execution_audit_receipt_artifact"]["kind"] == "background_music_audit_receipt"
+    assert result["provider_output_artifact"]["kind"] == "background_music_provider_output"
     assert [
         {
             key: window[key]
@@ -185,6 +207,26 @@ def test_development_only_local_mvp_archives_routes_and_preserves_source_music_w
         (window["uploaded_start_sample"], window["uploaded_end_sample"])
         for window in result["music_timeline_contract"]["windows"]
     ] == [(0, 44_100), (44_100, 88_200)]
+    assert [
+        (window["output_start_ms"], window["output_end_ms"])
+        for window in result["music_timeline_contract"]["windows"]
+    ] == [(0, 1000), (2000, 3000)]
+    assert result["music_timeline_contract"]["meaningful_silence_output_intervals"] == [
+        {"output_start_ms": 1000, "output_end_ms": 2000}
+    ]
+    assert result["music_timeline_contract"]["output_duration_ms"] == 3000
+    assert all(
+        set(window) >= {
+            "source_entry",
+            "source_exit",
+            "fade_in",
+            "fade_out",
+            "silence_before",
+            "silence_after",
+            "transition",
+        }
+        for window in result["music_timeline_contract"]["windows"]
+    )
     assert result["music_timeline_contract_artifact"]["sha256"] == result["music_timeline_contract_sha256"]
     assert result["mix_receipt"]["uploaded_audio_sha256"] == result["intake"]["background_music"]["sha256"]
     assert all(
@@ -216,7 +258,7 @@ def test_development_only_local_mvp_archives_routes_and_preserves_source_music_w
     assert final_pcm[88_200 * bytes_per_sample : 132_300 * bytes_per_sample] == uploaded_pcm[44_100 * bytes_per_sample : 88_200 * bytes_per_sample]
     assert result["singing_qa"] == {
         "status": "skipped",
-        "reason": "no_visible_singing_person",
+        "reason": "no_lyric_lip_sync",
         "regions": [],
     }
 
@@ -242,6 +284,8 @@ def test_development_only_local_mvp_binds_visible_singer_alignment_and_lip_sync_
 
     assert result["singing_qa"]["status"] == "passed"
     assert result["singing_qa"]["mode"] == "development-only"
+    assert result["music_execution_contract"]["mode"] == "verified_singing"
+    assert result["music_execution_contract"]["performance_line_contract_sha256"] is not None
     region = result["singing_qa"]["regions"][0]
     assert region["lyrics_phoneme_alignment"]["passed"] is True
     assert region["lyrics_phoneme_alignment"]["lyrics"] == "la la"
@@ -293,3 +337,43 @@ def test_development_only_local_mvp_preserves_32_bit_pcm_fragment_format(tmp_pat
     assert video_pcm == final_pcm
     assert final_pcm[:44_100 * bytes_per_sample] == uploaded_pcm[:44_100 * bytes_per_sample]
     assert final_pcm[88_200 * bytes_per_sample : 132_300 * bytes_per_sample] == uploaded_pcm[44_100 * bytes_per_sample : 88_200 * bytes_per_sample]
+
+
+@pytest.mark.parametrize("codec", ["mp3", "aac", "flac"])
+def test_development_only_local_mvp_validates_compressed_upload_fragments_as_decoded_pcm(
+    tmp_path: Path, codec: str
+):
+    source_video = _make_source_video(tmp_path)
+    uncompressed_song = tmp_path / "song_source.wav"
+    uploaded_song = tmp_path / f"uploaded_song.{codec}"
+    _write_tone_wave(
+        uncompressed_song,
+        seconds=2,
+        active_ranges=[(0, 2)],
+        frequency=220,
+        sample_rate=44_100,
+        channels=2,
+        frequencies_by_second=[220, 880],
+    )
+    _encode_uploaded_audio(uncompressed_song, uploaded_song, codec=codec)
+
+    result = DevelopmentOnlyBackgroundMusicMvpHarness(run_root=tmp_path / "mvp-run").run(
+        source_video=source_video,
+        background_music=uploaded_song,
+        visible_singer_regions=[],
+    )
+
+    uploaded_pcm = _decode_pcm(uploaded_song)
+    final_pcm = _decode_pcm(Path(result["final_audio_path"]))
+    assert _decode_pcm(Path(result["final_video_path"])) == final_pcm
+    assert all(
+        "uploaded_byte_offset" not in receipt
+        and "final_audio_byte_offset" not in receipt
+        and receipt["fragment_sha256"] == receipt["pcm_fragment_sha256"]
+        for receipt in result["mix_receipt"]["window_receipts"]
+    )
+    bytes_per_frame = 2 * 2
+    assert final_pcm[:44_100 * bytes_per_frame] == uploaded_pcm[:44_100 * bytes_per_frame]
+    assert final_pcm[88_200 * bytes_per_frame : 132_300 * bytes_per_frame] == uploaded_pcm[
+        44_100 * bytes_per_frame : 88_200 * bytes_per_frame
+    ]

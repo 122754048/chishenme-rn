@@ -9,7 +9,7 @@ path; never write or print the API key elsewhere. A workstation
 SEEDANCE_API_PROVIDER=youdao
 YOUDAO_API_KEY=
 YOUDAO_BASE_URL=https://openapi.youdao.com/llmgateway
-YOUDAO_SEEDANCE_MODEL=seedance-2.0-fast
+YOUDAO_SEEDANCE_MODEL=seedance-2.0
 YOUDAO_SEEDANCE_RESOLUTION=720p
 YOUDAO_PROJECT_NAME=default
 ```
@@ -27,13 +27,16 @@ Do not use a Bearer prefix.
 
 ## Asset lifecycle
 
-Register only the approved storyboard, character, and product image URLs:
+Register approved storyboard, character, and product image URLs. When the
+public `background_music` extension is present, register exactly one uploaded
+music URL as `AssetType=Audio`:
 
 ```text
 POST /api/v1/assets?Action=CreateAsset
 ```
 
-Send `URL`, `Name`, `AssetType=Image`, and `ProjectName=default`. `GroupId` is
+Send `URL`, `Name`, `AssetType=Image` or `AssetType=Audio`, and
+`ProjectName=default`. `GroupId` is
 optional. Read the asset identifier from `Result.id`, then poll:
 
 ```text
@@ -45,7 +48,9 @@ by returned state with bounded backoff; a production target is not a cancellatio
 deadline. Stop on
 `Failed` or an explicit provider timeout. Cache successful Active mappings in
 `youdao_assets.json` and reuse them across every segment; never upload the same
-URL twice. Independent segment asset preparation may run concurrently, while
+URL twice. Keep image and audio asset manifests separate or bind `asset_type`
+in every cache record, so an image mapping cannot satisfy an Audio reference.
+Independent segment asset preparation may run concurrently, while
 continuity-dependent assets keep their required ordering. Never register the
 reference video, `opaque_ui_demo`, or supplied App tail-card media.
 
@@ -65,15 +70,17 @@ Query:
 GET /api/v1/video/tasks/{taskId}?model={model}
 ```
 
-Supported gateway models are `seedance-2.0` and `seedance-2.0-fast`. The factory
-defaults to `seedance-2.0-fast`, `720p`, `9:16`, `generate_audio=true`, and
-`watermark=false`. The fast model supports 480p and 720p, not 1080p or 4K.
+The gateway supports `seedance-2.0` and `seedance-2.0-fast`, but this factory
+uses only `seedance-2.0`, `720p`, `9:16`, `generate_audio=true`, and
+`watermark=false`. A configured fast model is rejected before a task is created.
 
 The request `content` starts with one text item. Add each image as an
 `image_url` item with `role=reference_image` and an `asset://asset-*` URL. The
 prompt refers to those images as `图片1`, `图片2`, and so on; never put asset IDs
 inside prompt prose. This factory accepts at most four images and never sends
-`reference_videos` or `reference_audios`.
+`reference_videos` or top-level `reference_audios`. When `background_music` is
+supplied, add exactly one `audio_url` item with `role=reference_audio` and an
+`asset://asset-*` Audio URL; the prompt must refer to it as `@Audio1`.
 
 Valid task states are `submitting`, `queued`, `running`, `succeeded`, `failed`,
 and `expired`. Poll until `succeeded`, extract the returned `video_url`, and stop
@@ -106,9 +113,10 @@ The installed skill file must declare `name: seedance-20`; its exact-byte hash
 and authoritative metadata version must match the compiler artifact.
 
 Only this audited Factory path enforces the fixed-B payload shape: model
-`seedance-2.0-fast`, `resolution=720p`, `ratio=9:16`, duration 4–15,
-`generate_audio=true`, `watermark=false`, one exact text item, and at most four
-exact `reference_image` asset objects. Unknown fields and reference/UI,
+`seedance-2.0`, `resolution=720p`, `ratio=9:16`, duration 4–15,
+`generate_audio=true`, `watermark=false`, one exact text item, at most four
+exact `reference_image` asset objects, and optionally one exact `audio_url`
+`@Audio1` item. Unknown fields and reference/UI,
 tail-card, source-frame, or transition markers in any separator/case variant
 are rejected. The unauthorised `--dry-run` is the only preview route and cannot
 carry audited or legacy authorization. After that dry run, actual audited
@@ -141,8 +149,11 @@ parameters, and negative constraints. Require zero ambiguity and no unresolved
 placeholders before **internal request integrity approval**. This is not a
 third user approval gate; prompt-only repair stays internal.
 
-The fixed factory route is `seedance-2.0-fast`, `720p`, `9:16`, fixed-B image
-references, no `reference_videos`, and no default `reference_audios`. Opaque UI
+The fixed factory route is `seedance-2.0`, `720p`, `9:16`, fixed-B image
+references, no `reference_videos`, and no default `reference_audios`. The
+approved `background_music` extension is the only normal-route audio reference:
+it uses content `audio_url` plus prompt `@Audio1`, never top-level
+`reference_audios`. Opaque UI
 videos, source-origin UI intervals, and tail-card media are never registered,
 never sent to Image Gen or Seedance, and never counted in paid generation
 duration. A missing tail video uses `omit_source_end_card` and removes the

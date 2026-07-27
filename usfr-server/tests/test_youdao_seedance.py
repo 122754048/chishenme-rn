@@ -135,10 +135,44 @@ class YoudaoConfigTest(unittest.TestCase):
             settings = load_settings(env_file, environ={})
         self.assertEqual(settings.seedance_api_provider, "youdao")
         self.assertEqual(settings.youdao_base_url, "https://openapi.youdao.com/llmgateway")
-        self.assertEqual(settings.youdao_model, "seedance-2.0-fast")
+        self.assertEqual(settings.youdao_model, "seedance-2.0")
         self.assertEqual(settings.youdao_resolution, "720p")
         self.assertEqual(settings.youdao_project_name, "default")
         self.assertNotIn("secret-value", repr(settings))
+
+    def test_preflight_writes_only_a_redacted_readiness_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp) / "preflight"
+            env_file = Path(tmp) / "seedance.env"
+            env_file.write_text(
+                "YOUDAO_API_KEY=secret-value\n"
+                "YOUDAO_SEEDANCE_MODEL=seedance-2.0\n",
+                encoding="utf-8",
+            )
+            argv = [
+                "seedance_submit.py",
+                "--env-file", str(env_file),
+                "--output-dir", str(output_dir),
+                "--preflight",
+            ]
+            with patch.object(
+                seedance_submit_module.YoudaoSeedanceClient,
+                "__init__",
+                side_effect=AssertionError("preflight must not construct a provider client"),
+            ), patch.object(
+                seedance_submit_module,
+                "prepare_youdao_assets",
+                side_effect=AssertionError("preflight must not prepare assets"),
+            ), patch.object(sys, "argv", argv):
+                self.assertEqual(seedance_submit_module.main(), 0)
+
+            raw_report = (output_dir / "provider_preflight.json").read_text(
+                encoding="utf-8"
+            )
+            report = json.loads(raw_report)
+        self.assertEqual(report["youdao_api_key"], "present")
+        self.assertEqual(report["seedance_api_ready"], "present")
+        self.assertNotIn("secret-value", raw_report)
 
     def test_missing_youdao_key_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -162,13 +196,13 @@ class YoudaoPayloadTest(unittest.TestCase):
             ["asset://asset-one", "asset://asset-two"],
             [],
             provider="youdao",
-            model="seedance-2.0-fast",
+            model="seedance-2.0",
             resolution="720p",
         )
         self.assertEqual(
             payload,
             {
-                "model": "seedance-2.0-fast",
+                "model": "seedance-2.0",
                 "content": [
                     {"type": "text", "text": "运动会现场，镜头跟随选手。"},
                     {
@@ -190,11 +224,44 @@ class YoudaoPayloadTest(unittest.TestCase):
             },
         )
 
-    def test_fast_model_rejects_1080p(self):
-        with self.assertRaisesRegex(PayloadError, "480p or 720p"):
+    def test_only_seedance_20_is_accepted_for_the_fixed_b_route(self):
+        with self.assertRaisesRegex(PayloadError, "must be seedance-2.0"):
             build_payload(
                 "test", 5, "9:16", [], [], provider="youdao",
-                model="seedance-2.0-fast", resolution="1080p"
+                model="seedance-2.0-fast", resolution="720p"
+            )
+
+    def test_audio_reference_is_a_single_audio_content_item(self):
+        payload = build_payload(
+            "@Audio1 人物跟随上传歌曲自然演唱。",
+            5,
+            "9:16",
+            ["asset://asset-model"],
+            [],
+            provider="youdao",
+            model="seedance-2.0",
+            audio_urls=["asset://asset-song"],
+        )
+        self.assertNotIn("reference_audios", payload)
+        self.assertEqual(
+            payload["content"][-1],
+            {
+                "type": "audio_url",
+                "role": "reference_audio",
+                "audio_url": {"url": "asset://asset-song"},
+            },
+        )
+
+    def test_audio_reference_requires_audio1_in_the_prompt(self):
+        with self.assertRaisesRegex(PayloadError, "@Audio1"):
+            build_payload(
+                "人物跟随上传歌曲自然演唱。",
+                5,
+                "9:16",
+                [],
+                [],
+                provider="youdao",
+                audio_urls=["asset://asset-song"],
             )
 
     def test_duration_and_reference_video_contract(self):
@@ -284,14 +351,14 @@ class YoudaoClientTest(unittest.TestCase):
             {"status": "queued"},
         ])
         client = YoudaoSeedanceClient("secret", request_json=transport)
-        task_id = client.create_video({"model": "seedance-2.0-fast"})
+        task_id = client.create_video({"model": "seedance-2.0"})
         client.get_status(task_id)
         self.assertEqual(task_id, "task-123")
         self.assertEqual(transport.calls[0]["headers"]["x-api-key"], "secret")
         self.assertNotIn("Authorization", transport.calls[0]["headers"])
         self.assertTrue(
             transport.calls[1]["url"].endswith(
-                "/api/v1/video/tasks/task-123?model=seedance-2.0-fast"
+                "/api/v1/video/tasks/task-123?model=seedance-2.0"
             )
         )
 
@@ -306,7 +373,7 @@ class YoudaoClientTest(unittest.TestCase):
                     "secret", request_json=transport, sleep=lambda _: None
                 )
                 with self.assertRaisesRegex(SeedanceApiError, "not retried"):
-                    client.create_video({"model": "seedance-2.0-fast"})
+                    client.create_video({"model": "seedance-2.0"})
                 self.assertEqual(len(transport.calls), 1)
 
     def test_paid_create_video_rejects_route_leakage_before_network(self):
@@ -346,6 +413,17 @@ class YoudaoClientTest(unittest.TestCase):
                         "https://example.com/board.png", "board"
                     )
                 self.assertEqual(len(transport.calls), 1)
+
+    def test_audio_asset_is_registered_with_the_audio_asset_type(self):
+        transport = FakeTransport([{"Result": {"id": "asset-song"}}])
+        client = YoudaoSeedanceClient("secret", request_json=transport)
+        self.assertEqual(
+            client.register_asset(
+                "https://example.com/song.mp3", "uploaded-song", asset_type="Audio"
+            ),
+            "asset-song",
+        )
+        self.assertEqual(transport.calls[0]["json_body"]["AssetType"], "Audio")
 
     def test_asset_processing_to_active_and_manifest(self):
         transport = FakeTransport([
@@ -578,7 +656,7 @@ class YoudaoCliAuthorizationTest(unittest.TestCase):
         seedance_api_provider = "youdao"
         youdao_api_key = "secret"
         youdao_base_url = "https://example.test"
-        youdao_model = "seedance-2.0-fast"
+        youdao_model = "seedance-2.0"
         youdao_project_name = "default"
         youdao_resolution = "720p"
 
@@ -729,6 +807,32 @@ class YoudaoCliAuthorizationTest(unittest.TestCase):
                 seedance_submit_module.main()
             preview = json.loads((output_dir / "approval_preview.json").read_text())
         self.assertEqual(preview["status"], "internal_integrity_preview")
+
+    def test_dry_run_prepares_uploaded_music_as_an_audio_asset(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp)
+            prompt_file = output_dir / "prompt.txt"
+            prompt_file.write_text("@Audio1 人物跟随上传歌曲演唱。", encoding="utf-8")
+            argv = [
+                "seedance_submit.py",
+                "--prompt-file", str(prompt_file),
+                "--audio-url", "https://example.com/song.mp3",
+                "--duration", "5",
+                "--output-dir", str(output_dir),
+                "--dry-run",
+            ]
+            with patch.object(seedance_submit_module, "load_settings", return_value=self.FakeSettings()), \
+                 patch.object(seedance_submit_module, "YoudaoSeedanceClient", self.FakeClient), \
+                 patch.object(seedance_submit_module, "prepare_youdao_assets", side_effect=[[], ["asset://asset-song"]]) as prepare, \
+                 patch.object(sys, "argv", argv):
+                self.assertEqual(seedance_submit_module.main(), 0)
+            request = json.loads(
+                (output_dir / "request.redacted.json").read_text(encoding="utf-8")
+            )
+        self.assertEqual(prepare.call_args_list[1].kwargs["asset_type"], "Audio")
+        self.assertEqual(
+            request["content"][-1]["audio_url"]["url"], "asset://asset-song"
+        )
 
     def test_audited_cli_requires_frozen_input_contract_before_asset_preparation(self):
         with tempfile.TemporaryDirectory() as tmp:

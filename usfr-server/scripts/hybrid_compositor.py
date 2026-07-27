@@ -20,10 +20,23 @@ _ROUTES = {"KEEP", "REPLACE", "COMPOSITE", "REMOVE", "REINTERPRET", "OPAQUE_SPLI
 _REMOTION_UI_MOTION_WHITELIST = frozenset(
     {"perspective", "parallax", "translate", "scale"}
 )
+_REMOTION_ACTIVATION_SCHEMA = "remotion-ui-activation-receipt/v1"
+_REMOTION_REPORT_SCHEMA = "usfr-backend-benchmark/v1"
+_REMOTION_DECISION_SCHEMA = "usfr-backend-decision/v1"
+_REMOTION_SAME_CASE_BINDINGS = (
+    "target_ui_evidence_sha256",
+    "ui_truth_card_sha256",
+    "ui_render_contract_sha256",
+    "source_interval_contract_sha256",
+)
 
 
 def _canonical(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def _sha256(value: Any) -> str:
+    return hashlib.sha256(_canonical(value)).hexdigest()
 
 
 def _digest(value: Mapping[str, Any]) -> str:
@@ -74,6 +87,16 @@ def _remotion_ui_eligible(
     activation_sha = record.get("activation_report_sha256")
     if not isinstance(activation_sha, str) or _HEX64.fullmatch(activation_sha) is None:
         return False
+    adapter_identity = requirements.get("remotion_adapter_identity")
+    if not isinstance(adapter_identity, Mapping):
+        return False
+    for field in ("implementation", "version", "sha256"):
+        expected = adapter_identity.get(field)
+        actual = record.get(field)
+        if not isinstance(expected, str) or not expected or actual != expected:
+            return False
+    if _HEX64.fullmatch(adapter_identity["sha256"]) is None:
+        return False
     if (
         requirements.get("route") != "generated_ui_demo"
         or requirements.get("deterministic_ui_rebuild_allowed") is not True
@@ -90,6 +113,11 @@ def _remotion_ui_eligible(
         value = requirements.get(field)
         if not isinstance(value, str) or _HEX64.fullmatch(value) is None:
             return False
+    if not remotion_activation_receipt_matches(
+        requirements=requirements,
+        capability_record=record,
+    ):
+        return False
     motions = requirements.get("motion_actions")
     return (
         isinstance(motions, Sequence)
@@ -97,6 +125,103 @@ def _remotion_ui_eligible(
         and bool(motions)
         and all(isinstance(action, str) and action in _REMOTION_UI_MOTION_WHITELIST for action in motions)
     )
+
+
+def _identity_matches(value: Any, expected: Mapping[str, Any]) -> bool:
+    return isinstance(value, Mapping) and all(
+        isinstance(expected.get(field), str)
+        and bool(expected.get(field))
+        and value.get(field) == expected.get(field)
+        for field in ("implementation", "version", "sha256")
+    )
+
+
+def _same_case_side_matches(side: Any, expected_bindings: Mapping[str, Any]) -> bool:
+    if not isinstance(side, Mapping):
+        return False
+    if any(side.get(field) != expected_bindings[field] for field in _REMOTION_SAME_CASE_BINDINGS):
+        return False
+    try:
+        active_seconds = float(side.get("active_seconds"))
+    except (TypeError, ValueError):
+        return False
+    return (
+        side.get("ocr_match_percent") == 100
+        and side.get("layout_match_percent") == 100
+        and side.get("black_frame_count") == 0
+        and side.get("timing_contract_matched") is True
+        and active_seconds > 0
+    )
+
+
+def remotion_activation_receipt_matches(
+    *,
+    requirements: Mapping[str, Any],
+    capability_record: Mapping[str, Any],
+) -> bool:
+    """Validate the immutable benchmark receipt for this exact UI interval.
+
+    A digest-shaped string alone is not activation evidence.  The record has
+    to carry the immutable report and decision that produced it, and one
+    benchmark case must bind the exact source interval and target UI contracts
+    currently being rendered.
+    """
+
+    receipt = capability_record.get("activation_receipt")
+    if not isinstance(receipt, Mapping) or receipt.get("schema_version") != _REMOTION_ACTIVATION_SCHEMA:
+        return False
+    recorded_receipt_sha = receipt.get("receipt_sha256")
+    without_digest = {key: value for key, value in receipt.items() if key != "receipt_sha256"}
+    if not isinstance(recorded_receipt_sha, str) or _HEX64.fullmatch(recorded_receipt_sha) is None:
+        return False
+    if recorded_receipt_sha != _sha256(without_digest):
+        return False
+    expected_identity = requirements.get("remotion_adapter_identity")
+    if not isinstance(expected_identity, Mapping):
+        return False
+    if not _identity_matches(capability_record, expected_identity) or not _identity_matches(
+        receipt.get("adapter_identity"), expected_identity
+    ):
+        return False
+    report = receipt.get("benchmark_report")
+    decision = receipt.get("benchmark_decision")
+    if not isinstance(report, Mapping) or not isinstance(decision, Mapping):
+        return False
+    report_sha256 = _sha256(report)
+    if (
+        capability_record.get("activation_report_sha256") != report_sha256
+        or report.get("schema_version") != _REMOTION_REPORT_SCHEMA
+        or report.get("candidate") != "remotion_react_ui"
+        or report.get("domain") != "programmable_overlays"
+        or not _identity_matches(report.get("adapter_identity"), expected_identity)
+    ):
+        return False
+    if (
+        decision.get("schema_version") != _REMOTION_DECISION_SCHEMA
+        or decision.get("candidate") != "remotion_react_ui"
+        or decision.get("domain") != "programmable_overlays"
+        or decision.get("report_sha256") != report_sha256
+        or decision.get("eligible") is not True
+        or decision.get("no_hard_regressions") is not True
+    ):
+        return False
+    expected_bindings = {field: requirements.get(field) for field in _REMOTION_SAME_CASE_BINDINGS}
+    if any(not isinstance(value, str) or _HEX64.fullmatch(value) is None for value in expected_bindings.values()):
+        return False
+    cases = report.get("cases")
+    if not isinstance(cases, Sequence) or isinstance(cases, (str, bytes, bytearray)):
+        return False
+    for case in cases:
+        if not isinstance(case, Mapping):
+            continue
+        case_id = case.get("case_id")
+        if not isinstance(case_id, str) or not case_id or case.get("candidate_case_id", case_id) != case_id:
+            continue
+        if _same_case_side_matches(case.get("baseline"), expected_bindings) and _same_case_side_matches(
+            case.get("candidate"), expected_bindings
+        ):
+            return True
+    return False
 
 
 def _require_object(value: Any, field: str) -> Mapping[str, Any]:

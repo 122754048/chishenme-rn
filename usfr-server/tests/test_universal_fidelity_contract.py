@@ -260,7 +260,9 @@ class UniversalFidelityFactoryContractTest(unittest.TestCase):
         for required in (
             "`generate_audio=true`",
             "`watermark=false`",
-            "no `reference_audios` field, implicit audio reference, or registered reference-audio asset",
+            "no top-level `reference_audios` field or implicit audio reference is permitted",
+            "`background_music` extension is the sole exception: register it as Youdao `AssetType=Audio`",
+            "`role=reference_audio`, and require `@Audio1` in the compiled prompt",
             "complete package-relative dependency snapshot",
             "root `seedance-20`, `seedance-prompt`, and `seedance-antislop`",
             "free-form/raw `compiled_prompt`",

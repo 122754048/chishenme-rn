@@ -19,9 +19,10 @@ def resolve_review_route(*, seedance_required: bool, approved_script: RevisionMa
         return "local_only"
     if output_language is not None and output_language not in SUPPORTED_OUTPUT_LANGUAGES:
         raise ReplicationError("INVALID_INPUT", "output_language is unsupported")
-    language_matches = approved_output_language is None or output_language is None or approved_output_language == output_language
-    if approved_script is not None and approved_script.status == "APPROVED" and approved_script.inputs_sha256 == current_script_inputs_sha256 and language_matches:
-        return "route_1"
+    # Every generated-media run must expose a fresh, editable reverse script.
+    # A matching historical approval can be reused as draft evidence, but can
+    # never stand in for this run's explicit user confirmation.
+    del approved_script, current_script_inputs_sha256, approved_output_language
     return "route_2"
 
 

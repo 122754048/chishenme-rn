@@ -13,6 +13,13 @@ from typing import Any, Mapping
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_SAME_CASE_BINDING_FIELDS = (
+    "fixture_sha256",
+    "source_interval_contract_sha256",
+    "target_ui_evidence_sha256",
+    "ui_truth_card_sha256",
+    "ui_render_contract_sha256",
+)
 
 
 class BenchmarkContractError(ValueError):
@@ -78,6 +85,10 @@ def _validate_side(value: Any, field: str) -> dict[str, Any]:
         raise BenchmarkContractError(f"{field} active_seconds must be positive")
     _validate_receipt(value.get("evaluator_receipt"), field)
     return {
+        "bindings": {
+            name: _require_sha(value.get(name), f"{field} {name}")
+            for name in _SAME_CASE_BINDING_FIELDS
+        },
         "total_score": total_score,
         "factor_scores": factor_scores,
         "hard_failures": tuple(hard_failures),
@@ -104,6 +115,21 @@ def _validate_carrier_receipts(report: Mapping[str, Any]) -> None:
         "final_output_receipt_sha256",
     ):
         _require_sha(receipts.get(field), field)
+
+
+def _approved_p95_slowdown_limit(candidate_policy: Mapping[str, Any], baseline_p95: float) -> float:
+    ratio = candidate_policy.get("max_p95_slowdown_ratio")
+    seconds = candidate_policy.get("max_p95_slowdown_seconds")
+    if (
+        isinstance(ratio, bool)
+        or not isinstance(ratio, (int, float))
+        or float(ratio) < 1
+        or isinstance(seconds, bool)
+        or not isinstance(seconds, (int, float))
+        or float(seconds) < 0
+    ):
+        raise BenchmarkContractError("candidate policy requires approved p95 slowdown limits")
+    return baseline_p95 + min(float(seconds), baseline_p95 * (float(ratio) - 1))
 
 
 def evaluate_report(
@@ -157,6 +183,10 @@ def evaluate_report(
         )
         if set(baseline["factor_scores"]) != set(candidate_result["factor_scores"]):
             raise BenchmarkContractError("baseline and candidate factor sets must match")
+        if baseline["bindings"] != candidate_result["bindings"]:
+            raise BenchmarkContractError(
+                "baseline and candidate must bind the same source and UI evidence"
+            )
         if baseline["hard_failures"]:
             hard_regressions.append(f"{case_id}:baseline_not_release_eligible")
         hard_regressions.extend(
@@ -173,13 +203,15 @@ def evaluate_report(
     candidate_minimum = min(candidate_scores)
     baseline_p95 = _p95(baseline_seconds)
     candidate_p95 = _p95(candidate_seconds)
+    approved_candidate_p95 = _approved_p95_slowdown_limit(candidate_policy, baseline_p95)
     quality_improved = candidate_average > baseline_average
     minimum_quality_preserved = candidate_minimum >= baseline_minimum
     no_hard_regressions = not hard_regressions and minimum_quality_preserved
     speed_improved_without_quality_loss = (
         candidate_p95 < baseline_p95 and minimum_quality_preserved
     )
-    eligible = no_hard_regressions and (
+    p95_within_approved_slowdown = candidate_p95 <= approved_candidate_p95
+    eligible = no_hard_regressions and p95_within_approved_slowdown and (
         quality_improved or speed_improved_without_quality_loss
     )
     reasons: list[str] = []
@@ -187,6 +219,8 @@ def evaluate_report(
         reasons.append("hard gate regression")
     if not minimum_quality_preserved:
         reasons.append("minimum quality regressed")
+    if not p95_within_approved_slowdown:
+        reasons.append("candidate p95 exceeds approved p95 slowdown")
     if not quality_improved and candidate_p95 >= baseline_p95:
         reasons.append("neither quality nor p95 speed improved")
 
@@ -206,6 +240,8 @@ def evaluate_report(
         "candidate_min_score": candidate_minimum,
         "baseline_p95_seconds": baseline_p95,
         "candidate_p95_seconds": candidate_p95,
+        "approved_candidate_p95_seconds": approved_candidate_p95,
+        "p95_within_approved_slowdown": p95_within_approved_slowdown,
         "hard_regressions": hard_regressions,
         "reasons": reasons,
         "activation_effect": "none; production policy requires a separately reviewed immutable update",

@@ -21,6 +21,7 @@ from server.real_capabilities import (
     CapabilityUnavailable,
     _probe,
 )
+from server.remotion_react_ui import ConditionalUiRenderBackend
 from server.audio_backends import EvidenceBoundHttpAudioEventBackend
 
 
@@ -618,6 +619,68 @@ class RealCapabilitySmokeTest(unittest.TestCase):
         self.assertEqual(result["evidence"]["evidence_plan_sha256"], plan["plan_sha256"])
         self.assertNotIn(str(self.video), json.dumps(plan, ensure_ascii=False))
 
+    def test_dynamics_forwards_the_pre_route_scope_to_a_scope_aware_backend(self) -> None:
+        captured: dict[str, dict] = {}
+        context = _Context(self.video)
+        context.analysis_scope = {
+            "contract": "usfr-analysis-scope/v1",
+            "route_family": "targeted_replication",
+            "semantic_pass": {"status": "required", "focus": ["source_timeline", "character_identity"]},
+            "scope_sha256": "a" * 64,
+        }
+
+        class ScopeBackend:
+            def analyze(self, *, path, probe, cuts, analysis_scope, context=None):
+                captured["analysis_scope"] = dict(analysis_scope)
+                return {
+                    "source_cuts": [{"start_us": 0, "end_us": int(probe["duration_us"])}],
+                    "source_events": [],
+                }
+
+        result = FfmpegDynamicsAnalyzer(
+            semantic_analyzer=ScopeBackend(),
+            production=False,
+        ).analyze(context=context, input_artifacts=[])
+
+        self.assertEqual(captured["analysis_scope"], context.analysis_scope)
+        self.assertEqual(result["evidence"]["analysis_scope_sha256"], "a" * 64)
+
+    def test_dynamics_does_not_start_a_semantic_backend_for_a_technical_splice_scope(self) -> None:
+        calls = []
+        context = _Context(self.video)
+        context.analysis_scope = {
+            "contract": "usfr-analysis-scope/v1",
+            "route_family": "technical_splice",
+            "semantic_pass": {"status": "skipped", "focus": []},
+            "scope_sha256": "b" * 64,
+        }
+
+        class ExplodingBackend:
+            def analyze(self, **_kwargs):
+                calls.append(True)
+                raise AssertionError("technical splice must not call VLM")
+
+        result = FfmpegDynamicsAnalyzer(
+            semantic_analyzer=ExplodingBackend(),
+            production=False,
+        ).analyze(context=context, input_artifacts=[])
+
+        self.assertEqual(calls, [])
+        self.assertEqual(result["source_dynamics_analysis"]["source_cut_count"], 1)
+        self.assertEqual(result["evidence"]["analysis_scope_sha256"], "b" * 64)
+        self.assertFalse(result["evidence"]["semantic_backend"])
+
+    def test_app_store_parser_skips_when_stage4_found_no_generated_ui_region(self) -> None:
+        context = _Context(self.video, app_artifact=self.video, timeline_regions=())
+        result = BundledAppStoreEvidenceParser(
+            parser_script=self.root / "missing-app-store-parser.py"
+        ).run(context=context, input_artifacts=[])
+
+        self.assertEqual(result, {
+            "status": "skipped",
+            "skipped_reason": "no_generated_ui_region",
+        })
+
     def test_active_high_fidelity_dynamics_preserves_and_validates_deep_extension(self) -> None:
         context = _Context(
             self.video,
@@ -787,6 +850,170 @@ class RealCapabilitySmokeTest(unittest.TestCase):
         self.assertTrue(result["published_artifacts"][0]["metadata"]["parent_digests"])
         self.assertEqual(context.published[0]["metadata"]["content_type"], "video/mp4")
 
+    def test_active_generated_ui_persists_the_conditional_remotion_decision(self) -> None:
+        ui = self._ui_fixture()
+        truth = {
+            "approved_copy": ["BUY NOW"],
+            "states": [
+                {
+                    "state_id": "home",
+                    "frame_ms": 0,
+                    "expected_text": ["BUY NOW"],
+                    "expected_layout": [{"text": "BUY NOW", "bbox": [60, 20, 140, 50]}],
+                },
+                {
+                    "state_id": "confirm",
+                    "frame_ms": 200,
+                    "expected_text": ["BUY NOW"],
+                    "expected_layout": [{"text": "BUY NOW", "bbox": [60, 20, 140, 50]}],
+                },
+            ],
+        }
+        render_contract = {
+            "route": "generated_ui_demo",
+            "viewport": [200, 100],
+            "state_sequence": ["home", "confirm"],
+        }
+        calls: list[str] = []
+
+        class _Renderer:
+            def __init__(self, name: str, digest: str) -> None:
+                self.name = name
+                self.digest = digest
+
+            def capability_identity(self):
+                return {"implementation": f"tests:{self.name}", "version": "1", "sha256": self.digest}
+
+            def __call__(self, source, output, _context, *, truth, render_contract):
+                del truth, render_contract
+                calls.append(self.name)
+                result = subprocess.run(
+                    [
+                        "ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", str(source),
+                        "-t", "0.4", "-vf", "fps=10,format=yuv420p", "-c:v", "libx264",
+                        "-pix_fmt", "yuv420p", "-an", str(output),
+                    ],
+                    capture_output=True,
+                )
+                if result.returncode != 0:
+                    raise AssertionError(result.stderr.decode("utf-8", errors="replace"))
+                return {"video_path": str(output)}
+
+        fallback = _Renderer("ffmpeg", "f" * 64)
+        remotion = _Renderer("remotion", "d" * 64)
+        interval = {
+            "schema_version": "source-ui-interval/v1",
+            "region_id": "ui-1",
+            "source_start_ms": 0,
+            "source_end_ms": 400,
+            "output_duration_ms": 400,
+            "display_viewport": [200, 100],
+            "rotation_degrees": 0,
+            "safe_cover_crop_percent": 0,
+            "transition_shell": {"entry": "cut", "exit": "cut"},
+        }
+        interval_sha = hashlib.sha256(
+            json.dumps(interval, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        target_ui_evidence_sha = hashlib.sha256(ui.read_bytes()).hexdigest()
+        truth_sha = hashlib.sha256(
+            json.dumps(truth, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        render_contract_sha = hashlib.sha256(
+            json.dumps(render_contract, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        context = _Context(
+            self.video,
+            ui=ui,
+            ui_metadata={
+                "ui_truth_card": truth,
+                "ui_render_contract": render_contract,
+                "truth_basis": "target-owned-upload",
+            },
+            profile_snapshot={"profile": "high_fidelity_hybrid_v1", "activation_mode": "active"},
+            timeline_regions=(
+                {
+                    "region_id": "ui-1",
+                    "region_type": "generated_ui_demo",
+                    "source_start_us": 0,
+                    "source_end_us": 400_000,
+                    "display_viewport": [200, 100],
+                    "rotation_degrees": 0,
+                    "safe_cover_crop_percent": 0,
+                    "transition_shell": {"entry": "cut", "exit": "cut"},
+                    "deterministic_ui_rebuild_allowed": True,
+                    "existing_renderer_equivalent": False,
+                    "motion_actions": ["parallax"],
+                    "source_interval_contract": interval,
+                    "source_interval_contract_sha256": interval_sha,
+                },
+            ),
+        )
+        bindings = {
+            "source_interval_contract_sha256": interval_sha,
+            "target_ui_evidence_sha256": target_ui_evidence_sha,
+            "ui_truth_card_sha256": truth_sha,
+            "ui_render_contract_sha256": render_contract_sha,
+        }
+        side = {
+            **bindings,
+            "ocr_match_percent": 100,
+            "layout_match_percent": 100,
+            "black_frame_count": 0,
+            "timing_contract_matched": True,
+            "active_seconds": 1.0,
+        }
+        report = {
+            "schema_version": "usfr-backend-benchmark/v1",
+            "candidate": "remotion_react_ui",
+            "domain": "programmable_overlays",
+            "adapter_identity": remotion.capability_identity(),
+            "cases": [{"case_id": "ui-1", "candidate_case_id": "ui-1", "baseline": side, "candidate": side}],
+        }
+        report_sha = hashlib.sha256(
+            json.dumps(report, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        activation_receipt = {
+            "schema_version": "remotion-ui-activation-receipt/v1",
+            "adapter_identity": remotion.capability_identity(),
+            "benchmark_report": report,
+            "benchmark_decision": {
+                "schema_version": "usfr-backend-decision/v1",
+                "candidate": "remotion_react_ui",
+                "domain": "programmable_overlays",
+                "report_sha256": report_sha,
+                "eligible": True,
+                "no_hard_regressions": True,
+            },
+        }
+        activation_receipt["receipt_sha256"] = hashlib.sha256(
+            json.dumps(activation_receipt, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        conditional = ConditionalUiRenderBackend(
+            fallback_renderer=fallback,
+            remotion_renderer=remotion,
+            capabilities={
+                "remotion_react_ui": {
+                    "status": "enabled",
+                    "domain": "programmable_overlays",
+                    "activation_report_sha256": report_sha,
+                    "activation_receipt": activation_receipt,
+                    **remotion.capability_identity(),
+                }
+            },
+        )
+
+        result = DeterministicUiRenderer(
+            ocr_backend=_EvidenceBoundOcrBackend(lambda _path: self._ocr_records()),
+            render_backend=conditional,
+            production=True,
+            sha256="b" * 64,
+        ).render_and_verify(context=context, input_artifacts=[])
+
+        self.assertEqual(calls, ["remotion"])
+        self.assertEqual(result["ui_renderer_decision"]["backend"], "remotion_react_ui")
+        self.assertEqual(result["published_artifacts"][1]["kind"], "ui_renderer_decision")
+
     def test_active_generated_ui_derives_truth_from_uploaded_screenshot(self) -> None:
         """A screenshot-only slot must produce an executable immutable UI truth card."""
         ui = self._ui_fixture()
@@ -835,7 +1062,10 @@ class RealCapabilitySmokeTest(unittest.TestCase):
         self.assertEqual(result["truth_basis"], "target-owned-upload")
 
     def test_bundled_app_store_parser_publishes_evidence_before_ui_resolution(self) -> None:
-        context = _Context(self.video)
+        context = _Context(
+            self.video,
+            timeline_regions=({"region_type": "generated_ui_demo"},),
+        )
         context.input_slots = (
             {
                 "slot_id": "app_store_url",

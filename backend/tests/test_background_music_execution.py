@@ -22,6 +22,7 @@ from app.background_music_execution import (  # noqa: E402
     build_background_music_stage_plan,
 )
 import app.background_music_execution as background_music_execution  # noqa: E402
+from server.job_models import ProviderAttempt  # noqa: E402
 
 
 class _Checkpoint:
@@ -84,6 +85,8 @@ class _ArtifactPortContext:
     artifact_ref: dict[str, object] | None = None
     published: dict[str, bytes] = field(default_factory=dict)
     published_paths: dict[str, tuple[dict[str, object], Path]] = field(default_factory=dict)
+    job_id: str = "music-job"
+    job_store: object = field(default_factory=lambda: _ProviderAttemptStore())
 
     def materialize_slot(self, slot_id):
         return self.snapshot.slots_manifest["slots"][slot_id]["metadata"][0]
@@ -165,6 +168,8 @@ class _MediaPortContext:
     artifact_entries: tuple[tuple[dict[str, object], Path], ...]
     published_entries: dict[str, tuple[dict[str, object], Path]] = field(default_factory=dict)
     provider_lineage: dict[str, object] = field(default_factory=dict)
+    job_id: str = "music-job"
+    job_store: object = field(default_factory=lambda: _ProviderAttemptStore())
 
     @property
     def artifacts(self):
@@ -203,6 +208,49 @@ class _MediaPortContext:
         )
         assert entry is not None
         yield SimpleNamespace(path=entry[1])
+
+
+class _ProviderAttemptStore:
+    def __init__(self) -> None:
+        self.snapshot = SimpleNamespace(version=1, expires_at_ms=9_999_999_999_999)
+        self.attempts: list[ProviderAttempt] = []
+        self.events: list[str] = []
+
+    def get_job(self, job_id):
+        assert job_id == "music-job"
+        return self.snapshot
+
+    def list_provider_attempts(self, job_id):
+        assert job_id == "music-job"
+        return tuple(self.attempts)
+
+    def begin_provider_attempt(
+        self, *, job_id, expected_version, operation, request_sha256, segment_id=None, segment_plan_sha256=None
+    ):
+        assert job_id == "music-job"
+        assert expected_version == self.snapshot.version
+        attempt = ProviderAttempt(
+            attempt_id=f"attempt-{len(self.attempts) + 1}",
+            operation=operation,
+            request_sha256=request_sha256,
+            status="SUBMITTING",
+            segment_id=segment_id,
+            segment_plan_sha256=segment_plan_sha256,
+        )
+        self.attempts.append(attempt)
+        self.events.append("begin")
+        self.snapshot.version += 1
+        return attempt
+
+    def update_provider_attempt(self, *, job_id, expected_version, attempt, ttl_seconds):
+        assert job_id == "music-job"
+        assert expected_version == self.snapshot.version
+        assert ttl_seconds > 0
+        index = next(index for index, current in enumerate(self.attempts) if current.attempt_id == attempt.attempt_id)
+        self.attempts[index] = attempt
+        self.events.append(attempt.status)
+        self.snapshot.version += 1
+        return self.snapshot
 
 
 class _Port:
@@ -434,6 +482,24 @@ def _verified_performance_line_contract() -> dict[str, object]:
                 "lyric_status": "verified",
                 "exact_sung_text": "Hold on",
                 "beat_anchors_ms": [240],
+                "lip_sync": {
+                    "face_visibility": "locked medium close-up, face fully visible",
+                    "articulation": "clear syllable-by-syllable mouth articulation",
+                    "end_state": "mouth closes at the line end",
+                },
+                "action": {
+                    "start": "hand rests on the product",
+                    "beat_action": "finger taps the product on the beat",
+                    "end": "hand remains on the product",
+                },
+                "expression": {
+                    "start": "calm",
+                    "peak": "confident smile",
+                    "end": "calm smile",
+                },
+                "emotion": "confident",
+                "end_pose": "face forward with hand on the product",
+                "criticality": "HIGH",
             }
         ],
     }
@@ -494,6 +560,7 @@ def _final_mix_receipt(*, execution_contract: dict[str, object]) -> dict[str, ob
                 "fragment_sha256": "e" * 64,
                 "uploaded_fragment_sha256": "e" * 64,
                 "final_audio_fragment_sha256": "e" * 64,
+                "pcm_fragment_sha256": "e" * 64,
                 "looped": False,
                 "atempo_applied": False,
                 "speed_changed": False,
@@ -673,7 +740,6 @@ def _materialized_music_case(
             (final_video_reference, final_video_path),
         ),
     )
-    fragment_sha = hashlib.sha256(uploaded_bytes).hexdigest()
     pcm_fragment_sha = hashlib.sha256(uploaded_pcm).hexdigest()
     receipt = {
         "passed": True,
@@ -687,9 +753,9 @@ def _materialized_music_case(
         "window_receipts": [
             {
                 **execution["source_music_windows"][0],
-                "fragment_sha256": fragment_sha,
-                "uploaded_fragment_sha256": fragment_sha,
-                "final_audio_fragment_sha256": fragment_sha,
+                "fragment_sha256": pcm_fragment_sha,
+                "uploaded_fragment_sha256": pcm_fragment_sha,
+                "final_audio_fragment_sha256": pcm_fragment_sha,
                 "pcm_fragment_sha256": pcm_fragment_sha,
                 "uploaded_byte_offset": 0,
                 "uploaded_byte_length": len(uploaded_bytes),
@@ -774,7 +840,16 @@ def test_uploaded_song_is_the_final_audio_authority_without_time_or_pitch_transf
 
     text = execution["provider_payload"]["content"][0]["text"]
     assert "@Audio1" in text
-    assert "Hold on" in text
+    assert '"Hold on"' in text
+    assert "Line L01" in text
+    assert "Cut C01" in text
+    assert "CHARACTER_A" in text
+    assert "global source time 0-1000 ms" in text
+    assert "local segment time 0-1000 ms" in text
+    assert "beat anchors 240 ms" in text
+    assert "locked medium close-up, face fully visible" in text
+    assert "finger taps the product on the beat" in text
+    assert execution["performance_line_contract_sha256"] in text
     assert execution["performance_line_contract_sha256"] == hashlib.sha256(
         json.dumps(_verified_performance_line_contract(), sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
@@ -1272,6 +1347,11 @@ def test_provider_adapter_submits_the_materialized_request_and_waits_for_its_exa
     assert output["execution_request_artifact"]["kind"] == "background_music_execution_request"
     assert output["execution_contract_sha256"] == execution["execution_contract_sha256"]
     assert output["seedance_payload_sha256"] == execution["seedance_payload_sha256"]
+    attempt = context.job_store.attempts[0]
+    assert context.job_store.events == ["begin", "RUNNING", "SUCCEEDED"]
+    assert attempt.status == "SUCCEEDED"
+    assert attempt.provider_task_id == "provider-task-1"
+    assert attempt.response_sha256 == receipt["provider_raw_response_sha256"]
 
 
 def test_provider_lookup_materializes_the_exact_provider_video_before_publishing_output(tmp_path):
@@ -1304,6 +1384,98 @@ def test_provider_lookup_materializes_the_exact_provider_video_before_publishing
     assert provider_video_reference["kind"] == "background_music_provider_video"
     assert provider_video_reference["sha256"] == hashlib.sha256(provider_video_bytes).hexdigest()
     assert context.published_entries[provider_video_reference["artifact_id"]][1].read_bytes() == provider_video_bytes
+
+
+def test_provider_submission_stage_output_keeps_the_raw_response_only_as_an_artifact(tmp_path):
+    """A paid submit must survive the worker's JSON-only stage checkpoint."""
+
+    execution, _, context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
+    provider = _VerifiedProviderAdapter()
+    submitted = BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    ).run(context=context, input_artifacts=[])
+
+    evidence = submitted["background_music_evidence"]
+    assert "provider_raw_response" not in evidence
+    assert evidence["provider_submission_receipt"]["provider_raw_response_artifact"]["kind"] == (
+        "background_music_provider_raw_response"
+    )
+
+    from server.ephemeral_worker import _stage_output_value
+
+    assert _stage_output_value(submitted) == submitted
+
+
+def test_provider_task_identity_is_checkpointed_before_raw_response_artifact_publication(tmp_path):
+    """A post-charge artifact-store failure must not lose the Provider task ID."""
+
+    class _RawResponsePublicationFailureContext(_MediaPortContext):
+        def publish_bytes(self, *, kind, data, content_type, expected_sha256):
+            if kind == "background_music_provider_raw_response":
+                raise RuntimeError("object storage temporarily unavailable")
+            return super().publish_bytes(
+                kind=kind,
+                data=data,
+                content_type=content_type,
+                expected_sha256=expected_sha256,
+            )
+
+    execution, _, base_context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
+    context = _RawResponsePublicationFailureContext(
+        base_context.snapshot,
+        uploaded_path=base_context.uploaded_path,
+        artifact_entries=base_context.artifact_entries,
+        published_entries=base_context.published_entries,
+        provider_lineage=base_context.provider_lineage,
+    )
+    provider = _VerifiedProviderAdapter()
+    submit = BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    )
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_SUBMISSION_RECEIPT_REQUIRED"):
+        submit.run(context=context, input_artifacts=[])
+
+    assert provider.create_requests == [execution["provider_payload"]]
+    attempt = context.job_store.attempts[0]
+    assert attempt.status == "RUNNING"
+    assert attempt.provider_task_id == "provider-task-1"
+    assert isinstance(attempt.response_sha256, str) and len(attempt.response_sha256) == 64
+
+
+def test_provider_submit_freezes_and_reuses_the_running_attempt_instead_of_creating_a_second_paid_task(tmp_path):
+    execution, _, context, _, _ = _materialized_music_case(tmp_path, _music_timeline())
+    provider = _VerifiedProviderAdapter()
+    submit = BackgroundMusicStagePort(
+        stage="submit_provider_video",
+        delegate=_Port("canonical"),
+        music_delegate=_CopiedReceiptSubmitPort(),
+        provider_adapter=provider,
+    )
+
+    first = submit.run(context=context, input_artifacts=[])
+    attempt = context.job_store.attempts[0]
+
+    assert context.job_store.events == ["begin", "RUNNING"]
+    assert attempt.operation == "CreateVideo"
+    assert attempt.status == "RUNNING"
+    assert attempt.provider_task_id == "provider-task-1"
+    assert attempt.request_sha256 == execution["seedance_payload_sha256"]
+    assert attempt.response_sha256 == first["background_music_evidence"]["provider_submission_receipt"][
+        "provider_raw_response_sha256"
+    ]
+
+    resumed = submit.run(context=context, input_artifacts=[])
+
+    assert provider.create_requests == [execution["provider_payload"]]
+    assert context.job_store.events == ["begin", "RUNNING"]
+    assert resumed["background_music_evidence"]["provider_submission_receipt"]["provider_attempt_id"] == attempt.attempt_id
 
 
 def test_provider_adapter_without_a_bound_media_download_fails_closed():

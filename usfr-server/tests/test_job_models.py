@@ -196,6 +196,7 @@ def test_ephemeral_job_store_exposes_only_the_required_public_methods():
         "cas_transition",
         "append_revision",
         "approve_revision",
+        "get_script_approval",
         "list_revisions",
         "get_current_revision",
         "touch_review_ttl",
@@ -207,6 +208,7 @@ def test_ephemeral_job_store_exposes_only_the_required_public_methods():
         "list_artifacts",
         "get_stage_checkpoint",
         "begin_provider_attempt",
+        "list_provider_attempts",
         "update_provider_attempt",
         "claim_stage",
         "complete_stage",
@@ -260,6 +262,7 @@ def test_unimplemented_ephemeral_job_store_methods_fail_loudly():
             operation="CreateVideo",
             request_sha256="b" * 64,
         ),
+        lambda: store.list_provider_attempts("job-1"),
         lambda: store.update_provider_attempt(
             job_id="job-1",
             expected_version=1,

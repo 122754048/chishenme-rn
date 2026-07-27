@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fractions import Fraction
 import hashlib
 import json
@@ -20,7 +20,11 @@ import struct
 import sys
 from types import SimpleNamespace
 
-from app.background_music_execution import BackgroundMusicStagePort
+from app.background_music_execution import (
+    BackgroundMusicStagePort,
+    compile_background_music_execution_contract,
+)
+from server.job_models import ProviderAttempt
 
 
 LOCAL_MVP_ENVIRONMENT = "development-only"
@@ -61,12 +65,77 @@ class _DecodedPcm:
 
 
 @dataclass
+class _LocalProviderAttemptStore:
+    version: int = 1
+    expires_at_ms: int = 9_999_999_999_999
+    attempts: list[ProviderAttempt] = field(default_factory=list)
+
+    def get_job(self, job_id: str) -> "_LocalProviderAttemptStore":
+        if job_id != "local-background-music-mvp":
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_PROVIDER_ATTEMPT_INVALID")
+        return self
+
+    def list_provider_attempts(self, job_id: str) -> tuple[ProviderAttempt, ...]:
+        self.get_job(job_id)
+        return tuple(self.attempts)
+
+    def begin_provider_attempt(
+        self,
+        *,
+        job_id: str,
+        expected_version: int,
+        operation: str,
+        request_sha256: str,
+        segment_id: str | None = None,
+        segment_plan_sha256: str | None = None,
+    ) -> ProviderAttempt:
+        self.get_job(job_id)
+        if expected_version != self.version or operation != "CreateVideo":
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_PROVIDER_ATTEMPT_INVALID")
+        attempt = ProviderAttempt(
+            attempt_id=f"local-attempt-{len(self.attempts) + 1}",
+            operation="CreateVideo",
+            request_sha256=request_sha256,
+            status="SUBMITTING",
+            segment_id=segment_id,
+            segment_plan_sha256=segment_plan_sha256,
+        )
+        self.attempts.append(attempt)
+        self.version += 1
+        return attempt
+
+    def update_provider_attempt(
+        self,
+        *,
+        job_id: str,
+        expected_version: int,
+        attempt: ProviderAttempt,
+        ttl_seconds: int,
+    ) -> "_LocalProviderAttemptStore":
+        self.get_job(job_id)
+        if expected_version != self.version or ttl_seconds <= 0:
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_PROVIDER_ATTEMPT_INVALID")
+        index = next(
+            (index for index, current in enumerate(self.attempts) if current.attempt_id == attempt.attempt_id),
+            None,
+        )
+        if index is None:
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_PROVIDER_ATTEMPT_INVALID")
+        self.attempts[index] = attempt
+        self.version += 1
+        return self
+
+
+@dataclass
 class _LocalStageContext:
     snapshot: _Snapshot
     contracts_dir: Path
     _artifacts: list[dict[str, object]]
+    job_id: str = "local-background-music-mvp"
+    job_store: _LocalProviderAttemptStore = field(default_factory=_LocalProviderAttemptStore)
 
-    def materialize_slot(self, slot_id: str) -> Mapping[str, object]:
+    @contextmanager
+    def materialize_slot(self, slot_id: str):
         slots = self.snapshot.slots_manifest.get("slots")
         if not isinstance(slots, Mapping):
             raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_SLOT_CONTEXT_INVALID")
@@ -76,15 +145,19 @@ class _LocalStageContext:
         metadata = descriptor.get("metadata")
         if not isinstance(metadata, list) or len(metadata) != 1 or not isinstance(metadata[0], Mapping):
             raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_SLOT_CONTEXT_INVALID")
-        return dict(metadata[0])
+        archive_path = metadata[0].get("archive_path")
+        if not isinstance(archive_path, str) or not archive_path:
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_SLOT_CONTEXT_INVALID")
+        yield SimpleNamespace(path=Path(archive_path))
 
     def publish_bytes(self, *, kind: str, data: bytes, content_type: str, expected_sha256: str) -> dict[str, str]:
-        if kind != "music_timeline_contract" or content_type != "application/json":
+        if not isinstance(kind, str) or not kind or content_type not in {"application/json", "audio/wav", "video/mp4"}:
             raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_CONTRACT_PUBLISH_INVALID")
         if hashlib.sha256(data).hexdigest() != expected_sha256:
             raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_CONTRACT_PUBLISH_INVALID")
         artifact_id = f"{kind}-{expected_sha256[:16]}"
-        path = self.contracts_dir / f"{artifact_id}.json"
+        suffix = {"application/json": ".json", "audio/wav": ".wav", "video/mp4": ".mp4"}[content_type]
+        path = self.contracts_dir / f"{artifact_id}{suffix}"
         path.write_bytes(data)
         artifact = {
             "artifact_id": artifact_id,
@@ -119,6 +192,41 @@ class _StaticStagePort:
     def run(self, *, context: object, input_artifacts: list[Mapping[str, object]]) -> Mapping[str, object]:
         del context, input_artifacts
         return self._result
+
+
+class _LocalProviderAdapter:
+    """Deterministic local provider used only to exercise the StagePort lineage."""
+
+    def __init__(self, *, source_video: Path) -> None:
+        self._source_video = Path(source_video)
+        self._requests: list[Mapping[str, object]] = []
+
+    def capability_identity(self) -> dict[str, str]:
+        return {
+            "implementation": "background_music_local_mvp.LocalProviderAdapter",
+            "version": "1",
+            "sha256": "d" * 64,
+        }
+
+    def create_video(self, request: Mapping[str, object]) -> dict[str, str]:
+        self._requests.append(dict(request))
+        return {"task_id": "local-background-music-task", "status": "submitted"}
+
+    def lookup(self, intent: Mapping[str, object]) -> dict[str, object]:
+        if intent.get("taskId") != "local-background-music-task" or len(self._requests) != 1:
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_PROVIDER_LOOKUP_INVALID")
+        return {
+            "task_id": "local-background-music-task",
+            "status": "completed",
+            "output": {"kind": "local_source_video_passthrough"},
+        }
+
+    def download(self, task_id: str, destination: str) -> dict[str, object]:
+        if task_id != "local-background-music-task" or not self._source_video.is_file():
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_PROVIDER_DOWNLOAD_INVALID")
+        data = self._source_video.read_bytes()
+        Path(destination).write_bytes(data)
+        return {"sha256": _sha256_bytes(data), "size_bytes": len(data)}
 
 
 class DevelopmentOnlyBackgroundMusicMvpHarness:
@@ -159,8 +267,40 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
         timeline_reference = _mapping(timeline_evidence, "music_timeline_contract_artifact")
         frozen_contract = self._materialize_frozen_contract(context=context, reference=timeline_reference)
         audio_asset_receipt = self._audio_asset_receipt(uploaded)
-        provider_payload = self._provider_payload(audio_asset_receipt)
+        performance_line_contract = self._performance_line_contract(
+            contract=frozen_contract,
+            visible_singer_regions=visible_singer_regions,
+        )
+        if performance_line_contract is not None:
+            self._publish_json_artifact(
+                context=context,
+                kind="performance_line_contract",
+                payload=performance_line_contract,
+            )
+        user_confirmed_intent = (
+            "verified_singing" if performance_line_contract is not None else "background_music_replacement"
+        )
+        execution_contract = compile_background_music_execution_contract(
+            uploaded_audio=uploaded,
+            music_timeline_contract=frozen_contract,
+            audio_asset_receipt=audio_asset_receipt,
+            user_confirmed_intent=user_confirmed_intent,
+            performance_line_contract=performance_line_contract,
+        )
+        provider_payload = _mapping(execution_contract, "provider_payload")
         BackgroundMusicStagePort(
+            stage="compile_seedance20_prompt",
+            delegate=_StaticStagePort({"stage": "canonical_compile_seedance20_prompt"}),
+            music_delegate=_StaticStagePort(
+                {
+                    "background_music_evidence": {
+                        "music_execution_contract": execution_contract,
+                        "provider_payload": provider_payload,
+                    }
+                }
+            ),
+        ).run(context=context, input_artifacts=[])
+        audit_result = BackgroundMusicStagePort(
             stage="audit_seedance_request",
             delegate=_StaticStagePort({"stage": "canonical_audit_seedance_request"}),
             music_delegate=_StaticStagePort(
@@ -168,11 +308,16 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
                     "background_music_evidence": {
                         "audio_asset_receipt": audio_asset_receipt,
                         "provider_payload": provider_payload,
+                        "music_execution_contract": execution_contract,
                     }
                 }
             ),
         ).run(context=context, input_artifacts=[])
-        provider_execution = self._run_provider_stages(context=context)
+        audit_evidence = _evidence(audit_result)
+        provider_execution, provider_evidence = self._run_provider_stages(
+            context=context,
+            source_video=source_path,
+        )
         final_audio_path, final_video_path, mix_receipt = self._mix_exact_uploaded_fragments(
             source_analysis=source_analysis,
             source_video=source_path,
@@ -181,16 +326,52 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
             contract=frozen_contract,
         )
         final_video_sha256 = _sha256_file(final_video_path)
+        final_audio_reference = self._publish_media_artifact(
+            context=context,
+            kind="final_audio",
+            path=final_audio_path,
+            content_type="audio/wav",
+        )
+        final_video_reference = self._publish_media_artifact(
+            context=context,
+            kind="final_video",
+            path=final_video_path,
+            content_type="video/mp4",
+        )
         singing_qa = self._singing_qa(
             contract=frozen_contract,
             uploaded=uploaded,
             final_video_sha256=final_video_sha256,
+            verified_singing=execution_contract["mode"] == "verified_singing",
         )
         mix_receipt = self._bind_singing_receipts(mix_receipt=mix_receipt, singing_qa=singing_qa)
-        mix_receipt["final_video_sha256"] = final_video_sha256
+        provider_task_id = _mapping(provider_evidence, "provider_submission_receipt")["provider_task_id"]
+        provider_output_artifact = _mapping(provider_evidence, "provider_output_artifact")
+        mix_receipt.update(
+            {
+                "mode": execution_contract["mode"],
+                "forbidden_operations": execution_contract["forbidden_operations"],
+                "final_audio_artifact": final_audio_reference,
+                "final_video_artifact": final_video_reference,
+                "final_video_sha256": final_video_sha256,
+                "provider_output_artifact": provider_output_artifact,
+                "final_video_provider_output_artifact": provider_output_artifact,
+                "provider_task_id": provider_task_id,
+                "final_video_provider_task_id": provider_task_id,
+            }
+        )
         mix_evidence = {
             "music_timeline_contract": frozen_contract,
             "music_timeline_contract_artifact": timeline_reference,
+            "music_execution_contract": execution_contract,
+            "provider_payload": provider_payload,
+            "music_execution_audit_receipt_artifact": _mapping(
+                audit_evidence, "music_execution_audit_receipt_artifact"
+            ),
+            "music_execution_audit_binding": _mapping(audit_evidence, "music_execution_audit_binding"),
+            "provider_submission_receipt": _mapping(provider_evidence, "provider_submission_receipt"),
+            "provider_submission_artifact": _mapping(provider_evidence, "provider_submission_artifact"),
+            "provider_output_artifact": provider_output_artifact,
             "mix_receipt": mix_receipt,
         }
         BackgroundMusicStagePort(
@@ -226,6 +407,11 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
             "audio_asset_receipt": audio_asset_receipt,
             "provider_payload": provider_payload,
             "provider_execution": provider_execution,
+            "music_execution_contract": execution_contract,
+            "music_execution_audit_receipt_artifact": mix_evidence[
+                "music_execution_audit_receipt_artifact"
+            ],
+            "provider_output_artifact": provider_output_artifact,
             "music_timeline_contract": frozen_contract,
             "music_timeline_contract_artifact": timeline_reference,
             "music_timeline_contract_sha256": _sha256_bytes(_canonical_json_bytes(frozen_contract)),
@@ -372,29 +558,33 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
         }
 
     @staticmethod
-    def _run_provider_stages(*, context: _LocalStageContext) -> dict[str, object]:
+    def _run_provider_stages(
+        *,
+        context: _LocalStageContext,
+        source_video: Path,
+    ) -> tuple[dict[str, object], Mapping[str, object]]:
+        provider = _LocalProviderAdapter(source_video=source_video)
+        submit = BackgroundMusicStagePort(
+            stage="submit_provider_video",
+            delegate=_StaticStagePort({"stage": "canonical_submit_provider_video"}),
+            music_delegate=_StaticStagePort({"background_music_evidence": {}}),
+            provider_adapter=provider,
+        ).run(context=context, input_artifacts=[])
+        waited = BackgroundMusicStagePort(
+            stage="wait_provider_video",
+            delegate=_StaticStagePort({"stage": "canonical_wait_provider_video"}),
+            music_delegate=_StaticStagePort({"background_music_evidence": {}}),
+            provider_adapter=provider,
+        ).run(context=context, input_artifacts=[])
         receipt = {"status": "completed", "output": "local_source_video_passthrough"}
-        for stage in ("submit_provider_video", "wait_provider_video"):
-            BackgroundMusicStagePort(
-                stage=stage,
-                delegate=_StaticStagePort({"stage": f"canonical_{stage}"}),
-                music_delegate=_StaticStagePort(
-                    {
-                        "background_music_evidence": {
-                            "provider_execution": {
-                                "environment": LOCAL_MVP_ENVIRONMENT,
-                                "stage": stage,
-                                **receipt,
-                            }
-                        }
-                    }
-                ),
-            ).run(context=context, input_artifacts=[])
-        return {
-            "environment": LOCAL_MVP_ENVIRONMENT,
-            "submit_provider_video": dict(receipt),
-            "wait_provider_video": dict(receipt),
-        }
+        return (
+            {
+                "environment": LOCAL_MVP_ENVIRONMENT,
+                "submit_provider_video": dict(receipt),
+                "wait_provider_video": dict(receipt),
+            },
+            _evidence(waited),
+        )
 
     def _build_timeline_contract(
         self,
@@ -405,10 +595,13 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
     ) -> dict[str, object]:
         frame_rate = Fraction(str(source_analysis["frame_rate"]))
         windows = source_analysis.get("audio_activity_windows")
-        if not isinstance(windows, list):
+        frame_count = source_analysis.get("frame_count")
+        if not isinstance(windows, list) or isinstance(frame_count, bool) or not isinstance(frame_count, int) or frame_count <= 0:
             raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_SOURCE_MUSIC_ACTIVITY_REQUIRED")
+        output_duration_ms = round(frame_count * 1000 / float(frame_rate))
+        output_duration_samples = round(frame_count * uploaded_pcm.sample_rate / float(frame_rate))
         uploaded_cursor_samples = 0
-        contract_windows: list[dict[str, int]] = []
+        contract_windows: list[dict[str, object]] = []
         for raw_window in windows:
             start_frame = raw_window.get("source_start_frame") if isinstance(raw_window, Mapping) else None
             end_frame = raw_window.get("source_end_frame") if isinstance(raw_window, Mapping) else None
@@ -420,23 +613,186 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
             uploaded_end_samples = uploaded_cursor_samples + window_samples
             if uploaded_end_samples * uploaded_pcm.bytes_per_frame > len(uploaded_pcm.data):
                 raise DevelopmentOnlyBackgroundMusicMvpError("BACKGROUND_MUSIC_DURATION_INSUFFICIENT")
+            uploaded_start_ms = round(uploaded_cursor_samples * 1000 / uploaded_pcm.sample_rate)
+            uploaded_end_ms = round(uploaded_end_samples * 1000 / uploaded_pcm.sample_rate)
+            output_start_ms = round(start_frame * 1000 / float(frame_rate))
+            output_end_ms = round(end_frame * 1000 / float(frame_rate))
+            source_entry = {
+                "source_start_ms": uploaded_start_ms,
+                "source_end_ms": uploaded_start_ms,
+                "output_start_ms": output_start_ms,
+                "output_end_ms": output_start_ms,
+            }
+            source_exit = {
+                "source_start_ms": uploaded_end_ms,
+                "source_end_ms": uploaded_end_ms,
+                "output_start_ms": output_end_ms,
+                "output_end_ms": output_end_ms,
+            }
             contract_windows.append(
                 {
                     "source_start_frame": start_frame,
                     "source_end_frame": end_frame,
                     "output_start_frame": start_frame,
                     "output_end_frame": end_frame,
-                    "uploaded_start_ms": round(uploaded_cursor_samples * 1000 / uploaded_pcm.sample_rate),
-                    "uploaded_end_ms": round(uploaded_end_samples * 1000 / uploaded_pcm.sample_rate),
+                    "source_start_ms": output_start_ms,
+                    "source_end_ms": output_end_ms,
+                    "uploaded_start_ms": uploaded_start_ms,
+                    "uploaded_end_ms": uploaded_end_ms,
+                    "output_start_ms": output_start_ms,
+                    "output_end_ms": output_end_ms,
                     "uploaded_start_sample": uploaded_cursor_samples,
                     "uploaded_end_sample": uploaded_end_samples,
+                    "output_start_sample": round(start_frame * uploaded_pcm.sample_rate / float(frame_rate)),
+                    "output_end_sample": round(end_frame * uploaded_pcm.sample_rate / float(frame_rate)),
+                    "source_entry": source_entry,
+                    "source_exit": source_exit,
+                    "fade_in": dict(source_entry),
+                    "fade_out": dict(source_exit),
+                    "silence_before": dict(source_entry),
+                    "silence_after": dict(source_exit),
+                    "transition": dict(source_exit),
                 }
             )
             uploaded_cursor_samples = uploaded_end_samples
+        meaningful_silence: list[dict[str, int]] = []
+        previous_end_ms = 0
+        for window in contract_windows:
+            start_ms = window["output_start_ms"]
+            if start_ms > previous_end_ms:
+                meaningful_silence.append(
+                    {"output_start_ms": previous_end_ms, "output_end_ms": start_ms}
+                )
+            previous_end_ms = window["output_end_ms"]
+        if previous_end_ms < output_duration_ms:
+            meaningful_silence.append(
+                {"output_start_ms": previous_end_ms, "output_end_ms": output_duration_ms}
+            )
         return {
             "visible_singer_regions": [dict(region) for region in visible_singer_regions],
             "windows": contract_windows,
+            "meaningful_silence_output_intervals": meaningful_silence,
+            "output_duration_ms": output_duration_ms,
+            "output_duration_samples": output_duration_samples,
         }
+
+    @staticmethod
+    def _performance_line_contract(
+        *,
+        contract: Mapping[str, object],
+        visible_singer_regions: Sequence[Mapping[str, object]],
+    ) -> dict[str, object] | None:
+        windows = contract.get("windows")
+        if not isinstance(windows, list):
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_TIMELINE_INVALID")
+        visible = [region for region in visible_singer_regions if region.get("visible") is True]
+        if not visible:
+            return None
+        cuts: list[dict[str, object]] = []
+        for index, region in enumerate(visible, start=1):
+            region_id = region.get("region_id")
+            lyrics = region.get("lyrics")
+            start_frame = region.get("source_start_frame")
+            end_frame = region.get("source_end_frame")
+            if (
+                not isinstance(region_id, str)
+                or not region_id
+                or not isinstance(lyrics, str)
+                or not lyrics.strip()
+                or isinstance(start_frame, bool)
+                or isinstance(end_frame, bool)
+                or not isinstance(start_frame, int)
+                or not isinstance(end_frame, int)
+                or end_frame <= start_frame
+            ):
+                return None
+            matching_window = next(
+                (
+                    window
+                    for window in windows
+                    if isinstance(window, Mapping)
+                    and window.get("source_start_frame") <= start_frame
+                    and end_frame <= window.get("source_end_frame")
+                ),
+                None,
+            )
+            if not isinstance(matching_window, Mapping):
+                return None
+            source_start_ms = matching_window.get("source_start_ms")
+            source_end_ms = matching_window.get("source_end_ms")
+            if not isinstance(source_start_ms, int) or not isinstance(source_end_ms, int):
+                raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_TIMELINE_INVALID")
+            evidence_sha256 = _sha256_bytes(_canonical_json_bytes(dict(region)))
+            cuts.append(
+                {
+                    "line_id": f"local-singing-{index}",
+                    "cut_id": region_id,
+                    "content_type": "sung",
+                    "speaker_assignment": {
+                        "status": "CONFIRMED",
+                        "speaker_id": f"CHARACTER_{index}",
+                        "evidence_sha256": evidence_sha256,
+                    },
+                    "source_time": {"start_ms": source_start_ms, "end_ms": source_end_ms},
+                    "segment_time": {"start_ms": source_start_ms, "end_ms": source_end_ms},
+                    "performance_mode": "singing",
+                    "lyric_status": "verified",
+                    "exact_sung_text": lyrics.strip(),
+                    "beat_anchors_ms": [source_start_ms + max(1, (source_end_ms - source_start_ms) // 2)],
+                    "lip_sync": {
+                        "face_visibility": "locked medium close-up, face visible",
+                        "articulation": "clear syllable-by-syllable articulation",
+                        "end_state": "mouth closes at the line end",
+                    },
+                    "action": {
+                        "start": "hold the approved opening pose",
+                        "beat_action": "make one small beat-synced gesture",
+                        "end": "hold the approved end pose",
+                    },
+                    "expression": {
+                        "start": "neutral focus",
+                        "peak": "engaged singing expression",
+                        "end": "settled expression",
+                    },
+                    "emotion": "engaged",
+                    "end_pose": "face remains visible in the approved end pose",
+                    "criticality": "HIGH",
+                }
+            )
+        return {"contract": "performance-line/v1", "cuts": cuts}
+
+    @staticmethod
+    def _publish_json_artifact(
+        *,
+        context: _LocalStageContext,
+        kind: str,
+        payload: Mapping[str, object],
+    ) -> dict[str, str]:
+        data = _canonical_json_bytes(payload)
+        reference = context.publish_bytes(
+            kind=kind,
+            data=data,
+            content_type="application/json",
+            expected_sha256=_sha256_bytes(data),
+        )
+        return {**reference, "kind": kind}
+
+    @staticmethod
+    def _publish_media_artifact(
+        *,
+        context: _LocalStageContext,
+        kind: str,
+        path: Path,
+        content_type: str,
+    ) -> dict[str, str]:
+        data = Path(path).read_bytes()
+        reference = context.publish_bytes(
+            kind=kind,
+            data=data,
+            content_type=content_type,
+            expected_sha256=_sha256_bytes(data),
+        )
+        return {**reference, "kind": kind}
 
     def _audio_asset_receipt(self, uploaded: Mapping[str, object]) -> dict[str, object]:
         digest = str(uploaded["sha256"])
@@ -566,6 +922,35 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
         )
         if self._decode_pcm(final_video_path).data != bytes(final_pcm):
             raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_FINAL_VIDEO_AUDIO_MISMATCH")
+        for receipt in receipts:
+            uploaded_start_sample = int(receipt["uploaded_start_sample"])
+            uploaded_end_sample = int(receipt["uploaded_end_sample"])
+            output_start_sample = round(int(receipt["output_start_frame"]) * uploaded_pcm.sample_rate / float(frame_rate))
+            output_end_sample = round(int(receipt["output_end_frame"]) * uploaded_pcm.sample_rate / float(frame_rate))
+            uploaded_start_ms = int(receipt["uploaded_start_ms"])
+            uploaded_end_ms = int(receipt["uploaded_end_ms"])
+            output_start_ms = int(receipt["output_start_ms"])
+            output_end_ms = int(receipt["output_end_ms"])
+            uploaded_pcm_fragment = uploaded_pcm.data[
+                uploaded_start_sample * uploaded_pcm.bytes_per_frame : uploaded_end_sample * uploaded_pcm.bytes_per_frame
+            ]
+            final_pcm_fragment = bytes(final_pcm)[
+                output_start_sample * uploaded_pcm.bytes_per_frame : output_end_sample * uploaded_pcm.bytes_per_frame
+            ]
+            if uploaded_pcm_fragment != final_pcm_fragment:
+                raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_EXACT_FRAGMENT_MISMATCH")
+            fragment_sha256 = _sha256_bytes(uploaded_pcm_fragment)
+            receipt.update(
+                {
+                    "fragment_sha256": fragment_sha256,
+                    "uploaded_fragment_sha256": fragment_sha256,
+                    "final_audio_fragment_sha256": fragment_sha256,
+                    "pcm_fragment_sha256": fragment_sha256,
+                    "atempo_applied": False,
+                    "speed_changed": False,
+                    "silence_padded": False,
+                }
+            )
         pcm_format = {
             "sample_rate": uploaded_pcm.sample_rate,
             "channels": uploaded_pcm.channels,
@@ -704,7 +1089,10 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
         contract: Mapping[str, object],
         uploaded: Mapping[str, object],
         final_video_sha256: str,
+        verified_singing: bool,
     ) -> dict[str, object]:
+        if not verified_singing:
+            return {"status": "skipped", "reason": "no_lyric_lip_sync", "regions": []}
         regions = contract.get("visible_singer_regions")
         if not isinstance(regions, list):
             raise DevelopmentOnlyBackgroundMusicMvpError("SINGING_ALIGNMENT_REQUIRED")
@@ -774,7 +1162,7 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
         if not isinstance(regions, list):
             raise DevelopmentOnlyBackgroundMusicMvpError("SINGING_FINAL_RECEIPT_REQUIRED")
         if status == "skipped":
-            if singing_qa.get("reason") != "no_visible_singing_person" or regions:
+            if singing_qa.get("reason") not in {"no_visible_singing_person", "no_lyric_lip_sync"} or regions:
                 raise DevelopmentOnlyBackgroundMusicMvpError("SINGING_FINAL_RECEIPT_REQUIRED")
             return {**mix_receipt, "singing_receipts": []}
         if status != "passed":
@@ -961,6 +1349,7 @@ def _evidence(result: Mapping[str, object]) -> Mapping[str, object]:
 def _content_type(path: Path) -> str:
     values = {
         ".aac": "audio/aac",
+        ".flac": "audio/flac",
         ".m4a": "audio/mp4",
         ".mp3": "audio/mpeg",
         ".mov": "video/quicktime",

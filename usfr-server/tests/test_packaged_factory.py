@@ -6,6 +6,8 @@ import importlib.util
 from pathlib import Path
 import pytest
 
+from server.remotion_react_ui import ConditionalUiRenderBackend
+
 from server.deployment_bootstrap import DeploymentRuntime
 
 from test_object_lifecycle import MemoryS3
@@ -75,3 +77,53 @@ def test_readiness_only_stage_ports_fail_if_work_is_accidentally_dispatched(monk
     port = runtime.worker_manager.stage_ports["run_qc"]
     with pytest.raises(PackagedFactoryError, match="readiness-only"):
         port.run(context=None)
+
+
+def test_port_factory_wires_only_an_explicit_remotion_candidate_into_the_ui_renderer() -> None:
+    path = ROOT / "server" / "packaged_factory.py"
+    spec = importlib.util.spec_from_file_location("server.packaged_factory", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    class Renderer:
+        def __init__(self, name: str, digest: str) -> None:
+            self.name = name
+            self.digest = digest
+
+        def capability_identity(self) -> dict[str, str]:
+            return {"implementation": f"tests:{self.name}", "version": "1", "sha256": self.digest}
+
+        def __call__(self, *_args, **_kwargs):
+            return {"video_path": "unused.mp4"}
+
+    class UiAdapter:
+        def __init__(self, backend):
+            self.render_backend = backend
+
+        def replace_render_backend(self, backend) -> None:
+            self.render_backend = backend
+
+    fallback = Renderer("ffmpeg", "f" * 64)
+    remotion = Renderer("remotion", "d" * 64)
+    adapter = UiAdapter(fallback)
+    module._configure_optional_remotion_ui_adapter(
+        {
+            "remotion_react_ui": {
+                "renderer": remotion,
+                "capabilities": {
+                    "remotion_react_ui": {
+                        "status": "enabled",
+                        "domain": "programmable_overlays",
+                        "activation_report_sha256": "a" * 64,
+                        **remotion.capability_identity(),
+                    }
+                },
+            }
+        },
+        {"ocr_ui_renderer": adapter},
+    )
+
+    assert isinstance(adapter.render_backend, ConditionalUiRenderBackend)
+    assert adapter.render_backend.fallback_renderer is fallback
+    assert adapter.render_backend.remotion_renderer is remotion

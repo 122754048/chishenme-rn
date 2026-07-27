@@ -45,7 +45,7 @@ def test_music_extension_is_admissible_without_an_eighth_slot():
     assert manifest["extensions"]["background_music"]["provider_route"] == "seedance_audio_reference"
 ```
 
-Run: `python -m pytest tests/test_fixed_input_slot_contract.py -p no:cacheprovider -q`
+Run: `python -B -m pytest tests/test_fixed_input_slot_contract.py -p no:cacheprovider -q`
 Expected: FAIL before extension support exists.
 
 - [x] **Step 2: 只实现固定槽位外的扩展归一化**
@@ -63,7 +63,7 @@ language_only = output_language is not None and optional_count == 0 and extensio
 can_proceed = optional_count >= 1 or extension is not None or language_only
 ```
 
-Run: `python -m pytest tests/test_fixed_input_slot_contract.py tests/test_server_intake_artifacts.py tests/test_api_upload_lifecycle.py -p no:cacheprovider -q`
+Run: `python -B -m pytest tests/test_fixed_input_slot_contract.py tests/test_server_intake_artifacts.py tests/test_api_upload_lifecycle.py -p no:cacheprovider -q`
 Expected: PASS。
 
 - [x] **Step 4: 用能力状态替代遗留“永久禁用”表述**
@@ -104,7 +104,7 @@ def test_timeline_merges_cut_bound_ocr_asr_music_and_speaker_evidence_once():
     assert timeline["rows"][0]["speaker_assignment"]["status"] == "CONFIRMED"
 ```
 
-Run: `python -m pytest tests/test_source_content_timeline.py -p no:cacheprovider -q`
+Run: `python -B -m pytest tests/test_source_content_timeline.py -p no:cacheprovider -q`
 Expected: FAIL because the module does not exist.
 
 - [x] **Step 2: 实现纯合同构造器和 SHA 绑定**
@@ -124,7 +124,7 @@ def speaker_assignment_for_line(line: Mapping[str, Any], visible_tracks: Sequenc
     # 单一可见说话人 -> CONFIRMED；多人或置信度不足 -> PENDING_ASSIGNMENT。
 ```
 
-Run: `python -m pytest tests/test_source_content_timeline.py -p no:cacheprovider -q`
+Run: `python -B -m pytest tests/test_source_content_timeline.py -p no:cacheprovider -q`
 Expected: PASS。
 
 - [x] **Step 4: 在既有 dynamics/script 间发布并复用制品**
@@ -136,7 +136,7 @@ context.publish_artifact(kind="source_content_timeline", payload=timeline)
 
 - [x] **Step 5: 跑端口回归并提交**
 
-Run: `python -m pytest tests/test_real_media_ports.py tests/test_production_ports.py tests/test_source_content_timeline.py -p no:cacheprovider -q`
+Run: `python -B -m pytest tests/test_real_media_ports.py tests/test_production_ports.py tests/test_source_content_timeline.py -p no:cacheprovider -q`
 Expected: PASS。
 
 ### Task 3: 将用户确认的说话人/台词写入 Seedance-20 不可改写合同
@@ -154,7 +154,7 @@ Expected: PASS。
 - Produces: `line_contract` 与 `performance_line_contract` 的一对一绑定，供 Invocation A/B 使用。
 - Invariant: `PENDING_ASSIGNMENT`、未确认歌词、跨 Cut/Segment 的行必须在 Invocation B 前失败。
 
-- [ ] **Step 1: 写入未确认说话人被阻止的失败测试**
+- [x] **Step 1: 写入未确认说话人被阻止的失败测试**
 
 ```python
 def test_compiler_rejects_pending_speaker_assignment():
@@ -162,19 +162,19 @@ def test_compiler_rejects_pending_speaker_assignment():
         compile_prompt(request_with_pending_assignment)
 ```
 
-- [ ] **Step 2: 扩展逐句合同字段并保持已有 spoken/sung/instrumental/inaudible 行为**
+- [x] **Step 2: 扩展逐句合同字段并保持已有 spoken/sung/instrumental/inaudible 行为**
 
 ```python
 line["speaker_assignment"] = {"status": "CONFIRMED", "speaker_id": "CHARACTER_A",
                                "confidence": 0.94, "evidence_sha256": evidence_sha}
 ```
 
-- [ ] **Step 3: 在 Invocation A、脚本修订和 Invocation B 重复验证同一 SHA**
+- [x] **Step 3: 在 Invocation A、脚本修订和 Invocation B 重复验证同一 SHA**
 
-Run: `python -m pytest tests/test_line_contract.py tests/test_performance_audio_contracts.py tests/test_seedance_prompt_compiler.py -p no:cacheprovider -q`
+Run: `python -B -m pytest tests/test_line_contract.py tests/test_performance_audio_contracts.py tests/test_seedance_prompt_compiler.py -p no:cacheprovider -q`
 Expected: PASS。
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 Run: `git add usfr-server && git commit -m "feat: bind approved speaker assignments to audio contracts"`
 
@@ -194,7 +194,7 @@ Run: `git add usfr-server && git commit -m "feat: bind approved speaker assignme
 - Produces: `@Audio1` 受审计请求、演唱或 BGM 替换合同、上传音乐 SHA/片段 SHA/窗口/最终视频 SHA 的混音回执。
 - Invariant: 最终音频来自上传文件的精确片段；无可验证歌词/歌手时只能 BGM 模式，绝不声称精准演唱。
 
-- [ ] **Step 1: 写入演唱/BGM 两模式及禁止变换的失败测试**
+- [x] **Step 1: 写入演唱/BGM 两模式及禁止变换的失败测试**
 
 ```python
 def test_uploaded_song_is_the_final_audio_authority_without_time_or_pitch_transform():
@@ -203,18 +203,18 @@ def test_uploaded_song_is_the_final_audio_authority_without_time_or_pitch_transf
     assert receipt["uploaded_audio_sha256"] == uploaded_sha
 ```
 
-- [ ] **Step 2: 复用已有部署适配器，拒绝没有该适配器的商业任务**
+- [x] **Step 2: 复用已有部署适配器，拒绝没有该适配器的商业任务**
 
 ```python
 if is_background_music_manifest(manifest) and adapter is None:
     raise ContractError("BACKGROUND_MUSIC_EXECUTION_CAPABILITY_REQUIRED")
 ```
 
-- [ ] **Step 3: 将 verified singing 合同接到 Seedance-20 B，BGM 合同明确 `No lyric lip-sync`**
+- [x] **Step 3: 将 verified singing 合同接到 Seedance-20 B，BGM 合同明确 `No lyric lip-sync`**
 
-- [ ] **Step 4: 跑商业/本地回归并提交**
+- [x] **Step 4: 跑商业/本地回归并提交**
 
-Run: `cd backend; python -m pytest tests/test_background_music_execution.py tests/test_replication_runtime.py tests/test_usfr_commercial_deployment.py -p no:cacheprovider -q`
+Run: `cd backend; python -B -m pytest tests/test_background_music_execution.py tests/test_replication_runtime.py tests/test_usfr_commercial_deployment.py -p no:cacheprovider -q`
 Expected: PASS。
 
 ### Task 5: 接通严格受限的 `remotion_react_ui` 适配器
@@ -231,7 +231,7 @@ Expected: PASS。
 - Produces: `remotion_react_ui` 或现有 FFmpeg/确定性 UI renderer 的单一选路决定。
 - Invariant: 不安装或合并 Video ShotCraft；opaque/source UI、无证据 UI 和未基准的候选绝不进入 Remotion。
 
-- [ ] **Step 1: 写入阶段端口只接收完整 eligibility 合同的失败测试**
+- [x] **Step 1: 写入阶段端口只接收完整 eligibility 合同的失败测试**
 
 ```python
 def test_generated_ui_stage_uses_remotion_only_with_an_active_same_case_receipt():
@@ -239,20 +239,22 @@ def test_generated_ui_stage_uses_remotion_only_with_an_active_same_case_receipt(
     assert select_ui_renderer(contract_without_receipt, enabled_capability) == "ffmpeg"
 ```
 
-- [ ] **Step 2: 发布 source interval SHA 和运动白名单，复用现有 `choose_backend`**
+- [x] **Step 2: 发布 source interval SHA 和运动白名单，复用现有 `choose_backend`**
 
-- [ ] **Step 3: 用黄金 UI 案例写入 OCR/layout/无黑帧/时长与耗时基准回执；缺失回执时回退**
+- [x] **Step 3: 用黄金 UI 案例写入 OCR/layout/无黑帧/时长与耗时基准回执；缺失回执时回退**
 
-Run: `python -m pytest tests/test_hybrid_compositor.py tests/test_backend_substitution_policy.py tests/test_remotion_react_ui_activation.py -p no:cacheprovider -q`
+Run: `python -B -m pytest tests/test_hybrid_compositor.py tests/test_backend_substitution_policy.py tests/test_remotion_react_ui_activation.py -p no:cacheprovider -q`
 Expected: PASS。
 
 ### Task 6: 端到端回归、临时制品清理与完成审计
 
 **Files:**
-- Modify: `usfr-server/tests/test_ephemeral_job_lifecycle.py`
+- Modify: `usfr-server/tests/test_cleanup_contract.py`
+- Modify: `usfr-server/tests/test_object_lifecycle.py`
+- Modify: `usfr-server/tests/test_cleanup_sweeper.py`
 - Modify: `usfr-server/tests/test_bundle_runtime_closure.py`
 - Modify: `backend/tests/test_background_music_local_mvp.py`
-- Modify: `docs/superpowers/specs/2026-07-24-usfr-performance-audio-ui-optimization-goal.md`
+- Modify: `docs/superpowers/specs/2026-07-25-usfr-commercial-batch-optimization-goal.md`
 
 **Interfaces:**
 - Consumes: 任务 1–5 的冻结合同、运行时制品与最终结果。
@@ -260,16 +262,20 @@ Expected: PASS。
 
 - [ ] **Step 1: 为五项新增能力各加入“命中/跳过/失败关闭”回归用例**
 
-- [ ] **Step 2: 验证 TTL 清理不会移除 final，也不会永久保留 ASR/故事板/音乐片段/QC**
+- [x] **Step 2: 验证 TTL 清理不会移除 final，也不会永久保留 ASR/故事板/音乐片段/QC**
 
 ```python
 assert store.list_prefix(f"temporary/{job_id}/") == []
 assert store.head(f"final/{job_id}/result.mp4").sha256 == final_sha
 ```
 
-- [ ] **Step 3: 分组完整回归并记录实际结果**
+- [x] **Step 3: 分组完整回归并记录实际结果**
 
-Run: `python -m pytest tests/test_storyboard_manifest.py tests/test_line_contract.py tests/test_performance_audio_contracts.py tests/test_seedance_prompt_compiler.py tests/test_hybrid_compositor.py tests/test_audio_backends.py -p no:cacheprovider -q`
+> 2026-07-27 验证状态（非完成声明）：当前改动下，`backend/tests/test_background_music_execution.py` 与 `backend/tests/test_background_music_local_mvp.py` 为 64 passed；此前完整 `backend` 套件为 119 passed。`usfr-server` 的功能套件（明确排除三个会扫描工作目录缓存的打包契约文件）为 1262 passed / 1 skipped；核心 Provider/能力端口回归为 227 passed，故事板/时间轴/音频/UI/清理回归为 156 passed，本地控制台为 80 passed。`git diff --check` 已通过。官方脱敏 Provider 预检确认 RunningHub 与 Youdao/Seedance 配置均为 present，且未创建 Provider 任务。
+>
+> 尚未完成：工程目录仍有解释器生成的 `__pycache__`，三个打包契约测试会按设计失败；当前执行环境拒绝删除命令，因此需在具备删除权限的环境中清除这些已确认缓存后复跑。真实 Provider E2E 仍必须等待用户提供授权的源视频（≤30 秒）及至少一个替换素材；不得由 mock、预检或单元测试替代。
+
+Run: `python -B -m pytest tests/test_storyboard_manifest.py tests/test_line_contract.py tests/test_performance_audio_contracts.py tests/test_seedance_prompt_compiler.py tests/test_hybrid_compositor.py tests/test_audio_backends.py -p no:cacheprovider -q`
 Expected: PASS。
 
 - [ ] **Step 4: 执行 `git diff --check`、清理测试缓存并提交最终回归结果**

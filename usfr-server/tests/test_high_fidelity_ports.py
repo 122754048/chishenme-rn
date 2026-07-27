@@ -47,7 +47,7 @@ def _factor_coverage() -> list[dict]:
 
 def _provider_payload(prompt: str, *, duration: int = 8) -> dict:
     return {
-        "model": "seedance-2.0-fast",
+        "model": "seedance-2.0",
         "content": [{"type": "text", "text": prompt}],
         "generate_audio": True,
         "ratio": "9:16",

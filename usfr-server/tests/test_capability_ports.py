@@ -506,6 +506,66 @@ class RuntimeCapabilityPortsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "generated UI.*video.*state_evidence"):
             stage.run(context=Context(), input_artifacts=[])
 
+    def test_ui_renderer_is_not_called_when_stage4_has_no_generated_ui_region(self):
+        from server.capability_ports import CapabilityStagePort
+
+        class Context:
+            timeline_regions = ()
+
+        manifest, ports = _manifest_and_ports()
+        calls = []
+        ports["ocr_ui_renderer"].render_and_verify = lambda **_: calls.append(True) or {"unexpected": True}
+        stage = CapabilityStagePort(
+            "resolve_ui_evidence",
+            ports,
+            manifest=manifest,
+            production=True,
+            profile_active=True,
+        )
+
+        output = stage.run(context=Context(), input_artifacts=[])
+
+        self.assertEqual(calls, [])
+        self.assertEqual(output, {
+            "status": "skipped",
+            "skipped_reason": "no_generated_ui_region",
+            "capabilities": ["ocr_ui_renderer"],
+        })
+
+    def test_technical_splice_scope_does_not_start_asr(self):
+        from server.capability_ports import CapabilityStagePort
+
+        class Context:
+            analysis_scope = {
+                "tools": {
+                    "source_asr": {
+                        "status": "skipped",
+                        "reason": "no_audio_rewrite_or_generated_speech_route",
+                    }
+                }
+            }
+
+        manifest, ports = _manifest_and_ports()
+        calls = []
+        ports["asr_transcriber"].transcribe = lambda **_: calls.append(True) or {"unexpected": True}
+        stage = CapabilityStagePort(
+            "analyze_dynamics",
+            ports,
+            manifest=manifest,
+            production=False,
+            profile_active=False,
+        )
+
+        output = stage.run(context=Context(), input_artifacts=[])
+
+        self.assertEqual(calls, [])
+        self.assertEqual(output["status"], "ready")
+        self.assertEqual(output["capabilities"], ["dynamics_analyzer"])
+        self.assertEqual(output["skipped_tools"], [{
+            "tool": "source_asr",
+            "reason": "no_audio_rewrite_or_generated_speech_route",
+        }])
+
     def test_active_generated_ui_stage_rejects_unbound_state_receipts(self):
         from server.capability_ports import CapabilityStagePort
 

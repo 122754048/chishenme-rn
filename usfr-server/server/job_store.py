@@ -117,6 +117,9 @@ class EphemeralJobStore(Protocol):
     ) -> ProviderAttempt:
         raise NotImplementedError
 
+    def list_provider_attempts(self, job_id: str) -> tuple[ProviderAttempt, ...]:
+        raise NotImplementedError
+
     def update_provider_attempt(
         self,
         *,

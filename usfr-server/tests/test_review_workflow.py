@@ -11,9 +11,9 @@ def test_route2_requires_script_then_storyboard():
     assert resolve_review_route(seedance_required=True, approved_script=None, current_script_inputs_sha256="a" * 64) == "route_2"
 
 
-def test_route1_reuses_matching_approved_script():
+def test_matching_historical_script_still_requires_a_fresh_editable_review():
     approved = RevisionManifest.script(revision=2, object_key="temporary/j/scripts/r2.json", sha256="a" * 64, inputs_sha256="b" * 64)
-    assert resolve_review_route(seedance_required=True, approved_script=approved, current_script_inputs_sha256="b" * 64) == "route_1"
+    assert resolve_review_route(seedance_required=True, approved_script=approved, current_script_inputs_sha256="b" * 64) == "route_2"
 
 
 def test_stale_approved_script_falls_back_to_route2():

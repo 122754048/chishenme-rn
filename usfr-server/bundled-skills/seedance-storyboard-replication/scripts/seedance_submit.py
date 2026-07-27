@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -19,12 +20,13 @@ from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-from config import DEFAULT_ENV_FILE, load_settings
+from config import DEFAULT_ENV_FILE, build_redacted_provider_preflight, load_settings
 
 
 YOUDAO_CREATE_PATH = "/api/v1/video/tasks"
 YOUDAO_QUERY_PATH = "/api/v1/video/tasks/{task_id}?model={model}"
 YOUDAO_ASSET_PATH = "/api/v1/assets?Action={action}"
+YOUDAO_VIDEO_MODEL = "seedance-2.0"
 # The production worker must inject the immutable, packaged Seedance-20
 # snapshot.  Do not derive a dependency from the operator's home directory:
 # that makes a local Codex checkout accidentally authoritative and is not
@@ -87,40 +89,88 @@ def _require_public_https_urls(urls: list[str]) -> None:
             raise PayloadError("media URLs must be public HTTPS URLs")
 
 
-def _require_asset_urls(urls: list[str], provider_name: str) -> None:
+def _require_asset_urls(
+    urls: list[str], provider_name: str, media_kind: str = "media"
+) -> None:
     for url in urls:
         if not url.startswith("asset://asset-"):
             raise PayloadError(
-                f"{provider_name} image references must use asset://asset-* URLs"
+                f"{provider_name} {media_kind} references must use asset://asset-* URLs"
             )
+
+
+def build_provider_duration_plan(approved_duration: int | float) -> dict[str, Any]:
+    """Preserve the approved window while requesting a supported Seedance duration."""
+
+    if isinstance(approved_duration, bool) or not isinstance(
+        approved_duration, (int, float)
+    ):
+        raise PayloadError("approved duration must be a finite number of seconds")
+    if not math.isfinite(approved_duration):
+        raise PayloadError("approved duration must be a finite number of seconds")
+
+    approved_duration_ms = round(approved_duration * 1000)
+    if not math.isclose(
+        approved_duration * 1000,
+        approved_duration_ms,
+        rel_tol=0,
+        abs_tol=1e-6,
+    ):
+        raise PayloadError("approved duration must resolve to whole milliseconds")
+    if approved_duration_ms < 4_000:
+        raise PayloadError("approved duration must be between 4 and 15 seconds")
+
+    provider_duration_s = math.ceil(approved_duration_ms / 1000)
+    if provider_duration_s > 15:
+        raise PayloadError(
+            "approved duration must be between 4 and 15 seconds after provider ceiling"
+        )
+    return {
+        "approved_duration_ms": approved_duration_ms,
+        "provider_duration_s": provider_duration_s,
+        "assembly_trim_end_ms": approved_duration_ms,
+        "post_provider_policy": "trim_to_approved_window_no_retime",
+    }
 
 
 def build_payload(
     prompt: str,
-    duration: int,
+    duration: int | float,
     ratio: str,
     image_urls: list[str],
     reference_video_urls: list[str],
     *,
     provider: str = "youdao",
-    model: str = "seedance-2.0-fast",
+    model: str = YOUDAO_VIDEO_MODEL,
     resolution: str = "720p",
     review_bindings: dict[str, Any] | None = None,
+    audio_urls: list[str] | None = None,
+    duration_plan: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     normalized_prompt = prompt.strip()
+    audio_urls = list(audio_urls or [])
+    duration_plan = duration_plan or build_provider_duration_plan(duration)
+    provider_duration_s = duration_plan["provider_duration_s"]
     if not normalized_prompt or len(normalized_prompt) > 5000:
         raise PayloadError("prompt must contain 1-5000 characters")
-    if not 4 <= int(duration) <= 15:
-        raise PayloadError("duration must be between 4 and 15 seconds")
+    if not isinstance(provider_duration_s, int) or not 4 <= provider_duration_s <= 15:
+        raise PayloadError("duration plan provider duration must be between 4 and 15 seconds")
     if ratio not in {"16:9", "9:16", "1:1"}:
         raise PayloadError("ratio must be one of 16:9, 9:16, 1:1")
     if len(image_urls) > 4:
-        raise PayloadError("seedance2.0-fast-md accepts at most 4 images")
+        raise PayloadError("seedance-2.0 accepts at most 4 images")
     if reference_video_urls:
         raise PayloadError("reference_videos is disabled by the fixed B route")
     if provider != "youdao":
         raise PayloadError("provider must be youdao")
-    _require_asset_urls(image_urls, "Youdao")
+    if model != YOUDAO_VIDEO_MODEL:
+        raise PayloadError("Youdao video model must be seedance-2.0")
+    if len(audio_urls) > 1:
+        raise PayloadError("background music accepts one @Audio1 reference")
+    if audio_urls and "@Audio1" not in normalized_prompt:
+        raise PayloadError("background music audio requires @Audio1 in the prompt")
+    _require_asset_urls(image_urls, "Youdao", "image")
+    _require_asset_urls(audio_urls, "Youdao", "audio")
     content: list[dict[str, Any]] = [{"type": "text", "text": normalized_prompt}]
     content.extend(
         {
@@ -130,21 +180,25 @@ def build_payload(
         }
         for url in image_urls
     )
+    content.extend(
+        {
+            "type": "audio_url",
+            "role": "reference_audio",
+            "audio_url": {"url": url},
+        }
+        for url in audio_urls
+    )
     payload = {
         "model": model,
         "content": content,
         "generate_audio": True,
         "ratio": ratio,
-        "duration": int(duration),
+        "duration": provider_duration_s,
         "watermark": False,
     }
     if resolution not in {"480p", "720p", "1080p", "4k"}:
         raise PayloadError(
             "Youdao resolution must be one of: 480p, 720p, 1080p, 4k"
-        )
-    if model == "seedance-2.0-fast" and resolution in {"1080p", "4k"}:
-        raise PayloadError(
-            "seedance-2.0-fast supports only 480p or 720p through Youdao"
         )
     payload["resolution"] = resolution
     if review_bindings is not None:
@@ -709,8 +763,8 @@ def _validate_audited_fixed_b_payload(payload: dict[str, Any]) -> None:
     }
     if set(payload) != expected_top_level:
         raise PayloadError("audited fixed-B payload contains unknown or missing provider fields")
-    if payload.get("model") != "seedance-2.0-fast":
-        raise PayloadError("audited fixed-B payload requires model seedance-2.0-fast")
+    if payload.get("model") != YOUDAO_VIDEO_MODEL:
+        raise PayloadError("audited fixed-B payload requires model seedance-2.0")
     if payload.get("resolution") != "720p" or payload.get("ratio") != "9:16":
         raise PayloadError("audited fixed-B payload parameters are not fixed-B")
     duration = payload.get("duration")
@@ -719,7 +773,7 @@ def _validate_audited_fixed_b_payload(payload: dict[str, Any]) -> None:
     if payload.get("generate_audio") is not True or payload.get("watermark") is not False:
         raise PayloadError("audited fixed-B payload audio or watermark is not fixed-B")
     content = payload.get("content")
-    if not isinstance(content, list) or not 1 <= len(content) <= 5:
+    if not isinstance(content, list) or not 1 <= len(content) <= 6:
         raise PayloadError("audited fixed-B payload content is invalid")
     text_item = content[0]
     if (
@@ -729,18 +783,42 @@ def _validate_audited_fixed_b_payload(payload: dict[str, Any]) -> None:
         or not isinstance(text_item.get("text"), str)
     ):
         raise PayloadError("audited fixed-B payload first content item must be exact text")
+    image_count = 0
+    audio_count = 0
     for item in content[1:]:
-        if (
-            not isinstance(item, dict)
-            or set(item) != {"type", "role", "image_url"}
-            or item.get("type") != "image_url"
-            or item.get("role") != "reference_image"
-            or not isinstance(item.get("image_url"), dict)
-            or set(item["image_url"]) != {"url"}
-            or not isinstance(item["image_url"].get("url"), str)
-            or not item["image_url"]["url"].startswith("asset://asset-")
-        ):
-            raise PayloadError("audited fixed-B payload reference image item is invalid")
+        if isinstance(item, dict) and item.get("type") == "image_url":
+            image_count += 1
+            if (
+                set(item) != {"type", "role", "image_url"}
+                or item.get("role") != "reference_image"
+                or not isinstance(item.get("image_url"), dict)
+                or set(item["image_url"]) != {"url"}
+                or not isinstance(item["image_url"].get("url"), str)
+                or not item["image_url"]["url"].startswith("asset://asset-")
+            ):
+                raise PayloadError("audited fixed-B payload reference image item is invalid")
+            continue
+        if isinstance(item, dict) and item.get("type") == "audio_url":
+            audio_count += 1
+            if (
+                set(item) != {"type", "role", "audio_url"}
+                or item.get("role") != "reference_audio"
+                or not isinstance(item.get("audio_url"), dict)
+                or set(item["audio_url"]) != {"url"}
+                or not isinstance(item["audio_url"].get("url"), str)
+                or not item["audio_url"]["url"].startswith("asset://asset-")
+            ):
+                raise PayloadError(
+                    "audited fixed-B payload background music audio item is invalid"
+                )
+            continue
+        raise PayloadError("audited fixed-B payload content item is invalid")
+    if image_count > 4:
+        raise PayloadError("audited fixed-B payload accepts at most four reference images")
+    if audio_count > 1:
+        raise PayloadError("audited fixed-B payload accepts at most one @Audio1 reference")
+    if audio_count and "@Audio1" not in text_item["text"]:
+        raise PayloadError("audited fixed-B background music requires @Audio1 in prompt")
 
 
 def _validate_audit_check_set(checks: Any) -> None:
@@ -766,7 +844,7 @@ def _validate_audited_factory_parameters(
 ) -> None:
     if provider != "youdao":
         raise PayloadError("audited fixed-B Factory path requires Youdao")
-    if model != "seedance-2.0-fast" or resolution != "720p" or ratio != "9:16":
+    if model != YOUDAO_VIDEO_MODEL or resolution != "720p" or ratio != "9:16":
         raise PayloadError("audited fixed-B Factory parameters are not fixed-B")
     if isinstance(duration, bool) or not isinstance(duration, int) or not 4 <= duration <= 15:
         raise PayloadError("audited fixed-B Factory duration is invalid")
@@ -1484,7 +1562,7 @@ class YoudaoSeedanceClient(SeedanceHttpClient):
         api_key: str,
         *,
         base_url: str = "https://openapi.youdao.com/llmgateway",
-        model: str = "seedance-2.0-fast",
+        model: str = YOUDAO_VIDEO_MODEL,
         project_name: str = "default",
         request_json: Callable[..., Any] | None = None,
         download: Callable[[str, Path], None] | None = None,
@@ -1510,15 +1588,19 @@ class YoudaoSeedanceClient(SeedanceHttpClient):
         self.model = model
         self.project_name = project_name
 
-    def register_asset(self, source_url: str, name: str) -> str:
+    def register_asset(
+        self, source_url: str, name: str, *, asset_type: str = "Image"
+    ) -> str:
         _require_public_https_urls([source_url])
+        if asset_type not in {"Image", "Video", "Audio"}:
+            raise PayloadError("Youdao asset type must be Image, Video, or Audio")
         response = self._request(
             "POST",
             YOUDAO_ASSET_PATH.format(action="CreateAsset"),
             {
                 "URL": source_url,
                 "Name": name,
-                "AssetType": "Image",
+                "AssetType": asset_type,
                 "ProjectName": self.project_name,
             },
             retry_transient=False,
@@ -1574,8 +1656,12 @@ def prepare_youdao_assets(
     poll_interval: float = 5,
     max_workers: int = 4,
     cache_only: bool = False,
+    asset_type: str = "Image",
+    asset_name_prefix: str = "seedance-reference",
 ) -> list[str]:
     _require_public_https_urls(source_urls)
+    if asset_type not in {"Image", "Video", "Audio"}:
+        raise PayloadError("Youdao asset type must be Image, Video, or Audio")
     if max_workers < 1:
         raise ValueError("max_workers must be at least 1")
     with _manifest_lock(manifest_path):
@@ -1584,7 +1670,11 @@ def prepare_youdao_assets(
             loaded = json.loads(manifest_path.read_text(encoding="utf-8"))
             if isinstance(loaded, list):
                 existing = [item for item in loaded if isinstance(item, dict)]
-        by_source = {item.get("source_url"): item for item in existing}
+        by_source = {
+            item.get("source_url"): item
+            for item in existing
+            if item.get("asset_type", "Image") == asset_type
+        }
         unique_urls = list(dict.fromkeys(source_urls))
         if cache_only:
             cached_uris: dict[str, str] = {}
@@ -1598,6 +1688,7 @@ def prepare_youdao_assets(
                     or not _non_empty_string(asset_id)
                     or asset_uri != f"asset://{asset_id}"
                     or item.get("project_name") != client.project_name
+                    or item.get("asset_type", "Image") != asset_type
                 ):
                     raise PayloadError(
                         f"audited cache-only asset mapping missing for {source_url}"
@@ -1613,10 +1704,11 @@ def prepare_youdao_assets(
                         _prepare_youdao_asset,
                         client,
                         source_url,
-                        f"seedance-reference-{index:02d}",
+                        f"{asset_name_prefix}-{index:02d}",
                         by_source.get(source_url),
                         timeout=timeout,
                         poll_interval=poll_interval,
+                        asset_type=asset_type,
                     ): source_url
                     for index, source_url in enumerate(unique_urls, start=1)
                 }
@@ -1685,12 +1777,16 @@ def _prepare_youdao_asset(
     *,
     timeout: float,
     poll_interval: float,
+    asset_type: str,
 ) -> dict[str, str]:
     if cached and cached.get("status", "").lower() == "active":
         return cached
     asset_id = str((cached or {}).get("asset_id") or "")
     if not asset_id:
-        asset_id = client.register_asset(source_url, name)
+        if asset_type == "Image":
+            asset_id = client.register_asset(source_url, name)
+        else:
+            asset_id = client.register_asset(source_url, name, asset_type=asset_type)
     deadline = client.clock() + timeout
     while True:
         response = client.get_asset(asset_id)
@@ -1702,6 +1798,7 @@ def _prepare_youdao_asset(
                 "asset_uri": f"asset://{asset_id}",
                 "status": "Active",
                 "project_name": client.project_name,
+                "asset_type": asset_type,
             }
         if status == "failed":
             reason = _find_response_value(response, {"message", "error", "reason"})
@@ -1786,11 +1883,13 @@ def main() -> int:
     )
     parser.add_argument("--prompt-file", type=Path)
     parser.add_argument("--image-url", action="append", default=[])
-    parser.add_argument("--duration", type=int)
+    parser.add_argument("--audio-url", action="append", default=[])
+    parser.add_argument("--duration", type=float)
     parser.add_argument("--ratio", default="9:16")
     parser.add_argument("--resolution", choices=("480p", "720p", "1080p", "4k"))
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--env-file", type=Path, default=DEFAULT_ENV_FILE)
+    parser.add_argument("--preflight", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--poll", action="store_true")
     parser.add_argument("--resume-task-id")
@@ -1824,6 +1923,41 @@ def main() -> int:
     args.seedance20_skill_file = resolve_seedance20_skill_file(
         args.seedance20_skill_file
     )
+
+    if args.preflight:
+        if any(
+            (
+                args.prompt_file is not None,
+                args.image_url,
+                args.audio_url,
+                args.duration is not None,
+                args.dry_run,
+                args.poll,
+                args.resume_task_id is not None,
+                args.approved_request_sha256 is not None,
+                args.audited_request_sha256 is not None,
+                args.audit_artifact is not None,
+                args.approved_script_sha256 is not None,
+                args.seedance_input_contract is not None,
+                args.profile_snapshot is not None,
+                args.prescript_artifact is not None,
+            )
+        ):
+            raise PayloadError("--preflight cannot be combined with a Seedance task option")
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+        report = build_redacted_provider_preflight(args.env_file)
+        settings = load_settings(args.env_file)
+        report["seedance_api_ready"] = (
+            "present"
+            if (
+                settings.seedance_api_provider == "youdao"
+                and settings.youdao_api_key
+                and settings.youdao_model == YOUDAO_VIDEO_MODEL
+            )
+            else "missing"
+        )
+        _write_json(args.output_dir / "provider_preflight.json", report)
+        return 0
 
     authorization_flags = (
         args.audited_request_sha256,
@@ -1881,9 +2015,17 @@ def main() -> int:
         if args.duration is None:
             raise PayloadError("--duration is required for a new Seedance request")
 
+    duration_plan = (
+        build_provider_duration_plan(args.duration)
+        if not args.resume_task_id
+        else None
+    )
+
     settings = load_settings(args.env_file)
     settings.require_seedance()
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    if duration_plan is not None:
+        _write_json(args.output_dir / "duration_plan.json", duration_plan)
     prompt = (
         args.prompt_file.read_text(encoding="utf-8-sig")
         if args.prompt_file is not None and not args.resume_task_id
@@ -1897,10 +2039,13 @@ def main() -> int:
         project_name=settings.youdao_project_name,
     )
     image_references = []
+    audio_references = []
     model = settings.youdao_model
     resolution = args.resolution or settings.youdao_resolution
 
     if not args.resume_task_id:
+        if args.audio_url and "@Audio1" not in prompt:
+            raise PayloadError("background music audio requires @Audio1 in the prompt")
         if audited_request:
             _validate_audited_factory_parameters(
                 prompt=prompt,
@@ -1908,7 +2053,7 @@ def main() -> int:
                 model=model,
                 resolution=resolution,
                 ratio=args.ratio,
-                duration=args.duration,
+                duration=duration_plan["provider_duration_s"],
                 input_contract_path=args.seedance_input_contract,
                 approved_script_sha256=args.approved_script_sha256,
                 skill_file=args.seedance20_skill_file,
@@ -1922,6 +2067,17 @@ def main() -> int:
             poll_interval=args.asset_poll_interval,
             cache_only=audited_request and not args.dry_run,
         )
+        if args.audio_url:
+            audio_references = prepare_youdao_assets(
+                client,
+                args.audio_url,
+                args.output_dir / "youdao_audio_assets.json",
+                timeout=args.asset_timeout,
+                poll_interval=args.asset_poll_interval,
+                cache_only=audited_request and not args.dry_run,
+                asset_type="Audio",
+                asset_name_prefix="seedance-audio",
+            )
 
         payload = build_payload(
             prompt,
@@ -1932,6 +2088,8 @@ def main() -> int:
             provider=settings.seedance_api_provider,
             model=model,
             resolution=resolution,
+            audio_urls=audio_references,
+            duration_plan=duration_plan,
         )
         _write_json(args.output_dir / "request.redacted.json", payload)
         payload_sha256 = request_sha256(payload)

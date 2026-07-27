@@ -26,9 +26,13 @@ class ArtifactRef:
     revision: int | None = None
     segment_id: str | None = None
     segment_plan_sha256: str | None = None
+    metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        result = asdict(self)
+        if not self.metadata:
+            result.pop("metadata", None)
+        return result
 
 
 @dataclass(frozen=True)

@@ -85,6 +85,21 @@ class EphemeralStageDriver:
         snapshot = self.job_store.get_job(job_id)
         if snapshot is None:
             return None
+        if snapshot.review_route == "route_1":
+            # route_1 is a legacy "reuse an earlier approval" marker.  A new
+            # generated-media run must always expose both editable review
+            # gates, so retain the historical revision only as draft evidence
+            # and clear its approval authority before planning work.
+            snapshot = self.job_store.cas_transition(
+                job_id=job_id,
+                expected_version=snapshot.version,
+                command="normalize_legacy_review_route",
+                updates={
+                    "review_route": "route_2",
+                    "approved_script_sha256": None,
+                    "approved_storyboard_sha256": None,
+                },
+            )
         plan = build_stage_plan(
             snapshot.slots_manifest,
             review_route=snapshot.review_route,
@@ -106,9 +121,7 @@ class EphemeralStageDriver:
                 continue
             if stage not in EXECUTABLE_STAGES:
                 continue
-            if stage == "build_script" and not language_only and snapshot.review_route == "route_1" and not snapshot.approved_script_sha256:
-                return None
-            if stage == "generate_storyboards" and not language_only and snapshot.review_route == "route_2" and not snapshot.approved_script_sha256:
+            if stage == "generate_storyboards" and not language_only and not snapshot.approved_script_sha256:
                 return None
             if stage in POST_APPROVAL_STAGES and not language_only and not snapshot.approved_storyboard_sha256:
                 return None

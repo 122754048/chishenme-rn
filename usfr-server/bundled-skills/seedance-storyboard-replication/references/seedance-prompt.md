@@ -124,11 +124,13 @@ that frozen factor-ID set exactly. Pass `--seedance20-skill-file` for the
 installed root `seedance-20/SKILL.md`; its frontmatter name, exact-byte hash,
 and metadata version must match compiler provenance.
 
-The audited payload is fixed-B only: Youdao model `seedance-2.0-fast`, 720p,
+The audited payload is fixed-B only: Youdao model `seedance-2.0`, 720p,
 9:16, 4–15 seconds, `generate_audio=true`, `watermark=false`, exact text and
-reference-image item shapes, no unknown provider fields, and no reference,
-opaque-UI, tail-card, source-frame, or transition markers in snake/kebab/
-spaced/camel variants. The unauthorised dry run is explicitly pre-audit and
+reference-image item shapes, optional one `audio_url` item for approved
+`background_music`, no unknown provider fields, and no reference, opaque-UI,
+tail-card, source-frame, or transition markers in snake/kebab/spaced/camel
+variants. A supplied music file must appear in prompt text as `@Audio1`; never
+use top-level `reference_audios`. The unauthorised dry run is explicitly pre-audit and
 cannot carry audited or legacy authorization. After it, actual audited
 submission must reuse only cached Active mappings with a non-empty ID, exact
 `asset://{asset_id}` URI, and matching project name; invalid provenance must

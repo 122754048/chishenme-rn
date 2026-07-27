@@ -5,6 +5,7 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from .analysis_scope import build_analysis_scope
 from .errors import ReplicationError
 
 
@@ -324,6 +325,85 @@ def _region_microseconds(region: Mapping[str, Any]) -> tuple[int, int] | None:
     return start, end
 
 
+def _generated_ui_source_interval_contract(region: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Project one routed generated-UI interval into its frozen source contract.
+
+    Stage 4 already owns the source region boundaries and transition shell.  The
+    optional Remotion adapter must consume those facts rather than infer them
+    after target UI truth is resolved in the next stage.  Return ``None`` when
+    the route has not frozen every required source fact so callers retain the
+    deterministic fallback instead of inventing a contract.
+    """
+
+    kind = str(region.get("region_type") or region.get("kind") or "").strip().lower()
+    if kind not in {"generated_ui_demo", "generated_ui"}:
+        return None
+    region_id = str(region.get("region_id") or "").strip()
+    interval = _region_microseconds(region)
+    viewport = region.get("display_viewport")
+    transition_shell = region.get("transition_shell")
+    try:
+        rotation = int(region.get("rotation_degrees"))
+        crop = float(region.get("safe_cover_crop_percent"))
+        width, height = int(viewport[0]), int(viewport[1])
+    except (IndexError, TypeError, ValueError):
+        return None
+    if (
+        not region_id
+        or interval is None
+        or interval[0] < 0
+        or interval[1] <= interval[0]
+        or interval[0] % 1000 != 0
+        or interval[1] % 1000 != 0
+        or width <= 0
+        or height <= 0
+        or rotation not in {0, 90, 180, 270}
+        or not 0 <= crop <= 12
+        or not isinstance(transition_shell, Mapping)
+        or not transition_shell
+    ):
+        return None
+    start_ms, end_ms = interval[0] // 1000, interval[1] // 1000
+    normalized_crop: int | float = int(crop) if crop.is_integer() else crop
+    return {
+        "schema_version": "source-ui-interval/v1",
+        "region_id": region_id,
+        "source_start_ms": start_ms,
+        "source_end_ms": end_ms,
+        "output_duration_ms": end_ms - start_ms,
+        "display_viewport": [width, height],
+        "rotation_degrees": rotation,
+        "safe_cover_crop_percent": normalized_crop,
+        "transition_shell": json.loads(json.dumps(transition_shell, ensure_ascii=False, sort_keys=True)),
+    }
+
+
+def _bind_generated_ui_source_interval_contracts(
+    regions: Sequence[dict[str, Any]],
+) -> None:
+    for region in regions:
+        existing = region.get("source_interval_contract")
+        canonical_contract = _generated_ui_source_interval_contract(region)
+        if isinstance(existing, Mapping) and canonical_contract is not None:
+            normalized_existing = json.loads(json.dumps(existing, ensure_ascii=False, sort_keys=True))
+            if _canonical_sha256(normalized_existing) != _canonical_sha256(canonical_contract):
+                raise ReplicationError(
+                    "SOURCE_UI_INTERVAL_CONTRACT_MISMATCH",
+                    "SOURCE_UI_INTERVAL_CONTRACT_MISMATCH: supplied source_interval_contract differs from routed source facts",
+                    category="timeline",
+                    user_action_required=True,
+                    details={"region_id": canonical_contract["region_id"]},
+                )
+            contract = canonical_contract
+        elif isinstance(existing, Mapping):
+            contract = json.loads(json.dumps(existing, ensure_ascii=False, sort_keys=True))
+        else:
+            contract = canonical_contract
+        if contract is not None:
+            region["source_interval_contract"] = contract
+            region["source_interval_contract_sha256"] = _canonical_sha256(contract)
+
+
 def _timeline_has_generated_overlay_overlap(
     regions: Sequence[Mapping[str, Any]],
     source_overlay_contract: Mapping[str, Any],
@@ -509,6 +589,7 @@ def bind_source_overlay_contract_to_timeline(
                 region["source_overlay_contract"] = contract_copy
                 if mapping is not None:
                     region["overlay_render_mapping"] = result["overlay_render_mapping"]
+    _bind_generated_ui_source_interval_contracts(regions)
     result["regions"] = regions
     result.pop("timeline_regions", None)
     if not str(result.get("timeline_regions_sha256") or ""):
@@ -689,23 +770,25 @@ def build_stage_plan(
     timeline_regions: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
     review_route: str | None = None,
 ) -> list[dict[str, Any]]:
+    analysis_scope = build_analysis_scope(manifest)
     routes = dict(manifest.get("routes") or {})
     slots = dict(manifest.get("slots") or {})
     extensions = dict(manifest.get("extensions") or {})
     profile = (extensions.get("high_fidelity_profile") or {})
     profile_active = profile.get("profile") == HIGH_FIDELITY_PROFILE
-    # This is an internal worker decision, never a public input field.  Route
-    # 1 carries a pre-approved script artifact and therefore keeps only the
-    # existing storyboard approval gate.
+    # A historical route_1 marker is accepted only for compatibility.  It is
+    # normalized to route_2 because every generated-media run must let the
+    # user edit and confirm both its script and storyboard.
     execution_route = extensions.get("execution_route") or manifest.get("execution_route")
     selected_review_route = review_route or extensions.get("review_route") or manifest.get("review_route") or execution_route
-    route1 = selected_review_route == "route_1"
+    if selected_review_route == "route_1":
+        selected_review_route = "route_2"
     local_only_review = selected_review_route == "local_only"
     stages: list[dict[str, Any]] = [
-        {"name": "bind_inputs", "kind": "deterministic", "provider": False},
-        {"name": "probe_source", "kind": "deterministic", "provider": False},
-        {"name": "analyze_dynamics", "kind": "analysis", "provider": False},
-        {"name": "route_regions", "kind": "deterministic", "provider": False},
+        {"name": "bind_inputs", "kind": "deterministic", "provider": False, "analysis_scope": analysis_scope},
+        {"name": "probe_source", "kind": "deterministic", "provider": False, "analysis_scope": analysis_scope},
+        {"name": "analyze_dynamics", "kind": "analysis", "provider": False, "analysis_scope": analysis_scope},
+        {"name": "route_regions", "kind": "deterministic", "provider": False, "analysis_scope": analysis_scope},
     ]
     target_truth_slots = [
         slot_name
@@ -805,8 +888,6 @@ def build_stage_plan(
         # defensive deterministic plan if a stale manifest claims otherwise.
         return [dict(stage, workflow_version=workflow_version, review_route=selected_review_route) for stage in stages]
     build_script = {"name": "build_script", "kind": "contract", "provider": False}
-    if route1:
-        build_script["mode"] = "reuse_approved"
     compile_prompt = {"name": "compile_seedance20_prompt", "kind": "audit", "provider": False}
     audit_request = {"name": "audit_seedance_request", "kind": "audit", "provider": False}
     if profile_active:
@@ -824,9 +905,10 @@ def build_stage_plan(
         build_script["artifact_contract"] = _artifact_contract("build_script")
         compile_prompt["artifact_contract"] = _artifact_contract("compile_seedance20_prompt")
         audit_request["artifact_contract"] = _artifact_contract("audit_seedance_request")
-    approval_and_storyboard = [build_script]
-    if not route1:
-        approval_and_storyboard.append({"name": "await_script_approval", "kind": "approval", "provider": False})
+    approval_and_storyboard = [
+        build_script,
+        {"name": "await_script_approval", "kind": "approval", "provider": False},
+    ]
     storyboard_stage: dict[str, Any] = {
         "name": "generate_storyboards",
         "kind": "image2",

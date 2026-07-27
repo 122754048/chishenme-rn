@@ -580,6 +580,12 @@ class EvidenceBoundVisionBackendTest(unittest.TestCase):
             height=64,
             fps=5,
         )
+        analysis_scope = {
+            "contract": "usfr-analysis-scope/v1",
+            "route_family": "targeted_replication",
+            "semantic_pass": {"status": "required", "focus": ["source_timeline", "character_identity"]},
+            "scope_sha256": "a" * 64,
+        }
 
         def response(payload: dict) -> dict:
             return {
@@ -615,9 +621,11 @@ class EvidenceBoundVisionBackendTest(unittest.TestCase):
                 probe={"duration_us": duration_us, "width": 96, "height": 64, "fps": 5.0},
                 cuts=[{"cut": 1, "start_us": 0, "end_us": duration_us}],
                 evidence_plan=plan,
+                analysis_scope=analysis_scope,
             )
 
         self.assertEqual(requests[0]["evidence_plan"], plan)
+        self.assertEqual(requests[0]["analysis_scope"], analysis_scope)
         self.assertEqual(result["backend_evidence"]["evidence_plan_sha256"], plan["plan_sha256"])
         self.assertNotIn(str(video), json.dumps(requests[0]["evidence_plan"], ensure_ascii=False))
 

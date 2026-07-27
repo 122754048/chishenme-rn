@@ -43,6 +43,37 @@ def test_begin_persists_submitting_and_exact_segment_identity():
     assert client.zcard(f"{store.prefix}:provider:due") == 1
 
 
+def test_list_provider_attempts_returns_the_current_immutable_attempt_state_after_restart():
+    store, client = make_store()
+    job = create_job(store)
+    started = store.begin_provider_attempt(
+        job_id=job.job_id,
+        expected_version=job.version,
+        operation="CreateVideo",
+        request_sha256="b" * 64,
+    )
+    current = store.get_job(job.job_id)
+    assert current is not None
+    running = ProviderAttempt(
+        **{
+            **started.to_dict(),
+            "status": "RUNNING",
+            "provider_task_id": "task-1",
+            "response_sha256": "c" * 64,
+        }
+    )
+    store.update_provider_attempt(
+        job_id=job.job_id,
+        expected_version=current.version,
+        attempt=running,
+        ttl_seconds=3600,
+    )
+
+    restarted = RedisEphemeralJobStore(client, prefix=store.prefix)
+
+    assert restarted.list_provider_attempts(job.job_id) == (running,)
+
+
 def test_duplicate_active_pair_is_rejected_but_terminal_attempt_can_repeat():
     store, _ = make_store()
     job = create_job(store)

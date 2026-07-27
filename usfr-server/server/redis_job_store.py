@@ -1379,6 +1379,30 @@ class RedisEphemeralJobStore(EphemeralJobStore):
             raise ReplicationError("STORE_ERROR", "provider attempt reservation failed")
         return attempt
 
+    def list_provider_attempts(self, job_id: str) -> tuple[ProviderAttempt, ...]:
+        """Read every retained provider attempt without changing job authority."""
+
+        self._require_snapshot(job_id)
+        try:
+            raw_attempts = self.redis.hgetall(self._providers_key(job_id))
+        except Exception as error:
+            raise ReplicationError("STORE_ERROR", "provider attempt lookup failed") from error
+        attempts: list[ProviderAttempt] = []
+        for raw_id, raw_value in raw_attempts.items():
+            attempt_id = raw_id.decode("utf-8") if isinstance(raw_id, bytes) else str(raw_id)
+            if attempt_id.startswith("@"):
+                continue
+            try:
+                decoded = _json_load(raw_value)
+                attempt = ProviderAttempt.from_dict(decoded)
+                self._validate_attempt(attempt, allow_prepared=True)
+            except (TypeError, ValueError, ReplicationError) as error:
+                raise ReplicationError("STORE_ERROR", "stored provider attempt is invalid") from error
+            if attempt.attempt_id != attempt_id:
+                raise ReplicationError("STORE_ERROR", "stored provider attempt identity is invalid")
+            attempts.append(attempt)
+        return tuple(sorted(attempts, key=lambda item: item.attempt_id))
+
     def update_provider_attempt(
         self,
         *,

@@ -37,8 +37,11 @@ Both routes use the **固定 B 方案**. 参考视频仅用于反解分镜、节
 after storyboard approval retain it only as server-side, verified
 tenant-private object-storage evidence. 禁止将参考视频注册为 Youdao 素材,
 and 禁止发送 `reference_videos` to Seedance. The exact fixed-B payload uses
-`generate_audio=true` and `watermark=false`; no `reference_audios` field,
-implicit audio reference, or registered reference-audio asset is permitted.
+`generate_audio=true` and `watermark=false`; no top-level `reference_audios`
+field or implicit audio reference is permitted. The approved
+`background_music` extension is the sole exception: register it as Youdao
+`AssetType=Audio`, send it only as content `audio_url` with
+`role=reference_audio`, and require `@Audio1` in the compiled prompt.
 This rule also applies to Route 1 even when the user supplied an approved script
 together with a reference video.
 
@@ -335,10 +338,12 @@ set must equal that frozen list exactly. The audit stores the raw-byte
 
 The installed root `seedance-20/SKILL.md` is required before the paid path. Its
 frontmatter must name `seedance-20`; its exact-byte SHA-256 and metadata version
-must match compiler provenance. The audited payload is strictly Youdao fixed-B:
-`seedance-2.0-fast`, `720p`, `9:16`, duration 4–15, audio enabled, watermark
-disabled, exact text/reference-image item shapes, and no unknown or leaked
-provider fields. The normal unauthorised dry run is explicitly pre-audit and
+must match compiler provenance. The audited payload is strictly Youdao fixed-B
+plus the approved `background_music` extension when supplied:
+`seedance-2.0`, `720p`, `9:16`, duration 4–15, audio enabled, watermark
+disabled, exact text/reference-image item shapes, at most one exact
+`audio_url` item carrying `@Audio1`, and no unknown or leaked provider fields.
+The normal unauthorised dry run is explicitly pre-audit and
 cannot carry audited or legacy authorization flags. Audited actual submission
 reads only cached Active asset mappings from that dry run (`cache_only`); each
 must be Active with a non-empty ID, exact `asset://{asset_id}` URI, and the
@@ -374,10 +379,12 @@ Read `references/seedance-prompt.md` and `references/youdao-api.md` before assem
 2. Obtain the existing public HTTPS source URL for each approved segment storyboard, character reference, and product board. In the RunningHub image2 route, reuse the saved RunningHub upload/result URLs; do not generate or upload the images again.
 3. Run `scripts/seedance_submit.py --dry-run` with those source URLs as the unauthorised pre-audit request; do not pass authorization/audit/contract flags. For Youdao, the script calls `POST /api/v1/assets?Action=CreateAsset`, reads `Result.id`, polls `GetAsset` until `Status=Active`, caches mappings in `youdao_assets.json`, and maps each one to `asset://<id>`. No COS service is required. 禁止注册参考视频.
 4. Build each segment prompt under 5000 characters. Repeat that segment's complete approved Cuts as text, with global Cut numbers, local timecodes, actual `@图片1` to `@图片4` mapping, incoming/outgoing continuity anchors, 脚本描述, camera/action direction, product/person identity lock, 口播内容, sound, continuity, and 备注. Never replace these fields with “follow the storyboard image.”
-5. Do not use `reference_audios`; this fixed-B Seedance route does not accept uploaded reference audio.
-6. Audio policy: request voiceover plus environment/action sound, and **不默认添加背景音乐** unless the user explicitly asks for music.
+5. Do not use the top-level `reference_audios` field. Approved uploaded music
+   is accepted only as one `audio_url` content item plus an explicit `@Audio1`
+   prompt reference.
+6. Audio policy: request voiceover plus environment/action sound, and **不默认添加背景音乐** unless the user explicitly asks for music or uploads `background_music`.
 7. Run one dry-run, save the exact prompt/request and `approval_preview.json`, then complete the `seedance-20` parity audit, write the audit artifact, and authorize the exact digest.
-8. Submit with Youdao model `seedance-2.0-fast`, `resolution=720p`, `ratio=9:16`, `duration=4-15`, cached Youdao `asset://` image references, and the complete audited authorization set: `--audited-request-sha256`, `--audit-artifact`, `--approved-script-sha256`, `--seedance-input-contract`, and `--seedance20-skill-file`. 禁止发送 `reference_videos`.
+8. Submit with Youdao model `seedance-2.0`, `resolution=720p`, `ratio=9:16`, `duration=4-15`, cached Youdao `asset://` image references, the optional cached `@Audio1` Audio asset when `background_music` is supplied, and the complete audited authorization set: `--audited-request-sha256`, `--audit-artifact`, `--approved-script-sha256`, `--seedance-input-contract`, and `--seedance20-skill-file`. 禁止发送 `reference_videos`.
 9. When `opaque_ui_demo` or supplied `excluded_app_end_card` exists, submit only contiguous generated regions. Never register or send those opaque videos to Youdao, and never mention their visual contents in the Seedance prompt.
 
 Never make a paid Seedance call until the latest storyboard has been approved and the internal parity audit authorizes the exact audited digest. Normal submission does not require a user prompt confirmation.
@@ -473,7 +480,8 @@ through `scripts/seedance_prompt_compiler.py` and the same packaged
 timing verbatim, then run the existing unauthorized dry-run and 13-check audit.
 No paid task is allowed before zero ambiguity, no unresolved placeholders, and
 fixed-B closure. Do not send source/opaque media, `reference_videos`, or
-`reference_audios`.
+top-level `reference_audios`; the approved `background_music` exception uses
+content `audio_url` plus prompt `@Audio1`.
 The compiler recomputes the root Skill checks from the structured segment,
 exact line contract, route exclusions, anti-slop rules, and immutable Skill
 bytes; caller-supplied boolean checks are not authorization. The compiled

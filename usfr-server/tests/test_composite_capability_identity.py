@@ -201,6 +201,22 @@ class CompositeCapabilityIdentityTest(unittest.TestCase):
         self.assertNotEqual(ui_a["sha256"], ui_b["sha256"])
         self.assertNotEqual(compositor_a["sha256"], compositor_b["sha256"])
 
+    def test_ui_renderer_replacement_rebinds_its_production_identity(self) -> None:
+        ui_renderer = DeterministicUiRenderer(
+            ocr_backend=_ModelBackend("ocr", "b" * 64),
+            render_backend=_Renderer("1"),
+            production=True,
+            sha256="e" * 64,
+        )
+        before = ui_renderer.capability_identity()
+        replacement = _Renderer("2")
+
+        ui_renderer.replace_render_backend(replacement)
+
+        self.assertIs(ui_renderer.render_backend, replacement)
+        self.assertNotEqual(before["sha256"], ui_renderer.capability_identity()["sha256"])
+        self.assertIsNone(ui_renderer.validate_production_readiness())
+
     def test_production_rejects_unidentified_nested_renderers(self) -> None:
         with self.assertRaisesRegex(ValueError, "render backend.*capability_identity"):
             DeterministicUiRenderer(

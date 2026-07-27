@@ -95,6 +95,51 @@ def _load_port_factory(spec: str) -> Mapping[str, Any]:
     return result
 
 
+def _configure_optional_remotion_ui_adapter(
+    factory_result: Mapping[str, Any],
+    capability_ports: Mapping[str, Any],
+) -> None:
+    """Install the conditional UI lane only when a deployment opts in.
+
+    ``USFR_PORT_FACTORY`` remains the deployment authority for both renderer
+    implementations and the immutable activation receipt.  This package does
+    not install Remotion or create a renderer itself.  A factory can return a
+    ``remotion_react_ui`` object with its candidate ``renderer`` and its
+    verified ``capabilities`` record; the existing UI renderer is then wrapped
+    before worker capability validation.  Without that explicit object the
+    deterministic renderer remains untouched.
+    """
+
+    configuration = factory_result.get("remotion_react_ui")
+    if configuration is None:
+        return
+    if not isinstance(configuration, Mapping):
+        raise PackagedFactoryError("remotion_react_ui factory configuration must be an object")
+    renderer = configuration.get("renderer")
+    capabilities = configuration.get("capabilities")
+    if not callable(renderer) or not isinstance(capabilities, Mapping):
+        raise PackagedFactoryError(
+            "remotion_react_ui configuration requires a callable renderer and capability records"
+        )
+    ui_capability = capability_ports.get("ocr_ui_renderer")
+    concrete_ui_renderer = getattr(ui_capability, "adapter", ui_capability)
+    replace = getattr(concrete_ui_renderer, "replace_render_backend", None)
+    fallback = getattr(concrete_ui_renderer, "render_backend", None)
+    if not callable(replace) or not callable(fallback):
+        raise PackagedFactoryError(
+            "remotion_react_ui requires an ocr_ui_renderer with a replaceable deterministic video backend"
+        )
+    from .remotion_react_ui import ConditionalUiRenderBackend
+
+    replace(
+        ConditionalUiRenderBackend(
+            fallback_renderer=fallback,
+            remotion_renderer=renderer,
+            capabilities=capabilities,
+        )
+    )
+
+
 def _ports(*, readiness_only: bool) -> tuple[dict[str, Any], dict[str, Any], Any, Any]:
     spec = (os.getenv(PORT_FACTORY_ENV, "") or "").strip()
     if spec:
@@ -103,6 +148,7 @@ def _ports(*, readiness_only: bool) -> tuple[dict[str, Any], dict[str, Any], Any
         capability_ports = dict(result.get("capability_ports") or {})
         invocation_adapter = result.get("invocation_adapter")
         recovery_bridge = result.get("recovery_bridge")
+        _configure_optional_remotion_ui_adapter(result, capability_ports)
     elif readiness_only:
         stage_ports = {stage: _ReadinessOnlyPort(stage) for stage in EXECUTABLE_STAGES}
         capability_ports = {name: _ReadinessOnlyPort(name) for name in REQUIRED_CAPABILITIES}

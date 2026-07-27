@@ -46,8 +46,9 @@ The artifact must compare all of these fields:
 ```
 
 The audit also confirms complete approved Cut text, fixed-B image allocation,
-target route, no `reference_videos`, no default `reference_audios`, model
-`seedance-2.0-fast`, `720p`, `9:16`, allowed duration, and the absence of
+optional `background_music` `@Audio1` binding, target route, no
+`reference_videos`, no default or top-level `reference_audios`, model
+`seedance-2.0`, `720p`, `9:16`, allowed duration, and the absence of
 opaque UI or `app_tail_card_video` assets. Selling points must retain their
 `Feature → Mechanism → Benefit → Proof → CTA` evidence chain; an
 `unsupported` claim is lowered or removed before approval.
@@ -181,9 +182,10 @@ frontmatter; its exact-byte lowercase SHA-256 and authoritative metadata
 version must match `compiler.skill_sha256` and `compiler.version`.
 
 Only the audited Factory path enforces Youdao fixed-B payload shape:
-`seedance-2.0-fast`, `720p`, `9:16`, duration 4–15, `generate_audio: true`,
+`seedance-2.0`, `720p`, `9:16`, duration 4–15, `generate_audio: true`,
 `watermark: false`, one exact text item followed by at most four exact
-`reference_image` `asset://asset-*` items, and no unknown provider fields or
+`reference_image` `asset://asset-*` items, optionally one exact `audio_url`
+`asset://asset-*` item for `@Audio1`, and no unknown provider fields or
 forbidden route markers. The unauthorised `--dry-run` route is the only preview
 and digest-preparation route; it cannot carry audited or legacy authorization
 flags. Actual audited submission uses cache-only mappings produced by that dry

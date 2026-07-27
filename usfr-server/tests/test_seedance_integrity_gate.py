@@ -489,7 +489,7 @@ class SeedanceIntegrityGateV2Test(unittest.TestCase):
 
     def test_rejects_non_fixed_audited_payload_parameters(self):
         mutations = (
-            ("model", "seedance-2.0"),
+            ("model", "seedance-2.0-fast"),
             ("resolution", "480p"),
             ("ratio", "16:9"),
             ("generate_audio", False),

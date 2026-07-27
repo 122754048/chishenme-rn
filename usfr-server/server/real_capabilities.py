@@ -1855,6 +1855,14 @@ class FfmpegDynamicsAnalyzer:
     def analyze(self, *, context: Any, input_artifacts: list[Mapping[str, Any]]) -> Mapping[str, Any]:
         with _materialize(context, "source_video") as media:
             source = Path(media.path)
+            analysis_scope = getattr(context, "analysis_scope", None)
+            if analysis_scope is not None and not isinstance(analysis_scope, Mapping):
+                raise CapabilityUnavailable("analysis scope must be an immutable object")
+            semantic_pass = analysis_scope.get("semantic_pass") if isinstance(analysis_scope, Mapping) else None
+            semantic_required = not (
+                isinstance(semantic_pass, Mapping)
+                and semantic_pass.get("status") == "skipped"
+            )
             probe = _cached_probe_for_media(context, media)
             if probe is None:
                 probe = _probe(source, ffprobe_bin=self.ffprobe_bin)
@@ -1862,7 +1870,7 @@ class FfmpegDynamicsAnalyzer:
             # digest in the evidence envelope even when the canonical probe
             # came from a legacy adapter that did not include it.
             probe.setdefault("source_sha256", str(getattr(media, "sha256", "") or "").lower())
-            if self.semantic_analyzer is None and not self.allow_heuristic:
+            if semantic_required and self.semantic_analyzer is None and not self.allow_heuristic:
                 raise CapabilityUnavailable(
                     "dynamics analyzer requires an injected VLM/semantic backend in strict mode",
                     details={"implementation": self._identity["implementation"]},
@@ -1884,7 +1892,7 @@ class FfmpegDynamicsAnalyzer:
             semantic_extensions: dict[str, Any] | None = None
             semantic_overlay_contract: dict[str, Any] | None = None
             semantic_evidence: dict[str, Any] | None = None
-            if self.semantic_analyzer is not None:
+            if semantic_required and self.semantic_analyzer is not None:
                 analyzer = getattr(self.semantic_analyzer, "analyze", None)
                 if not callable(analyzer):
                     analyzer = self.semantic_analyzer
@@ -1901,6 +1909,13 @@ class FfmpegDynamicsAnalyzer:
                     )
                 if accepts_evidence_plan:
                     semantic_kwargs["evidence_plan"] = evidence_plan
+                accepts_analysis_scope = _accepts_keyword(analyzer, "analysis_scope")
+                if analysis_scope is not None and self.production and not accepts_analysis_scope:
+                    raise CapabilityUnavailable(
+                        "production VLM backend must accept the immutable pre-route analysis_scope"
+                    )
+                if analysis_scope is not None and accepts_analysis_scope:
+                    semantic_kwargs["analysis_scope"] = dict(analysis_scope)
                 if self.production:
                     enriched = analyzer(**semantic_kwargs)
                 else:
@@ -2036,7 +2051,12 @@ class FfmpegDynamicsAnalyzer:
                     "probe": probe,
                     "boundary_count": len(boundaries),
                     "evidence_plan_sha256": evidence_plan["plan_sha256"],
-                    "semantic_backend": bool(self.semantic_analyzer),
+                    "analysis_scope_sha256": (
+                        str(analysis_scope.get("scope_sha256") or "")
+                        if isinstance(analysis_scope, Mapping)
+                        else None
+                    ),
+                    "semantic_backend": bool(self.semantic_analyzer) and semantic_required,
                     "semantic_backend_identity": dict(self._semantic_backend_identity or {}),
                     "semantic_backend_evidence": semantic_evidence,
                 },
@@ -2505,6 +2525,11 @@ class BundledAppStoreEvidenceParser:
         input_artifacts: list[Mapping[str, Any]],
     ) -> Mapping[str, Any]:
         del input_artifacts
+        if hasattr(context, "timeline_regions") and not _has_generated_ui_region(context):
+            return {
+                "status": "skipped",
+                "skipped_reason": "no_generated_ui_region",
+            }
         url = self._url_from_context(context)
         work_dir = Path(getattr(context, "work_dir", tempfile.gettempdir())).resolve()
         output_dir = work_dir / "app_store"
@@ -2663,6 +2688,33 @@ class DeterministicUiRenderer:
             }
         else:
             self._render_backend_identity = None
+        self._capability_identity = _composite_identity(
+            self._identity,
+            {
+                "ocr_backend": self._ocr_backend_identity or {"mode": "development"},
+                "render_backend": self._render_backend_identity or {"mode": "development"},
+            },
+        )
+
+    def replace_render_backend(self, render_backend: Callable[[Path, Path, Any], Any]) -> None:
+        """Replace the injected video backend before worker startup.
+
+        Deployment composition may wrap the existing deterministic renderer in
+        a strictly conditional candidate (for example the restricted Remotion
+        UI adapter).  Recompute the public capability identity at that boundary
+        so the startup manifest and every later receipt bind the backend that
+        will actually receive rendered UI work.
+        """
+
+        if not callable(render_backend):
+            raise ValueError("UI render backend must be callable")
+        render_identity = (
+            _component_identity(render_backend, label="UI render backend")
+            if self.production
+            else None
+        )
+        self.render_backend = render_backend
+        self._render_backend_identity = render_identity
         self._capability_identity = _composite_identity(
             self._identity,
             {
@@ -3362,6 +3414,29 @@ class DeterministicUiRenderer:
             raise CapabilityUnavailable(
                 "active generated UI render backend must return video and state_evidence"
             )
+        raw_renderer_decision = rendered.get("ui_renderer_decision")
+        if isinstance(raw_renderer_decision, Mapping):
+            renderer_decision = deepcopy(dict(raw_renderer_decision))
+            backend = str(renderer_decision.get("backend") or "")
+            enabled = renderer_decision.get("enabled")
+            reason = renderer_decision.get("reason")
+            renderer_identity = renderer_decision.get("renderer_identity")
+            if (
+                backend not in {"ffmpeg", "remotion_react_ui"}
+                or not isinstance(enabled, bool)
+                or not isinstance(reason, str)
+                or not reason
+                or not isinstance(renderer_identity, Mapping)
+                or not all(str(renderer_identity.get(field) or "") for field in ("implementation", "version", "sha256"))
+            ):
+                raise CapabilityUnavailable("generated UI renderer decision is incomplete")
+        else:
+            renderer_decision = {
+                "backend": "ffmpeg",
+                "enabled": False,
+                "reason": "existing_deterministic_renderer",
+                "renderer_identity": dict(self._render_backend_identity or self._identity),
+            }
         candidate = rendered.get("video_path") or rendered.get("output_path") or output
         video_path = Path(candidate)
         if not video_path.is_file() or video_path.stat().st_size <= 0:
@@ -3476,6 +3551,32 @@ class DeterministicUiRenderer:
                 "state_count": len(states),
                 "ocr_match_percent": 100,
                 "layout_match_percent": 100,
+                "ui_renderer_decision_sha256": _canonical_sha256(renderer_decision),
+            },
+        )
+        decision_payload = {
+            "schema_version": "ui-renderer-decision/v1",
+            "decision": renderer_decision,
+            "target_ui_evidence_sha256": _sha256_file(source),
+            "ui_truth_card_sha256": _canonical_sha256(truth),
+            "ui_render_contract_sha256": _canonical_sha256(render_contract),
+        }
+        encoded_decision = json.dumps(
+            decision_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+        decision_sha256 = _sha256_bytes(encoded_decision)
+        decision_artifact = publisher(
+            kind="ui_renderer_decision",
+            stream=io.BytesIO(encoded_decision),
+            content_type="application/json",
+            expected_sha256=decision_sha256,
+            metadata={
+                "producer_stage": "resolve_ui_evidence",
+                "decision": renderer_decision,
+                "decision_sha256": decision_sha256,
+                "target_ui_evidence_sha256": _sha256_file(source),
+                "ui_truth_card_sha256": _canonical_sha256(truth),
+                "ui_render_contract_sha256": _canonical_sha256(render_contract),
             },
         )
         report = deepcopy(dict(report))
@@ -3489,7 +3590,7 @@ class DeterministicUiRenderer:
             "ui_truth_card": deepcopy(dict(truth)),
             "ui_render_contract": deepcopy(dict(render_contract)),
             "rendered_media": rendered_media,
-            "published_artifacts": [dict(rendered_media)],
+            "published_artifacts": [dict(rendered_media), dict(decision_artifact)],
             "ocr_match_percent": 100,
             "layout_match_percent": 100,
             "state_evidence": deepcopy(list(evidence)),
@@ -3497,6 +3598,8 @@ class DeterministicUiRenderer:
             "truth_basis": truth_basis or ("parsed-app-store-evidence" if slot == "app_store_evidence" else "target-owned-upload"),
             "ui_truth_card_sha256": _canonical_sha256(truth),
             "truth_source_sha256": _sha256_file(source),
+            "ui_renderer_decision": renderer_decision,
+            "ui_renderer_decision_artifact": decision_artifact,
         }
 
     def _build_generated_ui_report_from_video(

@@ -1772,6 +1772,7 @@ class EvidenceBoundHttpVlmBackend(_EvidenceBoundHttpBackend):
         probe: Mapping[str, Any],
         cuts: Sequence[Mapping[str, Any]],
         evidence_plan: Mapping[str, Any] | None = None,
+        analysis_scope: Mapping[str, Any] | None = None,
         context: Any | None = None,
     ) -> Mapping[str, Any]:
         active_profile = _active_high_fidelity_context(context)
@@ -1863,6 +1864,8 @@ class EvidenceBoundHttpVlmBackend(_EvidenceBoundHttpBackend):
             request_payload["route_policy"] = route_policy
         if validated_evidence_plan is not None:
             request_payload["evidence_plan"] = validated_evidence_plan
+        if analysis_scope is not None:
+            request_payload["analysis_scope"] = dict(analysis_scope)
         response, request_sha256, response_sha256 = self._post(
             request_payload
         )

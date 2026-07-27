@@ -41,7 +41,7 @@ class SeedanceDependencyResolutionTest(unittest.TestCase):
             _validate_audited_factory_parameters(
                 prompt="short prompt",
                 provider="youdao",
-                model="seedance-2.0-fast",
+                model="seedance-2.0",
                 resolution="720p",
                 ratio="9:16",
                 duration=4,

@@ -22,9 +22,12 @@ def _receipt(char: str) -> dict[str, str]:
     }
 
 
-def _side(*, score: float, seconds: float, char: str) -> dict[str, object]:
+def _side(
+    *, score: float, seconds: float, char: str, bindings: dict[str, str]
+) -> dict[str, object]:
     return {
         "final_sha256": char * 64,
+        **bindings,
         "total_score": score,
         "factor_scores": {
             "timeline": 100.0,
@@ -46,6 +49,13 @@ def _report(
 ) -> dict[str, object]:
     cases = []
     for index, case_id in enumerate(("A01", "A03")):
+        bindings = {
+            "fixture_sha256": str(index + 1) * 64,
+            "source_interval_contract_sha256": ("a" if index == 0 else "b") * 64,
+            "target_ui_evidence_sha256": ("c" if index == 0 else "d") * 64,
+            "ui_truth_card_sha256": ("e" if index == 0 else "f") * 64,
+            "ui_render_contract_sha256": ("0" if index == 0 else "1") * 64,
+        }
         cases.append(
             {
                 "case_id": case_id,
@@ -53,11 +63,13 @@ def _report(
                     score=baseline_scores[index],
                     seconds=baseline_seconds[index],
                     char=str(index + 1),
+                    bindings=bindings,
                 ),
                 "candidate": _side(
                     score=candidate_scores[index],
                     seconds=candidate_seconds[index],
                     char=chr(ord("a") + index),
+                    bindings=bindings,
                 ),
             }
         )
@@ -135,6 +147,26 @@ def test_case_set_mismatch_is_rejected() -> None:
     report["cases"][1]["candidate_case_id"] = "foreign-case"
     with pytest.raises(BenchmarkContractError, match="same case"):
         evaluate_report(report, json.loads(POLICY.read_text(encoding="utf-8")))
+
+
+def test_same_case_requires_identical_source_and_ui_contract_bindings() -> None:
+    report = _report()
+    report["cases"][0]["candidate"]["ui_render_contract_sha256"] = "9" * 64
+    with pytest.raises(BenchmarkContractError, match="same source and UI evidence"):
+        evaluate_report(report, json.loads(POLICY.read_text(encoding="utf-8")))
+
+
+def test_quality_gain_cannot_exceed_the_approved_p95_slowdown_limit() -> None:
+    report = _report(
+        baseline_scores=(90.0, 91.0),
+        candidate_scores=(95.0, 96.0),
+        baseline_seconds=(10.0, 10.0),
+        candidate_seconds=(10.0, 12.0),
+    )
+    decision = evaluate_report(report, json.loads(POLICY.read_text(encoding="utf-8")))
+    assert decision["quality_improved"] is True
+    assert decision["eligible"] is False
+    assert "candidate p95 exceeds approved p95 slowdown" in decision["reasons"]
 
 
 def test_candidate_may_only_benchmark_its_declared_domain() -> None:

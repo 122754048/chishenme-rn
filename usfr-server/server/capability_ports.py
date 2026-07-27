@@ -1067,6 +1067,20 @@ class CapabilityStagePort:
                 "dynamics_analyzer",
                 operation=self.stage,
             )
+            analysis_scope = getattr(context, "analysis_scope", None)
+            tools = analysis_scope.get("tools") if isinstance(analysis_scope, Mapping) else None
+            asr_decision = tools.get("source_asr") if isinstance(tools, Mapping) else None
+            if isinstance(asr_decision, Mapping) and asr_decision.get("status") == "skipped":
+                return {
+                    "status": "ready",
+                    "capabilities": ["dynamics_analyzer"],
+                    "source_dynamics_analysis": dict(dynamics["source_dynamics_analysis"]),
+                    "capability_receipts": {"dynamics_analyzer": dict(dynamics)},
+                    "skipped_tools": [{
+                        "tool": "source_asr",
+                        "reason": str(asr_decision.get("reason") or "pre_route_skipped"),
+                    }],
+                }
             audio = _require_result(
                 _call(
                     self._ports["asr_transcriber"].transcribe,
@@ -1137,6 +1151,16 @@ class CapabilityStagePort:
             if published_artifacts:
                 result["published_artifacts"] = published_artifacts
             return result
+        if (
+            self.stage == "resolve_ui_evidence"
+            and hasattr(context, "timeline_regions")
+            and not _context_has_generated_ui(context)
+        ):
+            return {
+                "status": "skipped",
+                "skipped_reason": "no_generated_ui_region",
+                "capabilities": list(sorted(self.capability_names)),
+            }
         name = self.capability_names[0]
         adapter = self._ports[name]
         method_name = {

@@ -12,6 +12,7 @@ from server.errors import StateConflictError
 from server.ephemeral_driver import EphemeralStageDriver
 from server.ephemeral_worker import EphemeralWorkerManager
 from server.job_models import WorkMessage
+from server.media_materializer import MediaMaterializer
 from server.object_store import FinalVideoStore, S3ObjectStore, TemporaryMediaStore
 from server.orchestrator import build_stage_plan
 from server.redis_job_store import RedisEphemeralJobStore
@@ -33,6 +34,83 @@ class Stage:
                 )
             ]
         }
+
+
+class MetadataStage:
+    def run(self, *, context, input_artifacts):
+        del input_artifacts
+        payload = b'{"decision":"ffmpeg"}'
+        artifact = context.publish_artifact(
+            kind="ui_renderer_decision",
+            stream=__import__("io").BytesIO(payload),
+            content_type="application/json",
+            expected_sha256=hashlib.sha256(payload).hexdigest(),
+            metadata={
+                "decision": "ffmpeg",
+                "reason": "remotion_adapter_unavailable",
+                "enabled": False,
+            },
+        )
+        return {"published_artifacts": [artifact]}
+
+
+class ProbeOutputStage:
+    def run(self, *, context, input_artifacts):
+        del input_artifacts
+        return {
+            "source_probe": {
+                "duration_us": 1_000_000,
+                "fps": 30,
+                "source_sha256": "a" * 64,
+            },
+            "work_dir": str(context.work_dir),
+        }
+
+
+class DependsOnProbeOutputStage:
+    def __init__(self) -> None:
+        self.observed = None
+
+    def run(self, *, context, input_artifacts):
+        del input_artifacts
+        self.observed = context.stage_outputs["probe_source"]
+        return {"status": "ready"}
+
+
+class RouteRegionsOutputStage:
+    def run(self, *, context, input_artifacts):
+        del context, input_artifacts
+        return {
+            "timeline_regions": {
+                "regions": [
+                    {
+                        "region_id": "ui-001",
+                        "region_type": "generated_ui_demo",
+                        "deterministic_ui_rebuild_allowed": True,
+                    }
+                ]
+            }
+        }
+
+
+class DependsOnTimelineRegionsStage:
+    def __init__(self) -> None:
+        self.observed = None
+
+    def run(self, *, context, input_artifacts):
+        del input_artifacts
+        self.observed = context.timeline_regions
+        return {"status": "ready"}
+
+
+class ScopeAwareStage:
+    def __init__(self) -> None:
+        self.observed = None
+
+    def run(self, *, context, input_artifacts):
+        del input_artifacts
+        self.observed = context.analysis_scope
+        return {"status": "ready"}
 
 
 class ScriptStage:
@@ -79,7 +157,8 @@ class QcFinalStage:
 def _runtime():
     redis = fakeredis.FakeRedis(decode_responses=False)
     store = RedisEphemeralJobStore(redis, prefix="ephemeral-runtime")
-    object_store = S3ObjectStore(MemoryS3(), bucket="test")
+    client = MemoryS3()
+    object_store = S3ObjectStore(client, bucket="test")
     temporary = TemporaryMediaStore(object_store)
     manager = EphemeralWorkerManager(
         job_store=store,
@@ -87,6 +166,17 @@ def _runtime():
         stage_ports={"analyze_dynamics": Stage()},
         profile_bundle_resolver=SimpleNamespace(immutable=True),
         capability_ports={},
+        materializer=MediaMaterializer(
+            SimpleNamespace(
+                head=lambda key: {
+                    "object_key": key,
+                    "sha256": object_store.head(key).sha256,
+                    "size_bytes": object_store.head(key).size_bytes,
+                    "content_type": object_store.head(key).content_type,
+                },
+                open_stream=lambda key: client.get_object(Bucket="test", Key=key)["Body"],
+            )
+        ),
     )
     return store, temporary, manager
 
@@ -106,11 +196,163 @@ def test_worker_processes_job_scoped_message_and_publishes_temporary_artifact() 
         checkpoint=checkpoint,
         owner="worker-1",
     )
-    assert len(result["output_artifact_ids"]) == 1
-    artifact = store.get_artifact(job.job_id, result["output_artifact_ids"][0])
+    assert len(result["output_artifact_ids"]) == 2
+    artifact = next(
+        store.get_artifact(job.job_id, artifact_id)
+        for artifact_id in result["output_artifact_ids"]
+        if store.get_artifact(job.job_id, artifact_id).kind == "analysis"
+    )
     assert artifact is not None
     assert artifact.object_key.startswith(f"temporary/{job.job_id}/")
-    assert temporary.list_job_keys(job.job_id) == (artifact.object_key,)
+    assert temporary.list_job_keys(job.job_id) == tuple(
+        sorted(
+            store.get_artifact(job.job_id, artifact_id).object_key
+            for artifact_id in result["output_artifact_ids"]
+        )
+    )
+
+
+def test_worker_persists_artifact_metadata_for_auditable_tool_decisions() -> None:
+    store, temporary, manager = _runtime()
+    manager.stage_ports["resolve_ui_evidence"] = MetadataStage()
+    job = store.create_job(slots_manifest={"slots": {}}, capability_token_hash="a" * 64, ttl_seconds=3600)
+    checkpoint = store.claim_stage(
+        job_id=job.job_id,
+        stage="resolve_ui_evidence",
+        dedupe_key="ui-decision-1",
+        owner="worker-1",
+        ttl_seconds=60,
+    )
+
+    result = manager.process_work_message(
+        message=WorkMessage(job.job_id, "resolve_ui_evidence", job.version, "ui-decision-1"),
+        checkpoint=checkpoint,
+        owner="worker-1",
+    )
+
+    artifact = next(
+        store.get_artifact(job.job_id, artifact_id)
+        for artifact_id in result["output_artifact_ids"]
+        if store.get_artifact(job.job_id, artifact_id).kind == "ui_renderer_decision"
+    )
+    assert artifact is not None
+    assert artifact.metadata == {
+        "decision": "ffmpeg",
+        "reason": "remotion_adapter_unavailable",
+        "enabled": False,
+    }
+    assert temporary.list_job_keys(job.job_id) == tuple(
+        sorted(
+            store.get_artifact(job.job_id, artifact_id).object_key
+            for artifact_id in result["output_artifact_ids"]
+        )
+    )
+
+
+def test_worker_rehydrates_only_safe_prior_stage_output_for_later_stages() -> None:
+    store, _temporary, manager = _runtime()
+    dependent = DependsOnProbeOutputStage()
+    manager.stage_ports = {
+        "probe_source": ProbeOutputStage(),
+        "analyze_dynamics": dependent,
+    }
+    job = store.create_job(slots_manifest={"slots": {}}, capability_token_hash="a" * 64, ttl_seconds=3600)
+    first = store.claim_stage(
+        job_id=job.job_id,
+        stage="probe_source",
+        dedupe_key="probe-1",
+        owner="worker-1",
+        ttl_seconds=60,
+    )
+    first_result = manager.process_work_message(
+        message=WorkMessage(job.job_id, "probe_source", job.version, "probe-1"),
+        checkpoint=first,
+        owner="worker-1",
+    )
+    store.complete_stage(
+        job_id=job.job_id,
+        stage="probe_source",
+        dedupe_key="probe-1",
+        owner="worker-1",
+        output_artifact_ids=first_result["output_artifact_ids"],
+        ttl_seconds=3600,
+    )
+    current = store.get_job(job.job_id)
+    assert current is not None
+    second = store.claim_stage(
+        job_id=job.job_id,
+        stage="analyze_dynamics",
+        dedupe_key="dynamics-1",
+        owner="worker-1",
+        ttl_seconds=60,
+    )
+
+    manager.process_work_message(
+        message=WorkMessage(job.job_id, "analyze_dynamics", current.version, "dynamics-1"),
+        checkpoint=second,
+        owner="worker-1",
+    )
+
+    assert dependent.observed == {
+        "source_probe": {
+            "duration_us": 1_000_000,
+            "fps": 30,
+            "source_sha256": "a" * 64,
+        }
+    }
+
+
+def test_worker_projects_frozen_route_regions_into_later_stage_context() -> None:
+    store, _temporary, manager = _runtime()
+    dependent = DependsOnTimelineRegionsStage()
+    manager.stage_ports = {
+        "route_regions": RouteRegionsOutputStage(),
+        "resolve_ui_evidence": dependent,
+    }
+    job = store.create_job(slots_manifest={"slots": {}}, capability_token_hash="a" * 64, ttl_seconds=3600)
+    first = store.claim_stage(
+        job_id=job.job_id,
+        stage="route_regions",
+        dedupe_key="route-1",
+        owner="worker-1",
+        ttl_seconds=60,
+    )
+    first_result = manager.process_work_message(
+        message=WorkMessage(job.job_id, "route_regions", job.version, "route-1"),
+        checkpoint=first,
+        owner="worker-1",
+    )
+    store.complete_stage(
+        job_id=job.job_id,
+        stage="route_regions",
+        dedupe_key="route-1",
+        owner="worker-1",
+        output_artifact_ids=first_result["output_artifact_ids"],
+        ttl_seconds=3600,
+    )
+    current = store.get_job(job.job_id)
+    assert current is not None
+    second = store.claim_stage(
+        job_id=job.job_id,
+        stage="resolve_ui_evidence",
+        dedupe_key="ui-1",
+        owner="worker-1",
+        ttl_seconds=60,
+    )
+
+    manager.process_work_message(
+        message=WorkMessage(job.job_id, "resolve_ui_evidence", current.version, "ui-1"),
+        checkpoint=second,
+        owner="worker-1",
+    )
+
+    assert dependent.observed == (
+        {
+            "region_id": "ui-001",
+            "region_type": "generated_ui_demo",
+            "deterministic_ui_rebuild_allowed": True,
+        },
+    )
 
 
 def test_driver_starts_at_first_executable_stage_before_approvals() -> None:
@@ -150,6 +392,98 @@ def test_language_only_replacement_still_enters_script_and_seedance_workflow() -
     assert "await_storyboard_approval" not in names
     assert "compile_seedance20_prompt" in names
     assert "submit_provider_video" in names
+
+
+def test_legacy_route_one_still_contains_both_editable_approval_gates() -> None:
+    plan = build_stage_plan(
+        {
+            "slots": {
+                "source_video": {"present": True},
+                "new_model_image": {"present": True},
+            },
+            "routes": {"character": "replace_from_slot"},
+            "review_route": "route_1",
+        },
+    )
+
+    assert [stage["name"] for stage in plan if stage["kind"] == "approval"] == [
+        "await_script_approval",
+        "await_storyboard_approval",
+    ]
+    assert next(stage for stage in plan if stage["name"] == "build_script").get("mode") != "reuse_approved"
+
+
+def test_driver_clears_legacy_script_approval_before_new_run_enters_review() -> None:
+    store, _temporary, _manager = _runtime()
+    job = store.create_job(
+        slots_manifest={
+            "slots": {
+                "source_video": {"present": True},
+                "new_model_image": {"present": True},
+            },
+            "routes": {"character": "replace_from_slot"},
+            "review_route": "route_1",
+        },
+        capability_token_hash="a" * 64,
+        ttl_seconds=3600,
+    )
+    job = store.cas_transition(
+        job_id=job.job_id,
+        expected_version=job.version,
+        command="seed_legacy_review",
+        updates={"review_route": "route_1", "approved_script_sha256": "a" * 64},
+        ttl_seconds=3600,
+    )
+    queue = SimpleNamespace(messages=[], enqueue=lambda **kwargs: queue.messages.append(WorkMessage(**kwargs)) or "1-0")
+    driver = EphemeralStageDriver(store, queue)
+
+    message = driver.enqueue_next(job.job_id)
+
+    current = store.get_job(job.job_id)
+    assert message is not None
+    assert message.stage == "bind_inputs"
+    assert current is not None
+    assert current.review_route == "route_2"
+    assert current.approved_script_sha256 is None
+
+
+def test_worker_exposes_the_manifest_pre_route_scope_to_stage_ports() -> None:
+    store, temporary, manager = _runtime()
+    stage = ScopeAwareStage()
+    manager.stage_ports = {"analyze_dynamics": stage}
+    job = store.create_job(
+        slots_manifest={
+            "slots": {
+                "source_video": {"present": True},
+                "new_model_image": {"present": True},
+            },
+            "routes": {"character": "replace_from_slot", "ui": "source_ui_keep"},
+        },
+        capability_token_hash="a" * 64,
+        ttl_seconds=3600,
+    )
+    checkpoint = store.claim_stage(
+        job_id=job.job_id,
+        stage="analyze_dynamics",
+        dedupe_key="scope-1",
+        owner="worker-1",
+        ttl_seconds=60,
+    )
+
+    manager.process_work_message(
+        message=WorkMessage(job.job_id, "analyze_dynamics", job.version, "scope-1"),
+        checkpoint=checkpoint,
+        owner="worker-1",
+    )
+
+    assert stage.observed["semantic_pass"]["focus"] == [
+        "source_timeline",
+        "character_identity",
+        "camera",
+        "action",
+        "continuity",
+    ]
+    assert stage.observed["tools"]["app_store_evidence"]["status"] == "skipped"
 
 
 def test_worker_appends_script_revision_before_driver_reaches_approval() -> None:

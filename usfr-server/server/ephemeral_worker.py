@@ -6,19 +6,87 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 import hashlib
 import inspect
+import json
+import math
 from pathlib import Path
 import tempfile
 import time
 from typing import Any, Iterator, Mapping, Sequence
 
+from .analysis_scope import build_analysis_scope
 from .errors import ReplicationError
 from .job_models import ArtifactRef, JobSnapshot, StageCheckpoint, WorkMessage
 from .media_materializer import MaterializedMedia, MediaMaterializer
 from .review_models import RevisionManifest
 
 
+_STAGE_OUTPUT_SCHEMA = "ephemeral-stage-output/v1"
+_UNSAFE_STAGE_OUTPUT_KEYS = frozenset(
+    {
+        "api_key",
+        "authorization",
+        "file_path",
+        "local_path",
+        "output_path",
+        "path",
+        "secret",
+        "token",
+        "video_path",
+        "work_dir",
+    }
+)
+
+
 def _artifact_id(stage: str, kind: str, sha256: str) -> str:
     return hashlib.sha256(f"{stage}\0{kind}\0{sha256}".encode()).hexdigest()[:32]
+
+
+def _stage_output_value(value: Any) -> Any:
+    """Return a JSON-safe stage-output projection without worker-local data."""
+
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ReplicationError(
+                "CONTRACT_INVALID",
+                "stage output cannot contain a non-finite number",
+                category="artifact",
+                http_status=422,
+            )
+        return value
+    if isinstance(value, Path):
+        raise ReplicationError(
+            "CONTRACT_INVALID",
+            "stage output cannot persist a local path",
+            category="artifact",
+            http_status=422,
+        )
+    to_dict = getattr(value, "to_dict", None)
+    if callable(to_dict):
+        value = to_dict()
+    if isinstance(value, Mapping):
+        result: dict[str, Any] = {}
+        for key, item in value.items():
+            if not isinstance(key, str) or not key:
+                raise ReplicationError(
+                    "CONTRACT_INVALID",
+                    "stage output keys must be non-empty strings",
+                    category="artifact",
+                    http_status=422,
+                )
+            if key.casefold() in _UNSAFE_STAGE_OUTPUT_KEYS:
+                continue
+            result[key] = _stage_output_value(item)
+        return result
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return [_stage_output_value(item) for item in value]
+    raise ReplicationError(
+        "CONTRACT_INVALID",
+        "stage output contains an unsupported value",
+        category="artifact",
+        http_status=422,
+    )
 
 
 @dataclass
@@ -33,6 +101,7 @@ class EphemeralStageContext:
     profile_snapshot: Mapping[str, Any] | None = None
     invocation_adapter: Any | None = None
     allow_local_paths: bool = False
+    analysis_scope: Mapping[str, Any] = field(default_factory=dict)
     stage_outputs: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
     timeline_regions: tuple[Mapping[str, Any], ...] = ()
     _published: dict[str, ArtifactRef] = field(default_factory=dict, init=False, repr=False)
@@ -140,7 +209,27 @@ class EphemeralStageContext:
         expected_sha256: str,
         metadata: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
-        del metadata
+        if metadata is None:
+            artifact_metadata: dict[str, Any] = {}
+        elif not isinstance(metadata, Mapping):
+            raise ReplicationError(
+                "CONTRACT_INVALID",
+                "artifact metadata must be an object",
+                category="artifact",
+                http_status=422,
+            )
+        else:
+            try:
+                artifact_metadata = json.loads(
+                    json.dumps(dict(metadata), ensure_ascii=False, sort_keys=True)
+                )
+            except (TypeError, ValueError) as exc:
+                raise ReplicationError(
+                    "CONTRACT_INVALID",
+                    "artifact metadata must be JSON-serializable",
+                    category="artifact",
+                    http_status=422,
+                ) from exc
         artifact_id = _artifact_id(self.stage, kind, expected_sha256)
         stored = self.temporary_store.put_stream(
             job_id=self.job_id,
@@ -149,7 +238,12 @@ class EphemeralStageContext:
             content_type=content_type,
             expected_sha256=expected_sha256,
         )
-        ref = replace(stored, artifact_id=artifact_id, kind=kind)
+        ref = replace(
+            stored,
+            artifact_id=artifact_id,
+            kind=kind,
+            metadata=artifact_metadata,
+        )
         self.job_store.put_artifact(job_id=self.job_id, artifact=ref)
         self._published[artifact_id] = ref
         return ref.to_dict()
@@ -169,6 +263,39 @@ class EphemeralStageContext:
             stream=io.BytesIO(data),
             content_type=content_type,
             expected_sha256=expected_sha256,
+        )
+
+    def publish_stage_output(self, output: Mapping[str, Any]) -> dict[str, Any]:
+        if not isinstance(output, Mapping):
+            raise ReplicationError(
+                "CONTRACT_INVALID",
+                "stage output must be an object",
+                category="artifact",
+                http_status=422,
+            )
+        safe_output = _stage_output_value(output)
+        if not isinstance(safe_output, Mapping):  # defensive: the helper preserves mappings
+            raise ReplicationError("CONTRACT_INVALID", "stage output projection is invalid", category="artifact", http_status=422)
+        output_sha256 = hashlib.sha256(
+            json.dumps(safe_output, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        payload = {
+            "schema_version": _STAGE_OUTPUT_SCHEMA,
+            "stage": self.stage,
+            "output": dict(safe_output),
+            "output_sha256": output_sha256,
+        }
+        encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        return self.publish_artifact(
+            kind="stage_output",
+            stream=__import__("io").BytesIO(encoded),
+            content_type="application/json",
+            expected_sha256=hashlib.sha256(encoded).hexdigest(),
+            metadata={
+                "stage": self.stage,
+                "schema_version": _STAGE_OUTPUT_SCHEMA,
+                "output_sha256": output_sha256,
+            },
         )
 
     @property
@@ -231,6 +358,105 @@ class EphemeralWorkerManager:
     @staticmethod
     def _remaining_ttl_seconds(snapshot: JobSnapshot) -> int:
         return max(1, (snapshot.expires_at_ms - time.time_ns() // 1_000_000) // 1000)
+
+    @staticmethod
+    def _known_stages() -> tuple[str, ...]:
+        from .ephemeral_driver import EXECUTABLE_STAGES
+
+        return tuple(EXECUTABLE_STAGES)
+
+    def _hydrate_stage_outputs(self, context: EphemeralStageContext) -> None:
+        """Restore only checkpoint-bound, JSON-safe outputs from prior stages."""
+
+        if context.materializer is None:
+            return
+        artifacts = {item.get("artifact_id"): item for item in context.artifacts if isinstance(item, Mapping)}
+        hydrated: dict[str, Mapping[str, Any]] = {}
+        for stage in self._known_stages():
+            if stage == context.stage:
+                continue
+            checkpoint = self.job_store.get_stage_checkpoint(context.job_id, stage)
+            if checkpoint is None or checkpoint.status != "SUCCEEDED":
+                continue
+            artifact_id = next(
+                (
+                    candidate
+                    for candidate in checkpoint.output_artifact_ids
+                    if isinstance(artifacts.get(candidate), Mapping)
+                    and artifacts[candidate].get("kind") == "stage_output"
+                    and isinstance(artifacts[candidate].get("metadata"), Mapping)
+                    and artifacts[candidate]["metadata"].get("stage") == stage
+                ),
+                None,
+            )
+            if artifact_id is None:
+                continue
+            descriptor = artifacts[artifact_id]
+            metadata = descriptor["metadata"]
+            try:
+                with context.materialize_artifact("stage_output", artifact_id=artifact_id) as media:
+                    payload = json.loads(Path(media.path).read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise ReplicationError(
+                    "CONTRACT_INVALID",
+                    "prior stage output artifact is not valid JSON",
+                    category="artifact",
+                    http_status=422,
+                ) from exc
+            if (
+                not isinstance(payload, Mapping)
+                or payload.get("schema_version") != _STAGE_OUTPUT_SCHEMA
+                or payload.get("stage") != stage
+                or not isinstance(payload.get("output"), Mapping)
+            ):
+                raise ReplicationError(
+                    "CONTRACT_INVALID",
+                    "prior stage output artifact has an invalid schema",
+                    category="artifact",
+                    http_status=422,
+                )
+            output = _stage_output_value(payload["output"])
+            output_sha256 = hashlib.sha256(
+                json.dumps(output, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            ).hexdigest()
+            if (
+                payload.get("output_sha256") != output_sha256
+                or metadata.get("output_sha256") != output_sha256
+                or metadata.get("schema_version") != _STAGE_OUTPUT_SCHEMA
+            ):
+                raise ReplicationError(
+                    "CONTRACT_INVALID",
+                    "prior stage output artifact digest does not match its checkpoint metadata",
+                    category="artifact",
+                    http_status=422,
+                )
+            hydrated[stage] = dict(output)
+        context.stage_outputs = hydrated
+        route_output = hydrated.get("route_regions")
+        if not isinstance(route_output, Mapping):
+            return
+        timeline_output = route_output.get("timeline_regions")
+        if timeline_output is None:
+            return
+        if isinstance(timeline_output, Mapping):
+            regions = timeline_output.get("regions")
+        else:
+            regions = timeline_output
+        if not isinstance(regions, Sequence) or isinstance(regions, (str, bytes, bytearray)):
+            raise ReplicationError(
+                "CONTRACT_INVALID",
+                "route_regions stage output must expose a region sequence",
+                category="artifact",
+                http_status=422,
+            )
+        if any(not isinstance(region, Mapping) for region in regions):
+            raise ReplicationError(
+                "CONTRACT_INVALID",
+                "route_regions stage output contains an invalid region",
+                category="artifact",
+                http_status=422,
+            )
+        context.timeline_regions = tuple(dict(region) for region in regions)
 
     def _apply_result_authority(
         self,
@@ -312,10 +538,13 @@ class EphemeralWorkerManager:
                 materializer=self.materializer,
                 profile_snapshot=snapshot.slots_manifest.get("extensions", {}).get("high_fidelity_profile"),
                 invocation_adapter=self.invocation_adapter,
+                analysis_scope=build_analysis_scope(snapshot.slots_manifest),
             )
             try:
+                self._hydrate_stage_outputs(context)
                 output = self._invoke(handler, context)
                 self._apply_result_authority(context=context, result=output)
+                context.publish_stage_output(output)
             except ReplicationError as exc:
                 if self.recovery_bridge is None or exc.retryable:
                     raise
