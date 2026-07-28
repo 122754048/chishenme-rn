@@ -48,11 +48,10 @@ def _parse_env(path: Path) -> dict[str, str]:
 class Settings:
     runninghub_api_key: str = field(repr=False)
     runninghub_base_url: str
-    youdao_api_key: str = field(repr=False)
-    youdao_base_url: str
-    youdao_model: str
-    youdao_resolution: str
-    youdao_project_name: str
+    runninghub_seedance_api_key: str = field(repr=False)
+    runninghub_seedance_create_url: str
+    runninghub_seedance_query_url: str
+    runninghub_seedance_upload_url: str
     seedance_api_provider: str
 
     def require_runninghub(self) -> None:
@@ -60,12 +59,10 @@ class Settings:
             raise ConfigurationError("Missing configuration: RUNNINGHUB_API_KEY")
 
     def require_seedance(self) -> None:
-        if self.seedance_api_provider != "youdao":
-            raise ConfigurationError("SEEDANCE_API_PROVIDER must be youdao")
-        if not self.youdao_api_key:
-            raise ConfigurationError("Missing configuration: YOUDAO_API_KEY")
-        if self.youdao_model != "seedance-2.0":
-            raise ConfigurationError("YOUDAO_SEEDANCE_MODEL must be seedance-2.0")
+        if self.seedance_api_provider != "runninghub_standard":
+            raise ConfigurationError("SEEDANCE_API_PROVIDER must be runninghub_standard")
+        if not self.runninghub_seedance_api_key:
+            raise ConfigurationError("Missing configuration: RUNNINGHUB_SEEDANCE_API_KEY")
 
 
 def load_settings(
@@ -81,21 +78,28 @@ def load_settings(
     def value(primary: str, alias: str = "", default: str = "") -> str:
         return merged.get(primary) or (merged.get(alias) if alias else "") or default
 
+    provider = value("SEEDANCE_API_PROVIDER", default="runninghub_standard").lower()
+
     return Settings(
         runninghub_api_key=value("RUNNINGHUB_API_KEY"),
         runninghub_base_url=value(
             "RUNNINGHUB_BASE_URL",
             default="https://www.runninghub.ai",
         ),
-        youdao_api_key=value("YOUDAO_API_KEY"),
-        youdao_base_url=value(
-            "YOUDAO_BASE_URL",
-            default="https://openapi.youdao.com/llmgateway",
+        runninghub_seedance_api_key=value("RUNNINGHUB_SEEDANCE_API_KEY"),
+        runninghub_seedance_create_url=value(
+            "RUNNINGHUB_SEEDANCE_CREATE_URL",
+            default="https://www.runninghub.cn/openapi/v2/bytedance/seedance-2.0-fast-token/multimodal-video",
         ),
-        youdao_model=value("YOUDAO_SEEDANCE_MODEL", default="seedance-2.0"),
-        youdao_resolution=value("YOUDAO_SEEDANCE_RESOLUTION", default="720p"),
-        youdao_project_name=value("YOUDAO_PROJECT_NAME", default="default"),
-        seedance_api_provider=value("SEEDANCE_API_PROVIDER", default="youdao").lower(),
+        runninghub_seedance_query_url=value(
+            "RUNNINGHUB_SEEDANCE_QUERY_URL",
+            default="https://www.runninghub.cn/openapi/v2/query",
+        ),
+        runninghub_seedance_upload_url=value(
+            "RUNNINGHUB_SEEDANCE_UPLOAD_URL",
+            default="https://www.runninghub.cn/openapi/v2/media/upload/binary",
+        ),
+        seedance_api_provider=provider,
     )
 
 
@@ -119,10 +123,11 @@ def build_redacted_provider_preflight(
             else "none"
         ),
         "runninghub_api_key": "present" if settings.runninghub_api_key else "missing",
-        "youdao_api_key": "present" if settings.youdao_api_key else "missing",
+        "runninghub_seedance_api_key": "present" if settings.runninghub_seedance_api_key else "missing",
         "runninghub_base_url": "present" if settings.runninghub_base_url else "missing",
-        "youdao_base_url": "present" if settings.youdao_base_url else "missing",
         "seedance_api_provider": (
-            "youdao" if settings.seedance_api_provider == "youdao" else "unsupported"
+            "runninghub_standard"
+            if settings.seedance_api_provider == "runninghub_standard"
+            else "unsupported"
         ),
     }

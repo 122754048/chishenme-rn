@@ -182,13 +182,13 @@ Rules to preserve:
 Update these when paid provider calls, asset upload, polling, reconciliation,
 or provider payload shape changes:
 
-- `bundled-skills/seedance-storyboard-replication/scripts/seedance_submit.py`
+- `bundled-skills/seedance-storyboard-replication/scripts/runninghub_seedance_submit.py`
 - `bundled-skills/seedance-storyboard-replication/scripts/runninghub_image2.py`
 - `server/provider_ports.py`
 - `server/production_ports.py`
 - `server/capability_ports.py`
 - `server/packaged_factory.py`
-- `tests/test_youdao_seedance.py`
+- `tests/test_runninghub_standard_seedance.py`
 - `tests/test_provider_idempotency_redis.py`
 - `tests/test_capability_ports.py`
 

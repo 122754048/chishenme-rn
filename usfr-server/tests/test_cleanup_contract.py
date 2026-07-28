@@ -43,7 +43,7 @@ class SkillCleanupContractTest(unittest.TestCase):
             path.read_text(encoding="utf-8")
             for path in (
                 SEEDANCE_ROOT / "scripts" / "config.py",
-                SEEDANCE_ROOT / "scripts" / "seedance_submit.py",
+                SEEDANCE_ROOT / "scripts" / "runninghub_seedance_submit.py",
                 SEEDANCE_ROOT / "references" / "seedance.env.example",
             )
         ).lower()
@@ -55,7 +55,8 @@ class SkillCleanupContractTest(unittest.TestCase):
             "ark_base_url",
             "ark_seedance_model",
             "arkseedanceclient",
-            "provider must be one of: youdao, ark",
+            "youdao",
+            "asset://",
         ):
             with self.subTest(retired=retired):
                 self.assertNotIn(retired, combined)
@@ -79,18 +80,20 @@ class SkillCleanupContractTest(unittest.TestCase):
             self.assertNotIn("source", module)
             self.assertTrue(module["bundled_path"].startswith("bundled-skills/"))
 
-    def test_required_compatibility_and_fixed_youdao_contract_remain(self):
-        submit = (SEEDANCE_ROOT / "scripts" / "seedance_submit.py").read_text(
+    def test_only_the_runninghub_standard_submitter_remains(self):
+        submit = (SEEDANCE_ROOT / "scripts" / "runninghub_seedance_submit.py").read_text(
             encoding="utf-8"
         )
         timeline = (SEEDANCE_ROOT / "scripts" / "timeline_splice.py").read_text(
             encoding="utf-8"
         )
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        self.assertFalse((SEEDANCE_ROOT / "scripts" / "seedance_submit.py").exists())
+        self.assertFalse((SEEDANCE_ROOT / "references" / "youdao-api.md").exists())
         self.assertIn("--approved-request-sha256", submit)
         self.assertIn("LEGACY_KIND_MAP", timeline)
         for required in (
-            "seedance-2.0-fast",
+            "seedance-2.0-fast-token",
             "720p",
             "9:16",
             "seedance-20",

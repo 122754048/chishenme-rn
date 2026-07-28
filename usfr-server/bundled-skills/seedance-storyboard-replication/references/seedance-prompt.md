@@ -8,16 +8,22 @@ The approved 完整分镜脚本 is the execution source of truth. The reference 
 
 The storyboard image is a visual reference; do not rely on text rendered inside the storyboard image. 不要依赖故事板图片中的文字，也不要要求 Seedance 自行识别图片里的完整脚本、口播或备注。Repeat the complete approved script as prompt text.
 
-Use the fixed B route for both workflow routes: keep the original video local after analysis, do not upload it for Seedance, and 禁止发送 `reference_videos`.
+Use the fixed B route for both workflow routes: keep the original video local after analysis. A video-reference replication is the only exception: it uploads exactly one matching frozen source segment as documented `videoUrls[0]`, while the approved storyboard remains `@Image1`. 禁止发送 `reference_videos`.
 
-1. Actual image-number mapping. Under Youdao, every image is registered with CreateAsset, polled until `Status=Active`, and sent as an `asset://asset-*` reference; no COS service is required:
+1. Actual image-number mapping. Upload only approved storyboard and target
+   images to the RunningHub Standard Model account and bind each returned
+   public HTTPS URL to its immutable input SHA-256. The fixed-B request uses
+   those URLs in `imageUrls`, normally sets `videoUrls=[]`, and never uploads
+   opaque UI or tail media. A video-reference replication may upload only the
+   matching frozen source slice to `videoUrls[0]` with its
+   `usfr-video-reference/v1` binding:
    - `@图片1` is 当前分段故事板 only, such as `storyboards/segment_01_v1.png` for task 1 or `storyboards/segment_02_v1.png` for task 2.
    - `@图片2` is the optional character board only when `new_model_image` is populated.
    - `@图片3` is product board 1 only when `new_product_image` is populated.
    - `@图片4` is optional product board 2 only when additional supplied product evidence is populated.
    - Do not invent an image reference for an absent slot. Source-origin KEEP
      intervals are excluded from the prompt and provider payload.
-2. State the global segment plan, selected narrative split, current segment index, source time range, segment-local duration, incoming continuity state, outgoing continuity state, and adjacent segment handoff. No reference video is available to Seedance.
+2. State the global segment plan, selected narrative split, current segment index, source time range, segment-local duration, incoming continuity state, outgoing continuity state, and adjacent segment handoff. When `videoUrls[0]` is authorized, state that it controls only the matching source motion, camera rhythm, and environment continuity; it never replaces the approved storyboard or target truth.
 3. Global product and character identity locks. Keep product shape, color, logo, packaging, material, scale, and use method consistent. Keep face, hairstyle, outfit, body proportion, and temperament consistent when a character board exists.
 4. 当前分段的完整分镜脚本, repeated Cut by Cut. Keep global Cut numbers and segment-local timecodes. Every Cut must include all of these fields:
    - `时间`: segment-local `00.0-02.5s` style timecode.
@@ -33,7 +39,16 @@ Use the fixed B route for both workflow routes: keep the original video local af
 
 Never use vague substitutions such as “follow the storyboard,” “same as the reference,” or “continue similarly” in place of the Cut fields above.
 
-After assembling the complete prompt, compile it through `seedance-20`, build the exact final payload, and run one unauthorised pre-audit dry-run request without audited/legacy authorization, audit, script, or input-contract flags. Then run a script-to-prompt parity audit against that exact request, save the audit and internal SHA256 digest, and submit only with the complete set `--audited-request-sha256`, `--audit-artifact`, `--approved-script-sha256`, `--seedance-input-contract`, and `--seedance20-skill-file`. Any prompt, image mapping, timing, or payload mutation invalidates the digest and requires a fresh dry-run and audit. This is an internal integrity authorization, not a user approval gate.
+After assembling the complete prompt, recompile the final prompt through
+`seedance-20`, build the exact direct Standard Model payload, and run one
+unauthorised pre-audit dry-run with `runninghub_seedance_submit.py --dry-run`.
+Then run a script-to-prompt parity audit against that exact request, save the
+audit and internal SHA256 digest, and submit only with
+`--approved-request-sha256`. Audit, script, storyboard, segment, and compiler
+artifacts remain server-side integrity evidence. Any prompt, image mapping,
+timing, or payload mutation invalidates the digest and requires a fresh dry-run
+and audit. This is an internal integrity authorization, not a user approval
+gate.
 
 ## Required post-storyboard integrity sequence
 
@@ -108,42 +123,32 @@ Cut 4
 
 Negative: no subtitles, no floating text, no extra logo, no extra character, no invented scene, no reordered Cuts, no product shape change, no wrong color, no identity drift.
 The exact dry-run payload is audited by `seedance-20`; write the audit JSON
-artifact before submitting with `--audited-request-sha256`,
-`--audit-artifact`, `--approved-script-sha256`,
-`--seedance-input-contract`, and `--seedance20-skill-file`. The artifact must
+artifact before submitting with `--approved-request-sha256`. The artifact must
 bind the request and compiled prompt digests and pass every required boolean
 check.
 
 ## Audited Factory contract and submission closure
 
-Freeze `seedance_input_contract.json` after storyboard approval and pass it with
-`--seedance-input-contract`. Its raw bytes are hashed and must bind the exact
-approved-script digest, all eight required contract digests, the unique 13-key
-audit-check list, and every applicable factor ID. The audit ledger must equal
-that frozen factor-ID set exactly. Pass `--seedance20-skill-file` for the
-installed root `seedance-20/SKILL.md`; its frontmatter name, exact-byte hash,
-and metadata version must match compiler provenance.
+Freeze `seedance_input_contract.json` after storyboard approval. Its raw bytes
+remain server-side and bind the exact approved-script digest, all required
+contract digests, the unique audit-check list, and every applicable factor ID.
+The audit ledger must equal that frozen factor-ID set exactly. The packaged
+compiler loads the installed root `seedance-20/SKILL.md`; its frontmatter name,
+exact-byte hash, and metadata version must match compiler provenance.
 
-The audited payload is fixed-B only: Youdao model `seedance-2.0`, 720p,
-9:16, 4–15 seconds, `generate_audio=true`, `watermark=false`, exact text and
-reference-image item shapes, optional one `audio_url` item for approved
-`background_music`, no unknown provider fields, and no reference, opaque-UI,
-tail-card, source-frame, or transition markers in snake/kebab/spaced/camel
-variants. A supplied music file must appear in prompt text as `@Audio1`; never
-use top-level `reference_audios`. The unauthorised dry run is explicitly pre-audit and
-cannot carry audited or legacy authorization. After it, actual audited
-submission must reuse only cached Active mappings with a non-empty ID, exact
-`asset://{asset_id}` URI, and matching project name; invalid provenance must
-fail without registration, polling, or manifest writes.
-The complete CLI authorization set is `--audited-request-sha256`,
-`--audit-artifact`, `--approved-script-sha256`, `--seedance-input-contract`,
-and `--seedance20-skill-file` alongside the ordinary prompt/duration/ratio/
-image/output/provider timing flags. `--approved-request-sha256` is legacy
-compatibility-only and cannot be mixed with audited authorization. A plain
+The audited payload is fixed-B only: RunningHub model
+`seedance-2.0-fast-token`, `720p`, `9:16`, 4–15 seconds,
+`generateAudio=true`, `videoUrls=[]`, documented `imageUrls`, optional one
+duration-bounded `audioUrls` item for approved `background_music`, no unknown
+provider fields, and no reference, opaque-UI, tail-card, source-frame, or
+transition markers in snake/kebab/spaced/camel variants. A supplied music file
+must appear in prompt text as `@Audio1`; never use top-level
+`reference_audios`. The unauthorised dry run is explicitly pre-audit. Actual
+submission reuses the exact digest from that dry run; an invalid upload receipt
+or expired URL blocks without a retry or a paid request. A plain
 `--resume-task-id` is a separate known-task route: it does not require a new
 prompt or duration, performs no asset preparation or payload build, cannot be
-combined with `--dry-run`, and cannot carry any new-request authorization,
-audit, script, or input-contract flags.
+combined with `--dry-run`, and cannot carry any new-request authorization.
 
 ## Exact line contract under the high-fidelity profile
 

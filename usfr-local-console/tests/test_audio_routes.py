@@ -61,7 +61,9 @@ def test_background_music_contract_preserves_source_frames_and_exact_uploaded_au
         visible_singer_regions=[],
     )
 
-    assert route["provider_route"] == "seedance_audio_reference"
+    assert route["provider_route"] == "runninghub_standard_audio_urls"
+    assert route["provider_upload"] == "runninghub_binary_media_upload"
+    assert route["provider_request_field"] == "audioUrls"
     assert route["prompt_reference_tag"] == "@Audio1"
     assert route["final_audio_source"] == "uploaded_exact_audio"
     assert route["windows"][0]["uploaded_start_ms"] == 0

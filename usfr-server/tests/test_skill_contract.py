@@ -36,7 +36,7 @@ class FactorySkillContractTest(unittest.TestCase):
             "weighted commercial intent",
             "Opaque slice branch",
             "RunningHub image2",
-            "Youdao CreateAsset",
+            "RunningHub Standard Model",
             "timeline_splice.py",
             "确认反解分镜脚本",
             "确认故事板",
@@ -45,6 +45,49 @@ class FactorySkillContractTest(unittest.TestCase):
             "final/result.mp4",
         ):
             self.assertIn(required, skill)
+
+    def test_active_seedance_submission_contract_uses_runninghub_standard_model(self):
+        bundled_root = ROOT / "bundled-skills" / "seedance-storyboard-replication"
+        documents = {
+            "root skill": ROOT / "SKILL.md",
+            "storyboard skill": bundled_root / "SKILL.md",
+            "deployment guide": ROOT / "references" / "server-deployment-step-by-step.md",
+            "workspace environment example": ROOT.parent / ".env.example",
+            "bundled environment example": bundled_root / "references" / "seedance.env.example",
+        }
+        combined = "\n".join(
+            document.read_text(encoding="utf-8") for document in documents.values()
+        )
+        for required in (
+            "runninghub_seedance_submit.py",
+            "seedance-2.0-fast-token/multimodal-video",
+            "RUNNINGHUB_SEEDANCE_API_KEY",
+            "usfr-video-reference/v1",
+            "videoUrls[0]",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, combined)
+        for forbidden in (
+            "Youdao",
+            "youdao",
+            "scripts/seedance_submit.py",
+            "asset://",
+        ):
+            for name, document in documents.items():
+                with self.subTest(document=name, forbidden=forbidden):
+                    self.assertNotIn(forbidden, document.read_text(encoding="utf-8"))
+
+        manifest = (ROOT / "references" / "bundle_manifest.json").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "bundled-skills/seedance-storyboard-replication/scripts/runninghub_seedance_submit.py",
+            manifest,
+        )
+        self.assertNotIn(
+            "bundled-skills/seedance-storyboard-replication/scripts/seedance_submit.py",
+            manifest,
+        )
 
     def test_fixed_slot_admission_and_source_defaults_are_documented(self):
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
@@ -336,23 +379,23 @@ class FactorySkillContractTest(unittest.TestCase):
     def test_bundled_seedance_workflow_uses_internal_audit_and_safe_concurrency(self):
         root = ROOT / "bundled-skills" / "seedance-storyboard-replication"
         skill = (root / "SKILL.md").read_text(encoding="utf-8")
-        prompt = (root / "references" / "seedance-prompt.md").read_text(encoding="utf-8")
-        api = (root / "references" / "youdao-api.md").read_text(encoding="utf-8")
-        combined = "\n".join((skill, prompt, api))
+        api = (root / "references" / "runninghub-standard-seedance-api.md").read_text(encoding="utf-8")
+        combined = "\n".join((skill, api))
         self.assertNotIn("\u786e\u8ba4 Seedance \u63d0\u793a\u8bcd", combined)
         self.assertNotIn("\u786e\u8ba4\u5267\u60c5\u5207\u70b9", combined)
         self.assertNotIn("explicit user approval of that exact digest", combined)
         for required in (
             "seedance-20",
             "script-to-prompt parity audit",
-            "--audited-request-sha256",
-            "--audit-artifact",
-            "--approved-script-sha256",
-            "independent segment",
-            "concurrently",
-            "cached",
-            "non-deadline polling",
-            "cross-process manifest lock",
+            "--approved-request-sha256",
+            "runninghub_seedance_submit.py --dry-run",
+            "RunningHub Standard Model",
+            "usfr-video-reference/v1",
+            "videoUrls[0]",
+            "audioUrls",
+            "independent single-task",
+            "two-segment concurrency",
+            "statefully and without a deadline",
             "Factory executor owns two-segment concurrency",
             "final/result.mp4",
             "complete approved Cuts",
@@ -363,12 +406,13 @@ class FactorySkillContractTest(unittest.TestCase):
             "final QC",
         ):
             self.assertIn(required, combined)
-        dry_run = skill.index("seedance_submit.py --dry-run")
+        self.assertNotIn("scripts/seedance_submit.py", combined)
+        self.assertNotIn("asset://", combined)
+        dry_run = skill.index("runninghub_seedance_submit.py --dry-run")
         parity = skill.index("script-to-prompt parity audit")
-        digest = skill.index("--audited-request-sha256")
+        digest = skill.index("--approved-request-sha256")
         self.assertLess(dry_run, parity)
         self.assertLess(parity, digest)
-        self.assertLess(digest, combined.index("--audit-artifact"))
 
     def test_generated_ui_and_opaque_app_regions_stay_out_of_seedance_semantics(self):
         factory = (ROOT / "SKILL.md").read_text(encoding="utf-8")
@@ -447,60 +491,27 @@ class FactorySkillContractTest(unittest.TestCase):
         ):
             self.assertIn(required, combined)
 
-    def test_audited_factory_steps_name_the_complete_authorization_set(self):
+    def test_audited_factory_steps_name_the_standard_model_request_digest(self):
         root = ROOT / "bundled-skills" / "seedance-storyboard-replication"
         factory = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         skill = (root / "SKILL.md").read_text(encoding="utf-8")
-        integrity = (
-            root / "references" / "seedance-20-integrity-gate.md"
-        ).read_text(encoding="utf-8")
-        prompt = (root / "references" / "seedance-prompt.md").read_text(encoding="utf-8")
-        api = (root / "references" / "youdao-api.md").read_text(encoding="utf-8")
-        required_flags = (
-            "--audited-request-sha256",
-            "--audit-artifact",
-            "--approved-script-sha256",
-            "--seedance-input-contract",
-            "--seedance20-skill-file",
-        )
+        api = (root / "references" / "runninghub-standard-seedance-api.md").read_text(encoding="utf-8")
         sections = {
             "factory audited sequence": factory[
-                factory.index("9. **Compile and audit the exact Youdao request internally**") :
+                factory.index("9. **Compile and audit the exact RunningHub Standard Model request internally**") :
                 factory.index("11. **Assemble final video**")
             ],
-            "bundled integrity sequence": skill[
-                skill.index("## Seedance Internal Integrity Gate") :
-                skill.index("## Universal selling-point mapping")
-            ],
             "bundled submission sequence": skill[
-                skill.index("## Youdao Asset and Seedance Submission") :
+                skill.index("## RunningHub Standard Model Seedance Submission") :
                 skill.index("## Download, Concatenation, and QC")
             ],
-            "integrity required sequence": integrity[
-                integrity.index("## Required sequence") :
-                integrity.index("## Audit checks")
-            ],
-            "integrity paid path": integrity[
-                integrity.index("The Factory paid path uses") :
-                integrity.index("## Audited Factory frozen input contract")
-            ],
-            "prompt opening authorization": prompt[
-                prompt.index("After assembling the complete prompt") :
-                prompt.index("## Required post-storyboard integrity sequence")
-            ],
-            "prompt example authorization": prompt[
-                prompt.index("The exact dry-run payload is audited") :
-                prompt.index("## Audited Factory contract and submission closure")
-            ],
-            "Youdao authorization sequence": api[
-                api.index("Keep prompts under 5000 characters") :
-                api.index("## Audited Factory submission requirements")
-            ],
+            "standard-model API": api,
         }
         for label, section in sections.items():
             with self.subTest(section=label):
-                for flag in required_flags:
-                    self.assertIn(flag, section)
+                self.assertIn("--approved-request-sha256", section)
+                self.assertNotIn("--audited-request-sha256", section)
+                self.assertNotIn("--seedance-input-contract", section)
 
     def test_integrity_reference_documents_live_seedance20_snapshot_recheck(self):
         integrity = (
@@ -538,7 +549,7 @@ class FactorySkillContractTest(unittest.TestCase):
             "bundled": (root / "SKILL.md").read_text(encoding="utf-8"),
             "integrity": (root / "references" / "seedance-20-integrity-gate.md").read_text(encoding="utf-8"),
             "prompt": (root / "references" / "seedance-prompt.md").read_text(encoding="utf-8"),
-            "api": (root / "references" / "youdao-api.md").read_text(encoding="utf-8"),
+            "api": (root / "references" / "runninghub-standard-seedance-api.md").read_text(encoding="utf-8"),
         }
         for label, document in documents.items():
             with self.subTest(document=label):
@@ -560,30 +571,30 @@ class FactorySkillContractTest(unittest.TestCase):
         documents = (
             (ROOT / "SKILL.md").read_text(encoding="utf-8"),
             (root / "SKILL.md").read_text(encoding="utf-8"),
-            (root / "references" / "youdao-api.md").read_text(encoding="utf-8"),
+            (root / "references" / "runninghub-standard-seedance-api.md").read_text(encoding="utf-8"),
         )
         required = (
-            "`CreateVideo` is never automatically retried after a 429, 5xx, "
+            "paid Seedance create is never automatically retried after a 429, 5xx, "
             "timeout, connection reset, or ambiguous response"
         )
         for document in documents:
             with self.subTest(document=document[:40]):
-                self.assertIn(required, document)
+                self.assertIn(required.lower(), " ".join(document.split()).lower())
 
     def test_asset_registration_is_documented_as_non_retryable(self):
         root = ROOT / "bundled-skills" / "seedance-storyboard-replication"
         documents = (
             (ROOT / "SKILL.md").read_text(encoding="utf-8"),
             (root / "SKILL.md").read_text(encoding="utf-8"),
-            (root / "references" / "youdao-api.md").read_text(encoding="utf-8"),
+            (root / "references" / "runninghub-standard-seedance-api.md").read_text(encoding="utf-8"),
         )
         required = (
-            "`CreateAsset` is never automatically retried after a 429, 5xx, "
+            "RunningHub media upload is never automatically retried after a 429, 5xx, "
             "timeout, connection reset, or ambiguous response"
         )
         for document in documents:
             with self.subTest(document=document[:40]):
-                self.assertIn(required, document)
+                self.assertIn(required.lower(), " ".join(document.split()).lower())
 
     def test_production_timing_transition_contract(self):
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
@@ -592,7 +603,7 @@ class FactorySkillContractTest(unittest.TestCase):
             'pause_approval("script")',
             'pause_approval("storyboard")',
             "RunningHub image2 wait",
-            "Youdao Seedance wait",
+            "RunningHub Standard Model Seedance wait",
             "provider=True",
             "after final MP4 QC",
             "same log path",

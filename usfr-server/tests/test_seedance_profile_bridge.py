@@ -9,13 +9,36 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "bundled-skills" / "seedance-storyboard-replication" / "scripts"))
 
-from high_fidelity_profile import build_profile_snapshot  # noqa: E402
-from seedance_prescript import build_prescript_artifact  # noqa: E402
-from seedance_submit import (  # noqa: E402
-    PayloadError,
-    validate_prescript_snapshot_file,
-    validate_profile_snapshot_file,
+from high_fidelity_profile import (  # noqa: E402
+    build_profile_snapshot,
+    validate_profile_snapshot,
 )
+from seedance_prescript import (  # noqa: E402
+    build_prescript_artifact,
+    validate_prescript_artifact,
+)
+
+
+class PayloadError(ValueError):
+    pass
+
+
+def validate_prescript_snapshot_file(prescript_path: Path, skill_file: Path) -> None:
+    try:
+        artifact = json.loads(prescript_path.read_text(encoding="utf-8-sig"))
+        compiler = artifact.get("compiler") if isinstance(artifact, dict) else None
+        inputs = compiler.get("input_digests") if isinstance(compiler, dict) else {}
+        validate_prescript_artifact(artifact, skill_file, inputs)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        raise PayloadError(str(error)) from error
+
+
+def validate_profile_snapshot_file(snapshot_path: Path, skill_file: Path) -> None:
+    try:
+        snapshot = json.loads(snapshot_path.read_text(encoding="utf-8-sig"))
+        validate_profile_snapshot(snapshot, {"seedance-20": skill_file})
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        raise PayloadError(str(error)) from error
 
 
 class SeedanceProfileBridgeTest(unittest.TestCase):

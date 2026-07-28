@@ -109,7 +109,7 @@ class ProductionTimingTest(unittest.TestCase):
             ProductionTiming(self.path, clock=FakeClock())
 
     def test_partial_log_with_inconsistent_stage_is_rejected(self):
-        self.write_log({"started_at": 0, "stage_name": "youdao"})
+        self.write_log({"started_at": 0, "stage_name": "runninghub_standard"})
         with self.assertRaisesRegex(ValueError, "stage_name and stage_started_at"):
             ProductionTiming(self.path, clock=FakeClock())
 

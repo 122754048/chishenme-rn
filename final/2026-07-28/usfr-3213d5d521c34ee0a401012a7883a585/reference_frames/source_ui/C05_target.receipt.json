@@ -1,0 +1,22 @@
+{
+  "schema_version": "usfr-source-ui-pixels/v1",
+  "render_mode": "source_pixels_with_deterministic_authorized_replacement",
+  "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\reference_frames\\source_ui\\C05.png",
+  "source_sha256": "3928ff8fce6e22306a1c2891b3cd682cb3024ef0d70b5f5cefaf21a642b91411",
+  "replacement_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\reference_frames\\lake_target_preview.png",
+  "replacement_sha256": "3d4260e886e72c27653bb9516321278f3e14173335b52e897ec07a651a4a9bda",
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\reference_frames\\source_ui\\C05_target.png",
+  "output_sha256": "140b55cd47040f0d0048668ba64027cad15b41cd07c73721753f2c6c9f76859a",
+  "source_dimensions": [
+    1080,
+    1920
+  ],
+  "authorized_rect": [
+    80,
+    545,
+    920,
+    1255
+  ],
+  "corner_radius": 28,
+  "outside_authorized_rect_changed_pixels": 0
+}

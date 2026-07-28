@@ -1,0 +1,24 @@
+{
+  "prompt": {
+    "path": "final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\storyboards\\r2\\segment_01_prompt.md",
+    "characters": 5314
+  },
+  "imageUrls": [
+    "https://rh-hk-images-switch-1252422369.cos.ap-hongkong.myqcloud.com/input/openapi/daedb6b2005377cfcbef31f7b996befc4ae6d1198f7adce413617fcc5963186a.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785234433%3B1785320833&q-key-time=1785234433%3B1785320833&q-header-list=host&q-url-param-list=&q-signature=7e520a160eae890f449307631dec2a3b084842d6",
+    "https://rh-hk-images-switch-1252422369.cos.ap-hongkong.myqcloud.com/input/openapi/8c2526d9b4e9d7a9923c9d5dcfa6c03e1124ce846e1574974077d379d36d1149.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785234434%3B1785320834&q-key-time=1785234434%3B1785320834&q-header-list=host&q-url-param-list=&q-signature=108e5d2f525459ce9723eb0587a8e20a7c255f40"
+  ],
+  "aspectRatio": "16:9",
+  "resolution": "2k",
+  "quality": "medium",
+  "timeline_scope_receipt": {
+    "path": "final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\analysis\\timeline_scope_receipt_r2.json",
+    "scope_sha256": "f502ab33f1a8b65798d4b315f3981a5ee66af8d9571d3363c90561bae5f03dc6"
+  },
+  "covered_cut_ids": [
+    "C01"
+  ],
+  "reference_images": [
+    "final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\reference_frames\\control_keyframes.png",
+    "C:\\Users\\zhaocx04\\Downloads\\POPO-20251225-154330.png"
+  ]
+}

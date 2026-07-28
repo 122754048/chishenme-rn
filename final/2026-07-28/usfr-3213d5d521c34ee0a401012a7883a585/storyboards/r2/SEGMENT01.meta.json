@@ -1,0 +1,30 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082050240839929858",
+  "prompt_path": "final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\storyboards\\r2\\segment_01_prompt.md",
+  "timeline_scope_receipt_path": "final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\analysis\\timeline_scope_receipt_r2.json",
+  "timeline_scope_receipt_sha256": "f502ab33f1a8b65798d4b315f3981a5ee66af8d9571d3363c90561bae5f03dc6",
+  "covered_cut_ids": [
+    "C01"
+  ],
+  "reference_inputs": [
+    "final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\reference_frames\\control_keyframes.png",
+    "C:\\Users\\zhaocx04\\Downloads\\POPO-20251225-154330.png"
+  ],
+  "output_path": "final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\storyboards\\r2\\segment_01.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 93.797,
+  "revision_reason": "r1 invalid: replaced generic control-grid overview with fixed director-board template",
+  "revision_number": 2,
+  "artifact_stem": "SEGMENT01",
+  "cut_id": "SEGMENT01",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

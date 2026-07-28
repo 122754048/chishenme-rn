@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import math
 import shutil
 import subprocess
@@ -122,20 +123,60 @@ def _make_source_video(tmp_path: Path) -> Path:
     return source_video
 
 
+def _upload_audio_to_runninghub(source: Path, uploaded: dict[str, object]) -> dict[str, object]:
+    assert source.is_file()
+    assert source.name == "seedance_segment_clip.wav"
+    assert uploaded["duration_seconds"] == 3.0
+    assert uploaded["clip_kind"] == "seedance_segment"
+    assert uploaded["seedance_segment"] == {"start_ms": 0, "end_ms": 3_000}
+    return {
+        "AssetType": "Audio",
+        "asset_type": "Audio",
+        "provider": "runninghub",
+        "runninghub_audio_url": "https://runninghub.example/openapi/song-clip.mp3",
+        "duration_seconds": 3.0,
+        "clip_kind": "seedance_segment",
+        "seedance_segment": {"start_ms": 0, "end_ms": 3_000},
+        "status": "completed",
+        "uploaded_audio_sha256": uploaded["uploaded_audio_sha256"],
+    }
+
+
+def test_development_only_local_mvp_rejects_an_audio_clip_that_cannot_cover_the_frozen_generated_segment(
+    tmp_path: Path,
+):
+    source_video = _make_source_video(tmp_path)
+    uploaded_song = tmp_path / "two-second-song.wav"
+    _write_tone_wave(uploaded_song, seconds=2, active_ranges=[(0, 2)], frequency=220)
+
+    with pytest.raises(ValueError, match="LOCAL_MVP_RUNNINGHUB_AUDIO_UPLOAD_INVALID"):
+        DevelopmentOnlyBackgroundMusicMvpHarness(
+            run_root=tmp_path / "mvp-run",
+            runninghub_audio_upload=_upload_audio_to_runninghub,
+        ).run(
+            source_video=source_video,
+            background_music=uploaded_song,
+            visible_singer_regions=[],
+        )
+
+
 def test_development_only_local_mvp_archives_routes_and_preserves_source_music_windows(tmp_path: Path):
     source_video = _make_source_video(tmp_path)
     uploaded_song = tmp_path / "uploaded_song.wav"
     _write_tone_wave(
         uploaded_song,
-        seconds=2,
-        active_ranges=[(0, 2)],
+        seconds=3,
+        active_ranges=[(0, 3)],
         frequency=220,
         sample_rate=44_100,
         channels=2,
-        frequencies_by_second=[220, 880],
+        frequencies_by_second=[220, 880, 880],
     )
 
-    result = DevelopmentOnlyBackgroundMusicMvpHarness(run_root=tmp_path / "mvp-run").run(
+    result = DevelopmentOnlyBackgroundMusicMvpHarness(
+        run_root=tmp_path / "mvp-run",
+        runninghub_audio_upload=_upload_audio_to_runninghub,
+    ).run(
         source_video=source_video,
         background_music=uploaded_song,
         visible_singer_regions=[],
@@ -153,15 +194,13 @@ def test_development_only_local_mvp_archives_routes_and_preserves_source_music_w
     assert Path(result["intake"]["background_music"]["archive_path"]).is_file()
     assert result["audio_asset_receipt"]["AssetType"] == "Audio"
     assert result["audio_asset_receipt"]["asset_type"] == "Audio"
-    assert result["provider_payload"]["content"] == [
-        {"type": "text", "text": result["provider_payload"]["content"][0]["text"]},
-        {
-            "type": "audio_url",
-            "role": "reference_audio",
-            "audio_url": {"url": result["audio_asset_receipt"]["asset_uri"]},
-        },
-    ]
-    assert "@Audio1" in result["provider_payload"]["content"][0]["text"]
+    assert result["audio_asset_receipt"]["duration_seconds"] == 3.0
+    assert result["audio_asset_receipt"]["seedance_segment"] == {"start_ms": 0, "end_ms": 3_000}
+    payload = result["provider_payload"]
+    assert payload["audioUrls"] == ["https://runninghub.example/openapi/song-clip.mp3"]
+    assert "content" not in payload
+    assert "asset://" not in json.dumps(payload)
+    assert "@Audio1" in payload["prompt"]
     assert "reference_audios" not in result["provider_payload"]
     assert result["provider_execution"] == {
         "environment": "development-only",
@@ -266,9 +305,12 @@ def test_development_only_local_mvp_archives_routes_and_preserves_source_music_w
 def test_development_only_local_mvp_binds_visible_singer_alignment_and_lip_sync_to_final_mix(tmp_path: Path):
     source_video = _make_source_video(tmp_path)
     uploaded_song = tmp_path / "uploaded_song.wav"
-    _write_tone_wave(uploaded_song, seconds=2, active_ranges=[(0, 2)], frequency=220)
+    _write_tone_wave(uploaded_song, seconds=3, active_ranges=[(0, 3)], frequency=220)
 
-    result = DevelopmentOnlyBackgroundMusicMvpHarness(run_root=tmp_path / "mvp-run").run(
+    result = DevelopmentOnlyBackgroundMusicMvpHarness(
+        run_root=tmp_path / "mvp-run",
+        runninghub_audio_upload=_upload_audio_to_runninghub,
+    ).run(
         source_video=source_video,
         background_music=uploaded_song,
         visible_singer_regions=[
@@ -324,16 +366,19 @@ def test_development_only_local_mvp_preserves_32_bit_pcm_fragment_format(tmp_pat
     uploaded_song = tmp_path / "uploaded_song_32bit.wav"
     _write_tone_wave(
         uploaded_song,
-        seconds=2,
-        active_ranges=[(0, 2)],
+        seconds=3,
+        active_ranges=[(0, 3)],
         frequency=220,
         sample_rate=44_100,
         channels=2,
         sample_width=4,
-        frequencies_by_second=[220, 880],
+        frequencies_by_second=[220, 880, 880],
     )
 
-    result = DevelopmentOnlyBackgroundMusicMvpHarness(run_root=tmp_path / "mvp-run").run(
+    result = DevelopmentOnlyBackgroundMusicMvpHarness(
+        run_root=tmp_path / "mvp-run",
+        runninghub_audio_upload=_upload_audio_to_runninghub,
+    ).run(
         source_video=source_video,
         background_music=uploaded_song,
         visible_singer_regions=[],
@@ -363,16 +408,19 @@ def test_development_only_local_mvp_validates_compressed_upload_fragments_as_dec
     uploaded_song = tmp_path / f"uploaded_song.{codec}"
     _write_tone_wave(
         uncompressed_song,
-        seconds=2,
-        active_ranges=[(0, 2)],
+        seconds=3,
+        active_ranges=[(0, 3)],
         frequency=220,
         sample_rate=44_100,
         channels=2,
-        frequencies_by_second=[220, 880],
+        frequencies_by_second=[220, 880, 880],
     )
     _encode_uploaded_audio(uncompressed_song, uploaded_song, codec=codec)
 
-    result = DevelopmentOnlyBackgroundMusicMvpHarness(run_root=tmp_path / "mvp-run").run(
+    result = DevelopmentOnlyBackgroundMusicMvpHarness(
+        run_root=tmp_path / "mvp-run",
+        runninghub_audio_upload=_upload_audio_to_runninghub,
+    ).run(
         source_video=source_video,
         background_music=uploaded_song,
         visible_singer_regions=[],

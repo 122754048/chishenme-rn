@@ -129,10 +129,9 @@ def build_background_music_route(
     singing_qa = _singing_qa(visible_singer_regions)
     return {
         "schema_version": 1,
-        "provider_route": "seedance_audio_reference",
-        "provider_asset_type": "Audio",
-        "provider_content_type": "audio_url",
-        "provider_content_role": "reference_audio",
+        "provider_route": "runninghub_standard_audio_urls",
+        "provider_upload": "runninghub_binary_media_upload",
+        "provider_request_field": "audioUrls",
         "prompt_reference_tag": "@Audio1",
         "forbidden_provider_field": "reference_audios",
         "uploaded_audio_sha256": sha256,

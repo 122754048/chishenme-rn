@@ -48,10 +48,11 @@ classification, and is recorded only in `extensions.background_music`. A valid
 audio upload is a source-plus-change admission, uses the
 `seedance_audio_reference` route, and must be executed only by a deployment
 that binds `background_music_execution/v1`. It is never `language_only`.
-The final fixed-B request may register it only as a Youdao `Audio` asset and
-may refer to it only through one content `audio_url` item with
-`role=reference_audio` and `@Audio1`; top-level `reference_audios` remains
-forbidden.
+The final fixed-B request may include it only as one 2–15 second, current-
+segment RunningHub Standard Model `audioUrls` entry. The approved visual
+request must retain at least one storyboard or target image; `videoUrls=[]`
+remains mandatory. The compiled prompt names that entry as `@Audio1`.
+Top-level `reference_audios` remains forbidden.
 
 Store evidence is parsed once per run in a server Worker and persisted as a
 tenant-scoped private evidence bundle plus verified media references. The URL,

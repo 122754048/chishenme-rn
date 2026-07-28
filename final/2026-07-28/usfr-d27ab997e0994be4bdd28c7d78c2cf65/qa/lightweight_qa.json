@@ -1,0 +1,37 @@
+﻿{
+    "schema_version":  "usfr-lightweight-qa/v1",
+    "provider_task_id":  "2082012161286496257",
+    "final_media_path":  "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-d27ab997e0994be4bdd28c7d78c2cf65\\final.mp4",
+    "final_media_sha256":  "0f0aff8609eceabb26c44463c945563c91818a73bc21cd7a9fa8aa5af8aae0f9",
+    "target_duration_seconds":  11.041667,
+    "measured_duration_seconds":  11.041678,
+    "automatic_retry":  false,
+    "checks":  [
+                   {
+                       "name":  "decode",
+                       "result":  "PASS",
+                       "evidence":  "ffmpeg decoded the full final MP4"
+                   },
+                   {
+                       "name":  "audio_stream",
+                       "result":  "PASS",
+                       "evidence":  "one provider-generated ALAC audio stream is present after exact trim"
+                   },
+                   {
+                       "name":  "opening_scene",
+                       "result":  "PASS",
+                       "evidence":  "0.500s sample shows target person, normal green room, white table, and green candy"
+                   },
+                   {
+                       "name":  "uv_reveal",
+                       "result":  "PASS",
+                       "evidence":  "7.800s sample shows UV-dark scene with glowing tongue and green package"
+                   },
+                   {
+                       "name":  "ending_point_to_camera",
+                       "result":  "FAIL",
+                       "evidence":  "10.950s sample shows both hands holding the package; no index-finger point to camera"
+                   }
+               ],
+    "verdict":  "FAIL"
+}

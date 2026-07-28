@@ -1,0 +1,65 @@
+{
+  "text": " You see I am loves, when I can't think. Simply upload a photo in a song, and you'll get your own music video.",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.0,
+      "end": 4.36,
+      "text": " You see I am loves, when I can't think.",
+      "tokens": [
+        50364,
+        509,
+        536,
+        286,
+        669,
+        6752,
+        11,
+        562,
+        286,
+        393,
+        380,
+        519,
+        13,
+        50582
+      ],
+      "temperature": 0.0,
+      "avg_logprob": -0.5031732831682477,
+      "compression_ratio": 1.1237113402061856,
+      "no_speech_prob": 0.14400136470794678
+    },
+    {
+      "id": 1,
+      "seek": 0,
+      "start": 4.36,
+      "end": 8.0,
+      "text": " Simply upload a photo in a song, and you'll get your own music video.",
+      "tokens": [
+        50582,
+        19596,
+        6580,
+        257,
+        5052,
+        294,
+        257,
+        2153,
+        11,
+        293,
+        291,
+        603,
+        483,
+        428,
+        1065,
+        1318,
+        960,
+        13,
+        50764
+      ],
+      "temperature": 0.0,
+      "avg_logprob": -0.5031732831682477,
+      "compression_ratio": 1.1237113402061856,
+      "no_speech_prob": 0.14400136470794678
+    }
+  ],
+  "language": "en"
+}

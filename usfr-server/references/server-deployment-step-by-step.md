@@ -211,8 +211,8 @@ credentials.
 
 ### RunningHub And Seedance Provider
 
-Use RunningHub/Seedance for storyboard image generation and final Seedance
-video generation.
+Use RunningHub for storyboard image generation and RunningHub Standard Model
+Seedance for final video generation.
 
 Your provider adapter must implement:
 
@@ -225,14 +225,21 @@ The workflow already creates provider intents and hashes the exact request
 payload before the paid call. Your adapter must not mutate the prompt, duration,
 reference list, model, or payload after the audit hash is frozen.
 
-Suggested adapter-owned environment:
+Required adapter-owned environment:
 
 ```bash
 RUNNINGHUB_API_KEY=<server-owned-runninghub-key>
-RUNNINGHUB_PROJECT_ID=<project-id>
-SEEDANCE_MODEL=seedance-2.0-fast
-SEEDANCE_REGION=<provider-region-if-needed>
+RUNNINGHUB_SEEDANCE_API_KEY=<enterprise-shared-runninghub-standard-model-key>
+RUNNINGHUB_SEEDANCE_CREATE_URL=https://www.runninghub.cn/openapi/v2/bytedance/seedance-2.0-fast-token/multimodal-video
+RUNNINGHUB_SEEDANCE_QUERY_URL=https://www.runninghub.cn/openapi/v2/query
+RUNNINGHUB_SEEDANCE_UPLOAD_URL=https://www.runninghub.cn/openapi/v2/media/upload/binary
 ```
+
+The video request must be the direct documented Standard Model body. Fixed-B
+USFR uploads only approved storyboard/target images and one eligible audio
+fragment; it sends `videoUrls=[]` and never sends source video, source slices,
+opaque UI video, or tail video. The Seedance key is separate so an ordinary
+RunningHub workflow key is never sent to the enterprise-only standard-model API.
 
 If the HTTP request times out after a paid create call may have reached the
 provider, return an ambiguous state and let `/provider/reconcile` use

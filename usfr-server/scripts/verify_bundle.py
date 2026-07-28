@@ -58,7 +58,8 @@ REQUIRED_MODULE_FILES = {
         "scripts/media_quality.py",
         "scripts/segment_plan.py",
         "scripts/runninghub_image2.py",
-        "scripts/seedance_submit.py",
+        "scripts/source_video_reference.py",
+        "scripts/runninghub_seedance_submit.py",
         "scripts/timeline_splice.py",
     ],
 }
@@ -103,6 +104,7 @@ REQUIRED_SERVER_FILES = (
     "server/high_fidelity_projection.py",
     "server/provider_ports.py",
     "server/production_ports.py",
+    "server/runninghub_standard_contract.py",
     "server/media_materializer.py",
     "server/telemetry.py",
     "server/media_probe.py",

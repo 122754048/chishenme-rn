@@ -237,10 +237,9 @@ def _validate_background_music_route(job: JobSnapshot, route: Mapping[str, Any])
     if route.get("uploaded_audio_sha256") != expected_sha256:
         raise BridgeError("BACKGROUND_MUSIC_ROUTE_UNVERIFIED")
     expected_provider = {
-        "provider_route": "seedance_audio_reference",
-        "provider_asset_type": "Audio",
-        "provider_content_type": "audio_url",
-        "provider_content_role": "reference_audio",
+        "provider_route": "runninghub_standard_audio_urls",
+        "provider_upload": "runninghub_binary_media_upload",
+        "provider_request_field": "audioUrls",
         "prompt_reference_tag": "@Audio1",
         "forbidden_provider_field": "reference_audios",
         "final_audio_source": "uploaded_exact_audio",

@@ -1,0 +1,46 @@
+{
+  "schema_version": "usfr-source-pixel-cards/v1",
+  "base_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\storyboards\\r2\\overview.png",
+  "base_sha256": "6c5442e50f4bff0a3f704cef8ec6c1ebffa109b9ab67568759ac63a73b4a5af5",
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\storyboards\\r3\\overview.png",
+  "output_sha256": "3228758fcd6066d00ca25c082ce687ef82caf09bde931e50ec204c7b50ec4c92",
+  "cards": [
+    {
+      "cut_id": "C01",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\reference_frames\\r3\\source_ui\\C01.png",
+      "source_sha256": "690c71d32bed5b1c06432a6030d0612d246a5c2fddda079b08105bf156fe8339",
+      "rect": [
+        360,
+        140,
+        408,
+        355
+      ],
+      "fit": "contain"
+    },
+    {
+      "cut_id": "C02",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\reference_frames\\r3\\source_ui\\C02.png",
+      "source_sha256": "5c303c4da5f2561d86ac9340e0325468299694625abb295236fddc7b00c13630",
+      "rect": [
+        815,
+        140,
+        400,
+        355
+      ],
+      "fit": "contain"
+    },
+    {
+      "cut_id": "C03",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\reference_frames\\r3\\source_ui\\C03_progress_4_500.jpg",
+      "source_sha256": "3d72144c82fc2be40ffa4680ef86948e8e7002f07a81530135eecbef5afcc002",
+      "rect": [
+        1256,
+        140,
+        404,
+        355
+      ],
+      "fit": "contain"
+    }
+  ],
+  "outside_card_rect_changed_pixels": 0
+}

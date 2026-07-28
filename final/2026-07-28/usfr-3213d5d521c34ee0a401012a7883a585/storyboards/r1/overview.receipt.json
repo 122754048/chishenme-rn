@@ -1,0 +1,11 @@
+﻿{
+    "schema_version":  "usfr-storyboard-source-ui-cards/v1",
+    "base_path":  ".\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\storyboards\\r1\\overview_ordered_base.png",
+    "base_sha256":  "0bb61a57ea40278c58b968cea1587f870c9d0c35b0d683e1f62e662ef882cb6b",
+    "cards_path":  ".\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\storyboards\\r1\\source_ui_cards.json",
+    "cards_sha256":  "3b6b3128e8dd0fcaf9ecc9ab5f802506e68192df6339b833d33d1ce15e089a33",
+    "output_path":  ".\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\storyboards\\r1\\overview.png",
+    "output_sha256":  "8d0b78a6ec8803dd78fc727b108b52ab14d6c63a228ca0a8bf2df9eef498891e",
+    "card_count":  5,
+    "render_mode":  "deterministic_source_ui_card_composition"
+}

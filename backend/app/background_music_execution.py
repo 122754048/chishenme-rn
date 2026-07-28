@@ -24,6 +24,10 @@ from server.job_models import ProviderAttempt, WorkMessage
 from server.orchestrator import build_stage_plan
 from server.performance_audio_contracts import build_background_music_performance_contract_from_route
 from server.runninghub_final_lip_sync import build_final_lip_sync_provider_request
+from server.runninghub_standard_contract import (
+    RunningHubStandardPayloadError,
+    validate_runninghub_standard_payload_contract,
+)
 from server.singing_audio_router import route_uploaded_audio
 
 
@@ -102,15 +106,44 @@ def _validated_audio_asset_receipt(
     receipt: Mapping[str, object],
     *,
     uploaded_audio_sha256: str,
+    music_timeline_contract: Mapping[str, object],
 ) -> dict[str, object]:
-    uri = receipt.get("asset_uri") if isinstance(receipt, Mapping) else None
+    audio_url = receipt.get("runninghub_audio_url") if isinstance(receipt, Mapping) else None
+    duration_seconds = receipt.get("duration_seconds") if isinstance(receipt, Mapping) else None
+    segment = receipt.get("seedance_segment") if isinstance(receipt, Mapping) else None
+    segment_start_ms = segment.get("start_ms") if isinstance(segment, Mapping) else None
+    segment_end_ms = segment.get("end_ms") if isinstance(segment, Mapping) else None
+    output_duration_ms = music_timeline_contract.get("output_duration_ms")
+    windows = music_timeline_contract.get("windows")
+    silence_windows = music_timeline_contract.get("meaningful_silence_output_intervals")
+    output_starts = [
+        item.get("output_start_ms")
+        for item in [*(windows if isinstance(windows, list) else []), *(silence_windows if isinstance(silence_windows, list) else [])]
+        if isinstance(item, Mapping)
+    ]
+    canonical_start_ms = min(output_starts) if output_starts and all(isinstance(value, int) and not isinstance(value, bool) for value in output_starts) else None
     if (
         not isinstance(receipt, Mapping)
         or receipt.get("asset_type") != "Audio"
-        or receipt.get("status") != "active"
+        or receipt.get("provider") != "runninghub"
+        or receipt.get("status") != "completed"
         or receipt.get("uploaded_audio_sha256") != uploaded_audio_sha256
-        or not isinstance(uri, str)
-        or not uri.startswith("asset://asset-")
+        or not isinstance(audio_url, str)
+        or not audio_url.startswith("https://")
+        or "asset://" in audio_url
+        or isinstance(duration_seconds, bool)
+        or not isinstance(duration_seconds, (int, float))
+        or not 2 <= duration_seconds <= 15
+        or receipt.get("clip_kind") != "seedance_segment"
+        or isinstance(segment_start_ms, bool)
+        or isinstance(segment_end_ms, bool)
+        or not isinstance(segment_start_ms, int)
+        or not isinstance(segment_end_ms, int)
+        or segment_start_ms < 0
+        or segment_end_ms <= segment_start_ms
+        or segment_end_ms - segment_start_ms != round(duration_seconds * 1_000)
+        or segment_start_ms != canonical_start_ms
+        or segment_end_ms != output_duration_ms
     ):
         raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
     return dict(receipt)
@@ -135,7 +168,26 @@ def _validated_music_windows(
     return [dict(window) for window in windows if isinstance(window, Mapping)]
 
 
-def _provider_payload(*, asset_uri: str, performance: Mapping[str, object]) -> dict[str, object]:
+def _approved_visual_seedance_payload(source_content_timeline: Mapping[str, object]) -> dict[str, object]:
+    payload = source_content_timeline.get("approved_seedance_visual_payload")
+    if not isinstance(payload, Mapping):
+        raise ValueError("BACKGROUND_MUSIC_APPROVED_VISUAL_REQUEST_REQUIRED")
+    visual_payload = dict(payload)
+    if visual_payload.get("audioUrls") != []:
+        raise ValueError("BACKGROUND_MUSIC_APPROVED_VISUAL_REQUEST_REQUIRED")
+    try:
+        validate_runninghub_standard_payload_contract(visual_payload)
+    except RunningHubStandardPayloadError as error:
+        raise ValueError("BACKGROUND_MUSIC_APPROVED_VISUAL_REQUEST_REQUIRED") from error
+    return visual_payload
+
+
+def _provider_payload(
+    *,
+    runninghub_audio_url: str,
+    performance: Mapping[str, object],
+    approved_visual_payload: Mapping[str, object],
+) -> dict[str, object]:
     mode = performance.get("mode")
     if mode == "verified_singing":
         lines = performance.get("singing_lines")
@@ -220,13 +272,17 @@ def _provider_payload(*, asset_uri: str, performance: Mapping[str, object]) -> d
         )
     else:
         raise ValueError("BACKGROUND_MUSIC_EXECUTION_CONTRACT_INVALID")
-    return {
-        "model": "seedance-2.0",
-        "content": [
-            {"type": "text", "text": text},
-            {"type": "audio_url", "role": "reference_audio", "audio_url": {"url": asset_uri}},
-        ],
-    }
+    payload = dict(approved_visual_payload)
+    visual_prompt = payload.get("prompt")
+    if not isinstance(visual_prompt, str) or not visual_prompt.strip():
+        raise ValueError("BACKGROUND_MUSIC_APPROVED_VISUAL_REQUEST_REQUIRED")
+    payload["prompt"] = f"{visual_prompt.strip()}\n{text}".strip()
+    payload["audioUrls"] = [runninghub_audio_url]
+    try:
+        validate_runninghub_standard_payload_contract(payload)
+    except RunningHubStandardPayloadError as error:
+        raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID") from error
+    return payload
 
 
 def _execution_binding(execution_contract: Mapping[str, object]) -> dict[str, str]:
@@ -293,6 +349,7 @@ def compile_background_music_execution_contract(
     asset_receipt = _validated_audio_asset_receipt(
         audio_asset_receipt,
         uploaded_audio_sha256=str(uploaded["sha256"]),
+        music_timeline_contract=music_timeline_contract,
     )
     try:
         uploaded_audio_route = route_uploaded_audio(source_content_timeline)
@@ -303,7 +360,12 @@ def compile_background_music_execution_contract(
     except ReplicationError as error:
         raise _background_music_error(error) from error
     _validate_verified_singing_windows(performance=performance, music_windows=windows)
-    payload = _provider_payload(asset_uri=str(asset_receipt["asset_uri"]), performance=performance)
+    approved_visual_payload = _approved_visual_seedance_payload(source_content_timeline)
+    payload = _provider_payload(
+        runninghub_audio_url=str(asset_receipt["runninghub_audio_url"]),
+        performance=performance,
+        approved_visual_payload=approved_visual_payload,
+    )
     execution = {
         "contract": BACKGROUND_MUSIC_EXECUTION_RECEIPT_V1,
         "mode": performance["mode"],
@@ -313,6 +375,10 @@ def compile_background_music_execution_contract(
         "uploaded_audio": uploaded,
         "music_timeline_contract": dict(music_timeline_contract),
         "source_content_timeline": dict(source_content_timeline),
+        "approved_seedance_visual_payload": approved_visual_payload,
+        "approved_seedance_visual_payload_sha256": hashlib.sha256(
+            _canonical_json_bytes(approved_visual_payload)
+        ).hexdigest(),
         "uploaded_audio_route": uploaded_audio_route,
         "performance_line_contract": (
             None if performance_line_contract is None else dict(performance_line_contract)
@@ -1650,27 +1716,48 @@ class BackgroundMusicStagePort:
                 or _canonical_json_bytes(execution_performance) != _canonical_json_bytes(frozen_performance[0])
             ):
                 raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
-        asset_uri = receipt.get("asset_uri")
+        runninghub_audio_url = receipt.get("runninghub_audio_url")
+        duration_seconds = receipt.get("duration_seconds")
+        segment = receipt.get("seedance_segment")
+        segment_start_ms = segment.get("start_ms") if isinstance(segment, Mapping) else None
+        segment_end_ms = segment.get("end_ms") if isinstance(segment, Mapping) else None
         if (
             receipt.get("asset_type") != "Audio"
             or receipt.get("uploaded_audio_sha256") != uploaded.get("sha256")
-            or receipt.get("status") != "active"
-            or not isinstance(asset_uri, str)
-            or not asset_uri.startswith("asset://asset-")
+            or receipt.get("provider") != "runninghub"
+            or receipt.get("status") != "completed"
+            or not isinstance(runninghub_audio_url, str)
+            or not runninghub_audio_url.startswith("https://")
+            or "asset://" in runninghub_audio_url
+            or isinstance(duration_seconds, bool)
+            or not isinstance(duration_seconds, (int, float))
+            or not 2 <= duration_seconds <= 15
+            or receipt.get("clip_kind") != "seedance_segment"
+            or isinstance(segment_start_ms, bool)
+            or isinstance(segment_end_ms, bool)
+            or not isinstance(segment_start_ms, int)
+            or not isinstance(segment_end_ms, int)
+            or segment_start_ms < 0
+            or segment_end_ms <= segment_start_ms
+            or segment_end_ms - segment_start_ms != round(duration_seconds * 1_000)
             or "reference_audios" in payload
         ):
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
-        content = payload.get("content")
-        if not isinstance(content, list):
-            raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
-        text_items = [item.get("text") for item in content if isinstance(item, Mapping) and item.get("type") == "text"]
-        audio_items = [item for item in content if isinstance(item, Mapping) and item.get("type") == "audio_url"]
+        try:
+            _validated_audio_asset_receipt(
+                receipt,
+                uploaded_audio_sha256=str(uploaded.get("sha256")),
+                music_timeline_contract=execution_timeline,
+            )
+        except ValueError as error:
+            raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID") from error
         if (
-            not any(isinstance(text, str) and "@Audio1" in text for text in text_items)
-            or len(audio_items) != 1
-            or audio_items[0].get("role") != "reference_audio"
-            or not isinstance(audio_items[0].get("audio_url"), Mapping)
-            or audio_items[0]["audio_url"].get("url") != asset_uri
+            not isinstance(payload.get("prompt"), str)
+            or "@Audio1" not in payload["prompt"]
+            or payload.get("audioUrls") != [runninghub_audio_url]
+            or "content" in payload
+            or "audio_url" in payload
+            or "asset://" in json.dumps(payload, ensure_ascii=False, sort_keys=True)
         ):
             raise ValueError("BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID")
         enriched = dict(result)

@@ -1,0 +1,93 @@
+{
+  "text": " Simply upload a photo and a song and you'll get your own music video. Don't you lay me down to a dead and buried? On the edge of your knife, stay and drunk on your fine.",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.0,
+      "end": 3.68,
+      "text": " Simply upload a photo and a song and you'll get your own music video.",
+      "tokens": [
+        50364,
+        19596,
+        6580,
+        257,
+        5052,
+        293,
+        257,
+        2153,
+        293,
+        291,
+        603,
+        483,
+        428,
+        1065,
+        1318,
+        960,
+        13,
+        50548
+      ],
+      "temperature": 0.0,
+      "avg_logprob": -0.4182516993308554,
+      "compression_ratio": 1.3412698412698412,
+      "no_speech_prob": 0.03714864328503609
+    },
+    {
+      "id": 1,
+      "seek": 0,
+      "start": 3.68,
+      "end": 7.44,
+      "text": " Don't you lay me down to a dead and buried?",
+      "tokens": [
+        50548,
+        1468,
+        380,
+        291,
+        2360,
+        385,
+        760,
+        281,
+        257,
+        3116,
+        293,
+        14101,
+        30,
+        50736
+      ],
+      "temperature": 0.0,
+      "avg_logprob": -0.4182516993308554,
+      "compression_ratio": 1.3412698412698412,
+      "no_speech_prob": 0.03714864328503609
+    },
+    {
+      "id": 2,
+      "seek": 0,
+      "start": 7.44,
+      "end": 12.08,
+      "text": " On the edge of your knife, stay and drunk on your fine.",
+      "tokens": [
+        50736,
+        1282,
+        264,
+        4691,
+        295,
+        428,
+        7976,
+        11,
+        1754,
+        293,
+        11192,
+        322,
+        428,
+        2489,
+        13,
+        50968
+      ],
+      "temperature": 0.0,
+      "avg_logprob": -0.4182516993308554,
+      "compression_ratio": 1.3412698412698412,
+      "no_speech_prob": 0.03714864328503609
+    }
+  ],
+  "language": "en"
+}

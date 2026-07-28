@@ -1,0 +1,25 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082019722788417538",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\reference_frames\\control_keyframes_prompt.md",
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Downloads\\d1bd875e-3d96-46b4-866f-0f8604896ae9.jpeg",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\reference_frames\\source_c12_grid.png"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\reference_frames\\control_keyframes.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 1.953,
+  "revision_reason": "approved_person_replacement_control_reference",
+  "revision_number": 1,
+  "artifact_stem": "CONTROL12",
+  "cut_id": "CONTROL12",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

@@ -17,7 +17,7 @@ no AI role classification.
 | `parse-app-store-evidence` | Official App Store URL supplied and a generated UI/target-evidence carrier remains | Evidence bundle, official icon/screenshots, hashes |
 | `analyze-reference-video-dynamics` | Any supported source video supplied | Probe, frame-accurate scene/camera/action/audio contract |
 | `replicate-source-ui-overlays` | Timed overlays must be semantically replicated | Overlay geometry and QA frame plan |
-| `seedance-storyboard-replication` | Any generated region remains after routing | Intent, scripts, storyboards, RunningHub, Youdao Seedance, assembly, QC |
+| `seedance-storyboard-replication` | Any generated region remains after routing | Intent, scripts, storyboards, RunningHub Standard Model Seedance, assembly, QC |
 
 The installed external `seedance-20` skill is an additional mandatory
 dependency for final Prompt recompilation and the internal request-integrity
@@ -25,7 +25,7 @@ audit. It is not one of the four vendored modules. If `seedance-20` is missing
 or cannot produce valid compiler provenance, contract digests, complete factor
 coverage, `ambiguities=[]`, and `unresolved_placeholders=[]`, the Factory must
 block before any paid Seedance request. This dependency does not change the two
-user approval types, fixed-B Youdao parameters, caching/concurrency rules, or
+user approval types, fixed-B RunningHub Standard Model parameters, caching/concurrency rules, or
 duplicate-paid-task protection.
 
 `scripts/skill_router.py` is the deterministic dependency planner for the

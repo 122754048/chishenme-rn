@@ -151,6 +151,22 @@ def test_compiler_rejects_pending_speaker_assignment(tmp_path):
         )
 
 
+def test_compiler_rejects_question_mark_degradation_in_arabic_dialogue(tmp_path):
+    files = _skill_files(tmp_path)
+    line = _line()
+    line["language"] = {"bcp47": "ar-EG", "script": "Arab"}
+    line["text"] = {"exact": "????", "normalized": "", "pronunciation_notes": []}
+
+    with pytest.raises(ValueError, match="language text degradation"):
+        module.compile_prompt(
+            segment=_segment(),
+            line_contracts=[line],
+            factors={"audio": True},
+            skill_files=files,
+            compiler_checks={name: True for name in module.COMPILER_CHECKS},
+        )
+
+
 def test_compiler_rejects_performance_line_with_altered_approved_text(tmp_path):
     files = _skill_files(tmp_path)
     performance = _performance_line()

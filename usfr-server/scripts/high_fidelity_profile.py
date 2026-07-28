@@ -864,6 +864,8 @@ def validate_profile_snapshot(
         raise ProfileSnapshotError("profile snapshot name is not supported")
     if snapshot.get("schema_version") != SCHEMA_VERSION:
         raise ProfileSnapshotError("profile snapshot schema version is stale")
+    if snapshot.get("revision") != 1:
+        raise ProfileSnapshotError("profile snapshot revision is unsupported")
     for field in ("profile_sha256", "schema_sha256", "config_digest", "config_sha256", "snapshot_sha256"):
         _require_digest(snapshot.get(field), field)
     if snapshot.get("config_digest") != snapshot.get("config_sha256"):
@@ -892,6 +894,8 @@ def validate_profile_snapshot(
     for item in expected_dependencies:
         if not isinstance(item, Mapping):
             raise ProfileSnapshotError("profile dependency records must be objects")
+        if set(item) != {"name", "version", "sha256", "package_path"}:
+            raise ProfileSnapshotError("profile dependency records contain unknown fields")
         name = _require_non_empty_string(item.get("name"), "dependency.name")
         if name in expected_by_name:
             raise ProfileSnapshotError(f"duplicate dependency: {name}")

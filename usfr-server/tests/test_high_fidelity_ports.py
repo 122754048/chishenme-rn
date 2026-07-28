@@ -47,13 +47,18 @@ def _factor_coverage() -> list[dict]:
 
 def _provider_payload(prompt: str, *, duration: int = 8) -> dict:
     return {
-        "model": "seedance-2.0",
-        "content": [{"type": "text", "text": prompt}],
-        "generate_audio": True,
-        "ratio": "9:16",
-        "duration": duration,
-        "watermark": False,
+        "prompt": prompt,
         "resolution": "720p",
+        "duration": str(duration),
+        "imageUrls": ["https://media.example/board.png"],
+        "videoUrls": [],
+        "audioUrls": [],
+        "generateAudio": True,
+        "ratio": "9:16",
+        "realPersonMode": False,
+        "conversionSlots": [],
+        "returnLastFrame": False,
+        "seed": -1,
     }
 
 
@@ -69,6 +74,147 @@ def _request_sha(payload: dict) -> str:
 
 
 class HighFidelityPortsTest(unittest.TestCase):
+    def test_provider_binding_accepts_exact_runninghub_standard_payload(self):
+        payload = _provider_payload("Prompt for S01")
+
+        binding = HighFidelityStageAdapter._provider_binding(
+            segment_id="S01",
+            segment_plan_sha256="a" * 64,
+            request={"provider_payload": payload},
+            result={"compiled_prompt": "Prompt for S01"},
+        )
+
+        self.assertEqual(binding["provider_payload"], payload)
+        self.assertEqual(binding["request_sha256"], _request_sha(payload))
+
+    def test_provider_binding_accepts_one_matching_source_video_reference_with_target_change(self):
+        payload = _provider_payload("Follow @Image1 and the reference motion.")
+        payload.update(
+            {
+                "imageUrls": [
+                    "https://media.example/approved-storyboard.png",
+                    "https://media.example/new-model.jpg",
+                ],
+                "videoUrls": ["https://media.example/source-s01.mp4"],
+                "realPersonMode": True,
+                "conversionSlots": ["all"],
+            }
+        )
+        video_reference = {
+            "schema_version": "usfr-video-reference/v1",
+            "url": "https://media.example/source-s01.mp4",
+            "source_video_sha256": "a" * 64,
+            "source_slice_sha256": "b" * 64,
+            "segment_id": "S01",
+            "start_ms": 0,
+            "end_ms": 8000,
+            "storyboard_url": "https://media.example/approved-storyboard.png",
+            "target_changes": [{"kind": "new_model_image", "sha256": "c" * 64}],
+        }
+
+        binding = HighFidelityStageAdapter._provider_binding(
+            segment_id="S01",
+            segment_plan_sha256="d" * 64,
+            request={
+                "provider_payload": payload,
+                "segment_plan": {
+                    "segments": [
+                        {"segment_id": "S01", "start_ms": 0, "end_ms": 8000, "duration_ms": 8000}
+                    ]
+                },
+                "video_reference": video_reference,
+            },
+            result={"compiled_prompt": "Follow @Image1 and the reference motion."},
+        )
+
+        self.assertEqual(binding["video_reference"], video_reference)
+        self.assertEqual(binding["provider_payload"]["imageUrls"][0], video_reference["storyboard_url"])
+
+    def test_provider_binding_rejects_source_video_reference_without_target_change(self):
+        payload = _provider_payload("Follow @Image1 and the reference motion.")
+        payload.update(
+            {
+                "videoUrls": ["https://media.example/source-s01.mp4"],
+                "realPersonMode": True,
+                "conversionSlots": ["all"],
+            }
+        )
+        video_reference = {
+            "schema_version": "usfr-video-reference/v1",
+            "url": "https://media.example/source-s01.mp4",
+            "source_video_sha256": "a" * 64,
+            "source_slice_sha256": "b" * 64,
+            "segment_id": "S01",
+            "start_ms": 0,
+            "end_ms": 8000,
+            "storyboard_url": "https://media.example/board.png",
+            "target_changes": [],
+        }
+
+        with self.assertRaisesRegex(ReplicationError, "target change"):
+            HighFidelityStageAdapter._provider_binding(
+                segment_id="S01",
+                segment_plan_sha256="d" * 64,
+                request={
+                    "provider_payload": payload,
+                    "segment_plan": {
+                        "segments": [
+                            {"segment_id": "S01", "start_ms": 0, "end_ms": 8000, "duration_ms": 8000}
+                        ]
+                    },
+                    "video_reference": video_reference,
+                },
+                result={"compiled_prompt": "Follow @Image1 and the reference motion."},
+            )
+
+    def test_provider_binding_substitutes_compiled_prompt_into_direct_template_prompt(self):
+        template = _provider_payload("stale template prompt")
+
+        binding = HighFidelityStageAdapter._provider_binding(
+            segment_id="S01",
+            segment_plan_sha256="a" * 64,
+            request={"provider_payload_template": template},
+            result={"compiled_prompt": "Exact approved prompt"},
+        )
+
+        self.assertEqual(binding["provider_payload"]["prompt"], "Exact approved prompt")
+        self.assertNotIn("content", binding["provider_payload"])
+
+    def test_provider_binding_rejects_legacy_content_asset_payload(self):
+        legacy_payload = {
+            "model": "seedance-2.0",
+            "content": [
+                {"type": "text", "text": "Prompt for S01"},
+                {
+                    "type": "image_url",
+                    "role": "reference_image",
+                    "image_url": {"url": "https://media.example/legacy-frame.png"},
+                },
+            ],
+            "generate_audio": True,
+            "ratio": "9:16",
+            "duration": 8,
+            "watermark": False,
+            "resolution": "720p",
+        }
+
+        with self.assertRaisesRegex(ReplicationError, "canonical"):
+            HighFidelityStageAdapter._provider_binding(
+                segment_id="S01",
+                segment_plan_sha256="a" * 64,
+                request={"provider_payload": legacy_payload},
+                result={"compiled_prompt": "Prompt for S01"},
+            )
+
+    def test_provider_binding_rejects_route_excluded_prompt_through_runninghub_validator(self):
+        with self.assertRaisesRegex(ReplicationError, "canonical"):
+            HighFidelityStageAdapter._provider_binding(
+                segment_id="S01",
+                segment_plan_sha256="a" * 64,
+                request={"provider_payload": _provider_payload("Preserve the source video framing.")},
+                result={"compiled_prompt": "Preserve the source video framing."},
+            )
+
     def test_invocation_b_blocks_source_audio_when_confirmed_performance_artifact_is_missing(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

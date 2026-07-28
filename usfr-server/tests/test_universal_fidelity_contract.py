@@ -8,7 +8,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 SEEDANCE_ROOT = ROOT / "bundled-skills" / "seedance-storyboard-replication"
 sys.path.insert(0, str(SEEDANCE_ROOT / "scripts"))
-import seedance_submit  # noqa: E402
+from runninghub_seedance_submit import RUNNINGHUB_STANDARD_PAYLOAD_FIELDS  # noqa: E402
 
 
 class UniversalFidelityFactoryContractTest(unittest.TestCase):
@@ -235,7 +235,18 @@ class UniversalFidelityFactoryContractTest(unittest.TestCase):
             "internal request integrity approval",
         ):
             self.assertIn(required, combined)
-        required_checks = set(seedance_submit.REQUIRED_AUDIT_CHECKS)
+        required_checks = {
+            "approved_cut_order",
+            "character_lock",
+            "product_lock",
+            "duration_and_timing",
+            "voiceover_and_audio",
+            "camera_action_continuity",
+            "timeline_region_routing",
+            "reference_role_mapping",
+            "provider_parameters",
+            "forbidden_fields",
+        }
         self.assertTrue(
             {
                 "approved_cut_order",
@@ -258,11 +269,13 @@ class UniversalFidelityFactoryContractTest(unittest.TestCase):
         )
         normalized_bundled = " ".join(bundled.split())
         for required in (
-            "`generate_audio=true`",
-            "`watermark=false`",
-            "no top-level `reference_audios` field or implicit audio reference is permitted",
-            "`background_music` extension is the sole exception: register it as Youdao `AssetType=Audio`",
-            "`role=reference_audio`, and require `@Audio1` in the compiled prompt",
+            "`generateAudio=true`",
+            "`videoUrls[0]`",
+            "`usfr-video-reference/v1`",
+            "no legacy `reference_audios` field",
+            "`background_music` extension is the sole exception",
+            "`audioUrls[0]`",
+            "`@Audio1`",
             "complete package-relative dependency snapshot",
             "root `seedance-20`, `seedance-prompt`, and `seedance-antislop`",
             "free-form/raw `compiled_prompt`",
@@ -271,6 +284,13 @@ class UniversalFidelityFactoryContractTest(unittest.TestCase):
         combined = " ".join((bundled + "\n" + universal).split())
         self.assertIn("tenant-private object storage", combined)
         self.assertIn("server-side", combined)
+        self.assertEqual(
+            RUNNINGHUB_STANDARD_PAYLOAD_FIELDS,
+            {
+                "prompt", "resolution", "duration", "imageUrls", "videoUrls", "audioUrls",
+                "generateAudio", "ratio", "realPersonMode", "conversionSlots", "returnLastFrame", "seed",
+            },
+        )
 
     def test_storyboard_template_is_not_locked_to_ecommerce(self):
         storyboard = (

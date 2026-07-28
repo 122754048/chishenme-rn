@@ -28,6 +28,14 @@ _LIP_SYNC_PRIORITIES = {"high", "medium", "low", "none"}
 _MUSIC_MODES = {"none", "preserve_source", "approved"}
 _CONTENT_TYPES = {"spoken", "sung", "instrumental", "inaudible"}
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_SCRIPT_LETTER_RANGES = {
+    "Arab": ((0x0621, 0x064A), (0x066E, 0x066F), (0x0671, 0x06D3), (0x06FA, 0x06FC), (0x06FF, 0x06FF)),
+    "Hans": ((0x3400, 0x4DBF), (0x4E00, 0x9FFF), (0xF900, 0xFAFF)),
+    "Hant": ((0x3400, 0x4DBF), (0x4E00, 0x9FFF), (0xF900, 0xFAFF)),
+    "Jpan": ((0x3040, 0x30FF), (0x3400, 0x4DBF), (0x4E00, 0x9FFF), (0xF900, 0xFAFF)),
+    "Kore": ((0x1100, 0x11FF), (0x3130, 0x318F), (0xAC00, 0xD7AF)),
+    "Cyrl": ((0x0400, 0x052F), (0x2DE0, 0x2DFF), (0xA640, 0xA69F)),
+}
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -237,6 +245,23 @@ def _contains_forbidden_voice_reference(value: Any) -> bool:
     return False
 
 
+def _has_script_letter(text: str, ranges: Sequence[tuple[int, int]]) -> bool:
+    return any(any(start <= ord(char) <= end for start, end in ranges) for char in text)
+
+
+def _validate_language_text(*, language: Mapping[str, Any], exact: str) -> None:
+    """Reject lossy dialogue before it can be frozen into a provider prompt."""
+
+    if "\ufffd" in exact or "\x00" in exact or "???" in exact:
+        raise ValueError("language text degradation: replacement or question-mark placeholder")
+    script = str(language.get("script") or "")
+    ranges = _SCRIPT_LETTER_RANGES.get(script)
+    if ranges is None:
+        return
+    if "?" in exact or not _has_script_letter(exact, ranges):
+        raise ValueError("language text degradation: exact text does not match the declared script")
+
+
 def canonical_line(value: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         raise ValueError("line contract must be an object")
@@ -288,6 +313,7 @@ def canonical_line(value: Mapping[str, Any]) -> dict[str, Any]:
     text = result["text"]
     if not isinstance(text, Mapping) or not isinstance(text.get("exact"), str) or not text["exact"].strip():
         raise ValueError("text.exact is required")
+    _validate_language_text(language=language, exact=text["exact"])
     expected_normalized = normalize_text(text["exact"]).lower()
     if text.get("normalized") != expected_normalized:
         raise ValueError("text.normalized must be canonicalized from text.exact")

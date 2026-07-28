@@ -1,0 +1,65 @@
+{
+  "schema_version": "usfr-timeline-regions/v1",
+  "source_end_ms": 17033,
+  "final_output_end_ms": 15000,
+  "region_count": 4,
+  "generation_required": true,
+  "regions": [
+    {
+      "region_id": "R01",
+      "source_cut_ids": ["C01"],
+      "start_ms": 0,
+      "end_ms": 4000,
+      "region_type": "character_replacement_performance",
+      "media_origin": "generated_media",
+      "assembly_policy": "replace_character_from_slot",
+      "include_in_script": true,
+      "include_in_storyboard": true,
+      "include_in_seedance": true,
+      "output_policy": "reference-video performance replication with target-character identity"
+    },
+    {
+      "region_id": "R02",
+      "source_cut_ids": ["C02", "C03", "C04", "C05", "C06"],
+      "start_ms": 4000,
+      "end_ms": 10000,
+      "region_type": "source_ui_keep",
+      "media_origin": "source_interval",
+      "assembly_policy": "source_ui_keep",
+      "include_in_script": true,
+      "include_in_storyboard": true,
+      "include_in_seedance": false,
+      "storyboard_render_mode": "source_pixels",
+      "control_keyframe_render_mode": "source_pixels",
+      "output_policy": "preserve source UI pixels; replace only approved portrait rectangles with the target person"
+    },
+    {
+      "region_id": "R03",
+      "source_cut_ids": ["C07", "C08"],
+      "start_ms": 10000,
+      "end_ms": 15000,
+      "region_type": "character_replacement_performance",
+      "media_origin": "generated_media",
+      "assembly_policy": "replace_character_from_slot",
+      "include_in_script": true,
+      "include_in_storyboard": true,
+      "include_in_seedance": true,
+      "output_policy": "reference-video performance replication with target-character identity"
+    },
+    {
+      "region_id": "R04",
+      "source_cut_ids": ["C09"],
+      "start_ms": 15000,
+      "end_ms": 17033,
+      "region_type": "excluded_app_end_card",
+      "media_origin": "excluded",
+      "assembly_policy": "omit_source_end_card",
+      "include_in_script": false,
+      "include_in_storyboard": false,
+      "include_in_seedance": false,
+      "include_in_final_assembly": false,
+      "prohibited_artifact_terms": ["end-card", "download", "CTA"],
+      "output_policy": "end at the preceding lake-performance frame without filler"
+    }
+  ]
+}

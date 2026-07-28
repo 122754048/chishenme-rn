@@ -5,11 +5,15 @@ from dataclasses import fields
 import hashlib
 import json
 from pathlib import Path
+import sys
 import tempfile
 from types import SimpleNamespace
 from typing import Any, Mapping
 
 import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 import server.production_ports as production_ports
 from server.production_ports import (
@@ -34,12 +38,65 @@ def _set_complete_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENAI_MODEL", "gpt-test-2026-07-22")
     monkeypatch.setenv("OPENAI_MODEL_CONFIG_SHA256", "a" * 64)
     monkeypatch.setenv("RUNNINGHUB_API_KEY", "runninghub-secret")
+    monkeypatch.setenv("RUNNINGHUB_SEEDANCE_API_KEY", "runninghub-standard-secret")
     monkeypatch.setenv("RUNNINGHUB_BASE_URL", "https://runninghub.example")
-    monkeypatch.setenv("RUNNINGHUB_SEEDANCE_CREATE_URL", "https://runninghub.example/seedance/create")
-    monkeypatch.setenv("RUNNINGHUB_SEEDANCE_QUERY_URL", "https://runninghub.example/seedance/query")
+    monkeypatch.setenv(
+        "RUNNINGHUB_SEEDANCE_CREATE_URL",
+        "https://www.runninghub.cn/openapi/v2/bytedance/seedance-2.0-fast-token/multimodal-video",
+    )
+    monkeypatch.setenv("RUNNINGHUB_SEEDANCE_QUERY_URL", "https://www.runninghub.cn/openapi/v2/query")
     monkeypatch.setenv("RUNNINGHUB_SEEDANCE_WORKFLOW_ID", "workflow-123")
     monkeypatch.setenv("RUNNINGHUB_SEEDANCE_MODEL_ID", "seedance-2.0")
     monkeypatch.setenv("RUNNINGHUB_SEEDANCE_CONFIG_SHA256", "b" * 64)
+
+
+def _standard_video_payload(prompt: str) -> dict[str, object]:
+    return {
+        "prompt": prompt,
+        "resolution": "720p",
+        "duration": "5",
+        "imageUrls": ["https://media.example/board.png"],
+        "videoUrls": [],
+        "audioUrls": [],
+        "generateAudio": True,
+        "ratio": "9:16",
+        "realPersonMode": False,
+        "conversionSlots": [],
+        "returnLastFrame": False,
+        "seed": -1,
+    }
+
+
+@pytest.mark.parametrize(
+    "url",
+    (
+        "https://localhost/board.png",
+        "https://127.0.0.1/board.png",
+        "https://10.0.0.2/board.png",
+        "https://[::1]/board.png",
+    ),
+)
+def test_runninghub_seedance_provider_rejects_non_public_or_route_leaking_media_before_paid_create(
+    monkeypatch: pytest.MonkeyPatch, url: str
+) -> None:
+    _set_complete_environment(monkeypatch)
+    payload = _standard_video_payload("Keep the approved performance.")
+    payload["imageUrls"] = [url]
+    provider = RunningHubSeedanceProvider(ProductionEnvironment.from_environ())
+
+    with pytest.raises(ProductionPortsError, match="public HTTPS"):
+        provider.create_video(payload)
+
+
+def test_runninghub_seedance_provider_rejects_source_route_leakage_before_paid_create(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _set_complete_environment(monkeypatch)
+    payload = _standard_video_payload("Use the source video as a visual reference.")
+    provider = RunningHubSeedanceProvider(ProductionEnvironment.from_environ())
+
+    with pytest.raises(ProductionPortsError, match="route leakage"):
+        provider.create_video(payload)
 
 
 def _strict_schema() -> dict[str, Any]:
@@ -769,9 +826,9 @@ def test_environment_is_frozen_and_contains_only_redacted_credential_references(
         "openai_model_config_sha256",
         "runninghub_api_key_env",
         "runninghub_base_url",
+        "runninghub_seedance_api_key_env",
         "runninghub_seedance_create_url",
         "runninghub_seedance_query_url",
-        "runninghub_seedance_workflow_id",
         "runninghub_seedance_model_id",
         "runninghub_seedance_config_sha256",
     }
@@ -1005,7 +1062,7 @@ def test_pinned_https_connection_uses_the_verified_address_and_original_sni(monk
     assert connection.sock is tls_socket
 
 
-def test_runninghub_video_create_uses_one_paid_task_envelope_and_redacted_identity(
+def test_runninghub_video_create_uses_standard_model_payload_and_dedicated_key(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _set_complete_environment(monkeypatch)
@@ -1016,28 +1073,25 @@ def test_runninghub_video_create_uses_one_paid_task_envelope_and_redacted_identi
         return {"taskId": "task-123"}
 
     provider = RunningHubSeedanceProvider(ProductionEnvironment.from_environ(), request_json=request_json)
-    result = provider.create_video({"prompt": "preserve the approved storyboard"})
+    payload = _standard_video_payload("preserve the approved storyboard")
+    result = provider.create_video(payload)
 
     assert result["task_id"] == "task-123"
     assert calls == [
         {
-            "url": "https://runninghub.example/seedance/create",
+            "url": "https://www.runninghub.cn/openapi/v2/bytedance/seedance-2.0-fast-token/multimodal-video",
             "headers": {
                 "Accept": "application/json",
-                "Authorization": "Bearer runninghub-secret",
+                "Authorization": "Bearer runninghub-standard-secret",
                 "Content-Type": "application/json; charset=utf-8",
             },
-            "payload": {
-                "workflowId": "workflow-123",
-                "modelId": "seedance-2.0",
-                "request": {"prompt": "preserve the approved storyboard"},
-            },
+            "payload": payload,
             "timeout_seconds": 120.0,
         }
     ]
     identity = provider.capability_identity()
     assert identity["provider"] == "runninghub"
-    assert identity["model_id"] == "seedance-2.0"
+    assert identity["model_id"] == "seedance-2.0-fast-token"
     assert identity["sha256"] == hashlib.sha256(
         json.dumps(
             {key: value for key, value in identity.items() if key != "sha256"},
@@ -1046,7 +1100,38 @@ def test_runninghub_video_create_uses_one_paid_task_envelope_and_redacted_identi
             separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
-    assert "runninghub-secret" not in json.dumps({"identity": identity, "receipt": result}, sort_keys=True)
+    serialized = json.dumps({"identity": identity, "receipt": result}, sort_keys=True)
+    assert "runninghub-secret" not in serialized
+    assert "runninghub-standard-secret" not in serialized
+
+
+def test_runninghub_video_create_accepts_one_documented_video_reference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _set_complete_environment(monkeypatch)
+    calls: list[dict[str, Any]] = []
+
+    def request_json(**kwargs: Any) -> dict[str, Any]:
+        calls.append(kwargs)
+        return {"taskId": "task-video-reference"}
+
+    provider = RunningHubSeedanceProvider(
+        ProductionEnvironment.from_environ(),
+        request_json=request_json,
+    )
+    payload = _standard_video_payload("Follow @Image1 and the reference motion.")
+    payload.update(
+        {
+            "videoUrls": ["https://media.example/source-s01.mp4"],
+            "realPersonMode": True,
+            "conversionSlots": ["all"],
+        }
+    )
+
+    result = provider.create_video(payload)
+
+    assert result["task_id"] == "task-video-reference"
+    assert calls[0]["payload"] == payload
 
 
 def test_runninghub_video_create_does_not_retry_an_ambiguous_paid_request(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1060,7 +1145,7 @@ def test_runninghub_video_create_does_not_retry_an_ambiguous_paid_request(monkey
     provider = RunningHubSeedanceProvider(ProductionEnvironment.from_environ(), request_json=request_json)
 
     with pytest.raises(RunningHubCreateAmbiguousError, match="ambiguous") as error:
-        provider.create_video({"prompt": "no automatic retry"})
+        provider.create_video(_standard_video_payload("no automatic retry"))
     assert error.value.retryable is False
     assert error.value.reconciliation_required is True
     assert len(calls) == 1
@@ -1077,7 +1162,7 @@ def test_runninghub_paid_create_turns_http_failure_into_non_retryable_ambiguity(
     provider = RunningHubSeedanceProvider(ProductionEnvironment.from_environ(), request_json=request_json)
 
     with pytest.raises(RunningHubCreateAmbiguousError, match="ambiguous") as error:
-        provider.create_video({"prompt": "provider may have accepted this"})
+        provider.create_video(_standard_video_payload("provider may have accepted this"))
     assert error.value.retryable is False
     assert error.value.reconciliation_required is True
 
@@ -1093,7 +1178,7 @@ def test_runninghub_paid_create_turns_malformed_response_into_non_retryable_ambi
     provider = RunningHubSeedanceProvider(ProductionEnvironment.from_environ(), request_json=request_json)
 
     with pytest.raises(RunningHubCreateAmbiguousError, match="ambiguous"):
-        provider.create_video({"prompt": "malformed response"})
+        provider.create_video(_standard_video_payload("malformed response"))
 
 
 def test_runninghub_paid_create_turns_missing_task_id_into_non_retryable_ambiguity(
@@ -1107,7 +1192,7 @@ def test_runninghub_paid_create_turns_missing_task_id_into_non_retryable_ambigui
     provider = RunningHubSeedanceProvider(ProductionEnvironment.from_environ(), request_json=request_json)
 
     with pytest.raises(RunningHubCreateAmbiguousError, match="taskId") as error:
-        provider.create_video({"prompt": "response omitted task id"})
+        provider.create_video(_standard_video_payload("response omitted task id"))
     assert error.value.retryable is False
     assert error.value.reconciliation_required is True
 
@@ -1117,7 +1202,7 @@ def test_runninghub_video_create_reports_a_missing_runtime_key_as_configuration_
 ) -> None:
     _set_complete_environment(monkeypatch)
     config = ProductionEnvironment.from_environ()
-    monkeypatch.delenv("RUNNINGHUB_API_KEY")
+    monkeypatch.delenv("RUNNINGHUB_SEEDANCE_API_KEY")
     calls: list[dict[str, Any]] = []
 
     def request_json(**kwargs: Any) -> dict[str, Any]:
@@ -1126,8 +1211,8 @@ def test_runninghub_video_create_reports_a_missing_runtime_key_as_configuration_
 
     provider = RunningHubSeedanceProvider(config, request_json=request_json)
 
-    with pytest.raises(ProductionPortsError, match="RUNNINGHUB_API_KEY is required") as error:
-        provider.create_video({"prompt": "missing key"})
+    with pytest.raises(ProductionPortsError, match="RUNNINGHUB_SEEDANCE_API_KEY is required") as error:
+        provider.create_video(_standard_video_payload("missing key"))
     assert "ambiguous" not in str(error.value)
     assert calls == []
 

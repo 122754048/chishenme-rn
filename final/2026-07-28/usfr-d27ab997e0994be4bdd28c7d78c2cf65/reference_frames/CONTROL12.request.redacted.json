@@ -1,0 +1,17 @@
+{
+  "prompt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-d27ab997e0994be4bdd28c7d78c2cf65\\reference_frames\\control_keyframes_prompt.md",
+    "characters": 1906
+  },
+  "imageUrls": [
+    "https://rh-hk-images-switch-1252422369.cos.ap-hongkong.myqcloud.com/input/openapi/1001a82e066f0995c6404a840d22cc0ca78a5a92ea4077402cb4f3164dbf3a67.jpg?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785224121%3B1785310521&q-key-time=1785224121%3B1785310521&q-header-list=host&q-url-param-list=&q-signature=941603d08c40ede093d6c73b803408907c8f698c",
+    "https://rh-hk-images-switch-1252422369.cos.ap-hongkong.myqcloud.com/input/openapi/7610919e809e3fd8267ca85a6221b8643945a08d983f13250949cde5f194893a.jpg?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785224122%3B1785310522&q-key-time=1785224122%3B1785310522&q-header-list=host&q-url-param-list=&q-signature=14e74fe9e424cb7d19595fb92adc86bdb51430f7"
+  ],
+  "aspectRatio": "16:9",
+  "resolution": "2k",
+  "quality": "medium",
+  "reference_images": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-d27ab997e0994be4bdd28c7d78c2cf65\\analysis\\source_timeline_grid_12.jpg",
+    "C:\\Users\\zhaocx04\\Downloads\\1782385943922_F76A7B78-5406-4A8A-A5BD-202780B1FC2E_17823859412.jpg"
+  ]
+}

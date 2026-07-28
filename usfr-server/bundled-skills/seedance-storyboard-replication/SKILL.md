@@ -6,10 +6,10 @@ description: Use when a user needs storyboard and Seedance execution for an appr
 # Seedance Storyboard Replication
 
 Turn an approved source-video contract into model-generated storyboards and a
-Youdao Seedance 2.0 task for each generated region. The skill is universal across
+RunningHub Standard Model Seedance 2.0 Fast task for each generated region. The skill is universal across
 physical products, Apps/digital products, services, brands, and no-product
 formats; source camera style and content type come from the contract. It owns
-route selection, approval gates, prompt assembly, Youdao asset registration,
+route selection, approval gates, prompt assembly, RunningHub media upload,
 Seedance submission, timeline assembly, and final QC.
 
 ## Route Selection
@@ -34,14 +34,18 @@ provider intent.
 Both routes must tell the user before Seedance submission that this workflow accepts **最多 4 张** image references: one storyboard image, optional one character board, and one or two product boards. If product assets exceed the remaining slots, ask the user to prepare a product board that combines product photos while preserving product pixels.
 
 Both routes use the **固定 B 方案**. 参考视频仅用于反解分镜、节奏分析和故事板生成;
-after storyboard approval retain it only as server-side, verified
-tenant-private object-storage evidence. 禁止将参考视频注册为 Youdao 素材,
-and 禁止发送 `reference_videos` to Seedance. The exact fixed-B payload uses
-`generate_audio=true` and `watermark=false`; no top-level `reference_audios`
-field or implicit audio reference is permitted. The approved
-`background_music` extension is the sole exception: register it as Youdao
-`AssetType=Audio`, send it only as content `audio_url` with
-`role=reference_audio`, and require `@Audio1` in the compiled prompt.
+after storyboard approval retain it as server-side, verified tenant-private
+object-storage evidence. Video-reference replication may upload exactly the
+matching 2-15 second source segment as `videoUrls[0]` only after storyboard
+approval. Its `usfr-video-reference/v1` receipt binds source-video/source-slice
+SHA-256, segment ID/time window, the approved storyboard at `@Image1`, and at
+least one authorized target change. Opaque UI-operation media and tail media
+remain forbidden. The exact fixed-B payload uses `generateAudio=true`; legacy
+`reference_videos` is forbidden, there is no legacy `reference_audios` field,
+and implicit audio references are forbidden. The approved
+`background_music` extension is the sole exception: upload one
+duration-bounded fragment as `audioUrls[0]` and require `@Audio1` in the
+compiled prompt.
 This rule also applies to Route 1 even when the user supplied an approved script
 together with a reference video.
 
@@ -180,7 +184,7 @@ stop with a blocker. After generation, write paths into `analysis/timeline_regio
 run `scripts/timeline_splice.py`, save `timeline_splice_manifest.json`, and
 verify source-to-output placement. Opaque and source-origin media remain local
 only as server-side object-store-backed or lease-materialized media and are
-never Youdao assets or client-workstation dependencies.
+never legacy provider assets or client-workstation dependencies.
 
 ## Evidence and Analysis Routing
 
@@ -295,11 +299,11 @@ step and is not vendored by this bundled module. If it is unavailable, stop
 before any paid request.
 
 1. Compile through `seedance-20`, preserving the complete approved Cuts, four-image mapping, fixed-B payload, and all negative constraints.
-2. Build the exact final payload and run `scripts/seedance_submit.py --dry-run` once as the unauthorised pre-audit preview; do not pass audited/legacy authorization, audit, script, or input-contract flags on this dry run.
+2. Build the exact final payload and run `scripts/runninghub_seedance_submit.py --dry-run` once as the pre-submit preview; do not create a paid task at this step.
 3. Run the `seedance-20` script-to-prompt parity audit against that exact dry-run request and write the required audit JSON artifact (`auditor`, `status`, exact request/prompt digests, approved script digest, compiler provenance, contract digests, factor coverage, zero ambiguities, and every required check in `references/seedance-20-integrity-gate.md`).
-4. Submit only with the complete audited authorization set: `--audited-request-sha256 <digest>`, `--audit-artifact <path>`, `--approved-script-sha256 <digest>`, `--seedance-input-contract <path>`, and `--seedance20-skill-file <path>` matching the saved internal audit and frozen inputs.
+4. Submit only the exact audited payload with `--approved-request-sha256 <digest>` matching the saved dry-run request SHA-256; audit, script, and contract artifacts remain server-side integrity evidence.
 5. The Factory executor owns two-segment concurrency: it starts both independent single-task CLI invocations before waiting for either. Preserve ordering where segment 2 requires segment 1 pixels; dependency-locked segment 2 remains sequential.
-6. Reuse cached Active Youdao assets under a cross-process manifest lock; polling is state-aware and non-deadline by default, with no duplicate registrations or paid tasks.
+6. Upload only the required storyboard/target/audio references to the RunningHub Standard Model account, poll known task IDs statefully and without a deadline, and never create duplicate paid tasks.
 7. Finalize and deliver only `final/result.mp4`; successful delivery contains no extra artifacts.
 8. Unsafe asset changes, a failed parity audit, digest mutation, or a duplicate paid retry remain blockers. Resume known tasks instead of creating duplicate paid tasks.
 
@@ -330,28 +334,27 @@ digest mutation, unsafe asset change, or duplicate paid retry is a blocker.
 
 ### Audited Factory closure
 
-The audited submission must pass `--seedance-input-contract` containing the
-approved-script digest, the eight contract digests, the exact unique 13-check
-list, and the non-empty unique `required_factor_ids` list. The ledger factor-ID
-set must equal that frozen list exactly. The audit stores the raw-byte
-`seedance_input_contract_sha256` and validates it before any asset operation.
+The audited dry run stores the approved-script digest, the eight contract
+digests, the exact unique 13-check list, and the non-empty unique
+`required_factor_ids` list as server-side integrity evidence. The ledger
+factor-ID set must equal that frozen list exactly. The audit stores the raw-byte
+`seedance_input_contract_sha256` and validates it before any provider call.
 
 The installed root `seedance-20/SKILL.md` is required before the paid path. Its
 frontmatter must name `seedance-20`; its exact-byte SHA-256 and metadata version
-must match compiler provenance. The audited payload is strictly Youdao fixed-B
-plus the approved `background_music` extension when supplied:
-`seedance-2.0`, `720p`, `9:16`, duration 4–15, audio enabled, watermark
-disabled, exact text/reference-image item shapes, at most one exact
-`audio_url` item carrying `@Audio1`, and no unknown or leaked provider fields.
-The normal unauthorised dry run is explicitly pre-audit and
-cannot carry audited or legacy authorization flags. Audited actual submission
-reads only cached Active asset mappings from that dry run (`cache_only`); each
-must be Active with a non-empty ID, exact `asset://{asset_id}` URI, and the
-client project name. Missing or invalid cache provenance fails without
-CreateAsset registration, polling, or manifest writes. Dry-run and legacy
-explicit-digest paths retain their existing behavior. Legacy authorization is
-compatibility-only and never the normal Factory route; mixed audited/legacy
-flags are invalid. A plain `--resume-task-id` is a separate known-task route,
+must match compiler provenance. The audited payload is strictly RunningHub
+Standard Model fixed-B plus the approved `background_music` extension when supplied:
+`seedance-2.0-fast-token`, `720p`, `9:16`, duration 4–15, `generateAudio=true`,
+and documented direct image/audio/video URL fields: at most one exact `audioUrls`
+item carrying `@Audio1`, and either `videoUrls=[]` or one exact `videoUrls[0]`
+under `usfr-video-reference/v1`. A video-reference request keeps the approved
+storyboard at `@Image1`, enables `realPersonMode`, and has a non-empty target
+change receipt. The normal unauthorised dry run cannot carry
+`--approved-request-sha256`. Actual submission uses only
+`--approved-request-sha256 <dry-run-request-sha256>` for the exact saved
+payload. Every uploaded URL must bind to the exact local input SHA-256 and
+remain valid for the selected RunningHub account; missing, expired, or invalid
+upload provenance blocks before paid creation. A plain `--resume-task-id` is a separate known-task route,
 does not require a new prompt or duration, performs no asset preparation or
 payload build, cannot be combined with `--dry-run`, cannot carry authorization/
 audit/script/input-contract flags, and is not a new audited authorization.
@@ -371,27 +374,27 @@ Calculate duration only from the ordered contiguous generated regions in
 - The Skill chooses the boundary from story meaning; `segment_plan.py` only validates the chosen `--split-boundary`. It must never invent or balance the split.
 - If no valid approved boundary exists, or the generated-region plan would exceed two total tasks, stop with a blocker requiring storyboard-script revision or a different postproduction route. Never hard-cut and never add a third storyboard.
 
-## Youdao Asset and Seedance Submission
+## RunningHub Standard Model Seedance Submission
 
-Read `references/seedance-prompt.md` and `references/youdao-api.md` before assembling the final request.
+Read `references/seedance-prompt.md` and `references/runninghub-standard-seedance-api.md` before assembling the final request.
 
 1. Confirm the user approved the storyboard and understands the four-image allocation.
-2. Obtain the existing public HTTPS source URL for each approved segment storyboard, character reference, and product board. In the RunningHub image2 route, reuse the saved RunningHub upload/result URLs; do not generate or upload the images again.
-3. Run `scripts/seedance_submit.py --dry-run` with those source URLs as the unauthorised pre-audit request; do not pass authorization/audit/contract flags. For Youdao, the script calls `POST /api/v1/assets?Action=CreateAsset`, reads `Result.id`, polls `GetAsset` until `Status=Active`, caches mappings in `youdao_assets.json`, and maps each one to `asset://<id>`. No COS service is required. 禁止注册参考视频.
+2. Upload each approved segment storyboard, character reference, product board, optional duration-bounded audio fragment, and, for video-reference replication, only the matching 2-15 second source segment. For a local source intake, pass `--source-video-file`, `--segment-plan-file`, and `--segment-id` to `scripts/runninghub_seedance_submit.py`: it materializes that exact frozen window locally before upload, reuses the complete source only when it is itself the 2-15 second window, and otherwise writes a cached FFmpeg slice. Bind every returned public HTTPS URL to its exact input SHA-256; do not reuse an expired URL from another account.
+3. Run `scripts/runninghub_seedance_submit.py --dry-run` with those URLs as the pre-submit request. A video-reference request uses exactly `videoUrls[0]` plus `usfr-video-reference/v1`; it keeps the approved storyboard at `@Image1` and binds at least one target change. The approved dry run and paid submission must reuse the same source-slice SHA-256. Opaque UI and tail media are forbidden.
 4. Build each segment prompt under 5000 characters. Repeat that segment's complete approved Cuts as text, with global Cut numbers, local timecodes, actual `@图片1` to `@图片4` mapping, incoming/outgoing continuity anchors, 脚本描述, camera/action direction, product/person identity lock, 口播内容, sound, continuity, and 备注. Never replace these fields with “follow the storyboard image.”
-5. Do not use the top-level `reference_audios` field. Approved uploaded music
-   is accepted only as one `audio_url` content item plus an explicit `@Audio1`
-   prompt reference.
+5. Do not use any legacy `reference_audios` field. Approved uploaded music is
+   accepted only as one `audioUrls` item plus an explicit `@Audio1` prompt
+   reference.
 6. Audio policy: request voiceover plus environment/action sound, and **不默认添加背景音乐** unless the user explicitly asks for music or uploads `background_music`.
 7. Run one dry-run, save the exact prompt/request and `approval_preview.json`, then complete the `seedance-20` parity audit, write the audit artifact, and authorize the exact digest.
-8. Submit with Youdao model `seedance-2.0`, `resolution=720p`, `ratio=9:16`, `duration=4-15`, cached Youdao `asset://` image references, the optional cached `@Audio1` Audio asset when `background_music` is supplied, and the complete audited authorization set: `--audited-request-sha256`, `--audit-artifact`, `--approved-script-sha256`, `--seedance-input-contract`, and `--seedance20-skill-file`. 禁止发送 `reference_videos`.
-9. When `opaque_ui_demo` or supplied `excluded_app_end_card` exists, submit only contiguous generated regions. Never register or send those opaque videos to Youdao, and never mention their visual contents in the Seedance prompt.
+8. Submit through `seedance-2.0-fast-token/multimodal-video` at `720p`, `9:16`, duration 4–15, with uploaded `imageUrls`, optional one `audioUrls` entry for `@Audio1`, and either no video reference or the exact audited `videoUrls[0]` source segment. Use `generateAudio=true` and an `--approved-request-sha256` matching the audited dry run.
+9. When `opaque_ui_demo` or supplied `excluded_app_end_card` exists, submit only contiguous generated regions. Never upload or send those opaque videos to RunningHub Seedance, and never mention their visual contents in the Seedance prompt.
 
 Never make a paid Seedance call until the latest storyboard has been approved and the internal parity audit authorizes the exact audited digest. Normal submission does not require a user prompt confirmation.
 
 ## Download, Concatenation, and QC
 
-When a Seedance task completes, immediately download `data.result.video_url` to `result.mp4`; successful delivery is MP4-only at `final/result.mp4`.
+When a Seedance task completes, immediately download the returned `results[].url` MP4 to `result.mp4`; successful delivery is MP4-only at `final/result.mp4`.
 
 - For a single task, probe the MP4 with `scripts/concat_videos.py` or FFprobe and confirm a video stream exists.
 - For two segments, concatenate with FFmpeg through `scripts/concat_videos.py` at the approved story boundary and preserve audio. Do not add a crossfade by default.
@@ -422,13 +425,13 @@ When a Seedance task completes, immediately download `data.result.video_url` to 
 
 - Save `task_id.txt`, `request.redacted.json`, `approval_preview.json`, `create_response.json`, `status.json`, and `failure.json` when applicable.
 - Use `--resume-task-id` to continue a known Seedance task instead of submitting a duplicate paid task.
-- Retry 429 and transient 5xx responses only for idempotent status/readiness calls such as GetAsset/GetTask. `CreateAsset` is never automatically retried after a 429, 5xx, timeout, connection reset, or ambiguous response. `CreateVideo` is never automatically retried after a 429, 5xx, timeout, connection reset, or ambiguous response. Preserve the audited request, reconcile provider state, and resume only a known task ID. Treat 401/403 as configuration errors.
-- If Youdao CreateAsset/GetAsset fails or any required `asset://` mapping is missing, do not submit Seedance.
-- If a planned or dry-run payload contains `reference_videos`, stop before submission and rebuild it with the fixed B route.
+- Retry 429 and transient 5xx responses only for idempotent query/readiness calls. RunningHub media upload is never automatically retried after a 429, 5xx, timeout, connection reset, or ambiguous response. Paid Seedance create is never automatically retried after a 429, 5xx, timeout, connection reset, or ambiguous response. Preserve the audited request, reconcile provider state, and resume only a known task ID. Treat 401/403 as configuration errors.
+- If a required RunningHub upload fails, expires, or cannot be bound to its local SHA-256, do not submit Seedance.
+- Reject a planned or dry-run payload with a non-empty `videoUrls` unless it has exactly one current-segment URL and a valid `usfr-video-reference/v1` receipt. Missing target changes, a missing `@Image1` storyboard, a wrong segment window, opaque UI, or tail media blocks before submission.
 - `[SY_ERR:10] PROVIDER_MODERATION_ERROR: TRADEMARK`: do not retry unchanged. Clearly report the trademark moderation point, return to the storyboard prompt/image approval loop, and explain that changing the prompt may not be enough when the uploaded product image itself contains the mark. Never silently remove a product logo; obtain user approval before a compliant debranded or replacement asset is used.
 - A bare `[SY_ERR:10] PROVIDER_MODERATION_ERROR` has no known subtype. Report it as an unspecified moderation failure and preserve the raw message; never infer `TRADEMARK` unless the provider returned that token.
 - `[SY_ERR:10] Read timed out`, `s3 upload failed`, or `connection reset by peer`: treat as an ambiguous provider media-fetch failure. Do not change the prompt or create a replacement paid task. Preserve the original audited request, enter the existing provider-reconciliation/user-action blocker, and resume only when a known task ID or authoritative provider lookup resolves the outcome.
-- `video_reference ... DURATION_TOO_LONG`: report that the old request is still sending a reference video. The fixed B route must remove `reference_videos`; only a different intentional reference-video workflow would shorten it to 15 seconds or less.
+- `video_reference ... DURATION_TOO_LONG`: keep the existing task unmodified, report the invalid reference window, and require a current source segment shortened to 15 seconds or less. Do not submit another paid task until the corrected dry run is approved.
 - Unknown provider failures are never automatically resubmitted. Preserve the raw message in `failure.json` and tell the user what failed.
 - If storyboard approval is unclear, stop and ask for approval instead of assuming.
 - Never print or copy real credentials. The worker reads only its injected
@@ -479,9 +482,10 @@ through `scripts/seedance_prompt_compiler.py` and the same packaged
 `seedance-20` snapshot, repeat approved dialogue and
 timing verbatim, then run the existing unauthorized dry-run and 13-check audit.
 No paid task is allowed before zero ambiguity, no unresolved placeholders, and
-fixed-B closure. Do not send source/opaque media, `reference_videos`, or
-top-level `reference_audios`; the approved `background_music` exception uses
-content `audio_url` plus prompt `@Audio1`.
+fixed-B closure. A video-reference run may send only its exact approved source
+segment in `videoUrls[0]` under `usfr-video-reference/v1`; opaque media never
+enters the request. The approved `background_music` extension uses one
+`audioUrls` item plus prompt `@Audio1`.
 The compiler recomputes the root Skill checks from the structured segment,
 exact line contract, route exclusions, anti-slop rules, and immutable Skill
 bytes; caller-supplied boolean checks are not authorization. The compiled

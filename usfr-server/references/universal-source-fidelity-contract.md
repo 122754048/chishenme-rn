@@ -219,9 +219,12 @@ as an uncertainty note for review.
 
 ## Generation and assembly route
 
-The contract freezes before script, storyboard, and Seedance input. Opaque and
-source-origin media are never sent to a generation provider. Generated regions
-inherit exact global
+The contract freezes before script, storyboard, and Seedance input. Opaque
+media is never sent to a generation provider. A source-origin segment may be
+sent only through the video-reference replication route: exactly one matching
+2-15 second `videoUrls[0]`, bound by `usfr-video-reference/v1` to the source
+and slice SHA-256 values, frozen segment window, approved storyboard at
+`@Image1`, and at least one authorized target change. Generated regions inherit exact global
 Cut numbers, source timecodes, continuity handoff, voiceover/audio events,
 selling-point evidence, and negative constraints. A route change invalidates the
 downstream contract and returns to the relevant existing approval gate.

@@ -42,6 +42,7 @@ class BundleRuntimeClosureTest(unittest.TestCase):
         self.assertIn("server/ephemeral_worker.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/ephemeral_driver.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/high_fidelity_projection.py", REQUIRED_SERVER_FILES)
+        self.assertIn("server/runninghub_standard_contract.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/audio_mixer.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/performance_audio_contracts.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/runninghub_final_lip_sync.py", REQUIRED_SERVER_FILES)
@@ -52,7 +53,8 @@ class BundleRuntimeClosureTest(unittest.TestCase):
             "scripts/media_quality.py",
             "scripts/segment_plan.py",
             "scripts/runninghub_image2.py",
-            "scripts/seedance_submit.py",
+            "scripts/source_video_reference.py",
+            "scripts/runninghub_seedance_submit.py",
             "scripts/timeline_splice.py",
         ):
             self.assertIn(relative, REQUIRED_MODULE_FILES["seedance-storyboard-replication"])
@@ -71,6 +73,7 @@ class BundleRuntimeClosureTest(unittest.TestCase):
             "server/ephemeral_worker.py",
             "server/ephemeral_driver.py",
             "server/capabilities.py",
+            "server/runninghub_standard_contract.py",
             "server/audio_mixer.py",
             "server/performance_audio_contracts.py",
             "server/runninghub_final_lip_sync.py",
@@ -80,7 +83,8 @@ class BundleRuntimeClosureTest(unittest.TestCase):
             "bundled-skills/seedance-storyboard-replication/scripts/media_quality.py",
             "bundled-skills/seedance-storyboard-replication/scripts/segment_plan.py",
             "bundled-skills/seedance-storyboard-replication/scripts/runninghub_image2.py",
-            "bundled-skills/seedance-storyboard-replication/scripts/seedance_submit.py",
+            "bundled-skills/seedance-storyboard-replication/scripts/source_video_reference.py",
+            "bundled-skills/seedance-storyboard-replication/scripts/runninghub_seedance_submit.py",
             "bundled-skills/seedance-storyboard-replication/scripts/timeline_splice.py",
             "bundled-skills/analyze-reference-video-dynamics/scripts/probe_video.py",
             "bundled-skills/analyze-reference-video-dynamics/scripts/validate_dynamics.py",

@@ -1,0 +1,28 @@
+{
+  "cards": [
+    {
+      "cut_id": "C01",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\reference_frames\\r3\\source_ui\\C01.png",
+      "rect": [8, 8, 896, 496],
+      "fit": "contain"
+    },
+    {
+      "cut_id": "C02",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\reference_frames\\r3\\source_ui\\C02.png",
+      "rect": [920, 8, 896, 496],
+      "fit": "contain"
+    },
+    {
+      "cut_id": "C03",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\reference_frames\\r3\\source_ui\\C03.png",
+      "rect": [1832, 8, 896, 496],
+      "fit": "contain"
+    },
+    {
+      "cut_id": "C03_PROGRESS",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-61bb156889e04fdbada3d62977d0a1b3\\reference_frames\\r3\\source_ui\\C03_progress_4_500.jpg",
+      "rect": [8, 520, 896, 496],
+      "fit": "contain"
+    }
+  ]
+}

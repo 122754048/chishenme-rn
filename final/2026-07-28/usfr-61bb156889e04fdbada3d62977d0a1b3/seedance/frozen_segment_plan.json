@@ -1,0 +1,18 @@
+{
+  "schema_version": "usfr-segment-plan/v1",
+  "source_duration_ms": 13700,
+  "final_output_duration_ms": 11333,
+  "segments": [
+    {
+      "segment_id": "S01",
+      "start_ms": 5000,
+      "end_ms": 11333,
+      "duration_ms": 6333,
+      "cut_ids": [
+        "C04",
+        "C05",
+        "C06"
+      ]
+    }
+  ]
+}

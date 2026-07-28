@@ -25,6 +25,10 @@ from urllib import request as urlrequest
 
 from .performance_audio_contracts import build_source_audio_contracts
 from .review_models import RevisionManifest
+from .runninghub_standard_contract import (
+    RunningHubStandardPayloadError,
+    validate_runninghub_standard_payload_contract,
+)
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -359,9 +363,9 @@ class ProductionEnvironment:
     openai_model_config_sha256: str
     runninghub_api_key_env: str
     runninghub_base_url: str
+    runninghub_seedance_api_key_env: str
     runninghub_seedance_create_url: str
     runninghub_seedance_query_url: str
-    runninghub_seedance_workflow_id: str
     runninghub_seedance_model_id: str
     runninghub_seedance_config_sha256: str
 
@@ -370,6 +374,7 @@ class ProductionEnvironment:
         source: Mapping[str, str] = os.environ if environ is None else environ
         _require_secret(source, "OPENAI_API_KEY")
         _require_secret(source, "RUNNINGHUB_API_KEY")
+        _require_secret(source, "RUNNINGHUB_SEEDANCE_API_KEY")
         return cls(
             openai_api_key_env="OPENAI_API_KEY",
             openai_base_url=_require_https_url(source, "OPENAI_BASE_URL"),
@@ -377,10 +382,10 @@ class ProductionEnvironment:
             openai_model_config_sha256=_require_sha256(source, "OPENAI_MODEL_CONFIG_SHA256"),
             runninghub_api_key_env="RUNNINGHUB_API_KEY",
             runninghub_base_url=_require_https_url(source, "RUNNINGHUB_BASE_URL"),
+            runninghub_seedance_api_key_env="RUNNINGHUB_SEEDANCE_API_KEY",
             runninghub_seedance_create_url=_require_https_url(source, "RUNNINGHUB_SEEDANCE_CREATE_URL"),
             runninghub_seedance_query_url=_require_https_url(source, "RUNNINGHUB_SEEDANCE_QUERY_URL"),
-            runninghub_seedance_workflow_id=_require_text(source, "RUNNINGHUB_SEEDANCE_WORKFLOW_ID"),
-            runninghub_seedance_model_id=_require_text(source, "RUNNINGHUB_SEEDANCE_MODEL_ID"),
+            runninghub_seedance_model_id="seedance-2.0-fast-token",
             runninghub_seedance_config_sha256=_require_sha256(source, "RUNNINGHUB_SEEDANCE_CONFIG_SHA256"),
         )
 
@@ -1519,7 +1524,6 @@ class RunningHubSeedanceProvider:
             "version": "1.0.0",
             "provider": "runninghub",
             "base_url": self.config.runninghub_base_url,
-            "workflow_id": self.config.runninghub_seedance_workflow_id,
             "model_id": self.config.runninghub_seedance_model_id,
             "configuration_sha256": self.config.runninghub_seedance_config_sha256,
         }
@@ -1537,19 +1541,24 @@ class RunningHubSeedanceProvider:
     def create_video(self, request: Mapping[str, Any]) -> Mapping[str, Any]:
         if not isinstance(request, Mapping):
             raise ProductionPortsError("RunningHub video request must be a JSON object")
+        _validate_runninghub_standard_seedance_payload(request)
         return self._create(
             operation="video",
             url=self.config.runninghub_seedance_create_url,
-            payload={
-                "workflowId": self.config.runninghub_seedance_workflow_id,
-                "modelId": self.config.runninghub_seedance_model_id,
-                "request": dict(request),
-            },
+            payload=dict(request),
+            api_key_env=self.config.runninghub_seedance_api_key_env,
         )
 
-    def _create(self, *, operation: str, url: str, payload: Mapping[str, Any]) -> Mapping[str, Any]:
+    def _create(
+        self,
+        *,
+        operation: str,
+        url: str,
+        payload: Mapping[str, Any],
+        api_key_env: str | None = None,
+    ) -> Mapping[str, Any]:
         request_sha256 = _sha256(dict(payload))
-        api_key = _read_environment_secret(self.config.runninghub_api_key_env)
+        api_key = _read_environment_secret(api_key_env or self.config.runninghub_api_key_env)
         try:
             response = self._request_json(
                 url=url,
@@ -1598,7 +1607,7 @@ class RunningHubSeedanceProvider:
                 url=self.config.runninghub_seedance_query_url,
                 headers={
                     "Accept": "application/json",
-                    "Authorization": f"Bearer {_read_environment_secret(self.config.runninghub_api_key_env)}",
+                    "Authorization": f"Bearer {_read_environment_secret(self.config.runninghub_seedance_api_key_env)}",
                     "Content-Type": "application/json; charset=utf-8",
                 },
                 payload=payload,
@@ -1667,6 +1676,15 @@ class RunningHubSeedanceProvider:
 
 def _require_result_https_url(value: str) -> None:
     _validated_https_url(value, "RunningHub result URL", allow_query=True)
+
+
+def _validate_runninghub_standard_seedance_payload(payload: Mapping[str, Any]) -> None:
+    """Apply the same complete fixed-B contract as the bundled submitter."""
+
+    try:
+        validate_runninghub_standard_payload_contract(payload)
+    except RunningHubStandardPayloadError as error:
+        raise ProductionPortsError(f"RunningHub Seedance {error}") from error
 
 
 def _receipt_result_url(value: str) -> str:

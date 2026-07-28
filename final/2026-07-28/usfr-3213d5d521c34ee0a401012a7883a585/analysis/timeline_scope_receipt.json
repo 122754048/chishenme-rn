@@ -1,0 +1,42 @@
+{
+  "schema_version": "usfr-timeline-scope-receipt/v1",
+  "status": "passed",
+  "route": "omit_source_end_card",
+  "source_end_ms": 17033,
+  "final_output_end_ms": 15000,
+  "allowed_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08"
+  ],
+  "excluded_cut_ids": [
+    "C09"
+  ],
+  "source_pixel_cut_ids": [
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06"
+  ],
+  "image_model_allowed_cut_ids": [
+    "C01",
+    "C07",
+    "C08"
+  ],
+  "opaque_ui_cut_ids": [],
+  "input_slots_sha256": "6616299106407e9a09282b6ceb71cba28b67513dcac1a5261d896f2266656765",
+  "timeline_regions_sha256": "2c9c73a70713a7b499593efec0481cac9749cd8ca2dcf0866eb6ab77dac67892",
+  "segment_plan_sha256": "b52784dde79f545f749a554926c1b29deb1248f08b0e75fc703856873efd2246",
+  "text_artifact_sha256": {
+    "script_for_user_confirmation.md": "0e33cebcfa6dc41690bcbc2ca116f4553326aae41975ab67b509c5036d60de10",
+    "control_keyframes_prompt.md": "c968c9e36e2ceeeb308409b6a68d785a3b3ee733954c0a7c16fa49ab3d1c80df",
+    "storyboard_prompt.md": "5b297e3a197c1d05337c023d2601222d0536e2119f2733f358ada8888085cc4f"
+  },
+  "scope_sha256": "688da515db996121fe7e8f0647412c075c6f3ecd3156a67eef8f46d6d79f8134"
+}

@@ -94,8 +94,12 @@
       "role": "RunningHub storyboard image adapter"
     },
     {
-      "path": "bundled-skills/seedance-storyboard-replication/scripts/seedance_submit.py",
-      "role": "fixed-B Seedance asset/task adapter and integrity submission"
+      "path": "bundled-skills/seedance-storyboard-replication/scripts/source_video_reference.py",
+      "role": "deterministic frozen source-video segment materializer for RunningHub video references"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/scripts/runninghub_seedance_submit.py",
+      "role": "RunningHub Standard Model Seedance video adapter"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/scripts/timeline_splice.py",
@@ -212,6 +216,10 @@
     {
       "path": "server/production_ports.py",
       "role": "strict deployment configuration plus GPT and RunningHub low-level production boundaries"
+    },
+    {
+      "path": "server/runninghub_standard_contract.py",
+      "role": "shared RunningHub Standard Model fixed-B payload, route-leakage, and public-media validator"
     },
     {
       "path": "server/media_materializer.py",

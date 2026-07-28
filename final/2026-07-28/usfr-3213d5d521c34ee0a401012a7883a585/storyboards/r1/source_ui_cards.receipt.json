@@ -1,0 +1,70 @@
+{
+  "schema_version": "usfr-source-pixel-cards/v1",
+  "base_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\storyboards\\r1\\overview_ordered_base.png",
+  "base_sha256": "0bb61a57ea40278c58b968cea1587f870c9d0c35b0d683e1f62e662ef882cb6b",
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\storyboards\\r1\\overview.png",
+  "output_sha256": "098ed303a82259f201a9af20eaddb78e08aa52c62fdadb1e4dc82d373850848d",
+  "cards": [
+    {
+      "cut_id": "C02",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\reference_frames\\source_ui\\C02_target.png",
+      "source_sha256": "5d3e7522b8d9abdc179ff55fd1f8252763f3b228c25c97552c214e9b90e79f17",
+      "rect": [
+        916,
+        4,
+        904,
+        504
+      ],
+      "fit": "contain"
+    },
+    {
+      "cut_id": "C03",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\reference_frames\\source_ui\\C03_target.png",
+      "source_sha256": "20f0391f5a478e0b096ce19bafddb73218aece294231b94d2b241bd722f43ac0",
+      "rect": [
+        1828,
+        4,
+        904,
+        504
+      ],
+      "fit": "contain"
+    },
+    {
+      "cut_id": "C04",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\reference_frames\\source_ui\\C04_target.png",
+      "source_sha256": "e9e1b38cc97b74f500b7f9c2f3fc98f3c3f66c38793f4954325549b98375fd52",
+      "rect": [
+        4,
+        516,
+        904,
+        504
+      ],
+      "fit": "contain"
+    },
+    {
+      "cut_id": "C05",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\reference_frames\\source_ui\\C05_target_full.png",
+      "source_sha256": "09a1ba24a1174238e19b7deaa0768464953049a79f193d9afb17c46796e9a67d",
+      "rect": [
+        916,
+        516,
+        904,
+        504
+      ],
+      "fit": "contain"
+    },
+    {
+      "cut_id": "C06",
+      "source_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-3213d5d521c34ee0a401012a7883a585\\reference_frames\\source_ui\\C06_target_full.png",
+      "source_sha256": "24f22c941fedd6a58dca713ae3e46d603044f1356bf035c9edb4690b466cbc0d",
+      "rect": [
+        1828,
+        516,
+        904,
+        504
+      ],
+      "fit": "contain"
+    }
+  ],
+  "outside_card_rect_changed_pixels": 0
+}

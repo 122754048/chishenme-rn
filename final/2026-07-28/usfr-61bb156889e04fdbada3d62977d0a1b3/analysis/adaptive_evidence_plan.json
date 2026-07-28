@@ -1,0 +1,124 @@
+{
+  "contract": "high-fidelity-evidence-plan",
+  "contract_version": 1,
+  "profile": "high_fidelity_hybrid_v1",
+  "analysis_pass_count": 1,
+  "source": {
+    "sha256": "93359103776f9a1191ec8fef85f0bd87c0453c247729ffb2016c051e10b11c64",
+    "duration_us": 13700000,
+    "width": 1080,
+    "height": 1920,
+    "fps_num": 30,
+    "fps_den": 1
+  },
+  "coverage": {
+    "start_us": 0,
+    "end_us": 13700000,
+    "complete_timeline_required": true
+  },
+  "candidate_policy": "hints_only",
+  "cached_evidence_required": true,
+  "evidence": {
+    "complete_timeline": {
+      "start_us": 0,
+      "end_us": 13700000,
+      "method": "complete_timeline_contact_sheet",
+      "required": true
+    },
+    "boundary_neighborhoods": [
+      {
+        "boundary_id": "B001",
+        "time_us": 0,
+        "window_start_us": 0,
+        "window_end_us": 250000,
+        "method": "decoder_boundary_frames",
+        "reason": "edit/action/camera/audio/overlay phase candidate; reconcile in the single semantic pass"
+      },
+      {
+        "boundary_id": "B002",
+        "time_us": 5666666,
+        "window_start_us": 5416666,
+        "window_end_us": 5916666,
+        "method": "decoder_boundary_frames",
+        "reason": "edit/action/camera/audio/overlay phase candidate; reconcile in the single semantic pass"
+      },
+      {
+        "boundary_id": "B003",
+        "time_us": 11333333,
+        "window_start_us": 11083333,
+        "window_end_us": 11583333,
+        "method": "decoder_boundary_frames",
+        "reason": "edit/action/camera/audio/overlay phase candidate; reconcile in the single semantic pass"
+      },
+      {
+        "boundary_id": "B004",
+        "time_us": 12516666,
+        "window_start_us": 12266666,
+        "window_end_us": 12766666,
+        "method": "decoder_boundary_frames",
+        "reason": "edit/action/camera/audio/overlay phase candidate; reconcile in the single semantic pass"
+      },
+      {
+        "boundary_id": "B005",
+        "time_us": 13700000,
+        "window_start_us": 13450000,
+        "window_end_us": 13700000,
+        "method": "decoder_boundary_frames",
+        "reason": "edit/action/camera/audio/overlay phase candidate; reconcile in the single semantic pass"
+      }
+    ],
+    "adaptive_keyframes": [
+      {
+        "keyframe_id": "K001",
+        "time_us": 0,
+        "reason": "adaptive motion/action/camera/hold verification",
+        "decoder_anchor": true
+      },
+      {
+        "keyframe_id": "K002",
+        "time_us": 5666666,
+        "reason": "adaptive motion/action/camera/hold verification",
+        "decoder_anchor": true
+      },
+      {
+        "keyframe_id": "K003",
+        "time_us": 11333333,
+        "reason": "adaptive motion/action/camera/hold verification",
+        "decoder_anchor": true
+      },
+      {
+        "keyframe_id": "K004",
+        "time_us": 12516666,
+        "reason": "adaptive motion/action/camera/hold verification",
+        "decoder_anchor": true
+      },
+      {
+        "keyframe_id": "K005",
+        "time_us": 13700000,
+        "reason": "adaptive motion/action/camera/hold verification",
+        "decoder_anchor": true
+      }
+    ],
+    "detail_crops": {
+      "required_when": [
+        "product",
+        "hand",
+        "face",
+        "UI",
+        "subtitle",
+        "overlay",
+        "small_text"
+      ],
+      "method": "full_resolution_frame_or_crop",
+      "source_only": true
+    },
+    "audio": {
+      "required": true,
+      "transcription_required": true,
+      "method": "separate_audio_transcription_and_waveform",
+      "reconcile_with_visual": true
+    }
+  },
+  "opaque_intervals": [],
+  "plan_sha256": "6cd4e0d384b03a8b5abd83583c911747d6c1f1c2ab6ac87cfff9df8e7b592525"
+}

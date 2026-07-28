@@ -7,7 +7,7 @@ the commercial deployment adapter.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from fractions import Fraction
@@ -232,8 +232,14 @@ class _LocalProviderAdapter:
 class DevelopmentOnlyBackgroundMusicMvpHarness:
     """Run a deterministic local media loop without a network Provider or TTS."""
 
-    def __init__(self, *, run_root: Path) -> None:
+    def __init__(
+        self,
+        *,
+        run_root: Path,
+        runninghub_audio_upload: Callable[[Path, Mapping[str, object]], Mapping[str, object]],
+    ) -> None:
         self._run_root = Path(run_root)
+        self._runninghub_audio_upload = runninghub_audio_upload
 
     def run(
         self,
@@ -266,7 +272,15 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
         timeline_evidence = _evidence(timeline_result)
         timeline_reference = _mapping(timeline_evidence, "music_timeline_contract_artifact")
         frozen_contract = self._materialize_frozen_contract(context=context, reference=timeline_reference)
-        audio_asset_receipt = self._audio_asset_receipt(uploaded)
+        seedance_clip_path, seedance_clip = self._materialize_seedance_segment_clip(
+            uploaded_path=uploaded_path,
+            uploaded=uploaded,
+            music_timeline_contract=frozen_contract,
+        )
+        audio_asset_receipt = self._upload_audio_to_runninghub(
+            seedance_clip_path=seedance_clip_path,
+            seedance_clip=seedance_clip,
+        )
         performance_line_contract = self._performance_line_contract(
             contract=frozen_contract,
             visible_singer_regions=visible_singer_regions,
@@ -811,7 +825,29 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
                     },
                 }
             )
-        return {"contract": "source-content-timeline/v1", "audio_lines": audio_lines}
+        return {
+            "contract": "source-content-timeline/v1",
+            # Development-only fixture for the local provider double.  A real
+            # worker must inject the immutable, storyboard-approved request
+            # produced by the normal prompt-audit stage instead.
+            "approved_seedance_visual_payload": {
+                "prompt": "Keep the approved local visual performance and timing.",
+                "resolution": "720p",
+                "duration": "5",
+                "imageUrls": [
+                    "https://runninghub.example/openapi/development-only-approved-storyboard.png"
+                ],
+                "videoUrls": [],
+                "audioUrls": [],
+                "generateAudio": True,
+                "ratio": "9:16",
+                "realPersonMode": False,
+                "conversionSlots": [],
+                "returnLastFrame": False,
+                "seed": -1,
+            },
+            "audio_lines": audio_lines,
+        }
 
     @staticmethod
     def _publish_json_artifact(
@@ -846,32 +882,82 @@ class DevelopmentOnlyBackgroundMusicMvpHarness:
         )
         return {**reference, "kind": kind}
 
-    def _audio_asset_receipt(self, uploaded: Mapping[str, object]) -> dict[str, object]:
-        digest = str(uploaded["sha256"])
-        return {
-            "AssetType": "Audio",
-            "asset_type": "Audio",
-            "asset_uri": f"asset://asset-{digest[:16]}",
-            "status": "active",
-            "uploaded_audio_sha256": digest,
-        }
+    def _upload_audio_to_runninghub(
+        self,
+        *,
+        seedance_clip_path: Path,
+        seedance_clip: Mapping[str, object],
+    ) -> dict[str, object]:
+        """Materialize a real provider upload receipt before Seedance submission."""
 
-    @staticmethod
-    def _provider_payload(audio_asset_receipt: Mapping[str, object]) -> dict[str, object]:
-        asset_uri = str(audio_asset_receipt["asset_uri"])
-        return {
-            "content": [
-                {
-                    "text": "Use @Audio1 as the uploaded-song reference. Preserve the frozen frame windows without looping, time stretch, pitch shift, or generated replacement.",
-                    "type": "text",
-                },
-                {
-                    "audio_url": {"url": asset_uri},
-                    "role": "reference_audio",
-                    "type": "audio_url",
-                },
-            ],
-            "model": "seedance-2.0",
+        if not seedance_clip_path.is_file():
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_RUNNINGHUB_AUDIO_UPLOAD_INVALID")
+        try:
+            receipt = self._runninghub_audio_upload(seedance_clip_path, seedance_clip)
+        except Exception as error:
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_RUNNINGHUB_AUDIO_UPLOAD_INVALID") from error
+        if not isinstance(receipt, Mapping):
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_RUNNINGHUB_AUDIO_UPLOAD_INVALID")
+        returned = dict(receipt)
+        if (
+            returned.get("uploaded_audio_sha256") != seedance_clip.get("uploaded_audio_sha256")
+            or returned.get("duration_seconds") != seedance_clip.get("duration_seconds")
+            or returned.get("clip_kind") != "seedance_segment"
+            or returned.get("seedance_segment") != seedance_clip.get("seedance_segment")
+        ):
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_RUNNINGHUB_AUDIO_UPLOAD_INVALID")
+        return returned
+
+    def _materialize_seedance_segment_clip(
+        self,
+        *,
+        uploaded_path: Path,
+        uploaded: Mapping[str, object],
+        music_timeline_contract: Mapping[str, object],
+    ) -> tuple[Path, dict[str, object]]:
+        """Create the only provider-facing audio: a bounded Seedance segment clip."""
+
+        output_duration_ms = music_timeline_contract.get("output_duration_ms")
+        if (
+            isinstance(output_duration_ms, bool)
+            or not isinstance(output_duration_ms, int)
+            or not 2_000 <= output_duration_ms <= 15_000
+        ):
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_RUNNINGHUB_AUDIO_UPLOAD_INVALID")
+        source_duration = self._probe_duration(uploaded_path)
+        clip_duration_seconds = output_duration_ms / 1_000
+        if source_duration < clip_duration_seconds:
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_RUNNINGHUB_AUDIO_UPLOAD_INVALID")
+        clip_path = self._run_root / "provider" / "seedance_segment_clip.wav"
+        clip_path.parent.mkdir(parents=True, exist_ok=True)
+        self._run_command(
+            [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-i",
+                str(uploaded_path),
+                "-map",
+                "0:a:0",
+                "-vn",
+                "-t",
+                str(clip_duration_seconds),
+                "-c:a",
+                "pcm_s16le",
+                str(clip_path),
+            ]
+        )
+        if not clip_path.is_file() or abs(self._probe_duration(clip_path) - clip_duration_seconds) > 0.05:
+            raise DevelopmentOnlyBackgroundMusicMvpError("LOCAL_MVP_RUNNINGHUB_AUDIO_UPLOAD_INVALID")
+        return clip_path, {
+            "uploaded_audio_sha256": uploaded["sha256"],
+            "seedance_audio_sha256": _sha256_file(clip_path),
+            "content_type": "audio/wav",
+            "duration_seconds": clip_duration_seconds,
+            "clip_kind": "seedance_segment",
+            "seedance_segment": {"start_ms": 0, "end_ms": output_duration_ms},
         }
 
     def _mix_exact_uploaded_fragments(

@@ -289,9 +289,13 @@ class _AuditedMusicPort:
         evidence = {
             "audio_asset_receipt": {
                 "asset_type": "Audio",
-                "asset_uri": "asset://asset-song",
+                "provider": "runninghub",
+                "runninghub_audio_url": "https://runninghub.example/openapi/song-clip.mp3",
                 "uploaded_audio_sha256": "b" * 64,
-                "status": "active",
+                "duration_seconds": 2.0,
+                "clip_kind": "seedance_segment",
+                "seedance_segment": {"start_ms": 0, "end_ms": 2_000},
+                "status": "completed",
             },
             "provider_payload": self.payload,
         }
@@ -432,6 +436,13 @@ def _complete_music_timing(contract: dict[str, object]) -> None:
         "output_duration_ms",
         max((int(window["output_end_ms"]) for window in windows if isinstance(window, dict)), default=0),
     )
+    if int(contract["output_duration_ms"]) < 2_000:
+        prior_end = int(contract["output_duration_ms"])
+        contract["meaningful_silence_output_intervals"] = [
+            *contract["meaningful_silence_output_intervals"],
+            {"output_start_ms": prior_end, "output_end_ms": 2_000},
+        ]
+        contract["output_duration_ms"] = 2_000
 
 
 def _music_timeline() -> dict[str, object]:
@@ -458,8 +469,8 @@ def _music_timeline() -> dict[str, object]:
             }
         ],
         "visible_singer_regions": [],
-        "meaningful_silence_output_intervals": [],
-        "output_duration_ms": 1000,
+        "meaningful_silence_output_intervals": [{"output_start_ms": 1000, "output_end_ms": 2000}],
+        "output_duration_ms": 2000,
     }
 
 
@@ -508,6 +519,7 @@ def _verified_performance_line_contract() -> dict[str, object]:
 def _confirmed_sung_source_timeline(*, confidence: float = 0.95) -> dict[str, object]:
     return {
         "contract": "source-content-timeline/v1",
+        "approved_seedance_visual_payload": _approved_visual_seedance_payload(),
         "audio_lines": [
             {
                 "line_id": "source-song-line-01",
@@ -528,15 +540,84 @@ def _confirmed_sung_source_timeline(*, confidence: float = 0.95) -> dict[str, ob
 
 
 def _non_singing_source_timeline() -> dict[str, object]:
-    return {"contract": "source-content-timeline/v1", "audio_lines": []}
+    return {
+        "contract": "source-content-timeline/v1",
+        "approved_seedance_visual_payload": _approved_visual_seedance_payload(),
+        "audio_lines": [],
+    }
+
+
+def _approved_visual_seedance_payload() -> dict[str, object]:
+    return {
+        "prompt": "Keep the approved visual performance, camera, and product proof.",
+        "resolution": "720p",
+        "duration": "5",
+        "imageUrls": ["https://runninghub.example/openapi/approved-storyboard.png"],
+        "videoUrls": [],
+        "audioUrls": [],
+        "generateAudio": True,
+        "ratio": "9:16",
+        "realPersonMode": False,
+        "conversionSlots": [],
+        "returnLastFrame": False,
+        "seed": -1,
+    }
+
+
+def test_background_music_payload_inherits_the_approved_visual_request_and_only_adds_audio() -> None:
+    source_timeline = {
+        **_non_singing_source_timeline(),
+        "approved_seedance_visual_payload": _approved_visual_seedance_payload(),
+    }
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=_music_timeline(),
+        audio_asset_receipt=_audio_asset_receipt(),
+        source_content_timeline=source_timeline,
+    )
+
+    payload = execution["provider_payload"]
+    assert set(payload) == {
+        "prompt", "resolution", "duration", "imageUrls", "videoUrls", "audioUrls",
+        "generateAudio", "ratio", "realPersonMode", "conversionSlots", "returnLastFrame", "seed",
+    }
+    assert payload["imageUrls"] == ["https://runninghub.example/openapi/approved-storyboard.png"]
+    assert payload["audioUrls"] == ["https://runninghub.example/openapi/song-clip.mp3"]
+    assert payload["videoUrls"] == []
+    assert "model" not in payload
+    assert "@Audio1" in payload["prompt"]
 
 
 def _audio_asset_receipt() -> dict[str, object]:
     return {
         "asset_type": "Audio",
-        "asset_uri": "asset://asset-song",
-        "status": "active",
+        "provider": "runninghub",
+        "runninghub_audio_url": "https://runninghub.example/openapi/song-clip.mp3",
+        "duration_seconds": 2.0,
+        "clip_kind": "seedance_segment",
+        "seedance_segment": {"start_ms": 0, "end_ms": 2_000},
+        "status": "completed",
         "uploaded_audio_sha256": "b" * 64,
+    }
+
+
+def _audio_asset_receipt_for_timeline(
+    contract: dict[str, object],
+    *,
+    uploaded_audio_sha256: str = "b" * 64,
+) -> dict[str, object]:
+    starts = [
+        item["output_start_ms"]
+        for item in [*contract["windows"], *contract["meaningful_silence_output_intervals"]]
+        if isinstance(item, dict)
+    ]
+    start_ms = min(starts)
+    end_ms = int(contract["output_duration_ms"])
+    return {
+        **_audio_asset_receipt(),
+        "uploaded_audio_sha256": uploaded_audio_sha256,
+        "duration_seconds": (end_ms - start_ms) / 1_000,
+        "seedance_segment": {"start_ms": start_ms, "end_ms": end_ms},
     }
 
 
@@ -549,7 +630,7 @@ def _execution_contract_for(
     return background_music_execution.compile_background_music_execution_contract(
         uploaded_audio=_uploaded_music(),
         music_timeline_contract=music_timeline_contract,
-        audio_asset_receipt=_audio_asset_receipt(),
+        audio_asset_receipt=_audio_asset_receipt_for_timeline(music_timeline_contract),
         source_content_timeline=(
             _confirmed_sung_source_timeline()
             if intent == "verified_singing"
@@ -625,9 +706,10 @@ def _materialized_music_case(
 ) -> tuple[dict[str, object], dict[str, object], _MediaPortContext, dict[str, object], dict[str, object]]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     _complete_music_timing(contract)
-    uploaded_pcm = b"\x01\x00\x01\x00" * 48_000
+    music_pcm = b"\x01\x00\x01\x00" * 48_000
+    uploaded_pcm = music_pcm * 2
     uploaded_bytes = _pcm_wav_bytes(uploaded_pcm)
-    final_audio_bytes = uploaded_bytes
+    final_audio_bytes = _pcm_wav_bytes(music_pcm + b"\0" * len(music_pcm))
     uploaded = {
         **_uploaded_music(),
         "object_key": "uploads/batch-scope/song.wav",
@@ -638,7 +720,10 @@ def _materialized_music_case(
     execution = background_music_execution.compile_background_music_execution_contract(
         uploaded_audio=uploaded,
         music_timeline_contract=contract,
-        audio_asset_receipt={**_audio_asset_receipt(), "uploaded_audio_sha256": uploaded["sha256"]},
+        audio_asset_receipt=_audio_asset_receipt_for_timeline(
+            contract,
+            uploaded_audio_sha256=uploaded["sha256"],
+        ),
         source_content_timeline=(
             _confirmed_sung_source_timeline()
             if intent == "verified_singing"
@@ -726,7 +811,7 @@ def _materialized_music_case(
             "-f",
             "lavfi",
             "-i",
-            "color=c=black:s=16x16:r=30:d=1",
+            "color=c=black:s=16x16:r=30:d=2",
             *offset_args,
             "-i",
             str(video_audio_path),
@@ -774,7 +859,7 @@ def _materialized_music_case(
             (final_video_reference, final_video_path),
         ),
     )
-    pcm_fragment_sha = hashlib.sha256(uploaded_pcm).hexdigest()
+    pcm_fragment_sha = hashlib.sha256(music_pcm).hexdigest()
     receipt = {
         "passed": True,
         "mode": execution["mode"],
@@ -872,7 +957,11 @@ def test_uploaded_song_is_the_final_audio_authority_without_time_or_pitch_transf
             final_mix_receipt=_final_mix_receipt(execution_contract=execution),
         )
 
-    text = execution["provider_payload"]["content"][0]["text"]
+    payload = execution["provider_payload"]
+    assert payload["audioUrls"] == ["https://runninghub.example/openapi/song-clip.mp3"]
+    assert "content" not in payload
+    assert "asset://" not in json.dumps(payload)
+    text = payload["prompt"]
     assert "@Audio1" in text
     assert '"Hold on"' in text
     assert "Line L01" in text
@@ -887,6 +976,75 @@ def test_uploaded_song_is_the_final_audio_authority_without_time_or_pitch_transf
     assert execution["performance_line_contract_sha256"] == hashlib.sha256(
         json.dumps(_verified_performance_line_contract(), sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
+
+
+def test_background_music_execution_requires_a_duration_bound_runninghub_upload_receipt():
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID"):
+        background_music_execution.compile_background_music_execution_contract(
+            uploaded_audio=_uploaded_music(),
+            music_timeline_contract=_music_timeline(),
+            audio_asset_receipt={**_audio_asset_receipt(), "duration_seconds": 29.0},
+            source_content_timeline=_non_singing_source_timeline(),
+            performance_line_contract=None,
+        )
+
+
+@pytest.mark.parametrize("duration_seconds", [16.0, 30.0])
+def test_background_music_execution_rejects_a_full_or_oversized_runninghub_audio_upload(
+    duration_seconds: float,
+):
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID"):
+        background_music_execution.compile_background_music_execution_contract(
+            uploaded_audio={**_uploaded_music(), "duration_seconds": duration_seconds},
+            music_timeline_contract=_music_timeline(),
+            audio_asset_receipt={
+                **_audio_asset_receipt(),
+                "duration_seconds": duration_seconds,
+                "clip_kind": "seedance_segment",
+                "seedance_segment": {"start_ms": 0, "end_ms": int(duration_seconds * 1_000)},
+            },
+            source_content_timeline=_non_singing_source_timeline(),
+            performance_line_contract=None,
+        )
+
+
+def test_background_music_execution_accepts_a_two_second_runninghub_segment_clip_for_a_longer_song():
+    execution = background_music_execution.compile_background_music_execution_contract(
+        uploaded_audio=_uploaded_music(),
+        music_timeline_contract=_music_timeline(),
+        audio_asset_receipt={
+            **_audio_asset_receipt(),
+            "duration_seconds": 2.0,
+            "clip_kind": "seedance_segment",
+            "seedance_segment": {"start_ms": 0, "end_ms": 2_000},
+        },
+        source_content_timeline=_non_singing_source_timeline(),
+        performance_line_contract=None,
+    )
+
+    assert execution["provider_payload"]["audioUrls"] == [
+        "https://runninghub.example/openapi/song-clip.mp3"
+    ]
+    assert execution["uploaded_audio"]["duration_seconds"] == 30.0
+    assert execution["audio_asset_receipt"]["duration_seconds"] == 2.0
+
+
+def test_background_music_execution_rejects_a_self_consistent_clip_for_the_wrong_frozen_output_segment():
+    timeline = _music_timeline()
+    timeline["output_duration_ms"] = 2_000
+    timeline["meaningful_silence_output_intervals"] = [{"output_start_ms": 1_000, "output_end_ms": 2_000}]
+
+    with pytest.raises(ValueError, match="BACKGROUND_MUSIC_PROVIDER_REQUEST_INVALID"):
+        background_music_execution.compile_background_music_execution_contract(
+            uploaded_audio=_uploaded_music(),
+            music_timeline_contract=timeline,
+            audio_asset_receipt={
+                **_audio_asset_receipt(),
+                "seedance_segment": {"start_ms": 2_000, "end_ms": 4_000},
+            },
+            source_content_timeline=_non_singing_source_timeline(),
+            performance_line_contract=None,
+        )
 
 
 def test_background_music_execution_rejects_a_final_segment_sha_that_does_not_match_the_uploaded_segment():
@@ -1023,13 +1181,13 @@ def test_background_music_mode_has_explicit_no_lyric_lip_sync_when_singing_evide
 
     assert execution["mode"] == "background_music_replacement"
     assert execution["lyric_lip_sync_policy"] == "No lyric lip-sync"
-    assert "No lyric lip-sync" in execution["provider_payload"]["content"][0]["text"]
+    assert "No lyric lip-sync" in execution["provider_payload"]["prompt"]
 
 
 def test_verified_singing_seedance_prompt_locks_the_confirmed_singer_to_the_exact_audio1_lyrics():
     execution = _execution_contract_for(_music_timeline(), intent="verified_singing")
 
-    text = execution["provider_payload"]["content"][0]["text"]
+    text = execution["provider_payload"]["prompt"]
 
     assert "Song to perform: the exact uploaded track @Audio1." in text
     assert "CHARACTER_A is the only on-camera singer for this line." in text
@@ -1040,7 +1198,7 @@ def test_verified_singing_seedance_prompt_locks_the_confirmed_singer_to_the_exac
 def test_verified_singing_seedance_prompt_forbids_any_song_except_audio1_and_assigns_exact_lyrics_to_the_singer():
     execution = _execution_contract_for(_music_timeline(), intent="verified_singing")
 
-    text = execution["provider_payload"]["content"][0]["text"]
+    text = execution["provider_payload"]["prompt"]
 
     assert "@Audio1 is the only song that may be performed." in text
     assert 'CHARACTER_A must sing only this exact lyric from @Audio1: "Hold on".' in text
@@ -1264,7 +1422,7 @@ def test_background_music_provider_audit_requires_the_uploaded_audio_asset_and_e
         "execution_contract_sha256"
     ]
 
-    invalid_payload = {**valid_payload, "reference_audios": ["asset://asset-song"]}
+    invalid_payload = {**valid_payload, "reference_audios": ["https://runninghub.example/openapi/other.mp3"]}
     invalid_port = BackgroundMusicStagePort(
         stage="audit_seedance_request",
         delegate=_Port("canonical"),
@@ -1305,10 +1463,7 @@ def test_seedance_compile_stage_requires_the_canonical_background_music_executio
     execution = _execution_contract_for(_music_timeline())
     altered_payload = {
         **execution["provider_payload"],
-        "content": [
-            {"type": "text", "text": "Use @Audio1 but transform the uploaded song."},
-            execution["provider_payload"]["content"][1],
-        ],
+        "prompt": "Use @Audio1 but transform the uploaded song.",
     }
     port = BackgroundMusicStagePort(
         stage="compile_seedance20_prompt",
@@ -1364,10 +1519,7 @@ def test_background_music_provider_audit_rejects_a_payload_that_differs_from_the
     )
     altered_payload = {
         **execution["provider_payload"],
-        "content": [
-            {"type": "text", "text": "Use @Audio1 and invent a new lyric."},
-            execution["provider_payload"]["content"][1],
-        ],
+        "prompt": "Use @Audio1 and invent a new lyric.",
     }
     port = BackgroundMusicStagePort(
         stage="audit_seedance_request",
@@ -1396,7 +1548,10 @@ def test_provider_submission_rejects_a_post_audit_self_consistent_contract_swap(
     swapped = background_music_execution.compile_background_music_execution_contract(
         uploaded_audio=_uploaded_music(),
         music_timeline_contract=_music_timeline(),
-        audio_asset_receipt={**_audio_asset_receipt(), "asset_uri": "asset://asset-replaced-song"},
+        audio_asset_receipt={
+            **_audio_asset_receipt(),
+            "runninghub_audio_url": "https://runninghub.example/openapi/replaced-song.mp3",
+        },
         source_content_timeline=_non_singing_source_timeline(),
         performance_line_contract=None,
     )
@@ -1770,7 +1925,7 @@ def test_provider_submit_rejects_a_self_consistent_request_with_a_different_audi
         audio_asset_receipt={
             **_audio_asset_receipt(),
             "uploaded_audio_sha256": execution["uploaded_audio_sha256"],
-            "asset_uri": "asset://asset-forged",
+            "runninghub_audio_url": "https://runninghub.example/openapi/forged-song.mp3",
         },
         source_content_timeline=_non_singing_source_timeline(),
         performance_line_contract=None,
@@ -1867,7 +2022,7 @@ def test_background_music_splice_rejects_submission_not_bound_to_the_current_fro
         audio_asset_receipt={
             **_audio_asset_receipt(),
             "uploaded_audio_sha256": execution["uploaded_audio_sha256"],
-            "asset_uri": "asset://asset-another-audited-request",
+            "runninghub_audio_url": "https://runninghub.example/openapi/another-audited-song.mp3",
         },
         source_content_timeline=_non_singing_source_timeline(),
         performance_line_contract=None,
@@ -2038,10 +2193,7 @@ def test_background_music_provider_audit_revalidates_the_mode_contract_instead_o
     execution = _execution_contract_for(_music_timeline())
     unsafe_payload = {
         **execution["provider_payload"],
-        "content": [
-            {"type": "text", "text": "Use @Audio1 and make the performer lyric lip-sync every word."},
-            execution["provider_payload"]["content"][1],
-        ],
+        "prompt": "Use @Audio1 and make the performer lyric lip-sync every word.",
     }
     forged_execution = {**execution, "provider_payload": unsafe_payload}
     port = BackgroundMusicStagePort(

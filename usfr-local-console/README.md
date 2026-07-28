@@ -29,7 +29,7 @@
 6. `provider_request_ready` 导入后，不会出现“确认提交”按钮。控制台会先永久保存请求 SHA-256，再向 RunningHub 创建一次任务；之后只轮询同一 task ID。
 7. 成功后，控制台立即清除输入、分析、缓存、Provider 记录和 QA 记录，只保留最终 MP4，并显示视频预览和下载按钮。
 
-背景音乐是可选 `background_music` 扩展，不是第八固定槽位。仅“原视频加背景音乐”不会进入 language-only/TTS 快速通道：标准执行路线必须把上传音乐作为 Seedance 2.0 的 `@Audio1`，注册为 Audio 资产，并禁止 `reference_audios`。源合同冻结后需要帧级音乐窗口；最终 QA 必须保存上传音乐精确片段、可见演唱歌词或音素对齐和口型收据，以及最终混音收据。控制台不会把这条路线降级为 RunningHub 请求。
+背景音乐是可选 `background_music` 扩展，不是第八固定槽位。仅“原视频加背景音乐”不会进入 language-only/TTS 快速通道：标准执行路线通过 RunningHub 二进制上传接口取得歌曲的临时 HTTPS URL，写入 Seedance 2.0 的 `audioUrls[0]`，并在提示词中显式使用 `@Audio1`；禁止 `reference_audios`。源合同冻结后需要帧级音乐窗口；最终 QA 必须保存上传音乐精确片段、可见演唱歌词或音素对齐和口型收据，以及最终混音收据。
 
 “只改语言”路由不显示文字脚本和故事板确认；它直接请求 Codex 返回经过现有 Skill 编排的 Provider 请求。
 

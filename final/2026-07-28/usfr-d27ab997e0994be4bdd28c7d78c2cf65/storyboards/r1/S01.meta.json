@@ -1,0 +1,25 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082007650937225218",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-d27ab997e0994be4bdd28c7d78c2cf65\\storyboards\\r1\\storyboard_prompt.md",
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-d27ab997e0994be4bdd28c7d78c2cf65\\reference_frames\\control_keyframes.png",
+    "C:\\Users\\zhaocx04\\Downloads\\1782385943922_F76A7B78-5406-4A8A-A5BD-202780B1FC2E_17823859412.jpg"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\final\\2026-07-28\\usfr-d27ab997e0994be4bdd28c7d78c2cf65\\storyboards\\r1\\overview.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 87.922,
+  "revision_reason": "approved-script source-fidelity storyboard",
+  "revision_number": 1,
+  "artifact_stem": "approved-storyboard-s01",
+  "cut_id": "S01",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

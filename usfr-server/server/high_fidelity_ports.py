@@ -24,24 +24,24 @@ from typing import Any, Callable
 from .errors import ReplicationError
 
 
-_SEEDANCE_SUBMIT_MODULE: Any | None = None
+_RUNNINGHUB_SUBMIT_MODULE: Any | None = None
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
-def _load_seedance_submit_module() -> Any:
-    """Load the bundled fixed-B payload authority from deployed bytes."""
+def _load_runninghub_submit_module() -> Any:
+    """Load the bundled RunningHub fixed-B payload authority from deployed bytes."""
 
-    global _SEEDANCE_SUBMIT_MODULE
-    if _SEEDANCE_SUBMIT_MODULE is not None:
-        return _SEEDANCE_SUBMIT_MODULE
+    global _RUNNINGHUB_SUBMIT_MODULE
+    if _RUNNINGHUB_SUBMIT_MODULE is not None:
+        return _RUNNINGHUB_SUBMIT_MODULE
     script = (
         Path(__file__).resolve().parents[1]
         / "bundled-skills"
         / "seedance-storyboard-replication"
         / "scripts"
-        / "seedance_submit.py"
+        / "runninghub_seedance_submit.py"
     )
-    module_name = "usfr_high_fidelity_seedance_submit"
+    module_name = "usfr_high_fidelity_runninghub_submit"
     spec = importlib.util.spec_from_file_location(module_name, script)
     if spec is None or spec.loader is None:
         raise RuntimeError("bundled Seedance payload validator cannot be loaded")
@@ -52,7 +52,7 @@ def _load_seedance_submit_module() -> Any:
         spec.loader.exec_module(module)
     finally:
         sys.path.pop(0)
-    _SEEDANCE_SUBMIT_MODULE = module
+    _RUNNINGHUB_SUBMIT_MODULE = module
     return module
 
 
@@ -652,21 +652,16 @@ class HighFidelityStageAdapter:
             raw_payload = json.loads(
                 json.dumps(template, ensure_ascii=False)
             )
-            content = raw_payload.get("content")
-            if (
-                not isinstance(content, list)
-                or not content
-                or not isinstance(content[0], Mapping)
-            ):
+            if not isinstance(raw_payload.get("prompt"), str):
                 raise ReplicationError(
                     "PROMPT_INTEGRITY_FAILED",
-                    "provider_payload_template is missing its text carrier",
+                    "provider_payload_template is missing its direct prompt",
                     category="contract",
                     user_action_required=True,
                     details={"segment_id": segment_id},
                     http_status=422,
                 )
-            content[0] = {**dict(content[0]), "text": compiled_prompt}
+            raw_payload["prompt"] = compiled_prompt
         if not isinstance(raw_payload, Mapping):
             raise ReplicationError(
                 "PROMPT_INTEGRITY_FAILED",
@@ -677,15 +672,38 @@ class HighFidelityStageAdapter:
                 http_status=422,
             )
         payload = dict(raw_payload)
-        validator = _load_seedance_submit_module()
+        validator = _load_runninghub_submit_module()
         try:
-            validator._validate_audited_fixed_b_payload(payload)  # noqa: SLF001 - bundled authority
-            prompt = validator._payload_prompt(payload)  # noqa: SLF001 - bundled authority
-            validator._validate_route_integrity(payload, prompt)  # noqa: SLF001 - bundled authority
+            prompt = validator.validate_runninghub_standard_payload(payload, fixed_b=True)
+            video_urls = payload.get("videoUrls")
+            raw_video_reference = request.get("video_reference")
+            video_reference = None
+            if video_urls or raw_video_reference is not None:
+                expected_segment = None
+                if video_urls:
+                    plan = request.get("segment_plan")
+                    plan_segments = plan.get("segments") if isinstance(plan, Mapping) else None
+                    if not isinstance(plan_segments, list):
+                        raise ValueError("video reference requires the frozen segment plan")
+                    expected_segment = next(
+                        (
+                            item
+                            for item in plan_segments
+                            if isinstance(item, Mapping) and item.get("segment_id") == segment_id
+                        ),
+                        None,
+                    )
+                    if not isinstance(expected_segment, Mapping):
+                        raise ValueError("video reference segment is absent from the frozen segment plan")
+                video_reference = validator.validate_video_reference_binding(
+                    payload,
+                    raw_video_reference if isinstance(raw_video_reference, Mapping) else None,
+                    expected_segment=expected_segment,
+                )
             compiled_prompt = result.get("compiled_prompt")
             if compiled_prompt is not None and prompt != compiled_prompt:
                 raise ValueError("provider payload prompt differs from Invocation B output")
-            request_sha256 = validator.request_sha256(payload)
+            request_sha256 = validator.runninghub_standard_request_sha256(payload, fixed_b=True)
             for source_name, source in (("request", request), ("result", result)):
                 declared = source.get("request_sha256")
                 if declared is not None and declared != request_sha256:
@@ -697,7 +715,7 @@ class HighFidelityStageAdapter:
         except Exception as exc:
             raise ReplicationError(
                 "PROMPT_INTEGRITY_FAILED",
-                "Invocation B provider payload is not the canonical fixed-B request",
+                f"Invocation B provider payload is not the canonical fixed-B request: {exc}",
                 category="contract",
                 user_action_required=True,
                 details={"segment_id": segment_id, "reason": str(exc)},
@@ -712,6 +730,8 @@ class HighFidelityStageAdapter:
         if performance_line_contract_sha256 is not None:
             binding["performance_line_contract_sha256"] = performance_line_contract_sha256
             binding["source_content_timeline_sha256"] = source_content_timeline_sha256
+        if video_reference is not None:
+            binding["video_reference"] = video_reference
         return binding
 
     @staticmethod

@@ -188,10 +188,9 @@ def test_background_music_qa_import_persists_verified_final_delivery_receipt(tmp
     )
     uploaded_sha256 = frozen.inputs["background_music"]["sha256"]
     route = {
-        "provider_route": "seedance_audio_reference",
-        "provider_asset_type": "Audio",
-        "provider_content_type": "audio_url",
-        "provider_content_role": "reference_audio",
+        "provider_route": "runninghub_standard_audio_urls",
+        "provider_upload": "runninghub_binary_media_upload",
+        "provider_request_field": "audioUrls",
         "prompt_reference_tag": "@Audio1",
         "forbidden_provider_field": "reference_audios",
         "uploaded_audio_sha256": uploaded_sha256,
@@ -294,10 +293,9 @@ def test_background_music_qa_import_rejects_skipping_a_visible_singer(tmp_path):
     )
     uploaded_sha256 = frozen.inputs["background_music"]["sha256"]
     route = {
-        "provider_route": "seedance_audio_reference",
-        "provider_asset_type": "Audio",
-        "provider_content_type": "audio_url",
-        "provider_content_role": "reference_audio",
+        "provider_route": "runninghub_standard_audio_urls",
+        "provider_upload": "runninghub_binary_media_upload",
+        "provider_request_field": "audioUrls",
         "prompt_reference_tag": "@Audio1",
         "forbidden_provider_field": "reference_audios",
         "uploaded_audio_sha256": uploaded_sha256,
