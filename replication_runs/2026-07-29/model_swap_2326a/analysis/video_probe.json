@@ -1,0 +1,29 @@
+{
+  "contract": "reference-video-probe",
+  "contract_version": 1,
+  "file_name": "260424_2326A_SU_EN_9_16_lxj_LXJ_白女_室内_机车_golden_测_开头.mp4",
+  "duration_us": 18266667,
+  "source_width": 1080,
+  "source_height": 1920,
+  "encoded_width": 1080,
+  "encoded_height": 1920,
+  "rotation_deg": 0,
+  "fps_num": 30,
+  "fps_den": 1,
+  "frame_count": 548,
+  "video_codec": "hevc",
+  "audio_streams": [
+    {
+      "codec": "aac",
+      "sample_rate": 44100,
+      "channels": 2
+    }
+  ],
+  "warnings": [],
+  "scene_cut_candidates_us": [
+    800000,
+    2633333,
+    3800000
+  ],
+  "candidate_policy": "hints_only; inspect complete video and split on action/camera/audio/overlay phase changes"
+}

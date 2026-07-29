@@ -17,6 +17,16 @@ const TextEncodingSchema = z.object({
   replacement_glyphs_forbidden: z.literal(true),
 });
 
+const FastUiAcceptanceSchema = z.object({
+  mode: z.literal('basic_anchor_only'),
+  automatic_retry: z.literal(false),
+  anchor_frames: z.tuple([NonNegativeIntegerSchema, NonNegativeIntegerSchema]),
+  speed_profile: z.literal('fast_lightweight_v1').default('fast_lightweight_v1'),
+  visual_accuracy_target_percent: z.literal(90).default(90),
+  maximum_visual_deviation_percent: z.literal(20).default(20),
+  text_accuracy_required_percent: z.literal(100).default(100),
+});
+
 const SourceUiInteractionContractSchema = z
   .object({
     schema_version: z.literal('source-ui-interaction/v1'),
@@ -64,11 +74,7 @@ const SourceUiInteractionContractSchema = z
         z.literal('tap'),
       ]),
     }),
-    validation: z.object({
-      mode: z.literal('basic_anchor_only'),
-      automatic_retry: z.literal(false),
-      anchor_frames: z.tuple([NonNegativeIntegerSchema, NonNegativeIntegerSchema]),
-    }),
+    validation: FastUiAcceptanceSchema,
   })
   .superRefine((value, context) => {
     const [width, height] = value.display_viewport;

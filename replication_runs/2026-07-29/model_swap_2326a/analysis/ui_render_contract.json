@@ -1,0 +1,11 @@
+{
+  "schema_version": "usfr-ui-render-contract/v1",
+  "carrier": "deterministic source-pixel composite",
+  "source_interval": {"start_ms": 4000, "end_ms": 8533},
+  "render_mode": "source_pixels_with_deterministic_authorized_replacement",
+  "input_truth_card": "analysis/ui_truth_card.json",
+  "animation_policy": "Frame-lock all source UI state timing. Portrait replacement follows the original card geometry. Preview replacement is constrained to the original preview-person mask and must hand off into C13 with the same target identity.",
+  "pixel_invariants": ["source UI text and layout unchanged", "all non-authorized pixels unchanged", "portrait card retains source corner radius and placement", "generated-preview background and vehicle topology unchanged", "no original lead identity remains in authorized replacement areas"],
+  "validation_requirements": {"state_anchor_frames": [4100, 6250, 8250], "layout_match_percent": 100, "readable_copy_match_percent": 100, "outside_authorized_rect_changed_pixels": 0},
+  "handoff": {"outgoing_time_ms": 8533, "outgoing_state": "the target-character preview begins its source-style expansion toward full-frame performance", "next_region": "R03_motorcycle_performance"}
+}

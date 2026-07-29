@@ -1,0 +1,13 @@
+{
+  "schema_version": "usfr-source-ui-authorized-person-replacement/v1",
+  "route": "source_ui_keep",
+  "source_interval": {"start_ms": 4000, "end_ms": 8533, "display_size": [1080, 1920]},
+  "truth_provenance": {"source_ui_pixels": "reference_frames/evidence_022_04500.png, evidence_024_06250.png, evidence_026_08250.png", "target_character_sha256": "ef764c4ae31d096f98fe9acb029d15052c029e40578109f957cc85bfb2a76d91"},
+  "copy_and_layout_policy": "All readable source UI copy, controls, iconography, music artwork, progress values, layout, and timing are immutable source pixels. No readable UI text is generated or edited.",
+  "states": [
+    {"state_id": "U01_upload_controls", "time_range_ms": [4000, 4567], "person_replacements": [], "source_copy_policy": "preserve entire source UI frame"},
+    {"state_id": "U02_selected_assets_progress", "time_range_ms": [4567, 8033], "person_replacements": [{"replacement_id": "portrait_tile", "semantic_role": "selected performer photo", "source_rect_px": [62, 54, 422, 416], "corner_radius_px": 30, "target_role": "new_model_image"}], "source_copy_policy": "preserve all pixels outside the authorized portrait tile"},
+    {"state_id": "U03_generated_preview", "time_range_ms": [8033, 8533], "person_replacements": [{"replacement_id": "portrait_tile", "semantic_role": "selected performer photo", "source_rect_px": [62, 54, 422, 416], "corner_radius_px": 30, "target_role": "new_model_image"}, {"replacement_id": "preview_performer", "semantic_role": "performer inside lower generated preview", "source_rect_px": [62, 520, 956, 1298], "corner_radius_px": 28, "target_role": "new_model_image", "mask_requirement": "replace only person pixels; preserve preview background, vehicle, chains, lighting, and all interface chrome"}], "source_copy_policy": "preserve all source UI pixels outside the approved semantic person masks"}
+  ],
+  "forbidden_changes": ["new UI text", "changed icon", "changed music artwork", "changed progress timing", "changed layout", "replacement outside declared target-person regions", "source-person residue in declared target-person regions"]
+}

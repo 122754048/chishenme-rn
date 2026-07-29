@@ -26,6 +26,8 @@ def test_dense_flow_transfers_horizontal_drag(tmp_path):
     track = json.loads(result["track_path"].read_text(encoding="utf-8"))
     assert len(track["frames"]) == 12
     assert track["frames"][-1]["translation_x"] >= 35
+    assert track["capture_profile"] == "fast_lightweight_v1"
+    assert track["flow_max_dimension"] == 480
     assert probe_video(result["video_path"])["codec_name"] == "h264"
     assert int(probe_video(result["video_path"])["nb_read_frames"]) == 12
 

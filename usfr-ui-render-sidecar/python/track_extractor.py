@@ -13,6 +13,10 @@ import cv2
 import numpy as np
 
 
+FAST_CAPTURE_PROFILE = "fast_lightweight_v1"
+FAST_FLOW_MAX_DIMENSION = 480
+
+
 class ExtractorError(RuntimeError):
     pass
 
@@ -165,6 +169,47 @@ def _warp_roi(image: np.ndarray, flow: np.ndarray) -> np.ndarray:
     )
 
 
+def _fast_dense_flow(previous_gray: np.ndarray, current_gray: np.ndarray) -> np.ndarray:
+    """Estimate UI-only motion at a bounded working size, then restore pixel units."""
+    height, width = previous_gray.shape[:2]
+    longest_edge = max(width, height)
+    if longest_edge <= FAST_FLOW_MAX_DIMENSION:
+        return cv2.calcOpticalFlowFarneback(
+            previous_gray,
+            current_gray,
+            None,
+            pyr_scale=0.5,
+            levels=3,
+            winsize=15,
+            iterations=3,
+            poly_n=5,
+            poly_sigma=1.1,
+            flags=0,
+        )
+
+    scale = FAST_FLOW_MAX_DIMENSION / longest_edge
+    scaled_width = max(1, round(width * scale))
+    scaled_height = max(1, round(height * scale))
+    previous_small = cv2.resize(previous_gray, (scaled_width, scaled_height), interpolation=cv2.INTER_AREA)
+    current_small = cv2.resize(current_gray, (scaled_width, scaled_height), interpolation=cv2.INTER_AREA)
+    small_flow = cv2.calcOpticalFlowFarneback(
+        previous_small,
+        current_small,
+        None,
+        pyr_scale=0.5,
+        levels=3,
+        winsize=15,
+        iterations=3,
+        poly_n=5,
+        poly_sigma=1.1,
+        flags=0,
+    )
+    flow = cv2.resize(small_flow, (width, height), interpolation=cv2.INTER_LINEAR)
+    flow[..., 0] *= width / scaled_width
+    flow[..., 1] *= height / scaled_height
+    return flow
+
+
 def _encode_frames(frame_dir: Path, output: Path, fps_num: int, fps_den: int) -> None:
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg:
@@ -260,18 +305,7 @@ def extract_tracks(
         tap = False
         confidence = 1.0 if index == 0 else 0.0
         if index > 0:
-            flow = cv2.calcOpticalFlowFarneback(
-                previous_gray,
-                current_gray,
-                None,
-                pyr_scale=0.5,
-                levels=4,
-                winsize=21,
-                iterations=5,
-                poly_n=7,
-                poly_sigma=1.5,
-                flags=0,
-            )
+            flow = _fast_dense_flow(previous_gray, current_gray)
             dx, dy, step_scale, step_rotation, confidence = _incremental_affine(
                 previous_gray,
                 current_gray,
@@ -320,6 +354,8 @@ def extract_tracks(
     _encode_frames(frame_dir, video_path, facts["fps_num"], facts["fps_den"])
     track = {
         "schema_version": "usfr-ui-motion-track/v1",
+        "capture_profile": FAST_CAPTURE_PROFILE,
+        "flow_max_dimension": FAST_FLOW_MAX_DIMENSION,
         "source_video_sha256": _sha256(source_video),
         "target_image_sha256": _sha256(target_image),
         "fps": {"num": facts["fps_num"], "den": facts["fps_den"]},

@@ -1,0 +1,27 @@
+{
+  "contract": "usfr-local-run-manifest",
+  "contract_version": 1,
+  "run_id": "model_swap_2326a",
+  "created_at": "2026-07-29T00:00:00+08:00",
+  "requested_change": "Replace the lead female performer with the person in new_model_image while preserving source structure, timing, UI behavior, copy, and source audio.",
+  "inputs": {
+    "source_video": {
+      "sha256": "ddea35ca4945b5a28ca149bb7f7a0e70fc0bd935f964078c764f805083f6209b",
+      "duration_us": 18266667,
+      "display": "1080x1920@30"
+    },
+    "new_model_image": {
+      "sha256": "ef764c4ae31d096f98fe9acb029d15052c029e40578109f957cc85bfb2a76d91",
+      "role": "target_character_truth"
+    }
+  },
+  "fixed_slot_manifest": "analysis/input_slots.json",
+  "status": "storyboard_pending_user_approval",
+  "approved_reverse_script": "storyboards/reverse_script_v1.md",
+  "storyboard": {
+    "path": "storyboards/segment_01_v1.png",
+    "metadata": "storyboards/segment_01_v1.meta.json",
+    "scope_receipt": "analysis/timeline_scope_receipt.json",
+    "state": "awaiting_user_approval"
+  }
+}

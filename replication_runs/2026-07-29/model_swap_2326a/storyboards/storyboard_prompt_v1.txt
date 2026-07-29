@@ -1,0 +1,53 @@
+Use case: infographic-diagram
+Asset type: one polished 16:9 landscape cinematic director's pre-production storyboard / visual planning board for a 15.000-second vertical short-form creative-workflow commercial.
+
+Input roles:
+- Character reference: the supplied portrait is the exact identity reference for the single adult female lead: long light-blonde center-parted hair, light complexion, defined brows, natural glam makeup, and the same facial proportions. It controls identity and hair only. Do not copy its outdoor location, orange crop top, or denim.
+- Product/App/service/brand reference: none. Do not invent any product, application, brand, logo, packaging, UI wording, or claim.
+- Reference-video role: reproduce only the approved pacing, shot functions, blocking, camera progression, set topology, and lighting logic described below. Do not reproduce any source identity, UI pixels, or terminal graphic.
+
+Primary request:
+Create one professional landscape 16:9 director's production board titled "TARGET CHARACTER REPLACEMENT — 15.0S". It is a visual plan for a 9:16 final video, not the final video. The board must cover only the fourteen ordered generated-scene cuts C01-C08 and C13-C18. Do not make any card for C09-C12. Use a clean editorial grid with a shared top creative direction bar, character and wardrobe reference area, environment/camera movement plan, fourteen numbered Cut cards in global order, and concise bottom strips for lighting, palette, audio, and cinematography. The cards are model-generated scene visualizations, never copied source frames and never a contact sheet.
+
+Character and continuity locks:
+- One adult woman only: use the supplied blonde reference identity consistently in every card. No second woman, no face morph, no old performer residue.
+- In C01-C08 she wears a fitted white tailored suit and stands center-right in a green-screen studio. A male camera operator, tripod, and camera are on the left; never turn him into the woman.
+- In C13-C18 the same woman wears a black stage jacket and dark performance outfit, seated on a vintage motorcycle in an orange industrial set. Her raised right hand holds an upper-right hanging chain. Keep the motorcycle, chains, circular orange practical light, haze, and her body blocking consistent. Do not use the orange outdoor clothing from the reference photo.
+- Keep all text areas inside scene cards empty. A separate post layer handles every hook, X graphic, and lower CTA; do not render readable UI or advertising copy in any scene.
+
+Environment and cinematic plan:
+- Opening: real behind-the-scenes green cyc studio, floor marks, practical softboxes, metal truss, static wide vertical composition translated into director-board cards. Palette: green, white, black, purple-accent placeholder blocks, then a red graphic accent. Camera is locked wide; movement comes from the on-set operator and graphics.
+- Handoff: abstract radial zoom from a monochrome studio to a dark, non-readable interface boundary. The interface itself is deliberately absent from the board.
+- Performance: warm orange industrial music-video space, vintage motorcycle, chains descending from above, circular orange ring light behind the lead, gentle haze, dark metal, slow move from medium-wide to closer medium and back to medium. Palette: amber, burnt orange, black, steel.
+
+Ordered Cut cards — show exactly these fourteen cards, each with only a large crisp number/time label and one short action tag:
+1. C01 0.000-0.267 — LOCKED STUDIO: wide green-screen studio, male operator left at tripod, blonde target lead center-right in white suit, neutral poised stance.
+2. C02 0.267-0.733 — STUDIO HOLD: same exact placement; leave a clean lower composition zone for later overlay.
+3. C03 0.733-1.000 — STUDIO HOLD: same composition, operator makes a small camera adjustment, target lead remains poised.
+4. C04 1.000-1.467 — STUDIO HOLD: same studio geometry and target identity, no readable text.
+5. C05 1.467-2.533 — SUBTLE GESTURE: operator gestures by camera while target lead makes a contained hand-and-torso shift, fully clothed.
+6. C06 2.533-2.667 — CLEAN PLATE: same studio with clear lower field, both subjects hold position.
+7. C07 2.667-3.600 — REJECTION BEAT: same studio in monochrome with a bold non-text red circular X-shaped graphic cue; target lead and male operator remain behind it.
+8. C08 3.600-4.000 — RADIAL TRANSITION: monochrome studio dissolves into a fast radial zoom toward an abstract dark interface boundary; no readable interface.
+9. C13 8.533-8.800 — PREVIEW EXPANSION: the target woman's orange performance preview enlarges into a full-frame motorcycle scene; do not draw a UI shell.
+10. C14 8.800-10.000 — CHAIN POSE: medium-wide, blonde target woman seated on motorcycle, black jacket, raised right hand grips upper-right chain, orange ring behind.
+11. C15 10.000-11.800 — SLOW PUSH: camera moves closer; same chain contact, subtle head angle and left arm near handlebar.
+12. C16 11.800-13.600 — CLOSE MEDIUM: face and upper torso more prominent, warm orange haze, chain hand remains anatomically correct, motorcycle reads clearly.
+13. C17 13.600-14.967 — PERFORMANCE RETURN: medium framing restores more motorcycle and bent-leg seated pose; target face stays consistent.
+14. C18 14.967-15.000 — FINAL ACTIVE FRAME: stable medium motorcycle tableau, target woman maintains raised chain contact, end cleanly on the active scene.
+
+Board layout requirements:
+- Top bar: "TARGET CHARACTER REPLACEMENT — 15.0S / 14 GENERATED CUTS / FINAL 9:16" with large crisp sans-serif lettering.
+- Character reference area: one tasteful face close-up, blonde hair detail, and two wardrobe swatches labelled only "WHITE SUIT" and "BLACK STAGE".
+- Environment plan: small studio and industrial motorcycle atmosphere swatches with directional arrows, not copied photos.
+- Fourteen Cut cards: strict global order, distinct frames that match the specified camera/action, no duplicate card, no missing card, no added shot.
+- Bottom notes use only: "SOURCE AUDIO", "LOCKED WIDE", "RADIAL ZOOM", "SLOW PUSH", "AMBER HAZE", "IDENTITY LOCK".
+
+Audio / tone note:
+Source narration is retained in the opening and source music/performance bed is retained later. No new lyrics, dialogue, subtitle text, UI text, or sound claim is needed in this board.
+
+Brand and text safety:
+No brand names, fake logos, trademark text, UI wording, packaging claims, shopping banners, or source brand pixels. Use only the listed large short labels. If a label cannot be rendered cleanly, leave it blank rather than generating pseudo-text.
+
+Avoid:
+garbled text, pseudo-writing, dense paragraphs, readable UI, subtitle text inside scenes, watermark, extra storyboard panels, reordered shots, duplicate cards, identity drift, changed face, extra people, malformed hands, extra fingers, changed motorcycle, missing hanging chain, broken chain contact, changed wardrobe, orange outdoor clothing, unrelated props, anime, illustration, plastic skin, hard-sell poster, terminal graphic.

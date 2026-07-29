@@ -1,0 +1,44 @@
+{
+  "schema_version": "usfr-selling-point-mapping/v1",
+  "mappings": [
+    {
+      "source_claim": "The opening narration contrasts conventional music-clip shooting with a quicker creation flow.",
+      "status": "reinterpreted",
+      "feature": "Source-preserved creative-workflow demonstration",
+      "mechanism": null,
+      "benefit": "A concise before-versus-after story structure, without asserting a new product capability.",
+      "proof": [{"kind": "source voiceover and deterministic hook overlay", "time_range": "0.000-4.000s", "ref": "source_dynamics_analysis:C01-C08"}],
+      "cta": "No new CTA is authored in this generated region.",
+      "route": "REPLACE",
+      "confidence": 0.96,
+      "criticality": "high",
+      "target_evidence": "No product slot or target App evidence supplied; only target-person identity is replaced."
+    },
+    {
+      "source_claim": "The source interface visually demonstrates a photo and song input progressing to a generated preview.",
+      "status": "supported",
+      "feature": "Source-preserved UI interaction and copy",
+      "mechanism": "No new mechanism is stated; original UI pixels and timing remain intact.",
+      "benefit": "The existing visual proof remains readable while the depicted person is aligned to the target character.",
+      "proof": [{"kind": "source UI pixels with authorized person-region replacement", "time_range": "4.000-8.533s", "ref": "ui_truth_card.json"}],
+      "cta": "None in the UI lane.",
+      "route": "COMPOSITE",
+      "confidence": 0.98,
+      "criticality": "high",
+      "target_evidence": "new_model_image SHA-256 ef764c4ae31d096f98fe9acb029d15052c029e40578109f957cc85bfb2a76d91"
+    },
+    {
+      "source_claim": "A polished music-performance result resolves the creation-story promise.",
+      "status": "reinterpreted",
+      "feature": "Reference-character performance in the source scene topology",
+      "mechanism": null,
+      "benefit": "Retains the source emotional payoff and performance reveal without adding a result guarantee.",
+      "proof": [{"kind": "motorcycle performance scene", "time_range": "8.533-15.000s", "ref": "source_dynamics_analysis:C13-C18"}],
+      "cta": "Keep the existing lower CTA only through deterministic source-geometry overlay rendering.",
+      "route": "REPLACE",
+      "confidence": 0.93,
+      "criticality": "high",
+      "target_evidence": "new_model_image SHA-256 ef764c4ae31d096f98fe9acb029d15052c029e40578109f957cc85bfb2a76d91"
+    }
+  ]
+}

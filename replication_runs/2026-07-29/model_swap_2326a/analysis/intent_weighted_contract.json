@@ -1,0 +1,28 @@
+{
+  "primary_intent": "Stop the scroll by contrasting a conventional studio shoot with a fast photo-and-song creation flow, then resolve the promise in a stylized motorcycle performance.",
+  "audience_and_platform": "Short-form vertical-video viewers interested in a fast music-video creation workflow.",
+  "evidence": [
+    {"time_range": "0.000-3.920s", "observation": "Green-screen studio, old-workflow hook, rejection X, and narration establish the problem contrast.", "supports": ["attention_hook", "commercial_goal", "pacing_and_format"]},
+    {"time_range": "4.000-8.533s", "observation": "Source-preserved UI shows photo and song inputs, progress, and a performance preview.", "supports": ["product_proof", "commercial_goal"]},
+    {"time_range": "8.533-15.000s", "observation": "The preview expands into a polished orange motorcycle performance with a lower CTA treatment.", "supports": ["emotional_promise", "character_or_creator_appeal", "cta_conversion"]}
+  ],
+  "weights": {
+    "commercial_goal": 22,
+    "attention_hook": 20,
+    "character_or_creator_appeal": 12,
+    "product_proof": 18,
+    "emotional_promise": 6,
+    "social_or_trust_signal": 4,
+    "cta_conversion": 8,
+    "pacing_and_format": 7,
+    "platform_compliance": 3
+  },
+  "cut_allocation": [
+    {"cut": "C01-C08", "intent": "attention_hook + commercial_goal + pacing_and_format", "weight": 49, "script_instruction": "Preserve the locked studio composition, narrator timing, conventional-production contrast, rejection cue, and rapid radial transition. Replace only the adult lead identity."},
+    {"cut": "C09-C12", "intent": "product_proof + commercial_goal", "weight": 40, "script_instruction": "Keep the source UI as deterministic pixels. Change only the approved portrait and performance-person regions; do not author claims, controls, or new UI copy."},
+    {"cut": "C13-C18", "intent": "character_or_creator_appeal + emotional_promise + cta_conversion", "weight": 26, "script_instruction": "Keep the adult performer fully clothed in the source black stage wardrobe, retain the motorcycle and chain action, and preserve the CTA only as a deterministic overlay."}
+  ],
+  "compliance_boundary": ["adult subject only", "fully clothed source-style wardrobe", "non-explicit performance framing", "no nudity", "no intimate-area focus", "no sexual acts", "no unsupported product claim", "no source terminal-brand assets in generation"],
+  "uncertainties": ["The source music bed after narration has no reliable lyric transcription and is preserved as source audio rather than regenerated.", "No independent target App evidence was supplied, so readable source UI remains source-preserve pixels and is not re-authored as a new target claim."],
+  "weight_total": 100
+}

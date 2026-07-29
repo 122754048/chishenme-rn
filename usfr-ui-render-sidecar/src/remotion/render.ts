@@ -10,6 +10,9 @@ export type {UiReplicaProps} from './UiReplica';
 
 let serveUrlPromise: Promise<string> | undefined;
 
+// A fixed small worker count keeps CPU-only renders responsive without oversubscribing the host.
+export const FAST_RENDER_CONCURRENCY = 2;
+
 const entryPoint = fileURLToPath(new URL('./index.tsx', import.meta.url));
 
 const bundledServeUrl = (): Promise<string> => {
@@ -57,7 +60,7 @@ export const renderReplica = async (props: UiReplicaProps, outputPath: string) =
     inputProps: props,
     browserExecutable: await browserExecutable(),
     chromiumOptions: {gl: 'swiftshader'},
-    concurrency: 1,
+    concurrency: FAST_RENDER_CONCURRENCY,
     offthreadVideoThreads: 1,
     logLevel: 'warn',
   });

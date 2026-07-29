@@ -1,0 +1,42 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082410899922472961",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\model_swap_2326a\\storyboards\\storyboard_prompt_v1.txt",
+  "timeline_scope_receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\model_swap_2326a\\analysis\\timeline_scope_receipt.json",
+  "timeline_scope_receipt_sha256": "362da976551ac3af64ae5993174ae31ed9ccec568775b2a9ee0a361a833da893",
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C13",
+    "C14",
+    "C15",
+    "C16",
+    "C17",
+    "C18"
+  ],
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Downloads\\ComfyUI_00003_tosas_1754979787.png"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\model_swap_2326a\\storyboards\\segment_01_v1.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 86.469,
+  "revision_reason": "Initial approved-script director board",
+  "revision_number": 1,
+  "artifact_stem": "segment_01_v1",
+  "cut_id": "segment_01_v1",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

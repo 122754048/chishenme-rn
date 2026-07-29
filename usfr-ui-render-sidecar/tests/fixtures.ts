@@ -45,6 +45,10 @@ export const sourceInteractionContract = (
     mode: 'basic_anchor_only' as const,
     automatic_retry: false as const,
     anchor_frames: [0, frames - 1] as [number, number],
+    speed_profile: 'fast_lightweight_v1' as const,
+    visual_accuracy_target_percent: 90 as const,
+    maximum_visual_deviation_percent: 20 as const,
+    text_accuracy_required_percent: 100 as const,
   },
   };
 };
