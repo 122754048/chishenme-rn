@@ -22,7 +22,8 @@ const hashFiles = async (root: string, relativePaths: readonly string[]): Promis
   for (const relativePath of relativePaths) {
     hash.update(relativePath, 'utf8');
     hash.update('\0');
-    hash.update(await readFile(path.join(root, relativePath)));
+    const text = await readFile(path.join(root, relativePath), 'utf8');
+    hash.update(text.replace(/\r\n/g, '\n'), 'utf8');
     hash.update('\0');
   }
   return hash.digest('hex');
