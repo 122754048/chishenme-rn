@@ -20,8 +20,6 @@ validation_runs/
 video_replication_runs/
 outputs/
 exports/
-backend/app/runtime_uploads/
-usfr-local-console/data/
 *.log
 
 # Python test/build caches in the canonical package and local services
