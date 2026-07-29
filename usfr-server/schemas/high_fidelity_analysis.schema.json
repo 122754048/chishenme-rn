@@ -1,0 +1,521 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codex.local/universal-source-fidelity/high_fidelity_analysis.schema.json",
+  "title": "High Fidelity Hybrid Analysis Sidecar",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "contract_version",
+    "profile",
+    "parent_digests",
+    "legacy_intent_weights",
+    "source_intent_graph",
+    "target_value_graph",
+    "migration_edges",
+    "claim_atoms",
+    "affordance_ledger",
+    "layer_ledger",
+    "route_exclusions"
+  ],
+  "properties": {
+    "contract": {"const": "high-fidelity-analysis"},
+    "contract_version": {"const": 1},
+    "profile": {"const": "high_fidelity_hybrid_v1"},
+    "parent_digests": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"type": "string", "minLength": 1},
+      "additionalProperties": {"$ref": "#/$defs/sha256"}
+    },
+    "legacy_intent_weights": {"$ref": "#/$defs/legacyWeights"},
+    "source_intent_graph": {"$ref": "#/$defs/sourceIntentGraph"},
+    "target_value_graph": {"$ref": "#/$defs/targetValueGraph"},
+    "migration_edges": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/migrationEdge"}
+    },
+    "claim_atoms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/claimAtom"}
+    },
+    "affordance_ledger": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/affordance"}
+    },
+    "layer_ledger": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/cutLayerLedger"}
+    },
+    "route_exclusions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/routeExclusion"}
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "criticality": {"enum": ["H", "M", "L"]},
+    "provenance": {"enum": ["observed", "inferred", "planned"]},
+    "route": {
+      "enum": ["KEEP", "REPLACE", "COMPOSITE", "REMOVE", "REINTERPRET", "OPAQUE_SPLICE"]
+    },
+    "carrier": {
+      "enum": [
+        "source_interval",
+        "opaque_media",
+        "deterministic_composite",
+        "seedance_generation",
+        "audio_mix",
+        "route_excluded"
+      ]
+    },
+    "fidelityLevel": {"type": "integer", "enum": [0, 1, 2]},
+    "timeRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_ms", "end_ms"],
+      "properties": {
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 1}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "origin",
+        "object_key",
+        "kind",
+        "start_ms",
+        "end_ms",
+        "frame",
+        "method",
+        "observed_inferred_planned",
+        "confidence"
+      ],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/nonEmptyString"},
+        "origin": {"enum": ["source", "slot", "official", "approved"]},
+        "object_key": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z]:[\\\\/])(?![\\\\/]).+"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "kind": {
+          "enum": ["frame", "audio", "OCR", "ASR", "screenshot", "UI_state", "operation", "result"]
+        },
+        "start_ms": {"type": "integer", "minimum": 0},
+        "end_ms": {"type": "integer", "minimum": 0},
+        "frame": {"type": ["integer", "null"], "minimum": 0},
+        "method": {"$ref": "#/$defs/nonEmptyString"},
+        "observed_inferred_planned": {"$ref": "#/$defs/provenance"},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "state_id": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "factorBase": {
+      "type": "object",
+      "required": [
+        "evidence",
+        "observed_inferred_planned",
+        "confidence",
+        "uncertainty",
+        "criticality",
+        "blocker_threshold"
+      ],
+      "properties": {
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "observed_inferred_planned": {"$ref": "#/$defs/provenance"},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "uncertainty": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "criticality": {"$ref": "#/$defs/criticality"},
+        "blocker_threshold": {"$ref": "#/$defs/confidence"}
+      }
+    },
+    "legacyWeights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commercial_goal",
+        "attention_hook",
+        "character_or_creator_appeal",
+        "product_proof",
+        "emotional_promise",
+        "social_or_trust_signal",
+        "cta_conversion",
+        "pacing_and_format",
+        "platform_compliance"
+      ],
+      "properties": {
+        "commercial_goal": {"type": "integer", "minimum": 0},
+        "attention_hook": {"type": "integer", "minimum": 0},
+        "character_or_creator_appeal": {"type": "integer", "minimum": 0},
+        "product_proof": {"type": "integer", "minimum": 0},
+        "emotional_promise": {"type": "integer", "minimum": 0},
+        "social_or_trust_signal": {"type": "integer", "minimum": 0},
+        "cta_conversion": {"type": "integer", "minimum": 0},
+        "pacing_and_format": {"type": "integer", "minimum": 0},
+        "platform_compliance": {"type": "integer", "minimum": 0}
+      }
+    },
+    "legacyProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["legacy_intent_keys", "weight_share", "cut_allocation", "projection_reason"],
+      "properties": {
+        "legacy_intent_keys": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "commercial_goal",
+              "attention_hook",
+              "character_or_creator_appeal",
+              "product_proof",
+              "emotional_promise",
+              "social_or_trust_signal",
+              "cta_conversion",
+              "pacing_and_format",
+              "platform_compliance"
+            ]
+          }
+        },
+        "weight_share": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "cut_allocation": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "projection_reason": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "intentNode": {
+      "allOf": [
+        {"$ref": "#/$defs/factorBase"},
+        {
+          "type": "object",
+          "required": [
+            "node_id",
+            "stage",
+            "status",
+            "cut_ids",
+            "time_ranges",
+            "audience_state_before",
+            "audience_state_after",
+            "commercial_job",
+            "presentation_archetype",
+            "attention_mechanism",
+            "proof_mechanism",
+            "emotional_identity_function",
+            "trust_objection_function",
+            "cta_relationship",
+            "legacy_projection"
+          ],
+          "properties": {
+            "node_id": {"$ref": "#/$defs/nonEmptyString"},
+            "stage": {"enum": ["Attention", "Curiosity", "Understanding", "Belief", "Desire", "Action", "Loop"]},
+            "status": {"enum": ["active", "zero"]},
+            "cut_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "time_ranges": {"type": "array", "items": {"$ref": "#/$defs/timeRange"}},
+            "audience_state_before": {"$ref": "#/$defs/nonEmptyString"},
+            "audience_state_after": {"$ref": "#/$defs/nonEmptyString"},
+            "commercial_job": {"$ref": "#/$defs/nonEmptyString"},
+            "presentation_archetype": {"$ref": "#/$defs/nonEmptyString"},
+            "attention_mechanism": {"$ref": "#/$defs/nonEmptyString"},
+            "proof_mechanism": {"type": ["string", "null"]},
+            "emotional_identity_function": {"$ref": "#/$defs/nonEmptyString"},
+            "trust_objection_function": {"$ref": "#/$defs/nonEmptyString"},
+            "cta_relationship": {"$ref": "#/$defs/nonEmptyString"},
+            "legacy_projection": {"$ref": "#/$defs/legacyProjection"}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "sourceIntentGraph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "nodes"],
+      "properties": {
+        "sequence": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "prefixItems": [
+            {"const": "Attention"},
+            {"const": "Curiosity"},
+            {"const": "Understanding"},
+            {"const": "Belief"},
+            {"const": "Desire"},
+            {"const": "Action"},
+            {"const": "Loop"}
+          ],
+          "items": false
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {"$ref": "#/$defs/intentNode"}
+        }
+      }
+    },
+    "targetValueNode": {
+      "allOf": [
+        {"$ref": "#/$defs/factorBase"},
+        {
+          "type": "object",
+          "required": [
+            "node_id",
+            "target_truth_refs",
+            "feature",
+            "mechanism",
+            "benefit",
+            "proof",
+            "audience_relevance",
+            "objection_resolved",
+            "trust_signal",
+            "cta"
+          ],
+          "properties": {
+            "node_id": {"$ref": "#/$defs/nonEmptyString"},
+            "target_truth_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "feature": {"$ref": "#/$defs/nonEmptyString"},
+            "mechanism": {"type": ["string", "null"]},
+            "benefit": {"$ref": "#/$defs/nonEmptyString"},
+            "proof": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "audience_relevance": {"$ref": "#/$defs/nonEmptyString"},
+            "objection_resolved": {"$ref": "#/$defs/nonEmptyString"},
+            "trust_signal": {"$ref": "#/$defs/nonEmptyString"},
+            "cta": {"$ref": "#/$defs/nonEmptyString"}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "targetValueGraph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nodes"],
+      "properties": {
+        "nodes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/targetValueNode"}}
+      }
+    },
+    "migrationEdge": {
+      "allOf": [
+        {"$ref": "#/$defs/factorBase"},
+        {
+          "type": "object",
+          "required": [
+            "edge_id",
+            "source_node_id",
+            "target_node_id",
+            "mapping",
+            "invariant_ids",
+            "invariant_summary",
+            "changed_form",
+            "proof_equivalence",
+            "fidelity_level",
+            "route"
+          ],
+          "properties": {
+            "edge_id": {"$ref": "#/$defs/nonEmptyString"},
+            "source_node_id": {"$ref": "#/$defs/nonEmptyString"},
+            "target_node_id": {"type": ["string", "null"]},
+            "mapping": {"enum": ["exact", "functional", "intent_only", "unsupported"]},
+            "invariant_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "invariant_summary": {"$ref": "#/$defs/nonEmptyString"},
+            "changed_form": {"type": ["string", "null"]},
+            "proof_equivalence": {"enum": ["exact", "analogous", "none"]},
+            "fidelity_level": {"$ref": "#/$defs/fidelityLevel"},
+            "route": {"$ref": "#/$defs/route"}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "sourceExpression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cut_ids", "time_range", "modalities"],
+      "properties": {
+        "cut_ids": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "time_range": {"$ref": "#/$defs/timeRange"},
+        "modalities": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}}
+      }
+    },
+    "claimAtom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim_id",
+        "claim_class",
+        "claim_risk_class",
+        "source_expression",
+        "source_evidence",
+        "target_truth_refs",
+        "target_evidence",
+        "support_status",
+        "analysis_disposition",
+        "feature",
+        "mechanism",
+        "benefit",
+        "proof",
+        "audience_relevance",
+        "objection_resolved",
+        "trust_signal",
+        "cta",
+        "proof_substitution",
+        "route",
+        "route_by_layer",
+        "carrier",
+        "observed_inferred_planned",
+        "confidence",
+        "uncertainty",
+        "criticality",
+        "blocker_threshold",
+        "risk_flags"
+      ],
+      "properties": {
+        "claim_id": {"$ref": "#/$defs/nonEmptyString"},
+        "claim_class": {"enum": ["feature", "mechanism", "benefit", "result", "comparison", "social_proof", "identity", "offer", "urgency"]},
+        "claim_risk_class": {"enum": ["ordinary", "comparative", "guarantee", "regulated_health", "financial", "safety", "children", "adult"]},
+        "source_expression": {"$ref": "#/$defs/sourceExpression"},
+        "source_evidence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence"}},
+        "target_truth_refs": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "target_evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "support_status": {"enum": ["supported", "unsupported", "reinterpreted"]},
+        "analysis_disposition": {"enum": ["exact", "partial", "prohibited"]},
+        "feature": {"type": "string"},
+        "mechanism": {"type": ["string", "null"]},
+        "benefit": {"type": "string"},
+        "proof": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "audience_relevance": {"type": "string"},
+        "objection_resolved": {"type": "string"},
+        "trust_signal": {"type": "string"},
+        "cta": {"type": "string"},
+        "proof_substitution": {"enum": ["exact", "analogous", "none"]},
+        "route": {"$ref": "#/$defs/route"},
+        "route_by_layer": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/route"}},
+        "carrier": {"$ref": "#/$defs/carrier"},
+        "observed_inferred_planned": {"$ref": "#/$defs/provenance"},
+        "confidence": {"$ref": "#/$defs/confidence"},
+        "uncertainty": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "criticality": {"$ref": "#/$defs/criticality"},
+        "blocker_threshold": {"$ref": "#/$defs/confidence"},
+        "risk_flags": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}}
+      }
+    },
+    "targetState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state_id", "evidence_refs"],
+      "properties": {
+        "state_id": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}}
+      }
+    },
+    "affordance": {
+      "allOf": [
+        {"$ref": "#/$defs/factorBase"},
+        {
+          "type": "object",
+          "required": [
+            "affordance_id",
+            "target_kind",
+            "source_primitive_id",
+            "source_commercial_function",
+            "source_state_sequence",
+            "target_truth_refs",
+            "target_affordance",
+            "target_state_sequence",
+            "target_proof_event",
+            "proof_event_ids",
+            "audio_event_ids",
+            "physical_feasibility",
+            "temporal_feasibility",
+            "evidence_feasibility",
+            "match_level",
+            "fidelity_level",
+            "route",
+            "fallback_route",
+            "carrier",
+            "match_reason"
+          ],
+          "properties": {
+            "affordance_id": {"$ref": "#/$defs/nonEmptyString"},
+            "target_kind": {"enum": ["physical_product", "app", "service", "brand", "creator", "other"]},
+            "source_primitive_id": {"$ref": "#/$defs/nonEmptyString"},
+            "source_commercial_function": {"$ref": "#/$defs/nonEmptyString"},
+            "source_state_sequence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "target_truth_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "target_affordance": {"$ref": "#/$defs/nonEmptyString"},
+            "target_state_sequence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/targetState"}},
+            "target_proof_event": {"$ref": "#/$defs/nonEmptyString"},
+            "proof_event_ids": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "audio_event_ids": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "physical_feasibility": {"enum": ["feasible", "infeasible", "unknown"]},
+            "temporal_feasibility": {"enum": ["feasible", "infeasible", "unknown"]},
+            "evidence_feasibility": {"enum": ["feasible", "infeasible", "unknown"]},
+            "match_level": {"enum": ["exact", "functional", "intent_only", "unsupported"]},
+            "fidelity_level": {"$ref": "#/$defs/fidelityLevel"},
+            "route": {"$ref": "#/$defs/route"},
+            "fallback_route": {"$ref": "#/$defs/route"},
+            "carrier": {"$ref": "#/$defs/carrier"},
+            "match_reason": {"$ref": "#/$defs/nonEmptyString"}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "layer": {
+      "allOf": [
+        {"$ref": "#/$defs/factorBase"},
+        {
+          "type": "object",
+          "required": ["factor_id", "layer_id", "route", "fidelity_level", "carrier", "changes_output"],
+          "properties": {
+            "factor_id": {"$ref": "#/$defs/nonEmptyString"},
+            "layer_id": {"$ref": "#/$defs/nonEmptyString"},
+            "route": {"$ref": "#/$defs/route"},
+            "fidelity_level": {"$ref": "#/$defs/fidelityLevel"},
+            "carrier": {"$ref": "#/$defs/carrier"},
+            "changes_output": {"type": "boolean"}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "cutLayerLedger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cut_id", "layers"],
+      "properties": {
+        "cut_id": {"$ref": "#/$defs/nonEmptyString"},
+        "layers": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/layer"}}
+      }
+    },
+    "routeExclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["region_id", "reason"],
+      "properties": {
+        "region_id": {"$ref": "#/$defs/nonEmptyString"},
+        "reason": {"$ref": "#/$defs/nonEmptyString"},
+        "technical_evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}}
+      }
+    }
+  }
+}

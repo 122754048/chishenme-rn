@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codex.local/universal-source-fidelity/upload_completion.schema.json",
+  "title": "Immutable object-store upload completion",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["object_key", "sha256", "size_bytes", "content_type", "status"],
+  "properties": {
+    "object_key": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,511}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+    "size_bytes": {"type": "integer", "minimum": 0},
+    "content_type": {"type": "string"},
+    "duration_seconds": {"type": "number", "minimum": 0},
+    "etag": {"type": "string"},
+    "status": {"const": "completed"}
+  }
+}

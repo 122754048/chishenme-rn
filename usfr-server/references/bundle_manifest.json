@@ -1,0 +1,585 @@
+{
+  "snapshot_date": "2026-07-21",
+  "runtime_files": [
+    {
+      "path": "scripts/bind_input_slots.py",
+      "role": "fixed seven-slot intake binder and admission gate"
+    },
+    {
+      "path": "scripts/high_fidelity_profile.py",
+      "role": "internal high-fidelity profile snapshot and dependency pin validator"
+    },
+    {
+      "path": "scripts/high_fidelity_analysis.py",
+      "role": "deterministic high-fidelity intent, claim, affordance, and layer validation/projection"
+    },
+    {
+      "path": "scripts/line_contract.py",
+      "role": "machine-checkable exact voice-line timing, delivery, Foley, and silence contract"
+    },
+    {
+      "path": "scripts/seedance_prescript.py",
+      "role": "non-provider Seedance-20 Invocation A executability and fidelity-budget sidecar"
+    },
+    {
+      "path": "scripts/seedance_prompt_compiler.py",
+      "role": "Invocation B Seedance-20 prompt compiler, exact-line parity, and route-leakage validator"
+    },
+    {
+      "path": "scripts/skill_router.py",
+      "role": "deterministic packaged/injected Skill routing and deployability contract"
+    },
+    {
+      "path": "scripts/build_overlay_render_mapping.py",
+      "role": "server-safe CLI for deterministic Stage-4 target overlay mapping"
+    },
+    {
+      "path": "scripts/hybrid_compositor.py",
+      "role": "layer-level deterministic hybrid composition manifest and route validation"
+    },
+    {
+      "path": "scripts/high_fidelity_qc.py",
+      "role": "weighted high-fidelity visual, commercial, audio, and technical QC extension with same-Run source/final-output SHA binding and production evaluator receipts"
+    },
+    {
+      "path": "scripts/production_timing.py",
+      "role": "durable active-time, provider-time, approval-wait, and Invocation A timing ledger"
+    },
+    {
+      "path": "scripts/run_high_fidelity_shadow.py",
+      "role": "no-provider feasibility shadow matrix runner"
+    },
+    {
+      "path": "scripts/compare_high_fidelity_runs.py",
+      "role": "deterministic baseline versus hybrid fidelity and timing comparison"
+    },
+    {
+      "path": "scripts/validation_catalog.py",
+      "role": "strict 36-case catalog validator and impacted-tags plus fixed-smoke incremental selector"
+    },
+    {
+      "path": "scripts/verify_lightweight_bundle.py",
+      "role": "release-time rejection of legacy product control planes, workstation paths, and generated caches"
+    },
+    {
+      "path": "references/fixed-input-slot-contract.md",
+      "role": "fixed input, default route, and source-preserve contract"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/references/timeline-slice-contract.md",
+      "role": "App/UI region routing, opaque media assembly, and terminal tail duration contract"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/references/fukeGem.md",
+      "role": "universal Route 2 reverse-storyboard contract and target migration rules"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/scripts/config.py",
+      "role": "worker-injected provider configuration loader"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/scripts/concat_videos.py",
+      "role": "deterministic FFmpeg concatenation adapter"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/scripts/media_quality.py",
+      "role": "media stream probe and quality validation dependency"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/scripts/segment_plan.py",
+      "role": "generated-region duration and segment boundary planner"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/scripts/runninghub_image2.py",
+      "role": "RunningHub storyboard image adapter"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/scripts/runninghub_seedance_submit.py",
+      "role": "RunningHub Standard Model Seedance video adapter"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/scripts/timeline_splice.py",
+      "role": "opaque/source/generated timeline splice, tail-duration authority, and final-output-bound transition receipts"
+    },
+    {
+      "path": "bundled-skills/analyze-reference-video-dynamics/scripts/probe_video.py",
+      "role": "deterministic source media probe dependency"
+    },
+    {
+      "path": "bundled-skills/analyze-reference-video-dynamics/scripts/validate_dynamics.py",
+      "role": "base dynamics contract validator"
+    },
+    {
+      "path": "bundled-skills/analyze-reference-video-dynamics/scripts/validate_dynamics_quality.py",
+      "role": "dynamics quality validator and comparison dependency"
+    },
+    {
+      "path": "bundled-skills/analyze-reference-video-dynamics/scripts/validate_high_fidelity_extension.py",
+      "role": "additive high-fidelity dynamics extension validator"
+    },
+    {
+      "path": "bundled-skills/analyze-reference-video-dynamics/scripts/compare_analyzer_results.py",
+      "role": "approved analyzer regression comparison dependency"
+    },
+    {
+      "path": "bundled-skills/analyze-reference-video-dynamics/scripts/adaptive_evidence_plan.py",
+      "role": "single-pass adaptive source-evidence plan and validation dependency"
+    },
+    {
+      "path": "bundled-skills/parse-app-store-evidence/scripts/parse_app_store.py",
+      "role": "official Apple/Google App Store evidence parser"
+    },
+    {
+      "path": "bundled-skills/replicate-source-ui-overlays/scripts/overlay_frame_plan.py",
+      "role": "timed overlay geometry frame-plan dependency"
+    },
+    {
+      "path": "bundled-skills/replicate-source-ui-overlays/scripts/validate_overlay_contract.py",
+      "role": "overlay contract validator dependency"
+    },
+    {
+      "path": "server/__init__.py",
+      "role": "server package entry point"
+    },
+    {
+      "path": "server/README.md",
+      "role": "server package integration guide"
+    },
+    {
+      "path": "server/errors.py",
+      "role": "typed server error envelope"
+    },
+    {
+      "path": "server/job_models.py",
+      "role": "temporary job, stage, artifact, work-message, and Provider-attempt records"
+    },
+    {
+      "path": "server/job_store.py",
+      "role": "ephemeral JobStore protocol and compare-and-set boundary"
+    },
+    {
+      "path": "server/redis_job_store.py",
+      "role": "Redis-backed job, revision, artifact, stage, Provider, and recovery authority"
+    },
+    {
+      "path": "server/redis_streams.py",
+      "role": "Redis Streams work queue with dedupe, reclaim, scheduling, and ACK control"
+    },
+    {
+      "path": "server/ephemeral_service.py",
+      "role": "job-scoped review and Provider authority without SQL or account state"
+    },
+    {
+      "path": "server/intake.py",
+      "role": "server upload completion and fixed-slot validation"
+    },
+    {
+      "path": "server/artifacts.py",
+      "role": "atomic run-scoped development artifact store"
+    },
+    {
+      "path": "server/fastapi_router.py",
+      "role": "mountable FastAPI v1 HTTP adapter"
+    },
+    {
+      "path": "server/orchestrator.py",
+      "role": "canonical stage planning and dedupe keys"
+    },
+    {
+      "path": "server/overlay_mapping.py",
+      "role": "deterministic source-overlay to target payload mapping builder"
+    },
+    {
+      "path": "server/overlay_renderer.py",
+      "role": "deterministic text and asset overlay compositor with output-bound receipts"
+    },
+    {
+      "path": "server/ephemeral_worker.py",
+      "role": "lease-fenced StagePort execution with temporary object-store artifacts"
+    },
+    {
+      "path": "server/seedance_invocations.py",
+      "role": "server-owned dual-stage Seedance-20 Invocation A/B adapter"
+    },
+    {
+      "path": "server/bundle_resolver.py",
+      "role": "immutable package-relative Skill byte resolver; rejects client/local paths in production"
+    },
+    {
+      "path": "server/provider_ports.py",
+      "role": "provider and stage adapter protocols"
+    },
+    {
+      "path": "server/production_ports.py",
+      "role": "strict deployment configuration plus GPT and RunningHub low-level production boundaries"
+    },
+    {
+      "path": "server/runninghub_standard_contract.py",
+      "role": "shared RunningHub Standard Model fixed-B payload, route-leakage, and public-media validator"
+    },
+    {
+      "path": "server/media_materializer.py",
+      "role": "job-scoped ephemeral object-store media materializer for worker-local tools"
+    },
+    {
+      "path": "server/high_fidelity_ports.py",
+      "role": "existing-stage Invocation A/B adapter boundary without new job-state stages"
+    },
+    {
+      "path": "server/high_fidelity_envelope.py",
+      "role": "canonical high-fidelity analysis envelope and immutable Invocation A/B projection digest bridge"
+    },
+    {
+      "path": "server/high_fidelity_projection.py",
+      "role": "validated evidence-to-contract projection for build_script and Invocation A without a new stage"
+    },
+    {
+      "path": "server/telemetry.py",
+      "role": "stage timing and provider observability sink"
+    },
+    {
+      "path": "server/media_probe.py",
+      "role": "bounded ffprobe input validation and source hash"
+    },
+    {
+      "path": "server/digests.py",
+      "role": "strict digest validation used by Redis CAS and artifact boundaries"
+    },
+    {
+      "path": "server/capabilities.py",
+      "role": "production stage capability manifest and fail-closed validator"
+    },
+    {
+      "path": "server/capability_ports.py",
+      "role": "executable seven-capability bindings and stage-port identity/output guards"
+    },
+    {
+      "path": "server/audio_backends.py",
+      "role": "evidence-bound audio event classifier adapter for Foley, ambience, music, and meaningful silence"
+    },
+    {
+      "path": "server/audio_mixer.py",
+      "role": "bundled evidence-bound FFmpeg source-speech and opaque-media mixer with canonical final-output receipts"
+    },
+    {
+      "path": "server/performance_audio_contracts.py",
+      "role": "immutable source-audio performance, lyric/beat, timeline, and splice-policy contracts"
+    },
+    {
+      "path": "server/runninghub_final_lip_sync.py",
+      "role": "canonical pinned RunningHub request builder for final language and verified-singing lip sync"
+    },
+    {
+      "path": "server/singing_audio_router.py",
+      "role": "constant-cost source-evidence router for uploaded-song singing versus background-music replacement"
+    },
+    {
+      "path": "server/uploaded_audio_contract.py",
+      "role": "immutable song versus non-song upload classification and timestamped lyric contract"
+    },
+    {
+      "path": "server/audio_route_guard.py",
+      "role": "fail-closed source-speech versus opaque UI/tail routing guard with explicit bundled-mixer deferred receipt admission"
+    },
+    {
+      "path": "server/vision_backends.py",
+      "role": "evidence-bound HTTPS OCR and VLM adapters with exact media, sampled-frame, and pinned-model response binding"
+    },
+    {
+      "path": "server/ephemeral_driver.py",
+      "role": "approved-revision-bound Redis queue driver for post-approval stages"
+    },
+    {
+      "path": "server/object_store.py",
+      "role": "S3-compatible temporary-media and final-MP4 lifecycle adapters"
+    },
+    {
+      "path": "server/cleanup.py",
+      "role": "idempotent sweeper that removes job authority and temporary media while preserving successful final MP4"
+    },
+    {
+      "path": "server/capability_tokens.py",
+      "role": "job-scoped bearer capability issue and verification"
+    },
+    {
+      "path": "server/result_handles.py",
+      "role": "signed final-result handle projection"
+    },
+    {
+      "path": "server/review_models.py",
+      "role": "script and storyboard revision records"
+    },
+    {
+      "path": "server/review_workflow.py",
+      "role": "two-gate revision validation and downstream invalidation rules"
+    },
+    {
+      "path": "server/recovery_models.py",
+      "role": "Adaptive Fidelity Recovery checkpoint and failure-signature records"
+    },
+    {
+      "path": "server/recovery_workflow.py",
+      "role": "recovery trigger, strategy, progress, and focused-QC decision contract"
+    },
+    {
+      "path": "server/recovery_executor.py",
+      "role": "runtime capability discovery and sandbox/provider recovery execution"
+    },
+    {
+      "path": "server/recovery_bridge.py",
+      "role": "reinsert passing recovery candidates through the original failed-stage artifact kind"
+    },
+    {
+      "path": "server/real_capabilities.py",
+      "role": "FFmpeg/Whisper/OCR/compositor/QC executable capability adapters"
+    },
+    {
+      "path": "server/ui_interaction_contract.py",
+      "role": "source UI Cut frame-window, UTF-8, and deterministic interaction contract"
+    },
+    {
+      "path": "server/ui_sidecar_runtime.py",
+      "role": "CPU-only generated-UI Sidecar lazy process lifecycle and readiness boundary"
+    },
+    {
+      "path": "server/ui_sidecar_retention.py",
+      "role": "final-video-bound 24-hour cleanup scheduling for local generated-UI Sidecar artifacts"
+    },
+    {
+      "path": "server/timeline_renderer.py",
+      "role": "bundled complete FFmpeg timeline renderer with lease-local media resolution and sanitized transition receipts"
+    },
+    {
+      "path": "server/deployment_bootstrap.py",
+      "role": "deployment-owned HTTP health/readiness and worker factory bootstrap"
+    },
+    {
+      "path": "server/packaged_factory.py",
+      "role": "packaged Redis/S3/API/Worker/Sweeper dependency factory with explicit real-port or readiness-only mode"
+    },
+    {
+      "path": "server/worker_entrypoint.py",
+      "role": "deployment-owned queue bootstrap entrypoint"
+    },
+    {
+      "path": "deployment/Dockerfile",
+      "role": "immutable worker image build contract"
+    },
+    {
+      "path": "deployment/requirements.lock",
+      "role": "pinned worker runtime dependency set"
+    },
+    {
+      "path": "deployment/requirements-control-plane.lock",
+      "role": "pinned fast API/Redis/S3 infrastructure-E2E dependency set"
+    },
+    {
+      "path": "deployment/README.md",
+      "role": "server deployment and model injection boundary"
+    },
+    {
+      "path": "deployment/docker-compose.yml",
+      "role": "API, worker, sweeper, Redis, and MinIO deployment topology"
+    },
+    {
+      "path": "references/production-readiness-status.md",
+      "role": "immutable Shadow/activation evidence boundary"
+    },
+    {
+      "path": "references/server-api-contract.md",
+      "role": "versioned HTTP command/query contract"
+    },
+    {
+      "path": "references/run-state-machine.md",
+      "role": "durable state and approval contract"
+    },
+    {
+      "path": "references/idempotency-and-provider-reconciliation.md",
+      "role": "Redis CAS/dedupe and ambiguous Provider recovery contract"
+    },
+    {
+      "path": "references/error-code-contract.md",
+      "role": "stable error code and HTTP mapping"
+    },
+    {
+      "path": "references/ephemeral-job-lifecycle.md",
+      "role": "temporary Redis/object lifecycle and final-only retention contract"
+    },
+    {
+      "path": "references/adaptive-fidelity-recovery-loop.md",
+      "role": "unbounded-method recovery loop activation and reinsertion contract"
+    },
+    {
+      "path": "references/quality-activation-contract.md",
+      "role": "focused validation, fixed smoke set, and immutable release-candidate gate"
+    },
+    {
+      "path": "references/runtime_skill_manifest.json",
+      "role": "immutable packaged Seedance-20 dependency names, versions, paths, and SHA-256 values"
+    },
+    {
+      "path": "runtime-skills/seedance-20/LICENSE",
+      "role": "packaged Seedance-20 runtime license"
+    },
+    {
+      "path": "schemas/input_slots.schema.json",
+      "role": "machine-readable fixed slot schema"
+    },
+    {
+      "path": "schemas/upload_completion.schema.json",
+      "role": "machine-readable object-store upload completion schema"
+    },
+    {
+      "path": "schemas/job.schema.json",
+      "role": "machine-readable ephemeral job snapshot schema"
+    },
+    {
+      "path": "schemas/artifact.schema.json",
+      "role": "machine-readable artifact schema"
+    },
+    {
+      "path": "schemas/queue_message.schema.json",
+      "role": "machine-readable Redis Streams work message schema"
+    },
+    {
+      "path": "schemas/provider_attempt.schema.json",
+      "role": "machine-readable Provider attempt and reconciliation schema"
+    },
+    {
+      "path": "schemas/result_handle.schema.json",
+      "role": "machine-readable final MP4 result handle schema"
+    },
+    {
+      "path": "schemas/script_revision.schema.json",
+      "role": "machine-readable script revision schema"
+    },
+    {
+      "path": "schemas/storyboard_revision.schema.json",
+      "role": "machine-readable storyboard revision schema"
+    },
+    {
+      "path": "schemas/recovery_checkpoint.schema.json",
+      "role": "machine-readable Adaptive Fidelity Recovery checkpoint schema"
+    },
+    {
+      "path": "schemas/error.schema.json",
+      "role": "machine-readable error schema"
+    },
+    {
+      "path": "schemas/high_fidelity_profile.schema.json",
+      "role": "machine-readable internal high-fidelity profile snapshot schema"
+    },
+    {
+      "path": "schemas/high_fidelity_analysis.schema.json",
+      "role": "machine-readable high-fidelity analysis sidecar schema"
+    },
+    {
+      "path": "schemas/exact_line_contract.schema.json",
+      "role": "machine-readable exact voice-line contract schema"
+    },
+    {
+      "path": "schemas/high_fidelity_qc.schema.json",
+      "role": "machine-readable weighted high-fidelity QC extension and media-binding schema"
+    },
+    {
+      "path": "schemas/stage_capabilities.schema.json",
+      "role": "machine-readable production stage capability manifest schema"
+    },
+    {
+      "path": "validation/high_fidelity/golden_cases.json",
+      "role": "metadata-only cross-category shadow validation matrix"
+    },
+    {
+      "path": "validation/case_catalog.json",
+      "role": "fully configured 36-case cross-category validation catalog and fixed six-case smoke set"
+    },
+    {
+      "path": "validation/high_fidelity/backend_policy.json",
+      "role": "default-disabled optional video backend activation policy bound to immutable benchmark evidence"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/references/seedance-20-prescript-contract.md",
+      "role": "Invocation A candidate-region and dependency snapshot contract"
+    },
+    {
+      "path": "bundled-skills/seedance-storyboard-replication/references/hybrid-compositor-contract.md",
+      "role": "layer compositor backend, opaque splice, and deployment contract"
+    },
+    {
+      "path": "references/high-fidelity-hybrid-v1.md",
+      "role": "internal profile snapshot, dependency pinning, and legacy bypass contract"
+    },
+    {
+      "path": "references/high-fidelity-evidence-matrix.md",
+      "role": "audited capability evidence matrix and production evidence-digest boundary"
+    },
+    {
+      "path": "references/seedance-20-prescript-contract.md",
+      "role": "canonical Invocation A sidecar and Route 1/Route 2 authority contract"
+    },
+    {
+      "path": "references/skill-routing-contract.md",
+      "role": "deterministic high-fidelity Skill selection and deployment dependency contract"
+    },
+    {
+      "path": "references/deployment-runtime-contract.md",
+      "role": "server/container runtime capabilities, startup checks, and worker boundary"
+    }
+  ],
+  "release_tools": [
+    {
+      "path": "validation/e2e/ports.py",
+      "role": "container-only deterministic stage/capability ports excluded from production target"
+    },
+    {
+      "path": "validation/e2e/driver.py",
+      "role": "Jobs API, Redis Worker, MinIO, approvals, QC, cleanup, and final-only container driver"
+    },
+    {
+      "path": "validation/tools/benchmark_backend.py",
+      "role": "same-case quality and speed evaluator for optional video backend activation"
+    },
+    {
+      "path": "validation/tools/validate_case_results.py",
+      "role": "incremental reuse and immutable 36-case release evidence validator"
+    },
+    {
+      "path": "validation/tools/run_case_matrix.py",
+      "role": "bounded Jobs API validation runner with approval automation and checkpoint resume"
+    },
+    {
+      "path": "validation/tools/build_case_catalog.py",
+      "role": "private fixture publisher, media probe, dedupe, and path-free release catalog builder"
+    }
+  ],
+  "contracts": [
+    {
+      "name": "universal-source-fidelity-contract",
+      "path": "references/universal-source-fidelity-contract.md",
+      "role": "authoritative source truth, fidelity levels, evidence, routing, and QC contract"
+    },
+    {
+      "name": "seedance-20-integrity-gate",
+      "path": "bundled-skills/seedance-storyboard-replication/references/seedance-20-integrity-gate.md",
+      "role": "post-storyboard prompt compilation, parity audit, and internal request authorization"
+    }
+  ],
+  "modules": [
+    {
+      "name": "parse-app-store-evidence",
+      "bundled_path": "bundled-skills/parse-app-store-evidence"
+    },
+    {
+      "name": "analyze-reference-video-dynamics",
+      "bundled_path": "bundled-skills/analyze-reference-video-dynamics"
+    },
+    {
+      "name": "replicate-source-ui-overlays",
+      "bundled_path": "bundled-skills/replicate-source-ui-overlays"
+    },
+    {
+      "name": "seedance-storyboard-replication",
+      "bundled_path": "bundled-skills/seedance-storyboard-replication"
+    }
+  ]
+}
