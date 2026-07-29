@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "manifest": "tsx scripts/build-manifest.ts",
     "start": "tsx src/server.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"

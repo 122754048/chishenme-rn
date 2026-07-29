@@ -1,0 +1,10 @@
+{
+  "schema_version": "usfr-ui-sidecar-manifest/v1",
+  "model_id": "usfr-ui-remotion-opencv",
+  "cpu_only": true,
+  "renderer_sha256": "5120f30796e2f37eb79e618490c8d3d9b2329cd02a320df438f52679fbc71df6",
+  "extractor_sha256": "8884d29c4d195640c2875fefc6cf325db609684ac9cd91be3fcada49c5942538",
+  "composition_sha256": "b7ee3fe55a4ef493b1aa682ef618037046019dd1ec769469c381185f48594cb1",
+  "contract_sha256": "8a2996e9785452ee60805850512e313f7f3238cc07037f48009303ca33d60337",
+  "model_sha256": "7af772da8e2268890b042bf70e2294526117cdd39a7f0296ad2fcb133e1cd17b"
+}
