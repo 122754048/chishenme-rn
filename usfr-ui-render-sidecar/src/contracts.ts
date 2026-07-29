@@ -165,6 +165,16 @@ export const RenderResponseSchema = z.object({
   state_sequence: z.array(ExactTextSchema).min(1),
   motion_track_sha256: Sha256Schema,
   model: z.object({id: ExactTextSchema, sha256: Sha256Schema}),
+  receipt: z
+    .object({
+      cache_hit: z.boolean(),
+      output_path: z.string().min(1),
+      cpu_only: z.literal(true),
+      extraction_ms: NonNegativeIntegerSchema,
+      render_ms: NonNegativeIntegerSchema,
+      total_ms: NonNegativeIntegerSchema,
+    })
+    .optional(),
 });
 
 export type SourceUiInteractionContract = z.infer<typeof SourceUiInteractionContractSchema>;
