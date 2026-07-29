@@ -1,0 +1,555 @@
+{
+  "schema_version": "seedance20-prompt/v1",
+  "prompt": "Segment S02. Duration 6.47s. Opening state: Target blonde woman is seated on motorcycle, right hand reaching upper-right chain. Reference @Image1 (slot 1): C13-C18 orange set, motorcycle, chains, black wardrobe and camera progression only; never render board labels. Reference @Image2 (slot 2): target adult blonde identity and hair only; not outdoor clothing or setting. Shot S02A, 0.00-0.27s, expanding medium-wide. Scene: Orange motorcycle set expands full-frame; chains and ring light behind target woman.. Camera: Bounded scale expansion to medium-wide.. Lighting: Warm ring rim and amber fill.. Performance: Target woman is seated; right hand reaches chain.. Action: Expansion completes and chain contact lands.. Endpoint: Stable full-frame tableau.. Product/UI truth: Keep motorcycle, chains, ring and black wardrobe.. Commercial proof: Performance result resolves visually.. Transition: Single scale completion.. Continuity: Same target identity and hand position into next phase.. Audio: No generated voice or lyric; post mix replaces sound.. Shot S02B, 0.27-3.27s, medium-wide to closer medium. Scene: Target woman sits on vintage motorcycle in orange haze and hanging chains.. Camera: One slow forward push toward face and torso.. Lighting: Fixed orange rim; dark metal texture.. Performance: Silent poised performance toward camera with subtle head angle.. Action: Right hand grips chain; left arm shifts once near handlebar.. Endpoint: Closer frame keeps chain hand and bike edge.. Product/UI truth: Keep bike scale, chain direction and black jacket.. Commercial proof: Polished tableau carries payoff.. Transition: Continuous slow push.. Continuity: Hand ownership, identity and screen direction lock.. Audio: No generated voice or lyric; post mix replaces sound.. Shot S02C, 3.27-5.07s, close medium. Scene: Face and upper torso against amber haze; chain at frame right.. Camera: Stable close-medium with slight settle.. Lighting: Orange hair rim and soft front fill.. Performance: Target woman leans gaze toward camera, silently performing.. Action: She holds chain with one shoulder settle.. Endpoint: Stable face and coherent hand contact.. Product/UI truth: Keep jacket, ring, chain and handlebar edge.. Commercial proof: Target identity reads clearly.. Transition: Continuous closer phase.. Continuity: Same hair, jacket, chain and screen direction.. Audio: No generated voice or lyric; post mix replaces sound.. Shot S02D, 5.07-6.47s, medium final hold. Scene: More motorcycle and bent-leg seated pose return in orange industrial set.. Camera: Gentle reframe to medium, then hold.. Lighting: Stable amber ring and haze.. Performance: Stronger silent open-mouth expression, then composed hold.. Action: She settles back on bike while keeping chain grip.. Endpoint: Exact active tableau at 6.467 seconds.. Product/UI truth: Vintage bike and vertical chains remain exact; no copy.. Commercial proof: Complete result tableau returns.. Transition: Hard assembly endpoint.. Continuity: No change to hand, face, wardrobe or set.. Audio: No generated voice or lyric; post mix replaces sound.. Lock: @Image2 is the only adult female identity. Lock: @Video1 transfers only camera pace, bike blocking and chain timing, never the original woman, text or branding. Lock: black stage wardrobe only. Lock: right hand stays on one upper-right chain. Lock: motorcycle, ring and haze remain stable. Lock: no readable text. Constraint: no second woman. Constraint: no face morph. Constraint: no extra limbs. Constraint: no broken chain contact. Constraint: no changed motorcycle. Constraint: no text. Constraint: no logo. Constraint: no dialogue. Constraint: no lyrics. Constraint: no fade tail. Cut C13: No dialogue. Allowed audio: post mix. Forbidden audio: dialogue. Cut C14: No dialogue. Allowed audio: post mix. Forbidden audio: dialogue. Cut C15: No dialogue. Allowed audio: post mix. Forbidden audio: dialogue. Cut C16: No dialogue. Allowed audio: post mix. Forbidden audio: dialogue. Cut C17: No dialogue. Allowed audio: post mix. Forbidden audio: dialogue. Cut C18: No dialogue. Allowed audio: post mix. Forbidden audio: dialogue.",
+  "compiler": {
+    "contract": "seedance20-prompt-compiler/v1",
+    "profile": "high_fidelity_hybrid_v1",
+    "skill": "seedance-20",
+    "version": "6.6.0",
+    "skill_sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+    "loaded_modules": [
+      "seedance-20",
+      "seedance-prompt",
+      "seedance-antislop",
+      "seedance-camera",
+      "seedance-motion",
+      "seedance-lighting",
+      "seedance-characters",
+      "seedance-audio",
+      "seedance-sequence"
+    ],
+    "required_specialists": [
+      "seedance-camera",
+      "seedance-motion",
+      "seedance-lighting",
+      "seedance-characters",
+      "seedance-audio",
+      "seedance-sequence"
+    ],
+    "dependency_snapshot": {
+      "seedance-20": {
+        "name": "seedance-20",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+        "package_path": "dependencies/seedance-20/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-prompt": {
+        "name": "seedance-prompt",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "ce558207516a6408de3425956c911dac4dbaa5da0d024d29ef03a01186d964a6",
+        "package_path": "dependencies/seedance-20/skills/seedance-prompt/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-antislop": {
+        "name": "seedance-antislop",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "3303e4ae1de3dc2fcf784e965c4df95b91c8d6522e04a11df9533440d9117eb1",
+        "package_path": "dependencies/seedance-20/skills/seedance-antislop/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-camera": {
+        "name": "seedance-camera",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "9785dee770590268ee98eab9fa7b2f7580cce8ad92764ee7b9c4a6613686b4bf",
+        "package_path": "dependencies/seedance-20/skills/seedance-camera/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-motion": {
+        "name": "seedance-motion",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "29dcb5b1718fe9742fea8498da3b468f47309d595ad56c9c62d65edccdbf52c7",
+        "package_path": "dependencies/seedance-20/skills/seedance-motion/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-lighting": {
+        "name": "seedance-lighting",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "8dd249bd1bc380801b624cb90cc37d46ac725ac20e7ec2b8efce02ac67cd21f7",
+        "package_path": "dependencies/seedance-20/skills/seedance-lighting/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-characters": {
+        "name": "seedance-characters",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "355500e3f0e00f789d736438e395501d7eac8136d40bac4b39b1b98a6e271148",
+        "package_path": "dependencies/seedance-20/skills/seedance-characters/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-audio": {
+        "name": "seedance-audio",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "3a5a906f9775222389520c9b4d426842d0fc3cb9d20621491a91e884d774e424",
+        "package_path": "dependencies/seedance-20/skills/seedance-audio/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-sequence": {
+        "name": "seedance-sequence",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "cbaecde282c0efb73120366dc54628a3f9988919ae545237f6cdd1b2e40f5758",
+        "package_path": "dependencies/seedance-20/skills/seedance-sequence/SKILL.md",
+        "digest_required": true
+      }
+    },
+    "route_sha256": "e63e77d7f62a3712350686c6d446c9727525946cacf040560d313a347b4ba8ed",
+    "checks": {
+      "professional_gate": true,
+      "capability_check": true,
+      "allocation_check": true,
+      "reference_role_check": true,
+      "directing_coherence_check": true,
+      "anti_slop_check": true,
+      "route_exclusion_check": true,
+      "line_parity_check": true
+    },
+    "rule_audit": {
+      "engine": "seedance-20",
+      "version": "seedance20-rules/v2",
+      "skill_sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+      "checks_sha256": "b3b46181a642414bfd4a657d96f0724cf67c7b1033fda62b7d7b297ccc6bbda1",
+      "source": "immutable_skill_bytes_and_compiler_rules"
+    },
+    "professional_gate": true,
+    "capability_check": true,
+    "allocation_check": true,
+    "reference_role_check": true,
+    "directing_coherence_check": true,
+    "anti_slop_check": true,
+    "route_exclusion_check": true,
+    "line_parity_check": true,
+    "output_sha256": "22c4aefd53fe04451688897b37fb139d7686d5644d0a94bd64cec9eff955b0e3"
+  },
+  "line_contracts": [],
+  "line_contract_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "performance_line_contracts": [],
+  "performance_line_contract_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "no_speech_contracts": [
+    {
+      "cut_id": "C13",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "post mix"
+      ],
+      "forbidden_audio": [
+        "dialogue"
+      ]
+    },
+    {
+      "cut_id": "C14",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "post mix"
+      ],
+      "forbidden_audio": [
+        "dialogue"
+      ]
+    },
+    {
+      "cut_id": "C15",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "post mix"
+      ],
+      "forbidden_audio": [
+        "dialogue"
+      ]
+    },
+    {
+      "cut_id": "C16",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "post mix"
+      ],
+      "forbidden_audio": [
+        "dialogue"
+      ]
+    },
+    {
+      "cut_id": "C17",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "post mix"
+      ],
+      "forbidden_audio": [
+        "dialogue"
+      ]
+    },
+    {
+      "cut_id": "C18",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "post mix"
+      ],
+      "forbidden_audio": [
+        "dialogue"
+      ]
+    }
+  ],
+  "no_speech_contract_sha256": "49349167904b19b7124a7332ac29017845c036c197a5c0b5da1a1b53c103459d",
+  "required_factor_ids": [
+    "S02.expand",
+    "S02.contact",
+    "S02.push",
+    "S02.bike",
+    "S02.wardrobe",
+    "S02.face",
+    "S02.hand",
+    "S02.rim",
+    "S02.return",
+    "S02.expression",
+    "S02.final"
+  ],
+  "required_factor_ids_sha256": "9e449c463fd55fa0055c6174570bd1c2d139ab654d12ec79d2f16db62cf02cb6",
+  "prompt_factor_coverage": [
+    {
+      "factor_id": "S02.expand",
+      "source_pointer": "/segment/shots/0/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02A",
+      "prompt_span": {
+        "start": 372,
+        "end": 1051
+      }
+    },
+    {
+      "factor_id": "S02.contact",
+      "source_pointer": "/segment/shots/0/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02A",
+      "prompt_span": {
+        "start": 372,
+        "end": 1051
+      }
+    },
+    {
+      "factor_id": "S02.push",
+      "source_pointer": "/segment/shots/1/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02B",
+      "prompt_span": {
+        "start": 1052,
+        "end": 1778
+      }
+    },
+    {
+      "factor_id": "S02.bike",
+      "source_pointer": "/segment/shots/1/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02B",
+      "prompt_span": {
+        "start": 1052,
+        "end": 1778
+      }
+    },
+    {
+      "factor_id": "S02.wardrobe",
+      "source_pointer": "/segment/shots/1/factor_ids/2",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02B",
+      "prompt_span": {
+        "start": 1052,
+        "end": 1778
+      }
+    },
+    {
+      "factor_id": "S02.face",
+      "source_pointer": "/segment/shots/2/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02C",
+      "prompt_span": {
+        "start": 1779,
+        "end": 2432
+      }
+    },
+    {
+      "factor_id": "S02.hand",
+      "source_pointer": "/segment/shots/2/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02C",
+      "prompt_span": {
+        "start": 1779,
+        "end": 2432
+      }
+    },
+    {
+      "factor_id": "S02.rim",
+      "source_pointer": "/segment/shots/2/factor_ids/2",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02C",
+      "prompt_span": {
+        "start": 1779,
+        "end": 2432
+      }
+    },
+    {
+      "factor_id": "S02.return",
+      "source_pointer": "/segment/shots/3/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02D",
+      "prompt_span": {
+        "start": 2433,
+        "end": 3105
+      }
+    },
+    {
+      "factor_id": "S02.expression",
+      "source_pointer": "/segment/shots/3/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02D",
+      "prompt_span": {
+        "start": 2433,
+        "end": 3105
+      }
+    },
+    {
+      "factor_id": "S02.final",
+      "source_pointer": "/segment/shots/3/factor_ids/2",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "S02D",
+      "prompt_span": {
+        "start": 2433,
+        "end": 3105
+      }
+    }
+  ],
+  "prompt_factor_coverage_sha256": "2cffe12c78bfbe19f6acfb91926597092cf7bfcbf358e3ece8cd94201c3237bf",
+  "source_contract": {
+    "segment": {
+      "segment_id": "S02",
+      "output_global_start_ms": 8533,
+      "duration_ms": 6467,
+      "cut_ids": [
+        "C13",
+        "C14",
+        "C15",
+        "C16",
+        "C17",
+        "C18"
+      ],
+      "opening_state": "Target blonde woman is seated on motorcycle, right hand reaching upper-right chain.",
+      "reference_roles": [
+        {
+          "slot": 1,
+          "tag": "@Image1",
+          "role": "C13-C18 orange set, motorcycle, chains, black wardrobe and camera progression only; never render board labels"
+        },
+        {
+          "slot": 2,
+          "tag": "@Image2",
+          "role": "target adult blonde identity and hair only; not outdoor clothing or setting"
+        }
+      ],
+      "shots": [
+        {
+          "shot_id": "S02A",
+          "shot_scale": "expanding medium-wide",
+          "start_ms": 0,
+          "end_ms": 267,
+          "scene": "Orange motorcycle set expands full-frame; chains and ring light behind target woman.",
+          "camera": "Bounded scale expansion to medium-wide.",
+          "lighting": "Warm ring rim and amber fill.",
+          "performance": "Target woman is seated; right hand reaches chain.",
+          "action": "Expansion completes and chain contact lands.",
+          "endpoint": "Stable full-frame tableau.",
+          "product_or_ui_truth": "Keep motorcycle, chains, ring and black wardrobe.",
+          "commercial_proof": "Performance result resolves visually.",
+          "transition": "Single scale completion.",
+          "continuity": "Same target identity and hand position into next phase.",
+          "audio": "No generated voice or lyric; post mix replaces sound.",
+          "factor_ids": [
+            "S02.expand",
+            "S02.contact"
+          ]
+        },
+        {
+          "shot_id": "S02B",
+          "shot_scale": "medium-wide to closer medium",
+          "start_ms": 267,
+          "end_ms": 3267,
+          "scene": "Target woman sits on vintage motorcycle in orange haze and hanging chains.",
+          "camera": "One slow forward push toward face and torso.",
+          "lighting": "Fixed orange rim; dark metal texture.",
+          "performance": "Silent poised performance toward camera with subtle head angle.",
+          "action": "Right hand grips chain; left arm shifts once near handlebar.",
+          "endpoint": "Closer frame keeps chain hand and bike edge.",
+          "product_or_ui_truth": "Keep bike scale, chain direction and black jacket.",
+          "commercial_proof": "Polished tableau carries payoff.",
+          "transition": "Continuous slow push.",
+          "continuity": "Hand ownership, identity and screen direction lock.",
+          "audio": "No generated voice or lyric; post mix replaces sound.",
+          "factor_ids": [
+            "S02.push",
+            "S02.bike",
+            "S02.wardrobe"
+          ]
+        },
+        {
+          "shot_id": "S02C",
+          "shot_scale": "close medium",
+          "start_ms": 3267,
+          "end_ms": 5067,
+          "scene": "Face and upper torso against amber haze; chain at frame right.",
+          "camera": "Stable close-medium with slight settle.",
+          "lighting": "Orange hair rim and soft front fill.",
+          "performance": "Target woman leans gaze toward camera, silently performing.",
+          "action": "She holds chain with one shoulder settle.",
+          "endpoint": "Stable face and coherent hand contact.",
+          "product_or_ui_truth": "Keep jacket, ring, chain and handlebar edge.",
+          "commercial_proof": "Target identity reads clearly.",
+          "transition": "Continuous closer phase.",
+          "continuity": "Same hair, jacket, chain and screen direction.",
+          "audio": "No generated voice or lyric; post mix replaces sound.",
+          "factor_ids": [
+            "S02.face",
+            "S02.hand",
+            "S02.rim"
+          ]
+        },
+        {
+          "shot_id": "S02D",
+          "shot_scale": "medium final hold",
+          "start_ms": 5067,
+          "end_ms": 6467,
+          "scene": "More motorcycle and bent-leg seated pose return in orange industrial set.",
+          "camera": "Gentle reframe to medium, then hold.",
+          "lighting": "Stable amber ring and haze.",
+          "performance": "Stronger silent open-mouth expression, then composed hold.",
+          "action": "She settles back on bike while keeping chain grip.",
+          "endpoint": "Exact active tableau at 6.467 seconds.",
+          "product_or_ui_truth": "Vintage bike and vertical chains remain exact; no copy.",
+          "commercial_proof": "Complete result tableau returns.",
+          "transition": "Hard assembly endpoint.",
+          "continuity": "No change to hand, face, wardrobe or set.",
+          "audio": "No generated voice or lyric; post mix replaces sound.",
+          "factor_ids": [
+            "S02.return",
+            "S02.expression",
+            "S02.final"
+          ]
+        }
+      ],
+      "locks": [
+        "@Image2 is the only adult female identity",
+        "@Video1 transfers only camera pace, bike blocking and chain timing, never the original woman, text or branding",
+        "black stage wardrobe only",
+        "right hand stays on one upper-right chain",
+        "motorcycle, ring and haze remain stable",
+        "no readable text"
+      ],
+      "negative_constraints": [
+        "no second woman",
+        "no face morph",
+        "no extra limbs",
+        "no broken chain contact",
+        "no changed motorcycle",
+        "no text",
+        "no logo",
+        "no dialogue",
+        "no lyrics",
+        "no fade tail"
+      ],
+      "no_speech_contracts": [
+        {
+          "cut_id": "C13",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "post mix"
+          ],
+          "forbidden_audio": [
+            "dialogue"
+          ]
+        },
+        {
+          "cut_id": "C14",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "post mix"
+          ],
+          "forbidden_audio": [
+            "dialogue"
+          ]
+        },
+        {
+          "cut_id": "C15",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "post mix"
+          ],
+          "forbidden_audio": [
+            "dialogue"
+          ]
+        },
+        {
+          "cut_id": "C16",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "post mix"
+          ],
+          "forbidden_audio": [
+            "dialogue"
+          ]
+        },
+        {
+          "cut_id": "C17",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "post mix"
+          ],
+          "forbidden_audio": [
+            "dialogue"
+          ]
+        },
+        {
+          "cut_id": "C18",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "post mix"
+          ],
+          "forbidden_audio": [
+            "dialogue"
+          ]
+        }
+      ]
+    },
+    "factors": {
+      "camera": true,
+      "motion": true,
+      "lighting": true,
+      "performance": true,
+      "audio": true,
+      "continuity": true,
+      "sequence": true
+    },
+    "compiler_checks": {
+      "professional_gate": true,
+      "capability_check": true,
+      "allocation_check": true,
+      "reference_role_check": true,
+      "directing_coherence_check": true,
+      "anti_slop_check": true,
+      "route_exclusion_check": true,
+      "line_parity_check": true
+    },
+    "performance_lines": []
+  }
+}

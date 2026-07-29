@@ -1,0 +1,35 @@
+{
+  "schema_version": "usfr-seedance-compile-receipt/v1",
+  "status": "passed",
+  "segment_id": "S01",
+  "prompt_characters": 3334,
+  "compiler_output_sha256": "da59458e27f598e21981bb13ad2d97267cc58f2feb2baaa2956dc6b43959d376",
+  "loaded_modules": [
+    "seedance-20",
+    "seedance-prompt",
+    "seedance-antislop",
+    "seedance-camera",
+    "seedance-motion",
+    "seedance-lighting",
+    "seedance-characters",
+    "seedance-audio",
+    "seedance-sequence"
+  ],
+  "required_factor_ids": [
+    "S01.studio_identity",
+    "S01.studio_blocking",
+    "S01.studio_light",
+    "S01.rejection_mono",
+    "S01.rejection_x",
+    "S01.rejection_depth",
+    "S01.radial_vector",
+    "S01.radial_endpoint"
+  ],
+  "rule_audit": {
+    "engine": "seedance-20",
+    "version": "seedance20-rules/v2",
+    "skill_sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+    "checks_sha256": "b3b46181a642414bfd4a657d96f0724cf67c7b1033fda62b7d7b297ccc6bbda1",
+    "source": "immutable_skill_bytes_and_compiler_rules"
+  }
+}

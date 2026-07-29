@@ -1,0 +1,36 @@
+{
+  "schema_version": "runninghub-standard-seedance-asset-bindings/v1",
+  "image_file_bindings": [
+    {
+      "sha256": "e9dcb26194fd1fd62d1ce39f1d054bed8c10dbdfaf3144322496c22b3a38dc9a",
+      "url": "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/e9dcb26194fd1fd62d1ce39f1d054bed8c10dbdfaf3144322496c22b3a38dc9a.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785321854%3B1785408254&q-key-time=1785321854%3B1785408254&q-header-list=host&q-url-param-list=&q-signature=33092de388ba0a1edac17eef75fafdc4040d87fa"
+    },
+    {
+      "sha256": "ef764c4ae31d096f98fe9acb029d15052c029e40578109f957cc85bfb2a76d91",
+      "url": "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/ef764c4ae31d096f98fe9acb029d15052c029e40578109f957cc85bfb2a76d91.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785321855%3B1785408255&q-key-time=1785321855%3B1785408255&q-header-list=host&q-url-param-list=&q-signature=1969ed9f7b93122d2e6da501a8aa3f572c7d6a16"
+    }
+  ],
+  "audio_file_bindings": [],
+  "video_file_bindings": [
+    {
+      "sha256": "582c3b53b8aa87978477a1ea8ec7542373e26f4b733c78a8396e89a8c550eb39",
+      "url": "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/582c3b53b8aa87978477a1ea8ec7542373e26f4b733c78a8396e89a8c550eb39.mp4?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785321855%3B1785408255&q-key-time=1785321855%3B1785408255&q-header-list=host&q-url-param-list=&q-signature=e76b618e59a2d1b488c732002da958572251aec9"
+    }
+  ],
+  "video_reference": {
+    "schema_version": "usfr-video-reference/v1",
+    "url": "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/582c3b53b8aa87978477a1ea8ec7542373e26f4b733c78a8396e89a8c550eb39.mp4?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785321855%3B1785408255&q-key-time=1785321855%3B1785408255&q-header-list=host&q-url-param-list=&q-signature=e76b618e59a2d1b488c732002da958572251aec9",
+    "source_video_sha256": "ddea35ca4945b5a28ca149bb7f7a0e70fc0bd935f964078c764f805083f6209b",
+    "source_slice_sha256": "582c3b53b8aa87978477a1ea8ec7542373e26f4b733c78a8396e89a8c550eb39",
+    "segment_id": "S01",
+    "start_ms": 0,
+    "end_ms": 4000,
+    "storyboard_url": "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/e9dcb26194fd1fd62d1ce39f1d054bed8c10dbdfaf3144322496c22b3a38dc9a.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785321854%3B1785408254&q-key-time=1785321854%3B1785408254&q-header-list=host&q-url-param-list=&q-signature=33092de388ba0a1edac17eef75fafdc4040d87fa",
+    "target_changes": [
+      {
+        "kind": "model",
+        "sha256": "ef764c4ae31d096f98fe9acb029d15052c029e40578109f957cc85bfb2a76d91"
+      }
+    ]
+  }
+}

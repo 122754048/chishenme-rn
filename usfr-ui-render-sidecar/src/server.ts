@@ -11,11 +11,17 @@ import {loadConfig, type SidecarConfig} from './config';
 import {RenderRequestSchema, RenderResponseSchema, type RenderRequest} from './contracts';
 import {canonicalSha256} from './digests';
 import {renderRequest, RenderPipelineError, type RenderPipelineResponse} from './render-pipeline';
+import {SidecarRetentionStore} from './retention';
 
 export type {SidecarConfig} from './config';
 
 type RenderPipeline = (request: RenderRequest) => Promise<RenderPipelineResponse | unknown>;
 type Readiness = () => Promise<{ready: boolean; checks: Record<string, boolean>}>;
+type RetentionStore = Pick<SidecarRetentionStore, 'markFinalized'> & {
+  sweep?: (nowMs?: number) => Promise<string[]>;
+};
+
+const sha256 = /^[0-9a-f]{64}$/;
 
 const secureTokenMatch = (supplied: string, expected: string): boolean => {
   const left = Buffer.from(supplied, 'utf8');
@@ -46,11 +52,15 @@ export const createApp = (
       renderTimeoutMs: config.renderTimeoutMs,
     }),
   readiness: Readiness = () => checkReadiness(config),
+  retention: RetentionStore = new SidecarRetentionStore({
+    runtimeRoot: config.runtimeRoot ?? resolve(config.projectRoot, '.runtime'),
+    retentionHours: 24,
+  }),
 ): Express => {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({limit: config.maxRequestBytes}));
-  app.locals.activity = {active: 0, lastActivityAt: Date.now()};
+  app.locals.activity = {active: 0, lastActivityAt: Date.now(), pendingRetention: 0};
 
   app.get('/readyz', async (_request, response, next) => {
     try {
@@ -102,6 +112,40 @@ export const createApp = (
     }
   });
 
+  app.post('/v1/retention/finalized', async (request, response, next) => {
+    try {
+      if (config.apiToken) {
+        const authorization = request.header('authorization') ?? '';
+        const supplied = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+        if (!secureTokenMatch(supplied, config.apiToken)) {
+          response.status(401).json({error: {code: 'UNAUTHORIZED', message: 'render token is invalid'}});
+          return;
+        }
+      }
+      const requestSha256 = String(request.body?.request_sha256 ?? '');
+      const finalVideoSha256 = String(request.body?.final_video_sha256 ?? '');
+      if (!sha256.test(requestSha256) || !sha256.test(finalVideoSha256)) {
+        response.status(422).json({error: {code: 'RETENTION_REQUEST_INVALID', message: 'retention requires SHA-256 bindings'}});
+        return;
+      }
+      const receipt = await retention.markFinalized({requestSha256, finalVideoSha256});
+      if (typeof retention.sweep === 'function') {
+        app.locals.activity.pendingRetention += 1;
+        const delay = Math.max(0, receipt.purge_after_ms - Date.now());
+        setTimeout(async () => {
+          try {
+            await retention.sweep?.(Date.now());
+          } finally {
+            app.locals.activity.pendingRetention -= 1;
+          }
+        }, delay);
+      }
+      response.status(202).json(receipt);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
     if (error instanceof ZodError) {
       response.status(422).json({error: {code: 'REQUEST_INVALID', message: error.message}});
@@ -124,9 +168,10 @@ if (isMain) {
   const server = app.listen(config.port, config.host);
   if (config.idleTimeoutSeconds > 0) {
     const timer = setInterval(() => {
-      const activity = app.locals.activity as {active: number; lastActivityAt: number};
+      const activity = app.locals.activity as {active: number; lastActivityAt: number; pendingRetention: number};
       if (
         activity.active === 0 &&
+        activity.pendingRetention === 0 &&
         Date.now() - activity.lastActivityAt >= config.idleTimeoutSeconds * 1000
       ) {
         clearInterval(timer);

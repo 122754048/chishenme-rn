@@ -8,6 +8,7 @@ import {canonicalSha256} from '../src/digests';
 const FILE_GROUPS = {
   renderer: [
     'src/render-pipeline.ts',
+    'src/retention.ts',
     'src/python-runner.ts',
     'src/remotion/render.ts',
     'src/server.ts',

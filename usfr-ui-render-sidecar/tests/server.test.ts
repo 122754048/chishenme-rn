@@ -73,4 +73,27 @@ describe('sidecar HTTP service', () => {
     expect(pipeline).toHaveBeenCalledTimes(1);
     expect(response.body.request_sha256).toBe(payload.request_sha256);
   });
+
+  it('starts UI artifact retention only after the final video is reported', async () => {
+    const retention = {
+      markFinalized: vi.fn(async () => ({
+        schema_version: 'usfr-ui-retention/v1' as const,
+        request_sha256: 'a'.repeat(64),
+        final_video_sha256: 'b'.repeat(64),
+        finalized_at_ms: 1_000,
+        purge_after_ms: 86_401_000,
+      })),
+    };
+    const app = createApp(config, vi.fn(), undefined, retention);
+
+    await request(app)
+      .post('/v1/retention/finalized')
+      .set('Authorization', 'Bearer private-token')
+      .send({request_sha256: 'a'.repeat(64), final_video_sha256: 'b'.repeat(64)})
+      .expect(202);
+
+    expect(retention.markFinalized).toHaveBeenCalledWith(
+      expect.objectContaining({requestSha256: 'a'.repeat(64), finalVideoSha256: 'b'.repeat(64)}),
+    );
+  });
 });
