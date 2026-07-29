@@ -64,7 +64,7 @@
 - 导入位置使用任务隔离前缀，Worker 只读取稳定的 MinIO 副本。
 - 临时对象包括下载副本、关键帧、音频、ASR 文件、故事板中间件、分段视频、Seedance 输入输出和合成中间文件。
 - 临时对象在任务结束后按部署配置清理，不作为长期素材库。
-- 默认建议在任务进入 `completed` 或 `failed` 后 48 小时清理临时媒体；清理失败必须重试并告警。
+- 默认 `USFR_TEMPORARY_RETENTION_SECONDS=0`：任务进入 `completed` 或不可恢复的 `failed` 后立即进入任务级临时媒体清理队列；清理失败必须重试并告警。正在处理或等待脚本/故事板确认的任务不能提前清理。
 
 ### 4.3 服务端自动生成的内部信息
 
@@ -175,7 +175,7 @@ Authorization: Bearer <access_token>
   "stage": "script",
   "review": {
     "type": "script",
-    "content": "当前生成的完整文字脚本"
+    "content": "当前生成的两段式 Markdown 文字脚本"
   }
 }
 ```
@@ -239,7 +239,7 @@ Authorization: Bearer <access_token>
 ```json
 {
   "action": "revise",
-  "content": "用户修改后的完整文字脚本"
+  "content": "用户修改后的两段式 Markdown 文字脚本"
 }
 ```
 
@@ -252,7 +252,7 @@ Authorization: Bearer <access_token>
 }
 ```
 
-当 `review.type` 为 `script` 时，`content` 表示用户修改后的完整文字脚本；当 `review.type` 为 `storyboard` 时，`content` 表示故事板修改要求，服务端据此重新生成故事板。服务端自动定位当前待审核 revision、执行 CAS、绑定审批摘要并推进任务，客户端不提交审核类型、版本号、SHA 或 revision。
+当 `review.type` 为 `script` 时，`content` 表示用户修改后的完整两段式 Markdown 文字脚本；当 `review.type` 为 `storyboard` 时，`content` 表示故事板修改要求，服务端据此重新生成故事板。服务端自动定位当前待审核 revision、执行 CAS、绑定审批摘要并推进任务，客户端不提交审核类型、版本号、SHA 或 revision。
 
 重复确认返回当前任务状态，不重复推进阶段或创建付费任务。审核顺序固定为先文字脚本、后故事板；未确认前一项时不能进入下一项。
 
