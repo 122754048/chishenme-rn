@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI 与 Logo 动画复刻"
+  short_description: "精确复刻视频中 UI、Logo、字幕和 CTA 的动画与屏幕位置"
+  default_prompt: "Use $replicate-source-ui-overlays to extract and freeze the source video's UI and logo overlay geometry."

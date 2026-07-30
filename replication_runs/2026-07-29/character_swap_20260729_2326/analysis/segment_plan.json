@@ -1,0 +1,15 @@
+{
+  "total_source_duration": 15.066667,
+  "retime_scale": 0.995575199212938,
+  "selected_split_boundary": null,
+  "segments": [
+    {
+      "source_start": 0.0,
+      "source_end": 15.066667,
+      "source_duration": 15.066667,
+      "segment_local_start": 0.0,
+      "segment_local_end": 15,
+      "output_duration": 15
+    }
+  ]
+}

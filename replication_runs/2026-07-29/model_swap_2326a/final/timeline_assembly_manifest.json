@@ -1,0 +1,77 @@
+{
+  "schema_version": "usfr-timeline-assembly-manifest/v1",
+  "status": "passed",
+  "output": {
+    "path": "final/result.mp4",
+    "duration_seconds": 15.0,
+    "frame_rate": "30/1",
+    "frame_count": 450,
+    "display": "1080x1920"
+  },
+  "assembly": {
+    "method": "frame-aligned concatenation of picture components with the source audio mix restored on the final output timeline",
+    "components": [
+      {
+        "order": 1,
+        "component": "S01_120f.mp4",
+        "origin": "generated_media",
+        "segment_id": "S01",
+        "output_frame_start_inclusive": 0,
+        "output_frame_end_exclusive": 120,
+        "output_time_start_seconds": 0.0,
+        "output_time_end_seconds": 4.0,
+        "frame_count": 120,
+        "source_cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08"],
+        "target_change": "Lead female performer replaced with the supplied model reference; male operator, studio, source composition, and deterministic overlays retained."
+      },
+      {
+        "order": 2,
+        "component": "UI_136f.mp4",
+        "origin": "source_interval",
+        "region_id": "R02_source_ui_with_authorized_person_replacement",
+        "output_frame_start_inclusive": 120,
+        "output_frame_end_exclusive": 256,
+        "output_time_start_seconds": 4.0,
+        "output_time_end_seconds": 8.533333333,
+        "frame_count": 136,
+        "source_time_start_seconds": 4.0,
+        "source_time_end_seconds": 8.533333333,
+        "source_cut_ids": ["C09", "C10", "C11", "C12"],
+        "target_change": "Source UI pixels and copy preserved; authorized target-person replacement is limited to the portrait tile and generated-preview performer."
+      },
+      {
+        "order": 3,
+        "component": "S02_194f.mp4",
+        "origin": "generated_media",
+        "segment_id": "S02",
+        "output_frame_start_inclusive": 256,
+        "output_frame_end_exclusive": 450,
+        "output_time_start_seconds": 8.533333333,
+        "output_time_end_seconds": 15.0,
+        "frame_count": 194,
+        "source_cut_ids": ["C13", "C14", "C15", "C16", "C17", "C18"],
+        "target_change": "Motorcycle performer replaced with the supplied model reference; source environment, motorcycle, chains, lighting, camera progression, and deterministic CTA retained."
+      }
+    ],
+    "audio": {
+      "policy": "source_audio_keep",
+      "source_time_start_seconds": 0.0,
+      "source_time_end_seconds": 15.0,
+      "output_time_start_seconds": 0.0,
+      "output_time_end_seconds": 15.0,
+      "notes": "Source narrator is retained through 7.280 s; the source music/performance bed is retained thereafter. No generated dialogue or lyrics are used."
+    },
+    "terminal_exclusion": {
+      "route": "omit_source_end_card",
+      "excluded_source_cut_ids": ["C19", "C20"],
+      "excluded_source_time_start_seconds": 15.0,
+      "excluded_source_time_end_seconds": 18.266667,
+      "filler_added": false
+    }
+  },
+  "evidence": {
+    "timeline_regions": "analysis/timeline_regions.json",
+    "segment_plan": "analysis/segment_plan.json",
+    "scope_receipt": "analysis/timeline_scope_receipt_v4.json"
+  }
+}

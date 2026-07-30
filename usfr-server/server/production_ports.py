@@ -26,6 +26,7 @@ from urllib import request as urlrequest
 from .performance_audio_contracts import build_source_audio_contracts
 from .review_models import RevisionManifest
 from .uploaded_audio_contract import UploadedAudioContractError, validate_uploaded_audio_contract
+from .source_evidence_bundle import validate_source_evidence_bundle
 from .user_script_document import UserScriptDocumentError, render_user_script_markdown
 from .visible_text_contract import (
     VisibleTextContractError,
@@ -434,6 +435,7 @@ class EvidenceBoundGptPlanner:
     ) -> None:
         self.config = config
         self._request_json = request_json or _post_json
+        self._structured_cache: dict[str, Mapping[str, Any]] = {}
 
     def request_script(self, *, evidence: Mapping[str, Any], schema: Mapping[str, Any]) -> Mapping[str, Any]:
         return self._request_structured(kind="script", evidence=evidence, schema=schema)
@@ -568,6 +570,32 @@ class EvidenceBoundGptPlanner:
         if not isinstance(analysis, Mapping):
             raise ProductionPortsError("current job source dynamics analysis is invalid")
         return artifact["sha256"], cls._project_source_cuts(analysis)
+
+    @classmethod
+    def _source_evidence_bundle(
+        cls,
+        context: Any,
+        artifacts: Sequence[Mapping[str, str]],
+    ) -> Mapping[str, Any] | None:
+        rows = [item for item in artifacts if item["kind"] == "source_evidence_bundle"]
+        if not rows:
+            return None
+        if len(rows) != 1:
+            raise ProductionPortsError("current job requires exactly one source evidence bundle")
+        artifact = rows[0]
+        value = cls._materialized_json(
+            context,
+            kind=artifact["kind"],
+            sha256=artifact["sha256"],
+            artifact_id=artifact["artifact_id"],
+        )
+        try:
+            validate_source_evidence_bundle(value)
+        except Exception as exc:
+            raise ProductionPortsError("current job source evidence bundle is invalid") from exc
+        if str(value.get("bundle_sha256") or "") != artifact["sha256"]:
+            raise ProductionPortsError("source evidence bundle artifact SHA does not match its contents")
+        return value
 
     @classmethod
     def _project_source_cuts(cls, analysis: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
@@ -1065,6 +1093,11 @@ class EvidenceBoundGptPlanner:
             replacements.append({"slot_id": "background_music", "sha256": uploaded_audio_sha256})
         artifacts = cls._safe_artifacts(context)
         source_dynamics_sha256, source_cuts = cls._source_cut_evidence(context, artifacts)
+        source_evidence_bundle = cls._source_evidence_bundle(context, artifacts)
+        if source_evidence_bundle is not None:
+            semantic_evidence = source_evidence_bundle.get("semantic_evidence")
+            if isinstance(semantic_evidence, Mapping) and isinstance(semantic_evidence.get("source_cuts"), list):
+                source_cuts = cls._project_source_cuts(semantic_evidence)
         performance_audio = cls._performance_audio_evidence(context, artifacts)
         source_content_timeline = cls._source_content_timeline_evidence(
             context,
@@ -1138,6 +1171,8 @@ class EvidenceBoundGptPlanner:
             "visible_text_locks": visible_text_locks,
             "visible_text_locks_sha256": visible_text_locks_digest,
         }
+        if source_evidence_bundle is not None:
+            base["source_evidence_bundle_sha256"] = str(source_evidence_bundle["bundle_sha256"])
         if performance_audio is not None:
             base["performance_audio"] = performance_audio
         if kind == "script" and source_content_timeline is not None:
@@ -1523,6 +1558,17 @@ class EvidenceBoundGptPlanner:
             "text": {"format": text_format},
         }
         request_sha256 = _sha256(payload)
+        cache_key = _sha256(
+            {
+                "model": self.config.openai_model,
+                "configuration_sha256": self.config.openai_model_config_sha256,
+                "kind": kind,
+                "payload": payload,
+            }
+        )
+        cached = self._structured_cache.get(cache_key)
+        if cached is not None:
+            return json.loads(json.dumps(dict(cached), ensure_ascii=False, sort_keys=True))
         try:
             response = self._request_json(
                 url=f"{self.config.openai_base_url}/responses",
@@ -1550,7 +1596,7 @@ class EvidenceBoundGptPlanner:
         if not isinstance(value, Mapping):
             raise ProductionPortsError("GPT Responses structured output must be a JSON object")
         self._validate_schema_value(value, text_format["schema"], path="$")
-        return {
+        result = {
             "kind": kind,
             "value": dict(value),
             "receipt": {
@@ -1565,6 +1611,8 @@ class EvidenceBoundGptPlanner:
                 "response_sha256": _sha256(dict(response)),
             },
         }
+        self._structured_cache[cache_key] = json.loads(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return result
 
 
 class _CreativeRevisionStage:
@@ -1676,6 +1724,11 @@ class _CreativeRevisionStage:
                     data=user_script_bytes,
                     content_type="text/markdown; charset=utf-8",
                     expected_sha256=user_script_sha256,
+                    metadata={
+                        "logical_name": "analysis/reverse_storyboard_script.md",
+                        "presentation": "file",
+                        "inline_chat_substitute_forbidden": True,
+                    },
                 )
             except ProductionPortsError:
                 raise

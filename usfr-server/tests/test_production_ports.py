@@ -223,6 +223,7 @@ class _CreativeContext:
         data: bytes,
         content_type: str,
         expected_sha256: str,
+        metadata: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         assert expected_sha256 == hashlib.sha256(data).hexdigest()
         artifact = {
@@ -232,6 +233,7 @@ class _CreativeContext:
             "sha256": expected_sha256,
             "content_type": content_type,
             "size_bytes": len(data),
+            "metadata": dict(metadata or {}),
         }
         self.published.append(artifact)
         self.published_bytes[expected_sha256] = data
@@ -590,6 +592,28 @@ def test_creative_planner_rejects_unbound_script_response(monkeypatch: pytest.Mo
         planner._validate_response({"source_sha256": "0" * 64}, context=context, kind="script")
 
 
+def test_prompt_version_is_compiled_once_for_the_same_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    _set_complete_environment(monkeypatch)
+    calls: list[dict[str, Any]] = []
+
+    def request_json(**kwargs: Any) -> dict[str, Any]:
+        calls.append(kwargs)
+        return {"model": "gpt-test-2026-07-22", "output_text": '{"value":"ok"}'}
+
+    planner = EvidenceBoundGptPlanner(ProductionEnvironment.from_environ(), request_json=request_json)
+    schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {"value": {"type": "string"}},
+        "required": ["value"],
+    }
+    first = planner._request_structured(kind="prompt", evidence={"source_bundle_sha256": "a" * 64}, schema=schema)
+    second = planner._request_structured(kind="prompt", evidence={"source_bundle_sha256": "a" * 64}, schema=schema)
+
+    assert first == second
+    assert len(calls) == 1
+
+
 @pytest.mark.parametrize("receipt_field", ("request_sha256", "response_sha256"))
 def test_creative_planner_rejects_tampered_transport_receipt(
     monkeypatch: pytest.MonkeyPatch,
@@ -908,6 +932,11 @@ def test_creative_planner_publishes_current_script_revision_without_approval(
     assert manifest.parent_script_sha256 is None
     assert result.get("final_artifact_id") is None
     assert [artifact["kind"] for artifact in context.published] == ["script_revision", "user_script_markdown"]
+    assert result["user_script_markdown"]["metadata"] == {
+        "logical_name": "analysis/reverse_storyboard_script.md",
+        "presentation": "file",
+        "inline_chat_substitute_forbidden": True,
+    }
 
 
 def test_creative_planner_binds_storyboard_to_approved_script_without_media_generation(

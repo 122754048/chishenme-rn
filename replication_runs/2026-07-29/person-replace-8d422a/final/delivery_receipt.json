@@ -1,0 +1,16 @@
+{
+  "schema_version": "usfr-local-delivery-receipt/v1",
+  "provider_task_id": "2082445326392168450",
+  "result_path": "final/result.mp4",
+  "result_sha256": "57a6627ff44eff6019704362ba9a2953e44531da7c0225462d5ab8306633556f",
+  "video": {"codec": "h264", "width": 720, "height": 1280, "duration_seconds": 9.088},
+  "audio": {"codec": "aac", "present": true},
+  "checks": {
+    "video_decodable": true,
+    "audio_stream_present": true,
+    "identity_reference_used": true,
+    "control_cut_count_matches_source_cut_count": true,
+    "utf8_multilingual_request_verified": true,
+    "deep_qa_enabled": false
+  }
+}

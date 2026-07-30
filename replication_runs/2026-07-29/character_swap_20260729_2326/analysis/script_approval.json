@@ -1,0 +1,10 @@
+{
+  "approval_type": "reverse_script",
+  "revision": 1,
+  "status": "approved",
+  "approved_by": "user",
+  "approved_instruction": "确认",
+  "approved_script": "analysis/reverse_storyboard_script.md",
+  "default_wardrobe_decision": "retain source plum long-sleeve top",
+  "next_gate": "storyboard_approval"
+}

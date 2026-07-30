@@ -1,0 +1,29 @@
+{
+  "run_id": "person-replace-8d422a",
+  "created_at": "2026-07-29",
+  "input_slots": {
+    "source_video": {
+      "sha256": "e71610ea664679660f60e2b5f69714790e39a96df2dd7b21ee247b37f3882aca",
+      "mime_type": "video/mp4",
+      "duration_us": 8266667
+    },
+    "new_model_image": {
+      "sha256": "49a5d3b7125985d9af60f739c6897559f8e3ab944158b87343c844719b6a66fc",
+      "mime_type": "image/jpeg"
+    }
+  },
+  "route": "identity_replacement",
+  "approval_state": "succeeded",
+  "storyboard": {
+    "revision": 2,
+    "path": "storyboards/r2/director_board.png",
+    "sha256": "bcb6a43e9ec3e2d59bbee88a2220092af63737bbcc754849dc43963b4d413c89",
+    "covered_cuts": ["C01", "C02", "C03", "C04", "C05", "C06", "C07"]
+  },
+  "final": {
+    "path": "final/result.mp4",
+    "sha256": "57a6627ff44eff6019704362ba9a2953e44531da7c0225462d5ab8306633556f",
+    "duration_seconds": 9.088,
+    "provider_task_id": "2082445326392168450"
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "contract": "source-ui-overlay-motion",
+  "contract_version": 1,
+  "reference_duration_us": 15066667,
+  "source_width": 720,
+  "source_height": 1280,
+  "coordinate_space": "rotation_corrected_source_visible_frame_normalized",
+  "target_mapping": "source_normalized_composition_to_target_frame",
+  "attachment": "screen_space",
+  "time_range_semantics": "start_inclusive_end_exclusive",
+  "cuts": [
+    {"cut": 1, "start_us": 0, "end_us": 200000, "source_overlays": []},
+    {"cut": 2, "start_us": 200000, "end_us": 1400000, "source_overlays": []},
+    {
+      "cut": 3,
+      "start_us": 1400000,
+      "end_us": 2300000,
+      "source_overlays": [
+        {
+          "overlay_id": "uninstall_response_01",
+          "kind": "subtitle",
+          "start_us": 1400000,
+          "end_us": 2300000,
+          "start_rect": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062},
+          "end_rect": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062},
+          "start_rotation_deg": 0,
+          "end_rotation_deg": 0,
+          "start_opacity": 1,
+          "end_opacity": 1,
+          "motion_phase": "static",
+          "motion_path": "No observed translation, rotation, scale, or opacity change while visible.",
+          "z_index": 30,
+          "layer_relation": "Screen-space subtitle rendered in front of the paper card and presenter hands.",
+          "interpolation": "hold",
+          "keyframes": [
+            {"time_us": 1400000, "bbox": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062}, "rotation_deg": 0, "opacity": 1},
+            {"time_us": 2300000, "bbox": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062}, "rotation_deg": 0, "opacity": 1}
+          ],
+          "observed_text": "अनइंस्टॉल!"
+        }
+      ]
+    },
+    {"cut": 4, "start_us": 2300000, "end_us": 3200000, "source_overlays": []},
+    {"cut": 5, "start_us": 3200000, "end_us": 3700000, "source_overlays": []},
+    {"cut": 6, "start_us": 3700000, "end_us": 5200000, "source_overlays": []},
+    {
+      "cut": 7,
+      "start_us": 5200000,
+      "end_us": 6200000,
+      "source_overlays": [
+        {
+          "overlay_id": "uninstall_response_02",
+          "kind": "subtitle",
+          "start_us": 5200000,
+          "end_us": 6200000,
+          "start_rect": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062},
+          "end_rect": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062},
+          "start_rotation_deg": 0,
+          "end_rotation_deg": 0,
+          "start_opacity": 1,
+          "end_opacity": 1,
+          "motion_phase": "static",
+          "motion_path": "No observed translation, rotation, scale, or opacity change while visible.",
+          "z_index": 30,
+          "layer_relation": "Screen-space subtitle rendered in front of the paper card and presenter hands.",
+          "interpolation": "hold",
+          "keyframes": [
+            {"time_us": 5200000, "bbox": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062}, "rotation_deg": 0, "opacity": 1},
+            {"time_us": 6200000, "bbox": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062}, "rotation_deg": 0, "opacity": 1}
+          ],
+          "observed_text": "अनइंस्टॉल!"
+        }
+      ]
+    },
+    {"cut": 8, "start_us": 6200000, "end_us": 7533333, "source_overlays": []},
+    {"cut": 9, "start_us": 7533333, "end_us": 8000000, "source_overlays": []},
+    {"cut": 10, "start_us": 8000000, "end_us": 9200000, "source_overlays": []},
+    {
+      "cut": 11,
+      "start_us": 9200000,
+      "end_us": 10300000,
+      "source_overlays": [
+        {
+          "overlay_id": "uninstall_response_03",
+          "kind": "subtitle",
+          "start_us": 9200000,
+          "end_us": 10300000,
+          "start_rect": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062},
+          "end_rect": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062},
+          "start_rotation_deg": 0,
+          "end_rotation_deg": 0,
+          "start_opacity": 1,
+          "end_opacity": 1,
+          "motion_phase": "static",
+          "motion_path": "No observed translation, rotation, scale, or opacity change while visible.",
+          "z_index": 30,
+          "layer_relation": "Screen-space subtitle rendered in front of the paper card and presenter hands.",
+          "interpolation": "hold",
+          "keyframes": [
+            {"time_us": 9200000, "bbox": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062}, "rotation_deg": 0, "opacity": 1},
+            {"time_us": 10300000, "bbox": {"x": 0.315, "y": 0.386, "width": 0.370, "height": 0.062}, "rotation_deg": 0, "opacity": 1}
+          ],
+          "observed_text": "अनइंस्टॉल!"
+        }
+      ]
+    },
+    {"cut": 12, "start_us": 10300000, "end_us": 11100000, "source_overlays": []},
+    {"cut": 13, "start_us": 11100000, "end_us": 15066667, "source_overlays": []}
+  ],
+  "notes": [
+    "Three static yellow Hindi response subtitles were observed; each is screen-space and sits in front of the paper card and hands.",
+    "The source has no visible logo, brand mark, UI, CTA badge, or end-card overlay that needs a target replacement."
+  ]
+}

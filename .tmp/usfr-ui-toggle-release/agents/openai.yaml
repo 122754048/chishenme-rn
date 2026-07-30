@@ -1,0 +1,4 @@
+interface:
+  display_name: "Universal Source-Fidelity Replication"
+  short_description: "Fixed-slot source-video replication with deterministic product, model, UI, App, and tail replacement"
+  default_prompt: "使用 $universal-source-fidelity-replication：上传爆款原视频，并在固定槽位中至少提供一项商品图、模特图、UI截图、App商店链接、UI操作视频或尾部视频。"

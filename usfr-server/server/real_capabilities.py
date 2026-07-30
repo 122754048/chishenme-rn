@@ -1897,6 +1897,9 @@ class FfmpegDynamicsAnalyzer:
             semantic_overlay_contract: dict[str, Any] | None = None
             semantic_evidence: dict[str, Any] | None = None
             if semantic_required and self.semantic_analyzer is not None:
+                require_tool = getattr(context, "require_tool", None)
+                if callable(require_tool):
+                    require_tool("semantic_vlm")
                 analyzer = getattr(self.semantic_analyzer, "analyze", None)
                 if not callable(analyzer):
                     analyzer = self.semantic_analyzer

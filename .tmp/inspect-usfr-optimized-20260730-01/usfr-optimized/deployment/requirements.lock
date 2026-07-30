@@ -1,0 +1,19 @@
+# Universal Source Fidelity worker baseline. Model weights live in immutable
+# mounted artifacts or separately deployed OCR/VLM sidecars; the worker never
+# downloads them or treats a workstation path as runtime authority.
+#
+# Every semantic model call in the packaged deployment is a remote HTTPS
+# contract: ASR uses the RunningHub Whisper workflow, semantics use the GPT
+# Responses API, and OCR/UI/QC use evidence-bound HTTP backends.  No local
+# inference runtime is imported by the server package, so torch,
+# onnxruntime-gpu, and openai-whisper are intentionally absent and the worker
+# requires no GPU.
+fastapi==0.116.1
+pydantic==2.11.9
+uvicorn==0.35.0
+Pillow==11.1.0
+numpy==1.26.4
+opencv-python-headless==4.11.0.86
+redis==5.2.1
+boto3==1.35.99
+oss2==2.19.1

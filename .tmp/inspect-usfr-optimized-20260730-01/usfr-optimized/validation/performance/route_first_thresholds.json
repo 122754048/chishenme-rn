@@ -1,0 +1,12 @@
+{
+  "minimum_throughput_gain": {
+    "standard": 1.8,
+    "compound_app_ui_audio": 1.3,
+    "deterministic_splice": 3.0
+  },
+  "maximum_full_source_semantic_calls": 1,
+  "maximum_relevant_tool_calls": 1,
+  "maximum_quality_drop": 0,
+  "maximum_hard_failures": 0,
+  "temporary_file_policy": "not_above_adaptive_manifest"
+}

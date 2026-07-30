@@ -695,10 +695,18 @@ class RedisEphemeralJobStore(EphemeralJobStore):
     Standalone; Redis Cluster key-slot routing is intentionally out of scope.
     """
 
-    def __init__(self, redis_client: Any, *, prefix: str = "usfr", provider_retention_ms: int = 300_000) -> None:
+    def __init__(
+        self,
+        redis_client: Any,
+        *,
+        prefix: str = "usfr",
+        provider_retention_ms: int = 300_000,
+        temporary_retention_ms: int = 172_800_000,
+    ) -> None:
         self.redis = redis_client
         self.prefix = _require_key_component(prefix.rstrip(":"), field="prefix")
         self.provider_retention_ms = _require_retention_ms(provider_retention_ms)
+        self.temporary_retention_ms = _require_retention_ms(temporary_retention_ms)
 
     def _job_key(self, job_id: str) -> str:
         _require_key_component(job_id, field="job_id", allow_colon=False)
@@ -736,6 +744,39 @@ class RedisEphemeralJobStore(EphemeralJobStore):
     @property
     def _provider_due_key(self) -> str:
         return f"{self.prefix}:provider:due"
+
+    @property
+    def _temporary_cleanup_due_key(self) -> str:
+        return f"{self.prefix}:temporary-cleanup:due"
+
+    def schedule_temporary_cleanup(
+        self,
+        *,
+        job_id: str,
+        terminal_at_ms: int,
+        retention_seconds: int | None = None,
+    ) -> None:
+        _require_nonempty_text(job_id, field="job_id")
+        if isinstance(terminal_at_ms, bool) or not isinstance(terminal_at_ms, int) or terminal_at_ms <= 0:
+            raise ReplicationError("INVALID_INPUT", "terminal_at_ms must be a positive integer")
+        if retention_seconds is None:
+            retention_ms = self.temporary_retention_ms
+        else:
+            if isinstance(retention_seconds, bool) or not isinstance(retention_seconds, int) or retention_seconds < 0:
+                raise ReplicationError("INVALID_INPUT", "retention_seconds must be non-negative")
+            retention_ms = int(retention_seconds) * 1000
+        self.redis.zadd(self._temporary_cleanup_due_key, {job_id: terminal_at_ms + retention_ms})
+
+    def due_temporary_jobs(self, *, now_ms: int, limit: int = 100) -> list[str]:
+        if isinstance(now_ms, bool) or not isinstance(now_ms, int):
+            raise ReplicationError("INVALID_INPUT", "now_ms must be an integer")
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit <= 0:
+            raise ReplicationError("INVALID_INPUT", "limit must be a positive integer")
+        try:
+            rows = self.redis.zrangebyscore(self._temporary_cleanup_due_key, "-inf", now_ms, start=0, num=limit)
+        except TypeError:
+            rows = self.redis.zrangebyscore(self._temporary_cleanup_due_key, "-inf", now_ms)[:limit]
+        return [item.decode("utf-8") if isinstance(item, bytes) else str(item) for item in rows]
 
     def _eval(self, script: str, keys: Sequence[str], args: Sequence[Any]) -> list[Any]:
         # Redis Standalone is the supported deployment mode for these
@@ -918,6 +959,8 @@ class RedisEphemeralJobStore(EphemeralJobStore):
             raise StateConflictError(details={"expected_version": expected_version, "actual_version": self._result_value(result)})
         if status != "OK":
             raise ReplicationError("STORE_ERROR", "snapshot CAS failed")
+        if str(candidate.state or "").upper() in {"SUCCEEDED", "FAILED", "EXPIRED", "CANCELLED", "ABORTED"}:
+            self.schedule_temporary_cleanup(job_id=job_id, terminal_at_ms=_now_ms())
         return candidate
 
     def append_revision(

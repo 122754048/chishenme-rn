@@ -23,6 +23,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .capabilities import REQUIRED_CAPABILITIES, validate_stage_capability_manifest
+from .qc_escalation import build_qc_plan
 from .performance_audio_contracts import build_audio_evidence_contracts
 from .source_content_timeline import SourceContentTimelineError, build_source_content_timeline
 
@@ -1062,6 +1063,9 @@ class CapabilityStagePort:
 
     def run(self, *, context: Any, input_artifacts: list[Mapping[str, Any]]) -> Mapping[str, Any]:
         if self.stage == "analyze_dynamics":
+            require_tool = getattr(context, "require_tool", None)
+            if callable(require_tool):
+                require_tool("structural_timeline")
             dynamics = _require_result(
                 _call(self._ports["dynamics_analyzer"].analyze, context=context, input_artifacts=input_artifacts),
                 "dynamics_analyzer",
@@ -1081,6 +1085,8 @@ class CapabilityStagePort:
                         "reason": str(asr_decision.get("reason") or "pre_route_skipped"),
                     }],
                 }
+            if callable(require_tool):
+                require_tool("source_asr")
             audio = _require_result(
                 _call(
                     self._ports["asr_transcriber"].transcribe,
@@ -1166,8 +1172,20 @@ class CapabilityStagePort:
                 "skipped_reason": "no_generated_ui_region",
                 "capabilities": list(sorted(self.capability_names)),
             }
+        require_tool = getattr(context, "require_tool", None)
+        if callable(require_tool):
+            if self.stage == "resolve_ui_evidence":
+                require_tool("ui_rebuild")
+                require_tool("target_ui_ocr")
         name = self.capability_names[0]
         adapter = self._ports[name]
+        if self.stage == "run_qc":
+            analysis_scope = getattr(context, "execution_scope", None) or getattr(context, "analysis_scope", None)
+            route = analysis_scope.get("route_family", "unknown") if isinstance(analysis_scope, Mapping) else "unknown"
+            try:
+                context.qc_plan = build_qc_plan(route=str(route), hard_failures=(), factor_scores={})
+            except AttributeError:
+                pass
         method_name = {
             "resolve_ui_evidence": "render_and_verify",
             "build_script": "invoke_a",
@@ -1198,6 +1216,16 @@ class CapabilityStagePort:
         # Keep canonical evidence at the stage boundary so downstream
         # artifact/QC handlers do not need to know this adapter's envelope.
         output.update(dict(result))
+        if self.stage == "run_qc":
+            factor_scores = result.get("factor_scores") if isinstance(result.get("factor_scores"), Mapping) else {}
+            hard_failures = result.get("hard_failures") if isinstance(result.get("hard_failures"), list) else ()
+            analysis_scope = getattr(context, "execution_scope", None) or getattr(context, "analysis_scope", None)
+            route = analysis_scope.get("route_family", "unknown") if isinstance(analysis_scope, Mapping) else "unknown"
+            output["qc_plan"] = build_qc_plan(
+                route=str(route),
+                hard_failures=hard_failures,
+                factor_scores=factor_scores,
+            )
         output["status"] = "ready"
         return output
 

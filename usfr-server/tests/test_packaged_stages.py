@@ -387,6 +387,8 @@ class _RouteRegionsContext:
         product: bool = False,
         model: bool = False,
         ui_video: bool = False,
+        ui_target: bool = False,
+        ui_rebuild_enabled: bool = False,
         output_language: str | None = None,
         cuts: list[dict[str, object]] | None = None,
     ) -> None:
@@ -395,7 +397,7 @@ class _RouteRegionsContext:
             "source_video": {"present": True, "values": ["source.mp4"], "metadata": [{}], "sha256": ["a" * 64]},
             "new_product_image": {"present": product, "values": ["product.png"] if product else [], "metadata": [{}] if product else [], "sha256": ["b" * 64] if product else []},
             "new_model_image": {"present": model, "values": ["model.png"] if model else [], "metadata": [{}] if model else [], "sha256": ["c" * 64] if model else []},
-            "ui_screenshot": dict(absent),
+            "ui_screenshot": {"present": ui_target, "values": ["ui.png"] if ui_target else [], "metadata": [{}] if ui_target else [], "sha256": ["e" * 64] if ui_target else []},
             "app_store_url": dict(absent),
             "ui_operation_video": {"present": ui_video, "values": ["ui.mp4"] if ui_video else [], "metadata": [{}] if ui_video else [], "sha256": ["d" * 64] if ui_video else []},
             "tail_video": dict(absent),
@@ -403,7 +405,8 @@ class _RouteRegionsContext:
         self.snapshot = SimpleNamespace(
             slots_manifest={
                 "slots": slots,
-                "routes": {"ui": "opaque_ui_demo" if ui_video else "source_ui_keep"},
+                "routes": {"ui": "opaque_ui_demo" if ui_video else "generated_ui_demo" if (ui_target or (ui_rebuild_enabled and (product or model or output_language))) else "source_ui_keep"},
+                "extensions": {"ui_rebuild_enabled": ui_rebuild_enabled},
                 "output_language": output_language,
             }
         )
@@ -538,6 +541,10 @@ def test_storyboard_stage_publishes_a_real_image2_board_and_binds_it_to_the_revi
 
     assert board["metadata"]["segment_id"] == "S01"
     assert board["metadata"]["storyboard_revision"] == 1
+    assert board["metadata"]["logical_name"] == "storyboards/segment_01_v1.png"
+    assert board["metadata"]["presentation"] == "image_set"
+    assert board["metadata"]["approval_scope"] == "all_segments_together"
+    assert board["metadata"]["text_only_substitute_forbidden"] is True
     assert board["metadata"]["storyboard_manifest_sha256"] == "e" * 64
     assert board["metadata"]["source_video_sha256"] == "a" * 64
     assert board["metadata"]["source_keyframe_sheet_sha256"] == _digest(source_sheet.read_bytes())
@@ -771,7 +778,7 @@ def test_seedance_prompt_reference_roles_follow_the_fixed_image_order() -> None:
     ]
 
 
-def test_route_regions_rebuilds_detected_ui_when_only_product_or_model_is_supplied() -> None:
+def test_route_regions_keeps_detected_source_ui_when_only_product_or_model_is_supplied() -> None:
     from server.packaged_stages import RouteRegionsStage
 
     result = RouteRegionsStage().run(
@@ -780,6 +787,21 @@ def test_route_regions_rebuilds_detected_ui_when_only_product_or_model_is_suppli
     )
 
     ui_region, ordinary_region = result["timeline_regions"]["regions"]
+    assert ui_region["region_type"] == "source_interval"
+    assert ui_region["media_origin"] == "source_interval"
+    assert ui_region["assembly_policy"] == "splice_source_interval"
+    assert ordinary_region["region_type"] == "generated"
+
+
+def test_route_regions_rebuilds_ui_from_explicit_target_evidence() -> None:
+    from server.packaged_stages import RouteRegionsStage
+
+    result = RouteRegionsStage().run(
+        context=_RouteRegionsContext(product=True, ui_target=True),
+        input_artifacts=[],
+    )
+
+    ui_region = result["timeline_regions"]["regions"][0]
     assert ui_region["region_type"] == "generated_ui_demo"
     assert ui_region["media_origin"] == "generated_ui"
     assert ui_region["assembly_policy"] == "render_generated_ui"
@@ -788,10 +810,29 @@ def test_route_regions_rebuilds_detected_ui_when_only_product_or_model_is_suppli
         "target": "en",
         "mode": "preserve_source",
     }
-    assert ordinary_region["region_type"] == "generated"
+    assert {item["tool"] for item in result["tool_promotion_receipts"]} == {
+        "source_ocr",
+        "target_ui_ocr",
+        "ui_rebuild",
+        "storyboard",
+        "seedance_video",
+    }
 
 
-def test_route_regions_localizes_only_ui_contract_when_output_language_is_requested() -> None:
+def test_route_regions_can_opt_in_to_automatic_ui_rebuild_for_product_change() -> None:
+    from server.packaged_stages import RouteRegionsStage
+
+    result = RouteRegionsStage().run(
+        context=_RouteRegionsContext(product=True, ui_rebuild_enabled=True),
+        input_artifacts=[],
+    )
+
+    ui_region = result["timeline_regions"]["regions"][0]
+    assert ui_region["region_type"] == "generated_ui_demo"
+    assert "ui_rebuild" in {item["tool"] for item in result["tool_promotion_receipts"]}
+
+
+def test_route_regions_keeps_source_ui_when_only_output_language_is_requested() -> None:
     from server.packaged_stages import RouteRegionsStage
 
     result = RouteRegionsStage().run(
@@ -799,9 +840,9 @@ def test_route_regions_localizes_only_ui_contract_when_output_language_is_reques
         input_artifacts=[],
     )
 
-    contract = result["timeline_regions"]["regions"][0]["source_ui_interaction_contract"]
-    assert contract["language"] == {"source": "en", "target": "pt", "mode": "localized"}
-    assert contract["text_encoding"] == {"encoding": "utf-8", "replacement_glyphs_forbidden": True}
+    region = result["timeline_regions"]["regions"][0]
+    assert region["region_type"] == "source_interval"
+    assert region["media_origin"] == "source_interval"
 
 
 def test_route_regions_preserves_uploaded_ui_video_priority_and_source_transition_shell() -> None:

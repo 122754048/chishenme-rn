@@ -81,6 +81,71 @@ class CleanupSweeper:
     def provider_due_key(self) -> str:
         return f"{self.prefix}:provider:due"
 
+    @property
+    def temporary_cleanup_due_key(self) -> str:
+        return f"{self.prefix}:temporary-cleanup:due"
+
+    def schedule_temporary_cleanup(
+        self,
+        *,
+        job_id: str,
+        terminal_at_ms: int,
+        retention_seconds: int = 172800,
+    ) -> None:
+        _safe_job_id(job_id)
+        if isinstance(terminal_at_ms, bool) or not isinstance(terminal_at_ms, int) or terminal_at_ms <= 0:
+            raise ReplicationError("INVALID_INPUT", "terminal_at_ms must be a positive integer", category="lifecycle", http_status=400)
+        if isinstance(retention_seconds, bool) or not isinstance(retention_seconds, int) or retention_seconds < 0:
+            raise ReplicationError("INVALID_INPUT", "retention_seconds must be non-negative", category="lifecycle", http_status=400)
+        self.redis.zadd(
+            self.temporary_cleanup_due_key,
+            {job_id: terminal_at_ms + retention_seconds * 1000},
+        )
+
+    def due_temporary_jobs(self, *, now_ms: int, limit: int = 100) -> tuple[str, ...]:
+        if isinstance(now_ms, bool) or not isinstance(now_ms, int):
+            raise ReplicationError("INVALID_INPUT", "now_ms must be an integer", category="lifecycle", http_status=400)
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit <= 0:
+            raise ReplicationError("INVALID_INPUT", "limit must be positive", category="lifecycle", http_status=400)
+        try:
+            rows = self.redis.zrangebyscore(self.temporary_cleanup_due_key, "-inf", now_ms, start=0, num=limit)
+        except TypeError:
+            rows = self.redis.zrangebyscore(self.temporary_cleanup_due_key, "-inf", now_ms)[:limit]
+        return tuple(_decode(item) for item in rows)
+
+    def purge_temporary_job(self, job_id: str) -> bool:
+        """Delete only temporary media; public job metadata and final MP4 remain."""
+
+        job_id = _safe_job_id(job_id)
+        token = self._acquire(job_id)
+        if token is None:
+            return False
+        try:
+            if self._provider_active(job_id):
+                self.redis.zadd(self.temporary_cleanup_due_key, {job_id: self._now_ms() + self.lease_ms})
+                return False
+            snapshot = self._snapshot(job_id)
+            self._validate_final_ref(job_id, snapshot)
+            self.temporary_store.delete_job(job_id)
+            slots_manifest = (snapshot or {}).get("slots_manifest")
+            upload_scope = slots_manifest.get("upload_scope") if isinstance(slots_manifest, Mapping) else None
+            if upload_scope and self.upload_store is not None:
+                self.upload_store.delete_scope(str(upload_scope))
+            self.redis.zrem(self.temporary_cleanup_due_key, job_id)
+            return True
+        except Exception:
+            self.redis.zadd(self.temporary_cleanup_due_key, {job_id: self._now_ms() + self.lease_ms})
+            return False
+        finally:
+            self._release(job_id, token)
+
+    def sweep_temporary_once(self, now_ms: int, *, limit: int = 100) -> tuple[str, ...]:
+        processed: list[str] = []
+        for job_id in self.due_temporary_jobs(now_ms=now_ms, limit=limit):
+            if self.purge_temporary_job(job_id):
+                processed.append(job_id)
+        return tuple(processed)
+
     def _job_prefix(self, job_id: str) -> str:
         return f"{self.prefix}:{_safe_job_id(job_id)}:"
 
@@ -300,6 +365,7 @@ class CleanupSweeper:
         if keys:
             self.redis.delete(*keys)
         self.redis.zrem(self.cleanup_due_key, job_id)
+        self.redis.zrem(self.temporary_cleanup_due_key, job_id)
         # Provider due members are job_id:attempt_id.  Iterate members and remove
         # only exact job-scoped entries, leaving other jobs intact.
         members: Iterable[Any]

@@ -1,0 +1,31 @@
+{
+  "schema_version": "high-fidelity-golden-cases/v1",
+  "cases": [
+    {"case_id": "PHYS-UNBOX-01", "category": "physical_product", "presentation": "unboxing", "route": "route_2", "generated_regions": 1, "opaque_only": false},
+    {"case_id": "PHYS-ASMR-02", "category": "physical_product", "presentation": "ASMR", "route": "route_2", "generated_regions": 1, "opaque_only": false},
+    {"case_id": "PHYS-TUTOR-03", "category": "physical_product", "presentation": "tutorial", "route": "route_1", "generated_regions": 2, "opaque_only": false, "scenario": "compatibility_dry_run"},
+    {"case_id": "APP-UI-04", "category": "app", "presentation": "UI walkthrough", "route": "route_2", "generated_regions": 1, "opaque_only": true, "scenario": "source_plus_app"},
+    {"case_id": "APP-SPLIT-05", "category": "app", "presentation": "split-screen", "route": "route_1", "generated_regions": 1, "opaque_only": false},
+    {"case_id": "APP-MOTION-06", "category": "app", "presentation": "motion graphics", "route": "route_2", "generated_regions": 2, "opaque_only": false},
+    {"case_id": "SVC-UGC-07", "category": "service", "presentation": "UGC testimonial", "route": "route_2", "generated_regions": 1, "opaque_only": false},
+    {"case_id": "SVC-COMP-08", "category": "service", "presentation": "comparison", "route": "route_1", "generated_regions": 1, "opaque_only": false},
+    {"case_id": "SVC-BEFORE-09", "category": "service", "presentation": "before/after", "route": "route_2", "generated_regions": 2, "opaque_only": false},
+    {"case_id": "BRAND-EMO-10", "category": "brand", "presentation": "emotional brand film", "route": "route_1", "generated_regions": 2, "opaque_only": false},
+    {"case_id": "BRAND-REACT-11", "category": "brand", "presentation": "reaction", "route": "route_2", "generated_regions": 1, "opaque_only": false},
+    {"case_id": "BRAND-LIST-12", "category": "brand", "presentation": "list format", "route": "route_1", "generated_regions": 1, "opaque_only": false},
+    {"case_id": "CREATOR-DRAMA-13", "category": "creator", "presentation": "drama dialogue", "route": "route_2", "generated_regions": 2, "opaque_only": false},
+    {"case_id": "CREATOR-POV-14", "category": "creator", "presentation": "POV performance", "route": "route_1", "generated_regions": 1, "opaque_only": false},
+    {"case_id": "CREATOR-SPORT-15", "category": "creator", "presentation": "sports/challenge", "route": "route_2", "generated_regions": 2, "opaque_only": false},
+    {"case_id": "MIXED-SCREEN-16", "category": "mixed_media", "presentation": "screen recording with overlays", "route": "route_1", "generated_regions": 1, "opaque_only": true},
+    {"case_id": "MIXED-AERIAL-17", "category": "mixed_media", "presentation": "complex tracking/aerial camera", "route": "route_2", "generated_regions": 2, "opaque_only": false},
+    {"case_id": "MIXED-VOICE-18", "category": "mixed_media", "presentation": "voiceover reveal", "route": "route_1", "generated_regions": 1, "opaque_only": false},
+    {"case_id": "LOCAL-OPAQUE-19", "category": "mixed_media", "presentation": "opaque UI and tail only", "route": "route_2", "generated_regions": 0, "opaque_only": true, "scenario": "local_only"},
+    {"case_id": "APP-RESUME-20", "category": "app", "presentation": "screen walkthrough", "route": "route_1", "generated_regions": 1, "opaque_only": true, "scenario": "provider_resume"},
+    {"case_id": "ALIAS-INVOCATION-21", "category": "creator", "presentation": "UGC review", "route": "route_2", "generated_regions": 1, "opaque_only": false, "scenario": "alias_invocation"},
+    {"case_id": "API-REPLAY-22", "category": "service", "presentation": "tutorial", "route": "route_2", "generated_regions": 1, "opaque_only": false, "scenario": "idempotency_replay"},
+    {"case_id": "STALE-SNAPSHOT-23", "category": "physical_product", "presentation": "comparison", "route": "route_1", "generated_regions": 1, "opaque_only": false, "scenario": "stale_snapshot_rejection"},
+    {"case_id": "STALE-VERSION-25", "category": "service", "presentation": "before/after", "route": "route_2", "generated_regions": 1, "opaque_only": false, "scenario": "stale_version_rejection"},
+    {"case_id": "COURSE-TUTOR-26", "category": "course", "presentation": "expert tutorial", "route": "route_1", "generated_regions": 1, "opaque_only": false},
+    {"case_id": "OBJECT-REJECT-24", "category": "mixed_media", "presentation": "source-only screen interval", "route": "route_1", "generated_regions": 0, "opaque_only": true, "scenario": "object_store_rejection"}
+  ]
+}

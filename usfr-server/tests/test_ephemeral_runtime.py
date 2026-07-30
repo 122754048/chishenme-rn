@@ -11,6 +11,7 @@ import fakeredis
 import pytest
 
 from server.errors import StateConflictError
+from server.analysis_scope import promote_deferred_tool
 from server.ephemeral_driver import EphemeralStageDriver
 from server.ephemeral_worker import EphemeralStageContext, EphemeralWorkerManager
 from server.job_models import WorkMessage
@@ -113,6 +114,33 @@ class ScopeAwareStage:
         del input_artifacts
         self.observed = context.analysis_scope
         return {"status": "ready"}
+
+
+class ExecutionScopeAwareStage:
+    def __init__(self) -> None:
+        self.observed = None
+
+    def run(self, *, context, input_artifacts):
+        del input_artifacts
+        self.observed = context.execution_scope
+        return {"status": "ready"}
+
+
+class RouteRegionsPromotionStage:
+    def run(self, *, context, input_artifacts):
+        del input_artifacts
+        receipt = promote_deferred_tool(
+            scope=context.analysis_scope,
+            tool_name="ui_rebuild",
+            region_ids=["ui-001"],
+            reason="generated UI interval confirmed",
+        )
+        return {
+            "timeline_regions": {
+                "regions": [{"region_id": "ui-001", "region_type": "generated_ui_demo"}]
+            },
+            "tool_promotion_receipts": [receipt],
+        }
 
 
 class ScriptStage:
@@ -402,6 +430,54 @@ def test_worker_projects_frozen_route_regions_into_later_stage_context() -> None
             "deterministic_ui_rebuild_allowed": True,
         },
     )
+
+
+def test_worker_freezes_stage4_promotions_into_downstream_execution_scope() -> None:
+    store, _temporary, manager = _runtime()
+    dependent = ExecutionScopeAwareStage()
+    manager.stage_ports = {
+        "route_regions": RouteRegionsPromotionStage(),
+        "resolve_ui_evidence": dependent,
+    }
+    manifest = {
+        "slots": {
+            "source_video": {"present": True},
+            "ui_screenshot": {"present": True},
+        },
+        "routes": {"ui": "generated_ui_demo"},
+    }
+    job = store.create_job(slots_manifest=manifest, capability_token_hash="a" * 64, ttl_seconds=3600)
+    first = store.claim_stage(
+        job_id=job.job_id, stage="route_regions", dedupe_key="route-scope", owner="worker-1", ttl_seconds=60,
+    )
+    first_result = manager.process_work_message(
+        message=WorkMessage(job.job_id, "route_regions", job.version, "route-scope"),
+        checkpoint=first,
+        owner="worker-1",
+    )
+    store.complete_stage(
+        job_id=job.job_id,
+        stage="route_regions",
+        dedupe_key="route-scope",
+        owner="worker-1",
+        output_artifact_ids=first_result["output_artifact_ids"],
+        ttl_seconds=3600,
+    )
+    current = store.get_job(job.job_id)
+    assert current is not None
+    second = store.claim_stage(
+        job_id=job.job_id, stage="resolve_ui_evidence", dedupe_key="ui-scope", owner="worker-1", ttl_seconds=60,
+    )
+
+    manager.process_work_message(
+        message=WorkMessage(job.job_id, "resolve_ui_evidence", current.version, "ui-scope"),
+        checkpoint=second,
+        owner="worker-1",
+    )
+
+    assert dependent.observed["finalized"] is True
+    assert dependent.observed["tools"]["ui_rebuild"]["status"] == "required"
+    assert dependent.observed["tools"]["target_ui_ocr"]["status"] == "skipped"
 
 
 def test_driver_starts_at_first_executable_stage_before_approvals() -> None:

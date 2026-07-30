@@ -175,8 +175,8 @@ def build_semantic_stage_mapping(
         for item in stages
         if isinstance(item, Mapping) and item.get("kind") == "approval"
     )
-    # The review route is authoritative for user approval semantics.  Route 1
-    # reuses an already approved script (storyboard approval remains), while
+    # The generated-media review surface is always the two artifact gates.
+    # Historical route_1 markers are normalized to route_2 by build_stage_plan;
     # local-only has no review gates.  Keep the structural fallback for legacy
     # plans that do not carry route metadata.
     route_values = {
@@ -186,7 +186,7 @@ def build_semantic_stage_mapping(
     }
     route = next((item for item in route_values if item in {"route_1", "route_2", "local_only"}), None)
     if route == "route_1":
-        approval_count = 1
+        approval_count = 2
     elif route == "local_only":
         approval_count = 0
     provider_stage_entry_count = sum(
@@ -905,9 +905,18 @@ def build_stage_plan(
         build_script["artifact_contract"] = _artifact_contract("build_script")
         compile_prompt["artifact_contract"] = _artifact_contract("compile_seedance20_prompt")
         audit_request["artifact_contract"] = _artifact_contract("audit_seedance_request")
+    script_user_artifact = dict(analysis_scope["user_review"]["script"]["artifact"])
+    storyboard_user_artifact = dict(analysis_scope["user_review"]["storyboard"]["artifact"])
     approval_and_storyboard = [
         build_script,
-        {"name": "await_script_approval", "kind": "approval", "provider": False},
+        {
+            "name": "await_script_approval",
+            "kind": "approval",
+            "provider": False,
+            "approval_gate": "script_document",
+            "confirmation_label": "确认反解分镜脚本",
+            "user_artifact": script_user_artifact,
+        },
     ]
     storyboard_stage: dict[str, Any] = {
         "name": "generate_storyboards",
@@ -926,7 +935,14 @@ def build_stage_plan(
     approval_and_storyboard.extend(
         [
             storyboard_stage,
-            {"name": "await_storyboard_approval", "kind": "approval", "provider": False},
+            {
+                "name": "await_storyboard_approval",
+                "kind": "approval",
+                "provider": False,
+                "approval_gate": "director_storyboard_images",
+                "confirmation_label": "确认故事板",
+                "user_artifact": storyboard_user_artifact,
+            },
             compile_prompt,
             audit_request,
             {"name": "submit_provider_video", "kind": "provider_create", "provider": True},

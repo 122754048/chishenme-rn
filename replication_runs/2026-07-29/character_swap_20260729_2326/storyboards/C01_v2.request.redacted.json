@@ -1,0 +1,34 @@
+{
+  "prompt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\character_swap_20260729_2326\\storyboards\\segment_01_v2.prompt.txt",
+    "characters": 3989
+  },
+  "imageUrls": [
+    "https://rh-hk-images-switch-1252422369.cos.ap-hongkong.myqcloud.com/input/openapi/4eb23167c62f44b78d0a94fb9504bddf580ccd8ad7d977b08f5739d075fde8d6.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785328751%3B1785415151&q-key-time=1785328751%3B1785415151&q-header-list=host&q-url-param-list=&q-signature=68d5702962f9aa1a837ac613fd8df69474365e87"
+  ],
+  "aspectRatio": "16:9",
+  "resolution": "2k",
+  "quality": "medium",
+  "timeline_scope_receipt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\character_swap_20260729_2326\\analysis\\timeline_scope_receipt_v2.json",
+    "scope_sha256": "358679b8db7fc7eecbe4e02309f761f8fe384c93f78bccdfd86c75b046026015"
+  },
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "C11",
+    "C12",
+    "C13"
+  ],
+  "reference_images": [
+    "C:\\Users\\zhaocx04\\Downloads\\ComfyUI_00001_texcx_1754979236.png"
+  ]
+}

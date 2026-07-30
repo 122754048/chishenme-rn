@@ -1,0 +1,10 @@
+{
+  "schema_version": "usfr-control-keyframes/v2",
+  "source_cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08", "C09", "C10", "C11", "C12", "C13"],
+  "panel_count": 13,
+  "fixed_panel_count": null,
+  "panels": [
+    {"panel_index": 1, "cut_id": "C01"}, {"panel_index": 2, "cut_id": "C02"}, {"panel_index": 3, "cut_id": "C03"}, {"panel_index": 4, "cut_id": "C04"}, {"panel_index": 5, "cut_id": "C05"}, {"panel_index": 6, "cut_id": "C06"}, {"panel_index": 7, "cut_id": "C07"}, {"panel_index": 8, "cut_id": "C08"}, {"panel_index": 9, "cut_id": "C09"}, {"panel_index": 10, "cut_id": "C10"}, {"panel_index": 11, "cut_id": "C11"}, {"panel_index": 12, "cut_id": "C12"}, {"panel_index": 13, "cut_id": "C13"}
+  ],
+  "manifest_sha256": "a72606ae161556b4db74576714e9fbf4d51f41ffff3d3518945fd7db868b44a7"
+}

@@ -1,0 +1,36 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082442116264509441",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\person-replace-8d422a\\storyboards\\r2\\director_board_prompt.md",
+  "timeline_scope_receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\person-replace-8d422a\\analysis\\timeline_scope_receipt.json",
+  "timeline_scope_receipt_sha256": null,
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Downloads\\jimeng-2025-07-21-7172-腰部以上中东女性单人照，橄榄色皮肤，自然深棕卷发，丰富面部表情，正面面对镜头，性....jpeg",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\person-replace-8d422a\\reference_frames\\replacement_identity_face_crop.jpg"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\person-replace-8d422a\\storyboards\\r2\\director_board.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 86.016,
+  "revision_reason": "storyboard-identity-correction",
+  "revision_number": 2,
+  "artifact_stem": "director_board",
+  "cut_id": "S01",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

@@ -1,0 +1,41 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082445042295230466",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\character_swap_20260729_2326\\storyboards\\segment_01_v1.prompt.txt",
+  "timeline_scope_receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\character_swap_20260729_2326\\analysis\\timeline_scope_receipt.json",
+  "timeline_scope_receipt_sha256": "4c4b4bb24778a0e2016d6c3219867c12e74ffc6d7828575e35f42bc53421d9fe",
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "C11",
+    "C12",
+    "C13"
+  ],
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Downloads\\ComfyUI_00001_texcx_1754979236.png"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\character_swap_20260729_2326\\storyboards\\segment_01_v1.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 65.937,
+  "revision_reason": "initial director board from approved reverse script",
+  "revision_number": 1,
+  "artifact_stem": "segment_01_v1",
+  "cut_id": "C01",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

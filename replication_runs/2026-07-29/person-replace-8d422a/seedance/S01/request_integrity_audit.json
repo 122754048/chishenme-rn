@@ -1,0 +1,21 @@
+{
+  "schema_version": "usfr-local-request-integrity-audit/v1",
+  "request_sha256": "321cd4c83df24106e41249a0fbd3b1059be3daa503701da683d7a033a94384ce",
+  "approved": true,
+  "checks": {
+    "prompt_utf8_valid": true,
+    "prompt_equals_frozen_prompt_except_terminal_newline": true,
+    "deva_codepoints_present": true,
+    "question_mark_replacement_count_zero": true,
+    "exact_dialogue_line_1_present": true,
+    "exact_dialogue_line_2_present": true,
+    "provider_duration_seconds": true,
+    "ratio_9_16": true,
+    "image_reference_count_two": true,
+    "source_video_reference_count_one": true,
+    "audio_reference_count_zero": true,
+    "generate_audio_enabled": true,
+    "target_character_change_bound": true,
+    "legacy_reference_audios_absent": true
+  }
+}

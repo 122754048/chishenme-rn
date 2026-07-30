@@ -1,0 +1,32 @@
+{
+  "primary_intent": "Use a friendly adult presenter's repeated card-and-tear pattern to stop the scroll, frame three short Hindi objections, and drive a direct download CTA without introducing a new product claim.",
+  "audience_and_platform": "Vertical short-form social feed; viewers who understand Hindi/Hinglish source copy.",
+  "evidence": [
+    {"time_range": "0.00-3.20s", "observation": "First handwritten objection is held to camera, answered by yellow response subtitle, then physically torn.", "supports": ["attention_hook", "pacing_and_format", "character_or_creator_appeal"]},
+    {"time_range": "3.20-7.53s", "observation": "The same objection-response-tear structure repeats with a second card.", "supports": ["attention_hook", "commercial_goal", "pacing_and_format"]},
+    {"time_range": "7.53-11.10s", "observation": "The third card completes the repeated visual pattern.", "supports": ["attention_hook", "commercial_goal"]},
+    {"time_range": "11.10-15.07s", "observation": "Presenter makes an audible direct download/uninstall fallback statement to camera.", "supports": ["cta_conversion", "commercial_goal"]}
+  ],
+  "weights": {
+    "commercial_goal": 20,
+    "attention_hook": 30,
+    "character_or_creator_appeal": 12,
+    "product_proof": 3,
+    "emotional_promise": 5,
+    "social_or_trust_signal": 0,
+    "cta_conversion": 20,
+    "pacing_and_format": 8,
+    "platform_compliance": 2
+  },
+  "cut_allocation": [
+    {"cut": "S01-S04", "intent": "attention_hook + character_or_creator_appeal", "weight": 42, "script_instruction": "Keep the adult character fully clothed, direct-to-camera, upbeat, and non-explicit; preserve first card, yellow response beat, and complete tear endpoint."},
+    {"cut": "S05-S12", "intent": "attention_hook + commercial_goal + pacing_and_format", "weight": 38, "script_instruction": "Preserve two repeated raise-hold-response-tear beats with the same room, camera, prop scale, and hand action."},
+    {"cut": "S13", "intent": "cta_conversion + commercial_goal", "weight": 20, "script_instruction": "Retain the source Hindi CTA cadence and friendly final smile; do not add a logo, badge, UI, or new marketing promise."}
+  ],
+  "compliance_boundary": [
+    "adult character only", "fully clothed source-preserved top", "no nudity", "no exposed intimate areas", "no fetishized framing", "no sexual acts", "no coercion", "no unverified product claim"],
+  "uncertainties": [
+    "ASR supplies timing but not fully verified Hindi transliteration.",
+    "No target product evidence is supplied, so source promotional copy is preserved only as source material rather than being adapted into a new target claim."
+  ]
+}

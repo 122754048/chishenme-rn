@@ -29,6 +29,7 @@ import time
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from .analysis_scope import build_analysis_scope, build_execution_scope, promote_deferred_tool
 from .errors import ReplicationError
 from .audio_provider_authorization import (
     AudioProviderAuthorizationError,
@@ -44,6 +45,7 @@ from .production_ports import (
     _StoryboardRevisionStage,
 )
 from .review_models import RevisionManifest, StoryboardCutRef
+from .source_evidence_bundle import build_source_evidence_bundle
 from .runninghub_standard_contract import (
     RunningHubStandardPayloadError,
     build_provider_audit_proof,
@@ -538,6 +540,91 @@ class RouteRegionsStage:
                 return candidate.strip()
         return "und"
 
+    @staticmethod
+    def _cut_has_vocal_content(cut: Mapping[str, Any]) -> bool:
+        if any(
+            cut.get(field) is True
+            for field in (
+                "contains_speech",
+                "contains_dialogue",
+                "visible_singing",
+                "contains_singing",
+                "speaking",
+                "singing",
+            )
+        ):
+            return True
+        return any(
+            isinstance(cut.get(field), str) and bool(str(cut.get(field)).strip())
+            for field in ("dialogue", "speech", "lyrics", "transcript", "spoken_text", "sung_text")
+        )
+
+    @classmethod
+    def _promotion_receipts(
+        cls,
+        *,
+        context: Any,
+        manifest: Mapping[str, Any],
+        cuts: Sequence[Mapping[str, Any]],
+        regions: Sequence[Mapping[str, Any]],
+    ) -> list[dict[str, Any]]:
+        analysis_scope = getattr(context, "analysis_scope", None)
+        if not isinstance(analysis_scope, Mapping) or not analysis_scope:
+            analysis_scope = build_analysis_scope(manifest)
+        tools = analysis_scope.get("tools")
+        tools = tools if isinstance(tools, Mapping) else {}
+        receipts: list[dict[str, Any]] = []
+
+        def promote(tool_name: str, region_ids: Sequence[str], reason: str) -> None:
+            decision = tools.get(tool_name)
+            if not isinstance(decision, Mapping) or decision.get("status") != "deferred" or not region_ids:
+                return
+            receipts.append(
+                promote_deferred_tool(
+                    scope=analysis_scope,
+                    tool_name=tool_name,
+                    region_ids=region_ids,
+                    reason=reason,
+                )
+            )
+
+        generated_ui_ids = [
+            str(item.get("region_id"))
+            for item in regions
+            if item.get("media_origin") == "generated_ui"
+        ]
+        generated_video_ids = [
+            str(item.get("region_id"))
+            for item in regions
+            if item.get("media_origin") == "generated"
+        ]
+        generated_ids = [*generated_ui_ids, *generated_video_ids]
+        if generated_ui_ids:
+            for tool_name, reason in (
+                ("source_ocr", "generated UI regions require source ROI text evidence"),
+                ("target_ui_ocr", "generated UI regions require target UI text evidence"),
+                ("ui_rebuild", "generated UI regions require deterministic reconstruction"),
+                ("app_store_evidence", "generated UI regions consume official App Store evidence"),
+            ):
+                promote(tool_name, generated_ui_ids, reason)
+        promote("storyboard", generated_ids, "generated regions require the approved director board set")
+        promote("seedance_video", generated_video_ids, "non-UI generated regions require Seedance video")
+
+        cuts_by_id = {
+            str(cut.get("cut_id") or f"C{index:02d}"): cut
+            for index, cut in enumerate(cuts, start=1)
+            if isinstance(cut, Mapping)
+        }
+        vocal_region_ids: list[str] = []
+        for region in regions:
+            if region.get("media_origin") not in {"generated", "generated_ui"}:
+                continue
+            cut_ids = region.get("cut_ids") or ()
+            if any(cls._cut_has_vocal_content(cuts_by_id.get(str(cut_id), {})) for cut_id in cut_ids):
+                vocal_region_ids.append(str(region.get("region_id")))
+        promote("source_asr", vocal_region_ids, "generated vocal regions require one timestamped source transcription")
+        return receipts
+
     def run(self, *, context: Any, input_artifacts: Sequence[Mapping[str, Any]]) -> Mapping[str, Any]:
         del input_artifacts
         dynamics = _stage_output(context, "analyze_dynamics").get("source_dynamics_analysis")
@@ -547,12 +634,19 @@ class RouteRegionsStage:
             raise _replication_error("CONTRACT_INVALID", "source dynamics has no ordered Cuts")
         snapshot = getattr(context, "snapshot", None)
         manifest = getattr(snapshot, "slots_manifest", None)
+        analysis_scope = getattr(context, "analysis_scope", None)
+        if not isinstance(analysis_scope, Mapping) or not analysis_scope:
+            analysis_scope = build_analysis_scope(manifest if isinstance(manifest, Mapping) else {})
         routes = manifest.get("routes") if isinstance(manifest, Mapping) else None
         routes = dict(routes) if isinstance(routes, Mapping) else {}
         model_change = _present(context, "new_model_image")
         product_change = _present(context, "new_product_image")
         language_change = isinstance(manifest, Mapping) and isinstance(manifest.get("output_language"), str)
         ui_route = str(routes.get("ui") or "source_ui_keep")
+        extensions = manifest.get("extensions") if isinstance(manifest, Mapping) else None
+        extensions = dict(extensions) if isinstance(extensions, Mapping) else {}
+        explicit_ui_target = _present(context, "ui_screenshot") or _present(context, "app_store_url")
+        automatic_ui_rebuild = extensions.get("ui_rebuild_enabled") is True
         tail_replacement = _present(context, "tail_video")
         regions: list[dict[str, Any]] = []
         previous_end = 0
@@ -596,7 +690,9 @@ class RouteRegionsStage:
                     "assembly_policy": "splice_opaque_ui",
                     "transition_shell": self._transition_shell(cut),
                 })
-            elif is_ui and (ui_route == "generated_ui_demo" or model_change or product_change or language_change):
+            elif is_ui and ui_route == "generated_ui_demo" and (
+                explicit_ui_target or automatic_ui_rebuild
+            ):
                 region.update({
                     "region_type": "generated_ui_demo",
                     "media_origin": "generated_ui",
@@ -615,6 +711,8 @@ class RouteRegionsStage:
                     raise _replication_error("CONTRACT_INVALID", f"source UI interaction contract is invalid: {exc}") from exc
                 region["source_ui_interaction_contract"] = interaction_contract
                 region["source_ui_interaction_contract_sha256"] = _sha(interaction_contract)
+            elif is_ui:
+                region.update({"region_type": "source_interval", "media_origin": "source_interval", "assembly_policy": "splice_source_interval"})
             elif model_change or product_change or language_change:
                 region.update({"region_type": "generated", "media_origin": "generated", "assembly_policy": "generate_region"})
             else:
@@ -627,8 +725,50 @@ class RouteRegionsStage:
             "seedance_generation_required": any(item["media_origin"] == "generated" for item in regions),
         }
         envelope["timeline_regions_sha256"] = _sha(envelope)
+        promotion_receipts = self._promotion_receipts(
+            context=context,
+            manifest=dict(manifest) if isinstance(manifest, Mapping) else {},
+            cuts=[dict(item) for item in cuts if isinstance(item, Mapping)],
+            regions=regions,
+        )
+        final_execution_scope = build_execution_scope(
+            analysis_scope,
+            promotion_receipts=promotion_receipts,
+            finalized=True,
+        )
+        generated_ui_ids = [
+            str(item.get("region_id"))
+            for item in regions
+            if item.get("media_origin") == "generated_ui"
+        ]
+        prior_outputs = getattr(context, "stage_outputs", {})
+        prior_outputs = prior_outputs if isinstance(prior_outputs, Mapping) else {}
+        probe_output = prior_outputs.get("probe_source")
+        probe = probe_output.get("probe", probe_output) if isinstance(probe_output, Mapping) else {}
+        analysis_output = prior_outputs.get("analyze_dynamics")
+        analysis_output = analysis_output if isinstance(analysis_output, Mapping) else {}
+        dynamics_evidence = analysis_output.get("source_dynamics_analysis")
+        dynamics_evidence = dynamics_evidence if isinstance(dynamics_evidence, Mapping) else {}
+        bundle = build_source_evidence_bundle(
+            probe=probe if isinstance(probe, Mapping) else {},
+            timeline=envelope,
+            execution_scope=final_execution_scope,
+            semantic_evidence=dynamics_evidence,
+            audio_evidence=analysis_output.get("audio_contract") if isinstance(analysis_output.get("audio_contract"), Mapping) else {},
+            ui_evidence={
+                "generated_region_ids": generated_ui_ids,
+                "source_ui_cut_ids": [str(item.get("region_id")) for item in regions if item.get("media_origin") == "source_interval" and item.get("region_type") == "source_interval"],
+            },
+        )
         published = _publish_json(context, kind="timeline_regions", value=envelope)
-        return {"status": "ready", "timeline_regions": envelope, "published_artifacts": [published]}
+        published_bundle = _publish_json(context, kind="source_evidence_bundle", value=bundle)
+        return {
+            "status": "ready",
+            "timeline_regions": envelope,
+            "tool_promotion_receipts": promotion_receipts,
+            "source_evidence_bundle": bundle,
+            "published_artifacts": [published, published_bundle],
+        }
 
 
 class StoryboardStage:
@@ -1056,7 +1196,7 @@ class StoryboardStage:
             references = [Path(control_sheet["path"]), *target_references]
             upstream_artifacts.extend(list(source_sheet.get("published_artifacts") or []))
             upstream_artifacts.extend(list(control_sheet.get("published_artifacts") or []))
-            for raw_segment in segments:
+            for segment_index, raw_segment in enumerate(segments):
                 segment = _mapping(raw_segment, "storyboard segment")
                 segment_id = str(segment.get("segment_id") or "").strip()
                 cut_ids = segment.get("cut_ids")
@@ -1087,9 +1227,14 @@ class StoryboardStage:
                 )
                 width, height = self._png_dimensions(image_bytes)
                 digest = hashlib.sha256(image_bytes).hexdigest()
+                segment_number = segment_index + 1
                 metadata = {
                     "segment_id": segment_id,
                     "storyboard_revision": manifest.revision,
+                    "logical_name": f"storyboards/segment_{segment_number:02d}_v{manifest.revision}.png",
+                    "presentation": "image_set",
+                    "approval_scope": "all_segments_together",
+                    "text_only_substitute_forbidden": True,
                     "storyboard_manifest_sha256": manifest.sha256,
                     "source_video_sha256": str(source_sheet["source_video_sha256"]),
                     "source_keyframe_sheet_sha256": str(source_sheet["source_keyframe_sheet_sha256"]),

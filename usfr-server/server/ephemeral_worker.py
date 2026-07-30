@@ -14,7 +14,7 @@ import tempfile
 import time
 from typing import Any, Iterator, Mapping, Sequence
 
-from .analysis_scope import build_analysis_scope
+from .analysis_scope import build_analysis_scope, build_execution_scope, validate_tool_call
 from .errors import ReplicationError
 from .job_models import ArtifactRef, JobSnapshot, StageCheckpoint, WorkMessage
 from .media_materializer import MaterializedMedia, MediaMaterializer
@@ -103,6 +103,8 @@ class EphemeralStageContext:
     invocation_adapter: Any | None = None
     allow_local_paths: bool = False
     analysis_scope: Mapping[str, Any] = field(default_factory=dict)
+    execution_scope: Mapping[str, Any] = field(default_factory=dict)
+    qc_plan: Mapping[str, Any] = field(default_factory=dict)
     stage_outputs: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
     timeline_regions: tuple[Mapping[str, Any], ...] = ()
     _published: dict[str, ArtifactRef] = field(default_factory=dict, init=False, repr=False)
@@ -110,6 +112,19 @@ class EphemeralStageContext:
     @property
     def run_id(self) -> str:
         return self.job_id
+
+    def require_tool(
+        self,
+        tool_name: str,
+        *,
+        promotion_receipt: Mapping[str, Any] | None = None,
+    ) -> None:
+        validate_tool_call(
+            self.execution_scope or self.analysis_scope,
+            tool_name,
+            self.stage,
+            promotion_receipt=promotion_receipt,
+        )
 
     @property
     def input_slots(self) -> tuple[Mapping[str, Any], ...]:
@@ -485,6 +500,19 @@ class EphemeralWorkerManager:
         route_output = hydrated.get("route_regions")
         if not isinstance(route_output, Mapping):
             return
+        raw_receipts = route_output.get("tool_promotion_receipts") or ()
+        if not isinstance(raw_receipts, Sequence) or isinstance(raw_receipts, (str, bytes, bytearray)):
+            raise ReplicationError(
+                "CONTRACT_INVALID",
+                "route_regions tool promotion receipts must be a sequence",
+                category="contract",
+                http_status=422,
+            )
+        context.execution_scope = build_execution_scope(
+            context.analysis_scope,
+            promotion_receipts=[dict(item) for item in raw_receipts if isinstance(item, Mapping)],
+            finalized=True,
+        )
         timeline_output = route_output.get("timeline_regions")
         if timeline_output is None:
             return
@@ -594,6 +622,7 @@ class EphemeralWorkerManager:
         if handler is None:
             raise ReplicationError("CONTRACT_INVALID", f"no StagePort for {message.stage}")
         with tempfile.TemporaryDirectory(prefix=f"usfr-{message.job_id[:8]}-") as temporary:
+            analysis_scope = build_analysis_scope(snapshot.slots_manifest)
             context = EphemeralStageContext(
                 job_id=message.job_id,
                 stage=message.stage,
@@ -604,7 +633,8 @@ class EphemeralWorkerManager:
                 materializer=self.materializer,
                 profile_snapshot=snapshot.slots_manifest.get("extensions", {}).get("high_fidelity_profile"),
                 invocation_adapter=self.invocation_adapter,
-                analysis_scope=build_analysis_scope(snapshot.slots_manifest),
+                analysis_scope=analysis_scope,
+                execution_scope=build_execution_scope(analysis_scope, finalized=False),
             )
             try:
                 self._hydrate_stage_outputs(context)

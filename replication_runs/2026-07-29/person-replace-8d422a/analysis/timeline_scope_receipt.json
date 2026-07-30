@@ -1,0 +1,6 @@
+{
+  "schema_version": "usfr-timeline-scope-receipt/v1",
+  "status": "not_applicable",
+  "reason": "The source analysis contains no terminal App or end-card interval; no source tail is being omitted.",
+  "image_model_allowed_cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07"]
+}

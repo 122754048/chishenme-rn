@@ -1,0 +1,146 @@
+{
+  "contract": "reference-video-dynamics",
+  "contract_version": 1,
+  "reference_duration_us": 8266667,
+  "source_width": 1080,
+  "source_height": 1920,
+  "fps_num": 30,
+  "fps_den": 1,
+  "source_cut_count": 7,
+  "source_cuts": [
+    {
+      "cut": 1,
+      "start_us": 0,
+      "end_us": 700000,
+      "subject_presence": "identifiable",
+      "content_roles": ["on-camera speaker", "persistent text overlay"],
+      "scene": "Vertical indoor medium-full portrait in front of a dark door and pale wall. A red location-pin 500M mark is at upper left; a purple Devanagari label and yellow upward arrow are at lower center.",
+      "action": "The woman faces the camera, begins speaking, and holds one hand across her lower abdomen while the other rests low at her side.",
+      "camera": "Locked vertical phone framing from head to mid-thigh; no cut or reframing.",
+      "transition": "Continuous opening.",
+      "end_state": "Direct gaze remains; speaking mouth is open; hands remain low.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 2,
+      "start_us": 700000,
+      "end_us": 1800000,
+      "subject_presence": "identifiable",
+      "content_roles": ["on-camera speaker", "persistent text overlay"],
+      "scene": "Same indoor portrait and persistent overlays.",
+      "action": "She continues the first spoken phrase with a mild smile; her free hand makes a small downward-and-forward emphasis motion before settling beside her skirt.",
+      "camera": "Locked vertical phone framing; small natural body sway only.",
+      "transition": "Continuous performance.",
+      "end_state": "One hand is held over the lower abdomen and the other is lowered near the thigh.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 3,
+      "start_us": 1800000,
+      "end_us": 3000000,
+      "subject_presence": "identifiable",
+      "content_roles": ["on-camera speaker", "persistent text overlay"],
+      "scene": "Same indoor portrait and persistent overlays.",
+      "action": "She speaks with a warmer smile, briefly lowers her eyelids, then returns to direct eye contact. Both hands stay close to the lower torso.",
+      "camera": "Locked vertical phone framing.",
+      "transition": "Continuous performance.",
+      "end_state": "Eyes reopen to the lens; torso remains square to camera.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 4,
+      "start_us": 3000000,
+      "end_us": 4860000,
+      "subject_presence": "identifiable",
+      "content_roles": ["on-camera speaker", "persistent text overlay"],
+      "scene": "Same indoor portrait and persistent overlays.",
+      "action": "She completes the first spoken phrase with changing mouth shapes and a soft, conversational expression; the free hand makes another compact beat at hip level.",
+      "camera": "Locked vertical phone framing.",
+      "transition": "Continuous performance.",
+      "end_state": "The mouth closes at the end of the phrase; hands return to the lower torso.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 5,
+      "start_us": 4860000,
+      "end_us": 5360000,
+      "subject_presence": "identifiable",
+      "content_roles": ["on-camera speaker", "persistent text overlay"],
+      "scene": "Same indoor portrait and persistent overlays.",
+      "action": "Brief speech pause; she keeps eye contact and holds a quiet closed-mouth expression.",
+      "camera": "Locked vertical phone framing.",
+      "transition": "Brief performance pause.",
+      "end_state": "Still, direct-facing pose with hands low.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 6,
+      "start_us": 5360000,
+      "end_us": 6800000,
+      "subject_presence": "identifiable",
+      "content_roles": ["on-camera speaker", "persistent text overlay"],
+      "scene": "Same indoor portrait and persistent overlays.",
+      "action": "She begins the second spoken phrase, opens her mouth more broadly, and briefly closes her eyes while keeping her torso square to the lens.",
+      "camera": "Locked vertical phone framing.",
+      "transition": "Continuous performance.",
+      "end_state": "Eyes return to the camera; one hand remains over the lower abdomen.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 7,
+      "start_us": 6800000,
+      "end_us": 8266667,
+      "subject_presence": "identifiable",
+      "content_roles": ["on-camera speaker", "persistent text overlay"],
+      "scene": "Same indoor portrait and persistent overlays.",
+      "action": "She finishes the second phrase with a friendly expression. Her free hand rises slightly toward the lower torso and settles; the other hand stays near the abdomen.",
+      "camera": "Locked vertical phone framing.",
+      "transition": "Continuous ending with no visual transition.",
+      "end_state": "Direct gaze and relaxed hands low at the final video frame.",
+      "certainty": "certain"
+    }
+  ],
+  "source_events": [
+    {
+      "event": 1,
+      "kind": "dialogue",
+      "start_us": 0,
+      "end_us": 4860000,
+      "source_cut_start": 1,
+      "source_cut_end": 4,
+      "text": "एक लिपिन से तक गई हूँ, देखो हम कुछ नी पास है",
+      "certainty": "uncertain"
+    },
+    {
+      "event": 2,
+      "kind": "silence",
+      "start_us": 4860000,
+      "end_us": 5360000,
+      "source_cut_start": 5,
+      "source_cut_end": 5,
+      "text": "",
+      "certainty": "certain"
+    },
+    {
+      "event": 3,
+      "kind": "dialogue",
+      "start_us": 5360000,
+      "end_us": 8266667,
+      "source_cut_start": 6,
+      "source_cut_end": 7,
+      "text": "क्या आज रात इन दूरियों को मिटा दें",
+      "certainty": "certain"
+    },
+    {
+      "event": 4,
+      "kind": "subtitle",
+      "start_us": 0,
+      "end_us": 8266667,
+      "source_cut_start": 1,
+      "source_cut_end": 7,
+      "text": "दूरियां मिटाएं",
+      "certainty": "certain"
+    }
+  ],
+  "notes": "The video contains no scene edits. Semantic Cuts are action and dialogue phases. The first locally transcribed line has low confidence and must be approved or corrected by the user before generation."
+}

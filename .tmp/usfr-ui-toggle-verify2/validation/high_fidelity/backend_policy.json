@@ -1,0 +1,34 @@
+{
+  "schema_version": "usfr-backend-policy/v1",
+  "default_backend": "ffmpeg",
+  "candidates": {
+    "hyperframes_html_ui": {
+      "domain": "complex_html_ui",
+      "status": "disabled",
+      "activation_report_sha256": null,
+      "max_p95_slowdown_ratio": 1.1,
+      "max_p95_slowdown_seconds": 120
+    },
+    "remotion_react_ui": {
+      "domain": "programmable_overlays",
+      "status": "disabled",
+      "activation_report_sha256": null,
+      "max_p95_slowdown_ratio": 1.1,
+      "max_p95_slowdown_seconds": 120
+    },
+    "video_use_boundary_qc": {
+      "domain": "boundary_qc",
+      "status": "disabled",
+      "activation_report_sha256": null,
+      "max_p95_slowdown_ratio": 1.1,
+      "max_p95_slowdown_seconds": 120
+    },
+    "mediabunny_preflight": {
+      "domain": "upload_preflight",
+      "status": "disabled",
+      "activation_report_sha256": null,
+      "max_p95_slowdown_ratio": 1.1,
+      "max_p95_slowdown_seconds": 120
+    }
+  }
+}

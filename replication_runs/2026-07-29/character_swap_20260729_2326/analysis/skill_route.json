@@ -1,0 +1,9 @@
+{
+  "contract": "universal-fidelity-skill-routing/v1",
+  "analysis_pass_count": 1,
+  "generated_regions": 1,
+  "modules": ["analyze-reference-video-dynamics", "replicate-source-ui-overlays", "seedance-storyboard-replication", "seedance-20", "seedance-prompt", "seedance-antislop", "seedance-characters", "seedance-camera", "seedance-motion", "seedance-lighting", "seedance-audio"],
+  "provider_modules": ["seedance-storyboard-replication"],
+  "route_sha256": "d6117c56a259be303595dd0d6174717459a24c0111040765a3e78039205ff5a8",
+  "notes": "The selected prompt modules are deferred until the approved storyboard phase; no provider task has been created."
+}

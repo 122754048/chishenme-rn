@@ -1,0 +1,30 @@
+{
+  "prompt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\person-replace-8d422a\\reference_frames\\r1\\replication_control_prompt.md",
+    "characters": 2263
+  },
+  "imageUrls": [
+    "https://rh-hk-images-switch-1252422369.cos.ap-hongkong.myqcloud.com/input/openapi/49a5d3b7125985d9af60f739c6897559f8e3ab944158b87343c844719b6a66fc.jpeg?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785328138%3B1785414538&q-key-time=1785328138%3B1785414538&q-header-list=host&q-url-param-list=&q-signature=a63495aea4c1f41515006846fd0c423b70d9031a",
+    "https://rh-hk-images-switch-1252422369.cos.ap-hongkong.myqcloud.com/input/openapi/3febf5f15af51736418b2455e0f59729a6f6a48fb46939f246981bf1c2f8b6a3.jpg?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785328139%3B1785414539&q-key-time=1785328139%3B1785414539&q-header-list=host&q-url-param-list=&q-signature=32bc5e9e3e6ee6bed8426c3c46369d430b73a068"
+  ],
+  "aspectRatio": "16:9",
+  "resolution": "2k",
+  "quality": "medium",
+  "timeline_scope_receipt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\person-replace-8d422a\\analysis\\timeline_scope_receipt.json",
+    "scope_sha256": null
+  },
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "reference_images": [
+    "C:\\Users\\zhaocx04\\Downloads\\jimeng-2025-07-21-7172-腰部以上中东女性单人照，橄榄色皮肤，自然深棕卷发，丰富面部表情，正面面对镜头，性....jpeg",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-29\\person-replace-8d422a\\reference_frames\\replacement_identity_face_crop.jpg"
+  ]
+}
