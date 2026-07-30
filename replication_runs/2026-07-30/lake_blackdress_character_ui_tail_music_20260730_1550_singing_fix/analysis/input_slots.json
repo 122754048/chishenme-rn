@@ -1,0 +1,133 @@
+{
+  "schema_version": "fixed-input-slots/v1",
+  "slot_order": [
+    "source_video",
+    "new_product_image",
+    "new_model_image",
+    "ui_screenshot",
+    "app_store_url",
+    "ui_operation_video",
+    "tail_video"
+  ],
+  "admission": {
+    "source_required": true,
+    "source_present": true,
+    "minimum_optional_slots": 1,
+    "optional_present_count": 3,
+    "can_proceed": true,
+    "language_only": false,
+    "change_input_present": true,
+    "enabled_extension_present": true,
+    "blocker_code": null
+  },
+  "slots": {
+    "source_video": {
+      "slot_id": "source_video",
+      "role": "source_video",
+      "kind": "video",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\lake_blackdress_character_ui_tail_music_20260730_1550\\inputs\\source_video.mp4"
+      ],
+      "sha256": [
+        "df7984360c0ddd62fa6b1232bda8eecb546b89f3afb3cb7a1fc58e607b4d7441"
+      ]
+    },
+    "new_product_image": {
+      "slot_id": "new_product_image",
+      "role": "target_product_truth",
+      "kind": "image",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "new_model_image": {
+      "slot_id": "new_model_image",
+      "role": "target_character_truth",
+      "kind": "image",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\lake_blackdress_character_ui_tail_music_20260730_1550\\inputs\\new_model_image.png"
+      ],
+      "sha256": [
+        "f3c0321fba54367f04fdff6468123c2cd3b8d69e93e07610c9a44eb74189a033"
+      ]
+    },
+    "ui_screenshot": {
+      "slot_id": "ui_screenshot",
+      "role": "target_ui_truth",
+      "kind": "image",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "app_store_url": {
+      "slot_id": "app_store_url",
+      "role": "app_store_evidence",
+      "kind": "url",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "ui_operation_video": {
+      "slot_id": "ui_operation_video",
+      "role": "opaque_ui_demo",
+      "kind": "video",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\lake_blackdress_character_ui_tail_music_20260730_1550\\inputs\\ui_operation_video.mp4"
+      ],
+      "sha256": [
+        "f79ff8497588a5f418f6762ce0e25275f6d4393fd20b90de83a031d587dab36e"
+      ]
+    },
+    "tail_video": {
+      "slot_id": "tail_video",
+      "role": "opaque_app_tail_card",
+      "kind": "video",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\lake_blackdress_character_ui_tail_music_20260730_1550\\inputs\\tail_video.mp4"
+      ],
+      "sha256": [
+        "af16df2fc2e60fd8f23ccf4b7af2eeb28c7e9a305fe6add4a8ef3db948fbeabf"
+      ]
+    }
+  },
+  "routes": {
+    "product": "source_preserve",
+    "character": "replace_from_slot",
+    "ui": "opaque_ui_demo",
+    "tail": "opaque_app_tail_card",
+    "background_music": "seedance_audio_reference"
+  },
+  "extensions": {
+    "ui_rebuild_enabled": false,
+    "background_music": {
+      "extension_id": "input_contract_v2.background_music",
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\lake_blackdress_character_ui_tail_music_20260730_1550\\inputs\\background_music_from_01m30.wav"
+      ],
+      "sha256": [
+        "8e315330470427ae741782f07de226b7450341d7da940543888e6609f45d4cb5"
+      ],
+      "content_type": "audio/wav",
+      "provider_route": "seedance_audio_reference"
+    }
+  }
+}

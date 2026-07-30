@@ -1383,6 +1383,10 @@ class SeedancePromptStage:
         music = extensions.get("background_music") if isinstance(extensions, Mapping) else None
         if not isinstance(music, Mapping):
             return ""
+        # Songs are applied only by the dedicated RunningHub song-lip-sync
+        # post-process.  Seedance must receive neither @Audio1 nor lyrics.
+        if uploaded_audio_kind == "song":
+            return ""
         if source_music_windows is not None:
             if not source_music_windows:
                 return ""
@@ -1715,6 +1719,11 @@ class SeedancePromptStage:
         uploaded_song_performance = self._uploaded_song_performance_lines(
             context=context, plan=plan, line_contracts=lines
         )
+        if uploaded_audio_kind == "song" and not uploaded_song_performance:
+            raise _replication_error(
+                "PERFORMANCE_LINE_CONTRACT_REQUIRED",
+                "uploaded lyric song is missing the source-verified lyric and performer contract required for lip-sync compilation",
+            )
         outputs: list[dict[str, Any]] = []
         for raw_segment in segments:
             segment_row = _mapping(raw_segment, "segment plan row")
@@ -1757,13 +1766,18 @@ class SeedancePromptStage:
                     "product_or_ui_truth": str(cut.get("visual") or "use only approved target evidence"),
                     "commercial_proof": str((cut.get("selling_point") or {}).get("proof", {}).get("evidence_id") or "approved target evidence"),
                     "transition": "match the source Cut transition", "continuity": str(board.get("continuity") or "preserve continuity"),
-                    "audio": " ".join(filter(None, (str(cut.get("dialogue") or "no dialogue"), uploaded_music_instruction))),
+                    "audio": "no dialogue" if uploaded_audio_kind == "song" else " ".join(filter(None, (str(cut.get("dialogue") or "no dialogue"), uploaded_music_instruction))),
                     "factor_ids": [f"{cut_id}.scene", f"{cut_id}.camera", f"{cut_id}.action", f"{cut_id}.audio"],
                 })
             local_lines = [line for line in lines if str(line.get("cut_id") or "") in set(cut_ids)]
             local_performance = source_song_performance.get(
                 segment_id, uploaded_song_performance.get(segment_id, [])
             )
+            if uploaded_audio_kind == "song" and not local_performance:
+                raise _replication_error(
+                    "PERFORMANCE_LINE_CONTRACT_REQUIRED",
+                    f"{segment_id} has an uploaded lyric song without a verified lyric lip-sync contract",
+                )
             expected_sung_lines = [
                 line for line in local_lines if line.get("content_type") == "sung"
             ] if uploaded_audio_kind != "non_song" else []
@@ -1782,13 +1796,17 @@ class SeedancePromptStage:
                 "shots": shots,
                 "locks": ["preserve approved Cut order", "preserve approved character and product evidence"],
                 "negative_constraints": ["no unapproved text", "no UI or tail media generation", "no generic quality filler"],
-                "no_speech_contracts": [] if local_lines and uploaded_audio_kind != "non_song" else self._no_speech([str(item) for item in cut_ids]),
+                "no_speech_contracts": [] if local_lines and uploaded_audio_kind not in {"non_song", "song"} else self._no_speech([str(item) for item in cut_ids]),
             }
             try:
                 artifact = compiler.compile_prompt(
                     segment=segment,
-                    line_contracts=[] if uploaded_audio_kind == "non_song" else local_lines,
-                    performance_lines=local_performance,
+                    # Uploaded lyric songs are lip-synced only after the
+                    # generated-person video exists.  Keep their verified
+                    # contract outside Seedance rather than asking Seedance
+                    # to render audio, lyrics, or mouth timing.
+                    line_contracts=[] if uploaded_audio_kind in {"non_song", "song"} else local_lines,
+                    performance_lines=[] if uploaded_audio_kind == "song" else local_performance,
                     factors=self._factor_flags(context),
                     skill_files=skill_files,
                     compiler_checks={
@@ -1806,7 +1824,15 @@ class SeedancePromptStage:
                 )
             except Exception as exc:
                 raise _replication_error("PROMPT_INTEGRITY_FAILED", f"Seedance-20 compiler rejected {segment_id}") from exc
-            outputs.append({"segment_id": segment_id, "compiled_prompt": artifact, "segment_plan_sha256": plan_sha})
+            row = {"segment_id": segment_id, "compiled_prompt": artifact, "segment_plan_sha256": plan_sha}
+            if uploaded_audio_kind == "song":
+                row["song_lip_sync_contract"] = {
+                    "schema_version": "uploaded-song-lip-sync-contract/v1",
+                    "segment_id": segment_id,
+                    "segment_plan_sha256": plan_sha,
+                    "performance_lines": local_performance,
+                }
+            outputs.append(row)
         envelope = {"schema_version": "seedance-input-contract/v1", "segment_plan": plan, "segment_plan_sha256": plan_sha, "segments": outputs}
         published = _publish_json(context, kind="seedance_input_contract", value=envelope)
         return {"status": "ready", "seedance_input_contract": envelope, "published_artifacts": [published]}
@@ -2706,7 +2732,18 @@ class SeedanceAuditStage:
                 plan_sha256=plan_sha,
                 segment_plan=plan,
             )
-            audio_reference = self._background_music_reference(
+            # A classified song is intentionally not a Seedance audio input:
+            # its original full audio and exact time window go to the
+            # dedicated song-lip-sync workflow after this video is generated.
+            uploaded_kind = None
+            if SeedancePromptStage._uploaded_music_present(context):
+                try:
+                    uploaded_kind = str(_uploaded_audio_classification(context).get("kind") or "")
+                except Exception:
+                    uploaded_kind = None
+            if uploaded_kind == "song" and "@Audio1" in prompt:
+                raise _replication_error("PROMPT_INTEGRITY_FAILED", "song Seedance prompt must not reference @Audio1")
+            audio_reference = None if uploaded_kind == "song" else self._background_music_reference(
                 context, segment=segment_plan, plan_sha256=plan_sha, prompt=prompt.strip()
             )
             audio_urls = [audio_reference[0]] if audio_reference is not None else []

@@ -1,0 +1,31 @@
+{
+  "schema_version": "usfr-timeline-scope-receipt/v1",
+  "status": "passed",
+  "route": "no_terminal_end_card",
+  "source_end_ms": 10867,
+  "final_output_end_ms": 10867,
+  "allowed_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05"
+  ],
+  "excluded_cut_ids": [],
+  "source_pixel_cut_ids": [],
+  "image_model_allowed_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05"
+  ],
+  "opaque_ui_cut_ids": [],
+  "input_slots_sha256": "d200640d081c1b48e09634a282c69ae053c7e9ce109f7c62d4a723705666d897",
+  "timeline_regions_sha256": "ef4c9521362de998d2e924cca81158e5fcbad421774ee4e5492a6edd151203a6",
+  "segment_plan_sha256": "d73726aa5b3312bd61c9c620db5760b7a6e53b5122308aa8b78b9fe5e4616a24",
+  "text_artifact_sha256": {
+    "director_storyboard_image2_prompt.txt": "e0f4ca4de6a2be55cad7829f0405c3b53efc5905ad1b1f1743b6dfa8073d7c37"
+  },
+  "scope_sha256": "cc90943ec375c0133d254d19f1673758f7b91af04de5a3434d4234e14dbf92ec"
+}

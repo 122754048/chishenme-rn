@@ -1,0 +1,42 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082741580867256322",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\storyboards\\segment_01_v1_prompt.submitted.txt",
+  "timeline_scope_receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\analysis\\timeline_scope_receipt_storyboard.json",
+  "timeline_scope_receipt_sha256": "dfbf0df7e708a30240783af79489efa163e9c3936df59e732633c7fc397d63be",
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "C11",
+    "C12"
+  ],
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\reference_frames\\control_keyframes.png",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\inputs\\new_model_image.png",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\inputs\\new_product_image.jpeg"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\storyboards\\segment_01_v1.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 94.765,
+  "revision_reason": "initial approved-script director storyboard",
+  "revision_number": 1,
+  "artifact_stem": "segment_01_v1",
+  "cut_id": "SEGMENT_01",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

@@ -1,0 +1,12 @@
+{
+  "run_id": "model_replace_20260730_1330",
+  "created_at": "2026-07-30",
+  "route": "fixed_slot_identity_replacement",
+  "fidelity_level": "level_1_structure_performance",
+  "inputs": {
+    "source_video": {"path": "inputs/source_video.mp4", "sha256": "5cd83cdf89f0f274d8f64d70dc561291ae77f78590a755114f85e6c1b128e79f", "mime_type": "video/mp4"},
+    "new_model_image": {"path": "inputs/new_model_image.png", "sha256": "c6e97d5599ae08dcfaeee1871985006353a95de0501910b0b6e7fc80d0c27ba1", "mime_type": "image/png"}
+  },
+  "output": {"width": 720, "height": 1280, "fps": 30, "container": "mp4"},
+  "approval_state": "awaiting_reverse_storyboard_script"
+}

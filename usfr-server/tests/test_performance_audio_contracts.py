@@ -3,16 +3,34 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
+import pytest
+
 from server.errors import ReplicationError
 from server.capability_ports import CapabilityStagePort, validate_provider_callable_binding
 from server.orchestrator import HIGH_FIDELITY_STAGE_ARTIFACTS, build_semantic_stage_mapping
 from server.performance_audio_contracts import (
     build_audio_evidence_contracts,
+    build_background_music_performance_contract_from_route,
     build_source_audio_contracts,
 )
 
 
 SOURCE_AUDIO_SHA = "a" * 64
+
+
+def test_uploaded_song_route_blocks_instead_of_downgrading_when_singing_evidence_is_missing():
+    """A classified lyric song must return to script confirmation, never BGM."""
+
+    with pytest.raises(ReplicationError, match="VERIFIED_SINGING_EVIDENCE_REQUIRED"):
+        build_background_music_performance_contract_from_route(
+            uploaded_audio_route={
+                "mode": "pending_uploaded_song_lyrics_confirmation",
+                "eligible_source_windows": [{
+                    "speaker_id": "CHARACTER_A", "start_ms": 0, "end_ms": 4_000,
+                }],
+            },
+            performance_line_contract=None,
+        )
 
 
 def _regions():

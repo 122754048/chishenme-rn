@@ -1,0 +1,706 @@
+{
+  "auditor": "seedance-20",
+  "status": "passed",
+  "schema_version": "usfr-seedance-integrity-audit/v1",
+  "segment_id": "S01",
+  "request_sha256": "a68f73dbc2c15ff279fe5d12e4d1bd29bbdb7d4d2fc570c2c967e2f2f8b87cd1",
+  "prompt_sha256": "8dd4154aff2e1d5fc7c89721a46b4f3692355abcdecd9ecf4d56236ffb4edbce",
+  "compiled_artifact_sha256": "e99bfa1d070b1c3ce2a8551d9ef40a3909638c795dd645634940ff7e90a60d92",
+  "approved_script_sha256": "3b867f50bd623ca2fb6788b3b34f8d24e33f9fc5363f04582d73e4a72f7f2fc7",
+  "approved_storyboard_manifest_sha256": "109a8cba43ed0703fc67706df522b922201a13745c0cbe22cf3e5f9f76a03ecf",
+  "segment_plan_sha256": "4ef2b1be021dd7b304c2d5e8390624e93fe6a95ef343db2d9185aca5f5438176",
+  "contract_digests": {
+    "approved_storyboard_sha256": "c8366322228b76326bf2e24b2df60e6b6886bf40daa9507a6dc190292692c4f4",
+    "source_fidelity_contract_sha256": "82d9f6383728cdc20e8d52f27466254f90cc8fe27fc1895c2652b605d69c678a",
+    "timeline_regions_sha256": "a8d798288d502c198f8989964df4648279cdc55a8457142d079a540fbfffb58e",
+    "character_lock_sha256": "4f57cc7a2375236ed467815256ba1e96c28212779ddaeaa82594259763dd9b3c",
+    "product_truth_sha256": "0ab62764bd6cee4c3685cadc88b705edda0d3a71adbf1c45f4c3e79a0d309f89",
+    "selling_point_mapping_sha256": "281ffab8835fe7acaa9e35e83c1d2a5a91b304447a02aaddfc58fef0287adfcd",
+    "audio_contract_sha256": "57fa616b0581718fadbc22f51de39056105a2b77c17eeccfeabe934078986abf",
+    "continuity_manifest_sha256": "4f57cc7a2375236ed467815256ba1e96c28212779ddaeaa82594259763dd9b3c"
+  },
+  "compiler": {
+    "contract": "seedance20-prompt-compiler/v1",
+    "profile": "high_fidelity_hybrid_v1",
+    "skill": "seedance-20",
+    "version": "6.6.0",
+    "skill_sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+    "loaded_modules": [
+      "seedance-20",
+      "seedance-prompt",
+      "seedance-antislop",
+      "seedance-camera",
+      "seedance-motion",
+      "seedance-lighting",
+      "seedance-characters",
+      "seedance-audio",
+      "seedance-sequence"
+    ],
+    "required_specialists": [
+      "seedance-camera",
+      "seedance-motion",
+      "seedance-lighting",
+      "seedance-characters",
+      "seedance-audio",
+      "seedance-sequence"
+    ],
+    "dependency_snapshot": {
+      "seedance-20": {
+        "name": "seedance-20",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+        "package_path": "dependencies/seedance-20/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-prompt": {
+        "name": "seedance-prompt",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "ce558207516a6408de3425956c911dac4dbaa5da0d024d29ef03a01186d964a6",
+        "package_path": "dependencies/seedance-20/skills/seedance-prompt/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-antislop": {
+        "name": "seedance-antislop",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "3303e4ae1de3dc2fcf784e965c4df95b91c8d6522e04a11df9533440d9117eb1",
+        "package_path": "dependencies/seedance-20/skills/seedance-antislop/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-camera": {
+        "name": "seedance-camera",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "9785dee770590268ee98eab9fa7b2f7580cce8ad92764ee7b9c4a6613686b4bf",
+        "package_path": "dependencies/seedance-20/skills/seedance-camera/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-motion": {
+        "name": "seedance-motion",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "29dcb5b1718fe9742fea8498da3b468f47309d595ad56c9c62d65edccdbf52c7",
+        "package_path": "dependencies/seedance-20/skills/seedance-motion/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-lighting": {
+        "name": "seedance-lighting",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "8dd249bd1bc380801b624cb90cc37d46ac725ac20e7ec2b8efce02ac67cd21f7",
+        "package_path": "dependencies/seedance-20/skills/seedance-lighting/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-characters": {
+        "name": "seedance-characters",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "355500e3f0e00f789d736438e395501d7eac8136d40bac4b39b1b98a6e271148",
+        "package_path": "dependencies/seedance-20/skills/seedance-characters/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-audio": {
+        "name": "seedance-audio",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "3a5a906f9775222389520c9b4d426842d0fc3cb9d20621491a91e884d774e424",
+        "package_path": "dependencies/seedance-20/skills/seedance-audio/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-sequence": {
+        "name": "seedance-sequence",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "cbaecde282c0efb73120366dc54628a3f9988919ae545237f6cdd1b2e40f5758",
+        "package_path": "dependencies/seedance-20/skills/seedance-sequence/SKILL.md",
+        "digest_required": true
+      }
+    },
+    "route_sha256": "e63e77d7f62a3712350686c6d446c9727525946cacf040560d313a347b4ba8ed",
+    "checks": {
+      "professional_gate": true,
+      "capability_check": true,
+      "allocation_check": true,
+      "reference_role_check": true,
+      "directing_coherence_check": true,
+      "anti_slop_check": true,
+      "route_exclusion_check": true,
+      "line_parity_check": true
+    },
+    "rule_audit": {
+      "engine": "seedance-20",
+      "version": "seedance20-rules/v2",
+      "skill_sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+      "checks_sha256": "b3b46181a642414bfd4a657d96f0724cf67c7b1033fda62b7d7b297ccc6bbda1",
+      "source": "immutable_skill_bytes_and_compiler_rules"
+    },
+    "review_bindings": {
+      "output_language": null,
+      "approved_script_sha256": "3b867f50bd623ca2fb6788b3b34f8d24e33f9fc5363f04582d73e4a72f7f2fc7",
+      "approved_storyboard_manifest_sha256": "109a8cba43ed0703fc67706df522b922201a13745c0cbe22cf3e5f9f76a03ecf",
+      "approved_storyboard_cut_sha256s": [
+        "c8366322228b76326bf2e24b2df60e6b6886bf40daa9507a6dc190292692c4f4",
+        "c8366322228b76326bf2e24b2df60e6b6886bf40daa9507a6dc190292692c4f4",
+        "c8366322228b76326bf2e24b2df60e6b6886bf40daa9507a6dc190292692c4f4",
+        "c8366322228b76326bf2e24b2df60e6b6886bf40daa9507a6dc190292692c4f4"
+      ],
+      "segment_plan_sha256": "4ef2b1be021dd7b304c2d5e8390624e93fe6a95ef343db2d9185aca5f5438176"
+    },
+    "professional_gate": true,
+    "capability_check": true,
+    "allocation_check": true,
+    "reference_role_check": true,
+    "directing_coherence_check": true,
+    "anti_slop_check": true,
+    "route_exclusion_check": true,
+    "line_parity_check": true,
+    "output_sha256": "b90d456145301f23d5229fc946b6eeec50f2ed9fc641eeed5fc21948f640e90a"
+  },
+  "factor_coverage": {
+    "required_factor_ids": [
+      "S01.C01.SCENE",
+      "S01.C01.CAMERA",
+      "S01.C01.LIGHT",
+      "S01.C01.PERFORMANCE",
+      "S01.C01.ACTION",
+      "S01.C01.IDENTITY",
+      "S01.C01.PROOF",
+      "S01.C01.TRANSITION",
+      "S01.C01.CONTINUITY",
+      "S01.C01.AUDIO",
+      "S01.C02.SCENE",
+      "S01.C02.CAMERA",
+      "S01.C02.LIGHT",
+      "S01.C02.PERFORMANCE",
+      "S01.C02.ACTION",
+      "S01.C02.IDENTITY",
+      "S01.C02.PROOF",
+      "S01.C02.TRANSITION",
+      "S01.C02.CONTINUITY",
+      "S01.C02.AUDIO",
+      "S01.C03.SCENE",
+      "S01.C03.CAMERA",
+      "S01.C03.LIGHT",
+      "S01.C03.PERFORMANCE",
+      "S01.C03.ACTION",
+      "S01.C03.IDENTITY",
+      "S01.C03.PROOF",
+      "S01.C03.TRANSITION",
+      "S01.C03.CONTINUITY",
+      "S01.C03.AUDIO",
+      "S01.C04.SCENE",
+      "S01.C04.CAMERA",
+      "S01.C04.LIGHT",
+      "S01.C04.PERFORMANCE",
+      "S01.C04.ACTION",
+      "S01.C04.IDENTITY",
+      "S01.C04.PROOF",
+      "S01.C04.TRANSITION",
+      "S01.C04.CONTINUITY",
+      "S01.C04.AUDIO"
+    ],
+    "required_factor_ids_sha256": "97ff4347f92f5296cd772131ba0d5a5849d68fd15203f5eeddc4fafdd877152a",
+    "prompt_factor_coverage": [
+      {
+        "factor_id": "S01.C01.SCENE",
+        "source_pointer": "/segment/shots/0/factor_ids/0",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C01",
+        "prompt_span": {
+          "start": 327,
+          "end": 1200
+        }
+      },
+      {
+        "factor_id": "S01.C01.CAMERA",
+        "source_pointer": "/segment/shots/0/factor_ids/1",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C01",
+        "prompt_span": {
+          "start": 327,
+          "end": 1200
+        }
+      },
+      {
+        "factor_id": "S01.C01.LIGHT",
+        "source_pointer": "/segment/shots/0/factor_ids/2",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C01",
+        "prompt_span": {
+          "start": 327,
+          "end": 1200
+        }
+      },
+      {
+        "factor_id": "S01.C01.PERFORMANCE",
+        "source_pointer": "/segment/shots/0/factor_ids/3",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C01",
+        "prompt_span": {
+          "start": 327,
+          "end": 1200
+        }
+      },
+      {
+        "factor_id": "S01.C01.ACTION",
+        "source_pointer": "/segment/shots/0/factor_ids/4",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C01",
+        "prompt_span": {
+          "start": 327,
+          "end": 1200
+        }
+      },
+      {
+        "factor_id": "S01.C01.IDENTITY",
+        "source_pointer": "/segment/shots/0/factor_ids/5",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C01",
+        "prompt_span": {
+          "start": 327,
+          "end": 1200
+        }
+      },
+      {
+        "factor_id": "S01.C01.PROOF",
+        "source_pointer": "/segment/shots/0/factor_ids/6",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C01",
+        "prompt_span": {
+          "start": 327,
+          "end": 1200
+        }
+      },
+      {
+        "factor_id": "S01.C01.TRANSITION",
+        "source_pointer": "/segment/shots/0/factor_ids/7",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C01",
+        "prompt_span": {
+          "start": 327,
+          "end": 1200
+        }
+      },
+      {
+        "factor_id": "S01.C01.CONTINUITY",
+        "source_pointer": "/segment/shots/0/factor_ids/8",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C01",
+        "prompt_span": {
+          "start": 327,
+          "end": 1200
+        }
+      },
+      {
+        "factor_id": "S01.C01.AUDIO",
+        "source_pointer": "/segment/shots/0/factor_ids/9",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C01",
+        "prompt_span": {
+          "start": 327,
+          "end": 1200
+        }
+      },
+      {
+        "factor_id": "S01.C02.SCENE",
+        "source_pointer": "/segment/shots/1/factor_ids/0",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C02",
+        "prompt_span": {
+          "start": 1201,
+          "end": 2043
+        }
+      },
+      {
+        "factor_id": "S01.C02.CAMERA",
+        "source_pointer": "/segment/shots/1/factor_ids/1",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C02",
+        "prompt_span": {
+          "start": 1201,
+          "end": 2043
+        }
+      },
+      {
+        "factor_id": "S01.C02.LIGHT",
+        "source_pointer": "/segment/shots/1/factor_ids/2",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C02",
+        "prompt_span": {
+          "start": 1201,
+          "end": 2043
+        }
+      },
+      {
+        "factor_id": "S01.C02.PERFORMANCE",
+        "source_pointer": "/segment/shots/1/factor_ids/3",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C02",
+        "prompt_span": {
+          "start": 1201,
+          "end": 2043
+        }
+      },
+      {
+        "factor_id": "S01.C02.ACTION",
+        "source_pointer": "/segment/shots/1/factor_ids/4",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C02",
+        "prompt_span": {
+          "start": 1201,
+          "end": 2043
+        }
+      },
+      {
+        "factor_id": "S01.C02.IDENTITY",
+        "source_pointer": "/segment/shots/1/factor_ids/5",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C02",
+        "prompt_span": {
+          "start": 1201,
+          "end": 2043
+        }
+      },
+      {
+        "factor_id": "S01.C02.PROOF",
+        "source_pointer": "/segment/shots/1/factor_ids/6",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C02",
+        "prompt_span": {
+          "start": 1201,
+          "end": 2043
+        }
+      },
+      {
+        "factor_id": "S01.C02.TRANSITION",
+        "source_pointer": "/segment/shots/1/factor_ids/7",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C02",
+        "prompt_span": {
+          "start": 1201,
+          "end": 2043
+        }
+      },
+      {
+        "factor_id": "S01.C02.CONTINUITY",
+        "source_pointer": "/segment/shots/1/factor_ids/8",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C02",
+        "prompt_span": {
+          "start": 1201,
+          "end": 2043
+        }
+      },
+      {
+        "factor_id": "S01.C02.AUDIO",
+        "source_pointer": "/segment/shots/1/factor_ids/9",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C02",
+        "prompt_span": {
+          "start": 1201,
+          "end": 2043
+        }
+      },
+      {
+        "factor_id": "S01.C03.SCENE",
+        "source_pointer": "/segment/shots/2/factor_ids/0",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C03",
+        "prompt_span": {
+          "start": 2044,
+          "end": 2942
+        }
+      },
+      {
+        "factor_id": "S01.C03.CAMERA",
+        "source_pointer": "/segment/shots/2/factor_ids/1",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C03",
+        "prompt_span": {
+          "start": 2044,
+          "end": 2942
+        }
+      },
+      {
+        "factor_id": "S01.C03.LIGHT",
+        "source_pointer": "/segment/shots/2/factor_ids/2",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C03",
+        "prompt_span": {
+          "start": 2044,
+          "end": 2942
+        }
+      },
+      {
+        "factor_id": "S01.C03.PERFORMANCE",
+        "source_pointer": "/segment/shots/2/factor_ids/3",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C03",
+        "prompt_span": {
+          "start": 2044,
+          "end": 2942
+        }
+      },
+      {
+        "factor_id": "S01.C03.ACTION",
+        "source_pointer": "/segment/shots/2/factor_ids/4",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C03",
+        "prompt_span": {
+          "start": 2044,
+          "end": 2942
+        }
+      },
+      {
+        "factor_id": "S01.C03.IDENTITY",
+        "source_pointer": "/segment/shots/2/factor_ids/5",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C03",
+        "prompt_span": {
+          "start": 2044,
+          "end": 2942
+        }
+      },
+      {
+        "factor_id": "S01.C03.PROOF",
+        "source_pointer": "/segment/shots/2/factor_ids/6",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C03",
+        "prompt_span": {
+          "start": 2044,
+          "end": 2942
+        }
+      },
+      {
+        "factor_id": "S01.C03.TRANSITION",
+        "source_pointer": "/segment/shots/2/factor_ids/7",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C03",
+        "prompt_span": {
+          "start": 2044,
+          "end": 2942
+        }
+      },
+      {
+        "factor_id": "S01.C03.CONTINUITY",
+        "source_pointer": "/segment/shots/2/factor_ids/8",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C03",
+        "prompt_span": {
+          "start": 2044,
+          "end": 2942
+        }
+      },
+      {
+        "factor_id": "S01.C03.AUDIO",
+        "source_pointer": "/segment/shots/2/factor_ids/9",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C03",
+        "prompt_span": {
+          "start": 2044,
+          "end": 2942
+        }
+      },
+      {
+        "factor_id": "S01.C04.SCENE",
+        "source_pointer": "/segment/shots/3/factor_ids/0",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C04",
+        "prompt_span": {
+          "start": 2943,
+          "end": 3809
+        }
+      },
+      {
+        "factor_id": "S01.C04.CAMERA",
+        "source_pointer": "/segment/shots/3/factor_ids/1",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C04",
+        "prompt_span": {
+          "start": 2943,
+          "end": 3809
+        }
+      },
+      {
+        "factor_id": "S01.C04.LIGHT",
+        "source_pointer": "/segment/shots/3/factor_ids/2",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C04",
+        "prompt_span": {
+          "start": 2943,
+          "end": 3809
+        }
+      },
+      {
+        "factor_id": "S01.C04.PERFORMANCE",
+        "source_pointer": "/segment/shots/3/factor_ids/3",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C04",
+        "prompt_span": {
+          "start": 2943,
+          "end": 3809
+        }
+      },
+      {
+        "factor_id": "S01.C04.ACTION",
+        "source_pointer": "/segment/shots/3/factor_ids/4",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C04",
+        "prompt_span": {
+          "start": 2943,
+          "end": 3809
+        }
+      },
+      {
+        "factor_id": "S01.C04.IDENTITY",
+        "source_pointer": "/segment/shots/3/factor_ids/5",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C04",
+        "prompt_span": {
+          "start": 2943,
+          "end": 3809
+        }
+      },
+      {
+        "factor_id": "S01.C04.PROOF",
+        "source_pointer": "/segment/shots/3/factor_ids/6",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C04",
+        "prompt_span": {
+          "start": 2943,
+          "end": 3809
+        }
+      },
+      {
+        "factor_id": "S01.C04.TRANSITION",
+        "source_pointer": "/segment/shots/3/factor_ids/7",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C04",
+        "prompt_span": {
+          "start": 2943,
+          "end": 3809
+        }
+      },
+      {
+        "factor_id": "S01.C04.CONTINUITY",
+        "source_pointer": "/segment/shots/3/factor_ids/8",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C04",
+        "prompt_span": {
+          "start": 2943,
+          "end": 3809
+        }
+      },
+      {
+        "factor_id": "S01.C04.AUDIO",
+        "source_pointer": "/segment/shots/3/factor_ids/9",
+        "carrier": "prompt_carried",
+        "status": "passed",
+        "shot_id": "C04",
+        "prompt_span": {
+          "start": 2943,
+          "end": 3809
+        }
+      }
+    ]
+  },
+  "checks": {
+    "approved_cut_order": true,
+    "character_lock": true,
+    "product_lock": true,
+    "duration_and_timing": true,
+    "voiceover_and_audio": true,
+    "camera_action_continuity": true,
+    "selling_point_evidence": true,
+    "timeline_region_routing": true,
+    "reference_role_mapping": true,
+    "provider_parameters": true,
+    "forbidden_fields": true,
+    "zero_ambiguity": true,
+    "no_unresolved_placeholders": true
+  },
+  "ambiguities": [],
+  "unresolved_placeholders": [],
+  "provider": {
+    "model": "seedance-2.0-fast-token",
+    "resolution": "720p",
+    "duration_seconds": "7",
+    "ratio": "9:16",
+    "generateAudio": true,
+    "realPersonMode": true,
+    "image_count": 2,
+    "video_count": 1,
+    "audio_count": 0,
+    "source_video_reference": {
+      "schema_version": "usfr-video-reference/v1",
+      "url": "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/71263ee7899ddc8b5b974752e002039822aed1ab25216a4d24b8ffb2eaacf2cc.mp4?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785390639%3B1785477039&q-key-time=1785390639%3B1785477039&q-header-list=host&q-url-param-list=&q-signature=1411fc1cad8e7a8890642e629b5e3ba5fa894ad6",
+      "source_video_sha256": "5cd83cdf89f0f274d8f64d70dc561291ae77f78590a755114f85e6c1b128e79f",
+      "source_slice_sha256": "71263ee7899ddc8b5b974752e002039822aed1ab25216a4d24b8ffb2eaacf2cc",
+      "segment_id": "S01",
+      "segment_plan_sha256": "3286f05990efe654c187e3e5a08346d98d88b70c9c803fa464aea15551e6f6cf",
+      "source_video_reference_artifact_id": "source-reference:71263ee7899ddc8b5b974752e002039822aed1ab25216a4d24b8ffb2eaacf2cc",
+      "start_ms": 0,
+      "end_ms": 6800,
+      "storyboard_url": "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/c8366322228b76326bf2e24b2df60e6b6886bf40daa9507a6dc190292692c4f4.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785390638%3B1785477038&q-key-time=1785390638%3B1785477038&q-header-list=host&q-url-param-list=&q-signature=c36b40257433a4d63a3ff42bdb35f4aaafc51d6f",
+      "target_changes": [
+        {
+          "kind": "new_model_image",
+          "sha256": "c6e97d5599ae08dcfaeee1871985006353a95de0501910b0b6e7fc80d0c27ba1"
+        }
+      ]
+    },
+    "target_change_receipt": [
+      {
+        "kind": "new_model_image",
+        "sha256": "c6e97d5599ae08dcfaeee1871985006353a95de0501910b0b6e7fc80d0c27ba1"
+      }
+    ]
+  },
+  "route_excluded_from_provider": [
+    "source UI interval",
+    "terminal tail interval",
+    "source keyframe sheet",
+    "replacement control sheet"
+  ]
+}

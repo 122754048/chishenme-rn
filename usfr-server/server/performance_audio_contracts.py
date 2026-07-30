@@ -971,6 +971,11 @@ def build_background_music_performance_contract_from_route(
         _blocked("BACKGROUND_MUSIC_ROUTE_REQUIRED", "uploaded_audio_route mode is invalid")
     windows = uploaded_audio_route.get("eligible_source_windows")
     if not isinstance(windows, Sequence) or isinstance(windows, (str, bytes, bytearray)) or not windows:
+        if mode == "pending_uploaded_song_lyrics_confirmation":
+            _blocked(
+                "VERIFIED_SINGING_EVIDENCE_REQUIRED",
+                "uploaded lyric song requires confirmed on-camera singer windows",
+            )
         return build_background_music_performance_contract(
             user_confirmed_intent="background_music_replacement",
             performance_line_contract=None,
@@ -981,6 +986,8 @@ def build_background_music_performance_contract_from_route(
             performance_line_contract=performance_line_contract,
         )
     except ReplicationError:
+        if mode == "pending_uploaded_song_lyrics_confirmation":
+            raise
         return build_background_music_performance_contract(
             user_confirmed_intent="background_music_replacement",
             performance_line_contract=None,
@@ -994,6 +1001,12 @@ def build_background_music_performance_contract_from_route(
             and source_time["end_ms"] <= window.get("end_ms")
             for window in eligible
         ):
+            if mode == "pending_uploaded_song_lyrics_confirmation":
+                _blocked(
+                    "VERIFIED_SINGING_EVIDENCE_REQUIRED",
+                    "uploaded lyric song line is outside its confirmed singer window",
+                    line_id=line["line_id"],
+                )
             return build_background_music_performance_contract(
                 user_confirmed_intent="background_music_replacement",
                 performance_line_contract=None,

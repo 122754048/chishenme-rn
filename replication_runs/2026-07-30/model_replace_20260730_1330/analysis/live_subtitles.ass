@@ -1,0 +1,16 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 720
+PlayResY: 1280
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: SourceArabic,Noto Sans Arabic,46,&H00FDB804,&H00FDB804,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,5,0,5,20,20,20,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:03.24,SourceArabic,,0,0,0,,{\an5\pos(360,578)}نفسك تتعرف على صحاب جداد كده؟
+Dialogue: 0,0:00:03.24,0:00:06.48,SourceArabic,,0,0,0,,{\an5\pos(360,578)}عايز تبقى مش لوحدك وسعيد\Nوتتواصل مع ناس زيك؟
+Dialogue: 0,0:00:06.48,0:00:06.80,SourceArabic,,0,0,0,,{\an5\pos(360,546)}يبقى لازم تجرب SUGO!

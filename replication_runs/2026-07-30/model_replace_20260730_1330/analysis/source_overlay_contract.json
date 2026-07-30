@@ -1,0 +1,24 @@
+{
+  "contract": "source-ui-overlay-motion",
+  "contract_version": 1,
+  "reference_duration_us": 13200000,
+  "source_width": 720,
+  "source_height": 1280,
+  "coordinate_space": "rotation_corrected_source_visible_frame_normalized",
+  "target_mapping": "source_normalized_composition_to_target_frame",
+  "attachment": "screen_space",
+  "time_range_semantics": "start_inclusive_end_exclusive",
+  "cuts": [
+    {"cut": 1, "start_us": 0, "end_us": 3240000, "source_overlays": [{"overlay_id": "subtitle_live_01", "kind": "subtitle", "start_us": 0, "end_us": 3240000, "start_rect": {"x": 0.10, "y": 0.43, "width": 0.80, "height": 0.08}, "end_rect": {"x": 0.10, "y": 0.43, "width": 0.80, "height": 0.08}, "start_rotation_deg": 0, "end_rotation_deg": 0, "start_opacity": 1, "end_opacity": 1, "motion_phase": "static", "motion_path": "screen-space center-lower subtitle hold", "z_index": 10, "layer_relation": "over performer and corridor", "interpolation": "hold", "keyframes": [{"time_us": 0, "bbox": {"x": 0.10, "y": 0.43, "width": 0.80, "height": 0.08}, "rotation_deg": 0, "opacity": 1}, {"time_us": 3240000, "bbox": {"x": 0.10, "y": 0.43, "width": 0.80, "height": 0.08}, "rotation_deg": 0, "opacity": 1}], "observed_text": null}]},
+    {"cut": 2, "start_us": 3240000, "end_us": 4200000, "source_overlays": [{"overlay_id": "subtitle_live_02", "kind": "subtitle", "start_us": 3240000, "end_us": 4200000, "start_rect": {"x": 0.10, "y": 0.42, "width": 0.80, "height": 0.12}, "end_rect": {"x": 0.10, "y": 0.42, "width": 0.80, "height": 0.12}, "start_rotation_deg": 0, "end_rotation_deg": 0, "start_opacity": 1, "end_opacity": 1, "motion_phase": "static", "motion_path": "screen-space center subtitle hold", "z_index": 10, "layer_relation": "over performer and corridor", "interpolation": "hold", "keyframes": [{"time_us": 3240000, "bbox": {"x": 0.10, "y": 0.42, "width": 0.80, "height": 0.12}, "rotation_deg": 0, "opacity": 1}, {"time_us": 4200000, "bbox": {"x": 0.10, "y": 0.42, "width": 0.80, "height": 0.12}, "rotation_deg": 0, "opacity": 1}], "observed_text": null}]},
+    {"cut": 3, "start_us": 4200000, "end_us": 6480000, "source_overlays": [{"overlay_id": "subtitle_live_02", "kind": "subtitle", "start_us": 4200000, "end_us": 6480000, "start_rect": {"x": 0.10, "y": 0.42, "width": 0.80, "height": 0.12}, "end_rect": {"x": 0.10, "y": 0.42, "width": 0.80, "height": 0.12}, "start_rotation_deg": 0, "end_rotation_deg": 0, "start_opacity": 1, "end_opacity": 1, "motion_phase": "static", "motion_path": "screen-space center subtitle hold", "z_index": 10, "layer_relation": "over performer and corridor", "interpolation": "hold", "keyframes": [{"time_us": 4200000, "bbox": {"x": 0.10, "y": 0.42, "width": 0.80, "height": 0.12}, "rotation_deg": 0, "opacity": 1}, {"time_us": 6480000, "bbox": {"x": 0.10, "y": 0.42, "width": 0.80, "height": 0.12}, "rotation_deg": 0, "opacity": 1}], "observed_text": null}]},
+    {"cut": 4, "start_us": 6480000, "end_us": 6800000, "source_overlays": [{"overlay_id": "subtitle_live_03", "kind": "subtitle", "start_us": 6480000, "end_us": 6800000, "start_rect": {"x": 0.16, "y": 0.47, "width": 0.68, "height": 0.06}, "end_rect": {"x": 0.16, "y": 0.47, "width": 0.68, "height": 0.06}, "start_rotation_deg": 0, "end_rotation_deg": 0, "start_opacity": 1, "end_opacity": 1, "motion_phase": "static", "motion_path": "screen-space center subtitle hold", "z_index": 10, "layer_relation": "over performer and corridor", "interpolation": "hold", "keyframes": [{"time_us": 6480000, "bbox": {"x": 0.16, "y": 0.47, "width": 0.68, "height": 0.06}, "rotation_deg": 0, "opacity": 1}, {"time_us": 6800000, "bbox": {"x": 0.16, "y": 0.47, "width": 0.68, "height": 0.06}, "rotation_deg": 0, "opacity": 1}], "observed_text": null}]},
+    {"cut": 5, "start_us": 6800000, "end_us": 7966666, "source_overlays": []},
+    {"cut": 6, "start_us": 7966666, "end_us": 9133333, "source_overlays": []},
+    {"cut": 7, "start_us": 9133333, "end_us": 10100000, "source_overlays": []},
+    {"cut": 8, "start_us": 10100000, "end_us": 11066667, "source_overlays": []},
+    {"cut": 9, "start_us": 11066667, "end_us": 12133333, "source_overlays": []},
+    {"cut": 10, "start_us": 12133333, "end_us": 13200000, "source_overlays": []}
+  ],
+  "notes": "Live-scene Arabic subtitles are screen-space text layers restored after identity generation. App UI is source-origin and terminal card is omitted."
+}

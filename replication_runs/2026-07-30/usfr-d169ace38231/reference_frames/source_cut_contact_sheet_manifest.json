@@ -1,0 +1,21 @@
+{
+  "schema_version": "source-cut-contact-sheet/v1",
+  "source_sha256": "166e4e8531609764c27d627419ceb1d8ff6b222047e9935d7ad8807fbaeb2e54",
+  "sheet": "reference_frames/source_cut_contact_sheet.png",
+  "panel_count": 12,
+  "ordered_panels": [
+    {"cut": 1, "frame": 17, "timestamp_us": 708333},
+    {"cut": 2, "frame": 42, "timestamp_us": 1750000},
+    {"cut": 3, "frame": 69, "timestamp_us": 2875000},
+    {"cut": 4, "frame": 97, "timestamp_us": 4041667},
+    {"cut": 5, "frame": 120, "timestamp_us": 5000000},
+    {"cut": 6, "frame": 147, "timestamp_us": 6125000},
+    {"cut": 7, "frame": 179, "timestamp_us": 7458333},
+    {"cut": 8, "frame": 216, "timestamp_us": 9000000},
+    {"cut": 9, "frame": 244, "timestamp_us": 10166667},
+    {"cut": 10, "frame": 264, "timestamp_us": 11000000},
+    {"cut": 11, "frame": 283, "timestamp_us": 11791667},
+    {"cut": 12, "frame": 326, "timestamp_us": 13583333}
+  ],
+  "authority": "Source structure only: panel order, pose, action, expression, gaze, camera, crop, background, lighting, hands, props, occlusion and continuity. Source identity, brand and product pixels are not target truth."
+}

@@ -1,0 +1,25 @@
+{
+  "contract": "source-fidelity-contract",
+  "fidelity_level": 1,
+  "source_truth": {
+    "status": "observed",
+    "camera": "locked vertical medium close-up; hard edits at source action resets",
+    "scene": "bedroom with wooden headboard and patterned bedspread",
+    "performance": "smiling direct-to-camera paper-sign presentation and three tear actions",
+    "audio": "preserve original source audio"
+  },
+  "target_truth": {
+    "status": "observed",
+    "model_identity": "Reference image woman: adult, short dark curly hair, warm light complexion, expressive dark brows, pearl stud earrings, friendly smile. The reference clothing and outdoor setting are not authorized replacement layers."
+  },
+  "migration_plan": {
+    "model_identity": {"route": "REPLACE", "criticality": "high", "evidence": "new_model_image SHA-256 097b640f0def480e6921ebc1c606768f604f5e5ef0561df833fa9bcbd8397e70"},
+    "source_scene": {"route": "KEEP", "criticality": "high"},
+    "wardrobe": {"route": "KEEP", "criticality": "high"},
+    "paper_props_and_visible_copy": {"route": "KEEP", "criticality": "high"},
+    "camera_action_and_cut_order": {"route": "KEEP", "criticality": "high"},
+    "original_audio": {"route": "KEEP", "criticality": "high"}
+  },
+  "continuity": "Keep the same target identity across all seven cuts; retain the source purple long-sleeve top, bedroom set, camera placement, paper placement, hand ownership, and paper-tear endpoints.",
+  "uncertainty": "ASR detected Hindi but did not provide a reliable verbatim transcript; original audio is preserved and no replacement dialogue claim is made."
+}

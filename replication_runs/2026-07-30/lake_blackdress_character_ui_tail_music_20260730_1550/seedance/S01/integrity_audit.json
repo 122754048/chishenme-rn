@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "compiler_output_sha256": "b2ddaa1f87fc9c4324cc0232e689b68538dd7867f80bd98f4fd958e6c5d726e6",
+  "rule_audit": {
+    "engine": "seedance-20",
+    "version": "seedance20-rules/v2",
+    "skill_sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+    "checks_sha256": "b3b46181a642414bfd4a657d96f0724cf67c7b1033fda62b7d7b297ccc6bbda1",
+    "source": "immutable_skill_bytes_and_compiler_rules"
+  },
+  "review_bindings": {
+    "output_language": null,
+    "approved_script_sha256": "6e47f83d1a71df2f78a245f21cde64be955fe788b0ebe0569bdc5762dd93c39a",
+    "approved_storyboard_manifest_sha256": "1e6422d4d7f34829e728b898ca5227b1fe09b861a1be9d226551c1e7bd85e753",
+    "approved_storyboard_cut_sha256s": [
+      "c8f59a6c16700e42dca9e439f23f4a40fa7eab3fa5e70f51f57661f2553e2959"
+    ],
+    "segment_plan_sha256": "20cba31125c7a5ada2b7013c15ac5a66434444f9bbbd3bd4dd1ca1762e0ef207"
+  },
+  "required_factor_ids": [
+    "S01.C01.SCENE",
+    "S01.C01.CAMERA",
+    "S01.C01.LIGHT",
+    "S01.C01.PERFORMANCE",
+    "S01.C01.ACTION",
+    "S01.C01.IDENTITY",
+    "S01.C01.PROOF",
+    "S01.C01.TRANSITION",
+    "S01.C01.CONTINUITY",
+    "S01.C01.AUDIO"
+  ],
+  "prompt_characters": 2262
+}

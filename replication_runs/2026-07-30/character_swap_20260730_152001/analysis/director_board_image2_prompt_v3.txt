@@ -1,0 +1,22 @@
+Use case: infographic-diagram. Asset type: one polished 16:9 cinematic pre-production director storyboard / visual planning board for Segment 1/1 of a 10.042-second 9:16 social-video character-replacement replication. Use the packaged fixed director-storyboard layout, not a single image with a note column and not a plain nine-grid.
+
+Input roles and priority:
+- Reference image 1 is the replacement-control sheet. It is the non-negotiable visual base and sole authority for the single Cut's exact pose, action, gentle relaxed expression, gaze, head tilt, camera, crop, composition, subject placement, subway background, window blur, lighting, wardrobe, hands, occlusion and continuity.
+- Reference image 2 is the new-model target truth. Use it only for the authorized character identity, face, hair and skin appearance. It must never override Reference image 1's visual state.
+
+Primary request:
+Create one professional modular-grid landscape 16:9 director's production board. It covers exactly C01, 00:00.000–00:10.042, one shot. Preserve the target identity in the exact emerald-green strapless satin dress, same seated subway pose, crossed legs, hands on lap, quiet softened expression, slight leftward head tilt, fixed vertical medium-close framing, grey subway bench, large window with horizontal moving exterior blur, fluorescent overhead light and muted cinematic color.
+
+Mandatory fixed layout:
+1. TOP SHARED CREATIVE-DIRECTION BAR: title "SUBWAY STILLNESS"; Segment 1/1; C01; 10.042s; target ratio 9:16; one shot; muted teal / steel-grey palette; locked-off vertical camera.
+2. LEFT CHARACTER + STYLE REFERENCE ZONE: a compact target-identity portrait reference and short visual locks: BROWN BANGS, SOFT MAKEUP, GOLD HOOPS, GREEN SATIN DRESS. Do not create a new pose here.
+3. LEFT DETAIL CALLOUTS: close facial, hair and hand/detail crops derived from the same target-control visual state only.
+4. CENTER STORYBOARD ZONE: exactly one large vertical 9:16 C01 production frame. It must reproduce Reference image 1's source state exactly after the authorized identity replacement.
+5. RIGHT TARGET-EVIDENCE ZONE: label "MODEL IDENTITY TARGET" only; no product, UI, service, brand or logo. Include a minimal top-down camera diagram showing locked camera and seated subject direction.
+6. ENVIRONMENT + CAMERA PLAN: concise arrows/diagram for stationary camera, bench, window and exterior motion direction.
+7. BOTTOM PRODUCTION-NOTES STRIP: concise labels only: LOCKED CAMERA; KEEP POSE; KEEP WARDROBE; KEEP SUBWAY; WINDOW MOTION; NO AUDIO; MUTED FLUORESCENT LIGHT.
+8. BOTTOM LIGHTING / PALETTE / MOOD / AUDIO / CINEMATOGRAPHY micro-sections with color swatches and icons only.
+
+Text rules: render only these short labels; no paragraph, dialogue, long script, UI copy, logo, watermark, brand or invented claims. Do not add extra Cut cards or people.
+
+Continuity and negatives: do not alter the source pose, action, gesture, expression, gaze, mouth state, head/body angle, wardrobe, hands, camera, crop, framing, subject scale, subway, lighting, props, occlusion, Cut order or continuity. No random scene change, no phone, no added product, no changed face, no extra fingers, no malformed hands, no anime, no illustration, no plastic skin.

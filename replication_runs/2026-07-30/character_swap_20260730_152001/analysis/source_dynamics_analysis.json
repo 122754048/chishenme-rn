@@ -1,0 +1,16 @@
+{
+  "schema_version": "source-dynamics-analysis/v1",
+  "source_duration_us": 10041667,
+  "source_cuts": [
+    {
+      "cut_id": "C01",
+      "start_us": 0,
+      "end_us": 10041667,
+      "scene": "fixed vertical medium-close shot inside a moving subway carriage",
+      "action": "seated woman holds a relaxed pose with minute breathing and head/hair micro-motion",
+      "camera": "locked-off, no cut, pan, tilt, zoom, or reframing",
+      "audio": "no source audio stream",
+      "visible_text": []
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082755123981271041",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1\\reference_frames\\replacement_control_prompt.txt",
+  "timeline_scope_receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1\\analysis\\timeline_scope_receipt.json",
+  "timeline_scope_receipt_sha256": "7336de5bf857fab6e3796711e1cb92b27a4edac5e73bf3913908df09adad0d31",
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1\\reference_frames\\source_cut_contact_sheet.png",
+    "C:\\Users\\zhaocx04\\Downloads\\未命名项目.jpeg"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1\\reference_frames\\replacement_control_sheet.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 19.641,
+  "revision_reason": "resume known replacement control sheet task",
+  "revision_number": 1,
+  "artifact_stem": "replacement-control-sheet",
+  "cut_id": "control_sheet",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

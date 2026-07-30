@@ -1,0 +1,16 @@
+{
+  "primary_intent":"以湖边黑裙人物的音乐表演感吸引停留，再以用户提供的音乐生成 UI 与尾部素材承接转化。",
+  "audience_and_platform":"9:16 短视频音乐/AI 创作受众。",
+  "evidence":[
+    {"time_range":"0.00-5.00s","observation":"湖边人物与歌曲标题构成首屏音乐情绪钩子。","supports":["attention_hook","character_or_creator_appeal","emotional_promise"]},
+    {"time_range":"5.00-10.00s","observation":"源片切换到音乐生成操作界面。","supports":["product_proof"]},
+    {"time_range":"15.00-17.03s","observation":"源片为终端品牌/CTA 卡。","supports":["cta_conversion"]}
+  ],
+  "weights":{"commercial_goal":15,"attention_hook":28,"character_or_creator_appeal":18,"product_proof":14,"emotional_promise":12,"social_or_trust_signal":2,"cta_conversion":6,"pacing_and_format":3,"platform_compliance":2},
+  "cut_allocation":[
+    {"cut":"C01","intent":"attention_hook + emotional_promise","weight":40,"script_instruction":"保留克制、成人、全身着装的湖边音乐情绪首屏。"},
+    {"cut":"C03","intent":"character_or_creator_appeal + pacing_and_format","weight":21,"script_instruction":"保持同一角色与场景连续性，承接不透明 UI 后的音乐表演感。"}
+  ],
+  "compliance_boundary":["成年角色","完整着装","非色情化取景","无虚假产品或音乐效果宣称"],
+  "uncertainties":["不透明 UI 与尾部素材不作语义解读，仅按用户指定原样拼接。"]
+}

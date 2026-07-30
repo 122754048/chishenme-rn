@@ -1,0 +1,60 @@
+{
+  "schema_version": "usfr-final-qc/v1",
+  "status": "passed",
+  "passed": true,
+  "final_artifact": "final/result.mp4",
+  "final_sha256": "3f5cc661051f02b550855696d00213ab70eeb080c54ba85b5971ab902ac08816",
+  "provider_task_id": "2082750379699081217",
+  "provider": "runninghub_standard",
+  "technical": {
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "width": 720,
+    "height": 1280,
+    "fps": 24,
+    "video_duration_seconds": 15.041667,
+    "audio_duration_seconds": 15.040998,
+    "av_duration_drift_seconds": 0.000669,
+    "video_start_seconds": 0.0,
+    "audio_start_seconds": 0.0,
+    "black_frame_events": [],
+    "freeze_events": [],
+    "video_stream_present": true,
+    "audio_stream_present": true
+  },
+  "visual": {
+    "single_continuous_take": true,
+    "cut_phase_order": "C01-C12 passed",
+    "target_character_identity": "passed",
+    "source_wardrobe_lock": "passed: blue-and-white striped short sleeve over white long sleeve",
+    "target_product_lock": "passed: white V-neck floral lace dress",
+    "camera_and_environment": "passed: fixed frontal camera, white table, central microphone, warm light from frame right",
+    "source_console_absent": true,
+    "source_pixl_brand_absent": true,
+    "watermark_absent": true,
+    "generated_box_pseudotext": "removed with deterministic local delogo during 0.00-4.15s",
+    "contact_sheet": "qc/final_contact_sheet.png"
+  },
+  "audio": {
+    "background_music": false,
+    "room_tone_present": true,
+    "box_tissue_fabric_foley_present": true,
+    "electronic_clicks_absent": true,
+    "asr_engine": "whisper-small",
+    "asr_artifact": "qc/whisper_repaired/result_audio_repaired.json",
+    "approved_dialogue_exact_match": true,
+    "transcript": "All right, let's open this dress. Okay, listen to the box. Lid comes straight off, and there it is. The lace looks amazing. Look at these details. If you want a full little try on test, tell me."
+  },
+  "recovery": {
+    "provider_output_visuals_retained": true,
+    "reason": "The provider-generated audio copied three source-product words and failed the exact-line hard gate.",
+    "strategy": "One deterministic focused repair replaced the incorrect provider speech with rights-cleared natural English TTS aligned to the six approved windows and rebuilt room/box/tissue/fabric audio; no second paid Seedance task was created.",
+    "result": "passed"
+  },
+  "weighted_high_fidelity_qc": {
+    "total_score": 94,
+    "high_criticality_score": 94,
+    "route_timeline_score": 100,
+    "hard_failures": []
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "active_processing_seconds": 4578.826560020447,
+  "approval_wait_seconds": 354.93918108940125,
+  "end_to_end_seconds": 4933.765741109848,
+  "finished_at": 1785402568.7160258,
+  "last_transition_at": 1785402568.7160258,
+  "paused_at": null,
+  "paused_gate": null,
+  "profile_metrics": {},
+  "provider_seconds": 232.7920434474945,
+  "skipped_stages": {
+    "app_store_evidence": "app_store_url slot absent",
+    "overlay_analysis": "no semantic timed overlay after authorized product replacement"
+  },
+  "slowest_stage": "image2_director_storyboard",
+  "stage_name": null,
+  "stage_provider": false,
+  "stage_seconds": {
+    "dynamics": 0.009917259216308594,
+    "image2_director_storyboard": 116.42881369590759,
+    "image2_replacement_control": 116.36322975158691,
+    "intake_bind": 0.010861635208129883,
+    "intent": 0.008768558502197266,
+    "region_overlay_route": 0.00781393051147461,
+    "script": 0.009251117706298828,
+    "target_truth": 0.010528802871704102
+  },
+  "stage_started_at": null,
+  "stage_statuses": {
+    "app_store_evidence": "skipped",
+    "dynamics": "succeeded",
+    "image2_director_storyboard": "succeeded",
+    "image2_replacement_control": "succeeded",
+    "intake_bind": "succeeded",
+    "intent": "succeeded",
+    "overlay_analysis": "skipped",
+    "region_overlay_route": "succeeded",
+    "script": "succeeded",
+    "target_truth": "succeeded"
+  },
+  "started_at": 1785397634.9502847,
+  "target_met": false,
+  "target_seconds": 1800
+}

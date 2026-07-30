@@ -1,0 +1,9 @@
+{
+  "schema_version": "usfr-output-cut-boundaries/v1",
+  "cuts": [
+    {"cut_id": "C01", "start": 0.0, "end": 3.24},
+    {"cut_id": "C02", "start": 3.24, "end": 4.2},
+    {"cut_id": "C03", "start": 4.2, "end": 6.48},
+    {"cut_id": "C04", "start": 6.48, "end": 6.8}
+  ]
+}

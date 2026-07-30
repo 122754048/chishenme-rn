@@ -1,0 +1,32 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082694936291532802",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\character_swap_20260730_1220\\analysis\\control_keyframes_image2_prompt.txt",
+  "timeline_scope_receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\character_swap_20260730_1220\\analysis\\timeline_scope_receipt_control.json",
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05"
+  ],
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\character_swap_20260730_1220\\reference_frames\\source_control_keyframes.png",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\character_swap_20260730_1220\\inputs\\new_model_image.jpg"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\character_swap_20260730_1220\\reference_frames\\control_keyframes.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "revision_reason": "Initial Image2 replacement-control sheet for approved character swap",
+  "revision_number": 1,
+  "artifact_stem": "control_keyframes_image2",
+  "cut_id": "C01",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

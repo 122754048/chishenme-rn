@@ -1,0 +1,9 @@
+Use case: image-to-image replacement-control sheet.
+
+Create one polished 16:9 landscape internal replacement-control sheet containing exactly five ordered vertical video frames, arranged as three frames on the top row and two frames on the bottom row. The source contact sheet establishes only the night-street interview composition, handheld vertical framing, microphone placement, adult woman's white short-sleeve top, dark skirt, body pose, lighting, and action progression. The character reference establishes the replacement adult woman's face, dark hair with straight bangs, facial proportions, natural skin tone, and identity.
+
+For every one of the five ordered frames, render the same replacement woman from the character reference while preserving the source scene exactly: nighttime street beside a lit storefront/vending display, interviewer hand and handheld microphone entering from lower left, medium-full 9:16 framing nested inside each card, white fitted short-sleeve top, dark skirt, same relaxed standing posture, same camera angle, and the subtle changing smile/head direction across the five phases. Preserve one continuous location, wardrobe, lighting direction, and person identity. This is visual control for a character swap only; no new products, no additional people, no wardrobe changes, and no scene changes.
+
+Frame order: 1 opening attentive look, 2 soft smile answering the microphone, 3 short smiling setup with a slight head tilt, 4 animated contained smile while speaking, 5 light closing smile with both hands together in front of the skirt.
+
+No text, no subtitles, no Japanese captions, no SUGO graphic, no logo, no watermark, no labels, no UI, no fake signage, no collage title. Do not use source identity. Do not crop away the face, microphone, hands, white shirt, or skirt. Photoreal live-action night street video stills, not illustration, anime, or beauty-filter plastic skin.

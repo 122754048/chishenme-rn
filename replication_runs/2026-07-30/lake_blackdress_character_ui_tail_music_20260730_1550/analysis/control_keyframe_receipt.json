@@ -1,0 +1,35 @@
+{
+  "schema_version": "usfr-control-keyframes-validation/v1",
+  "status": "passed",
+  "source_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04"
+  ],
+  "panel_count": 4,
+  "manifest_sha256": "2182db291196458acf4211d843eb98491e05654e4de242648b732f2469ebe4dd",
+  "source_video_sha256": "df7984360c0ddd62fa6b1232bda8eecb546b89f3afb3cb7a1fc58e607b4d7441",
+  "source_keyframe_sheet_sha256": "71fbbe77f2c0c9ba8c37b4d1a0e173db450c543858a89b39702b68339c9a08a7",
+  "replacement_control_sheet_sha256": "cf03e98a8b8351dfafdbb75e0787278fa8d6b4aa83d1cfbeec6231dddb2d32d7",
+  "replacement_target_sha256s": [
+    "f3c0321fba54367f04fdff6468123c2cd3b8d69e93e07610c9a44eb74189a033"
+  ],
+  "control_generation": {
+    "provider": "runninghub_image2",
+    "mode": "single_sheet_image_to_image",
+    "source_sheet_count": 1,
+    "output_sheet_count": 1,
+    "image2_call_count": 1
+  },
+  "required_director_board_reference_sha256": "cf03e98a8b8351dfafdbb75e0787278fa8d6b4aa83d1cfbeec6231dddb2d32d7",
+  "required_seedance_video_reference_sha256": "df7984360c0ddd62fa6b1232bda8eecb546b89f3afb3cb7a1fc58e607b4d7441",
+  "final_seedance_reference_contract": {
+    "source_video_required": true,
+    "director_board_required_at_image_slot": 1,
+    "internal_artifacts_forbidden": [
+      "source_keyframe_sheet",
+      "replacement_control_sheet"
+    ]
+  }
+}

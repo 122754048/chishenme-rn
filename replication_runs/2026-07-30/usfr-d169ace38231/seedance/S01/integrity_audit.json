@@ -1,0 +1,1667 @@
+{
+  "schema_version": "seedance-20-integrity-audit/v1",
+  "auditor": "seedance-20",
+  "status": "passed",
+  "request_sha256": "cd892e0dfa826431b3d5308482569ce5c8868e98832f2bf50038538d03f795b7",
+  "prompt_sha256": "22c0b80764e1f7291374454d94fdfa754f9533fc418cb5793a0bd2fb29fd0580",
+  "approved_script_sha256": "7abcd1c7a5b13c7aaad3a609118e7145f16e849f2f493043fc7585d63d330a93",
+  "segment_plan_sha256": "373fc09e693724bca337d7e35aed03478518d1517a0c8770035b9e5d67ac2a55",
+  "seedance_input_contract_sha256": "c74245dd7f3425c908e02aee9d64ba7f8f5bd071b62a8296ac1becb744d4cb7f",
+  "scope_receipt_sha256": "73f0121e391486f529e6822efa27dc34ab6af2f19ad0e5a2c0b406c1090cb74f",
+  "compiler": {
+    "contract": "seedance20-prompt-compiler/v1",
+    "profile": "high_fidelity_hybrid_v1",
+    "skill": "seedance-20",
+    "version": "6.6.0",
+    "skill_sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+    "loaded_modules": [
+      "seedance-20",
+      "seedance-prompt",
+      "seedance-antislop",
+      "seedance-camera",
+      "seedance-motion",
+      "seedance-lighting",
+      "seedance-characters",
+      "seedance-audio",
+      "seedance-sequence"
+    ],
+    "required_specialists": [
+      "seedance-camera",
+      "seedance-motion",
+      "seedance-lighting",
+      "seedance-characters",
+      "seedance-audio",
+      "seedance-sequence"
+    ],
+    "dependency_snapshot": {
+      "seedance-20": {
+        "name": "seedance-20",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+        "package_path": "dependencies/seedance-20/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-prompt": {
+        "name": "seedance-prompt",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "ce558207516a6408de3425956c911dac4dbaa5da0d024d29ef03a01186d964a6",
+        "package_path": "dependencies/seedance-20/skills/seedance-prompt/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-antislop": {
+        "name": "seedance-antislop",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "3303e4ae1de3dc2fcf784e965c4df95b91c8d6522e04a11df9533440d9117eb1",
+        "package_path": "dependencies/seedance-20/skills/seedance-antislop/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-camera": {
+        "name": "seedance-camera",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "9785dee770590268ee98eab9fa7b2f7580cce8ad92764ee7b9c4a6613686b4bf",
+        "package_path": "dependencies/seedance-20/skills/seedance-camera/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-motion": {
+        "name": "seedance-motion",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "29dcb5b1718fe9742fea8498da3b468f47309d595ad56c9c62d65edccdbf52c7",
+        "package_path": "dependencies/seedance-20/skills/seedance-motion/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-lighting": {
+        "name": "seedance-lighting",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "8dd249bd1bc380801b624cb90cc37d46ac725ac20e7ec2b8efce02ac67cd21f7",
+        "package_path": "dependencies/seedance-20/skills/seedance-lighting/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-characters": {
+        "name": "seedance-characters",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "355500e3f0e00f789d736438e395501d7eac8136d40bac4b39b1b98a6e271148",
+        "package_path": "dependencies/seedance-20/skills/seedance-characters/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-audio": {
+        "name": "seedance-audio",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "3a5a906f9775222389520c9b4d426842d0fc3cb9d20621491a91e884d774e424",
+        "package_path": "dependencies/seedance-20/skills/seedance-audio/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-sequence": {
+        "name": "seedance-sequence",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "cbaecde282c0efb73120366dc54628a3f9988919ae545237f6cdd1b2e40f5758",
+        "package_path": "dependencies/seedance-20/skills/seedance-sequence/SKILL.md",
+        "digest_required": true
+      }
+    },
+    "route_sha256": "e63e77d7f62a3712350686c6d446c9727525946cacf040560d313a347b4ba8ed",
+    "checks": {
+      "professional_gate": true,
+      "capability_check": true,
+      "allocation_check": true,
+      "reference_role_check": true,
+      "directing_coherence_check": true,
+      "anti_slop_check": true,
+      "route_exclusion_check": true,
+      "line_parity_check": true
+    },
+    "rule_audit": {
+      "engine": "seedance-20",
+      "version": "seedance20-rules/v2",
+      "skill_sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+      "checks_sha256": "b3b46181a642414bfd4a657d96f0724cf67c7b1033fda62b7d7b297ccc6bbda1",
+      "source": "immutable_skill_bytes_and_compiler_rules"
+    },
+    "review_bindings": {
+      "output_language": "en",
+      "approved_script_sha256": "7abcd1c7a5b13c7aaad3a609118e7145f16e849f2f493043fc7585d63d330a93",
+      "approved_storyboard_manifest_sha256": "75c8bb53a7db76a198c20396aae39b5d64eba15164fc7402145880810cec3127",
+      "approved_storyboard_cut_sha256s": [
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+        "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42"
+      ],
+      "segment_plan_sha256": "373fc09e693724bca337d7e35aed03478518d1517a0c8770035b9e5d67ac2a55"
+    },
+    "professional_gate": true,
+    "capability_check": true,
+    "allocation_check": true,
+    "reference_role_check": true,
+    "directing_coherence_check": true,
+    "anti_slop_check": true,
+    "route_exclusion_check": true,
+    "line_parity_check": true,
+    "output_sha256": "e60601a53ef0d50fb7e3c221a8b12811e758e04a3fc2ed464db828742f948c5c"
+  },
+  "contract_digests": {
+    "approved_storyboard_sha256": "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+    "source_fidelity_contract_sha256": "421cec5712721ea302c6beeccd1d75725ec22a13068b902211c5ada153e9ba09",
+    "timeline_regions_sha256": "68b7ab48b07b05f4db10ddfae88b75664da7d66b283cdfc372e0fa30af00f9b8",
+    "character_lock_sha256": "688a6373f4e4deb06226ef63d0bfe34e116937be574e07b6a7ac51ddd1bb932f",
+    "product_truth_sha256": "f94d8a7ccead6523aaedd5f9f893f35fb613a65a7e1170d1a7d1afb6a57a0004",
+    "selling_point_mapping_sha256": "281a39d52c76d95ce40be759b33b6485c9aec444eaa6d6261e711b2214162481",
+    "audio_contract_sha256": "d10bcc7ad4e0961c655047e35502be80487ceee29cf2852c79cdbd862f8c27e7",
+    "continuity_manifest_sha256": "9352410b6e07ce17651c0f2bd76200c2a9dde2ce05130d80e3efa29a16ab1980"
+  },
+  "contract_index": {
+    "approved_storyboard_sha256": {
+      "sha256": "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42"
+    },
+    "source_fidelity_contract_sha256": {
+      "sha256": "421cec5712721ea302c6beeccd1d75725ec22a13068b902211c5ada153e9ba09"
+    },
+    "timeline_regions_sha256": {
+      "sha256": "68b7ab48b07b05f4db10ddfae88b75664da7d66b283cdfc372e0fa30af00f9b8"
+    },
+    "character_lock_sha256": {
+      "sha256": "688a6373f4e4deb06226ef63d0bfe34e116937be574e07b6a7ac51ddd1bb932f"
+    },
+    "product_truth_sha256": {
+      "sha256": "f94d8a7ccead6523aaedd5f9f893f35fb613a65a7e1170d1a7d1afb6a57a0004"
+    },
+    "selling_point_mapping_sha256": {
+      "sha256": "281a39d52c76d95ce40be759b33b6485c9aec444eaa6d6261e711b2214162481"
+    },
+    "audio_contract_sha256": {
+      "sha256": "d10bcc7ad4e0961c655047e35502be80487ceee29cf2852c79cdbd862f8c27e7"
+    },
+    "continuity_manifest_sha256": {
+      "sha256": "9352410b6e07ce17651c0f2bd76200c2a9dde2ce05130d80e3efa29a16ab1980"
+    }
+  },
+  "required_factor_ids": [
+    "HFH.C01.SCENE",
+    "HFH.C01.CAMERA",
+    "HFH.C01.LIGHTING",
+    "HFH.C01.PERFORMANCE",
+    "HFH.C01.MOTION",
+    "HFH.C01.ENDPOINT",
+    "HFH.C01.PRODUCT",
+    "HFH.C01.PROOF",
+    "HFH.C01.CONTINUITY",
+    "HFH.C01.AUDIO",
+    "HFH.C02.SCENE",
+    "HFH.C02.CAMERA",
+    "HFH.C02.LIGHTING",
+    "HFH.C02.PERFORMANCE",
+    "HFH.C02.MOTION",
+    "HFH.C02.ENDPOINT",
+    "HFH.C02.PRODUCT",
+    "HFH.C02.PROOF",
+    "HFH.C02.CONTINUITY",
+    "HFH.C02.AUDIO",
+    "HFH.C03.SCENE",
+    "HFH.C03.CAMERA",
+    "HFH.C03.LIGHTING",
+    "HFH.C03.PERFORMANCE",
+    "HFH.C03.MOTION",
+    "HFH.C03.ENDPOINT",
+    "HFH.C03.PRODUCT",
+    "HFH.C03.PROOF",
+    "HFH.C03.CONTINUITY",
+    "HFH.C03.AUDIO",
+    "HFH.C04.SCENE",
+    "HFH.C04.CAMERA",
+    "HFH.C04.LIGHTING",
+    "HFH.C04.PERFORMANCE",
+    "HFH.C04.MOTION",
+    "HFH.C04.ENDPOINT",
+    "HFH.C04.PRODUCT",
+    "HFH.C04.PROOF",
+    "HFH.C04.CONTINUITY",
+    "HFH.C04.AUDIO",
+    "HFH.C05.SCENE",
+    "HFH.C05.CAMERA",
+    "HFH.C05.LIGHTING",
+    "HFH.C05.PERFORMANCE",
+    "HFH.C05.MOTION",
+    "HFH.C05.ENDPOINT",
+    "HFH.C05.PRODUCT",
+    "HFH.C05.PROOF",
+    "HFH.C05.CONTINUITY",
+    "HFH.C05.AUDIO",
+    "HFH.C06.SCENE",
+    "HFH.C06.CAMERA",
+    "HFH.C06.LIGHTING",
+    "HFH.C06.PERFORMANCE",
+    "HFH.C06.MOTION",
+    "HFH.C06.ENDPOINT",
+    "HFH.C06.PRODUCT",
+    "HFH.C06.PROOF",
+    "HFH.C06.CONTINUITY",
+    "HFH.C06.AUDIO",
+    "HFH.C07.SCENE",
+    "HFH.C07.CAMERA",
+    "HFH.C07.LIGHTING",
+    "HFH.C07.PERFORMANCE",
+    "HFH.C07.MOTION",
+    "HFH.C07.ENDPOINT",
+    "HFH.C07.PRODUCT",
+    "HFH.C07.PROOF",
+    "HFH.C07.CONTINUITY",
+    "HFH.C07.AUDIO",
+    "HFH.C08.SCENE",
+    "HFH.C08.CAMERA",
+    "HFH.C08.LIGHTING",
+    "HFH.C08.PERFORMANCE",
+    "HFH.C08.MOTION",
+    "HFH.C08.ENDPOINT",
+    "HFH.C08.PRODUCT",
+    "HFH.C08.PROOF",
+    "HFH.C08.CONTINUITY",
+    "HFH.C08.AUDIO",
+    "HFH.C09.SCENE",
+    "HFH.C09.CAMERA",
+    "HFH.C09.LIGHTING",
+    "HFH.C09.PERFORMANCE",
+    "HFH.C09.MOTION",
+    "HFH.C09.ENDPOINT",
+    "HFH.C09.PRODUCT",
+    "HFH.C09.PROOF",
+    "HFH.C09.CONTINUITY",
+    "HFH.C09.AUDIO",
+    "HFH.C10.SCENE",
+    "HFH.C10.CAMERA",
+    "HFH.C10.LIGHTING",
+    "HFH.C10.PERFORMANCE",
+    "HFH.C10.MOTION",
+    "HFH.C10.ENDPOINT",
+    "HFH.C10.PRODUCT",
+    "HFH.C10.PROOF",
+    "HFH.C10.CONTINUITY",
+    "HFH.C10.AUDIO",
+    "HFH.C11.SCENE",
+    "HFH.C11.CAMERA",
+    "HFH.C11.LIGHTING",
+    "HFH.C11.PERFORMANCE",
+    "HFH.C11.MOTION",
+    "HFH.C11.ENDPOINT",
+    "HFH.C11.PRODUCT",
+    "HFH.C11.PROOF",
+    "HFH.C11.CONTINUITY",
+    "HFH.C11.AUDIO",
+    "HFH.C12.SCENE",
+    "HFH.C12.CAMERA",
+    "HFH.C12.LIGHTING",
+    "HFH.C12.PERFORMANCE",
+    "HFH.C12.MOTION",
+    "HFH.C12.ENDPOINT",
+    "HFH.C12.PRODUCT",
+    "HFH.C12.PROOF",
+    "HFH.C12.CONTINUITY",
+    "HFH.C12.AUDIO"
+  ],
+  "factor_coverage_ledger": [
+    {
+      "factor_id": "HFH.C01.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C01.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C01.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/2",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C01.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/3",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C01.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/4",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C01.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/5",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C01.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/6",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C01.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/7",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C01.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/8",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C01.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/9",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C02.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/10",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C02.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/11",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C02.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/12",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C02.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/13",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C02.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/14",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C02.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/15",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C02.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/16",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C02.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/17",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C02.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/18",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C02.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/19",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C03.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/20",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C03.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/21",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C03.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/22",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C03.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/23",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C03.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/24",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C03.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/25",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C03.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/26",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C03.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/27",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C03.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/28",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C03.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/29",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C04.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/30",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C04.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/31",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C04.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/32",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C04.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/33",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C04.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/34",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C04.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/35",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C04.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/36",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C04.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/37",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C04.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/38",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C04.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/39",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C05.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/40",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C05.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/41",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C05.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/42",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C05.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/43",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C05.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/44",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C05.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/45",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C05.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/46",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C05.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/47",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C05.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/48",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C05.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/49",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C06.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/50",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C06.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/51",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C06.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/52",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C06.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/53",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C06.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/54",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C06.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/55",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C06.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/56",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C06.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/57",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C06.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/58",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C06.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/59",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C07.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/60",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C07.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/61",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C07.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/62",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C07.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/63",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C07.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/64",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C07.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/65",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C07.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/66",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C07.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/67",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C07.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/68",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C07.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/69",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C08.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/70",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C08.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/71",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C08.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/72",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C08.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/73",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C08.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/74",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C08.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/75",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C08.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/76",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C08.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/77",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C08.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/78",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C08.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/79",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C09.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/80",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C09.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/81",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C09.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/82",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C09.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/83",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C09.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/84",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C09.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/85",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C09.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/86",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C09.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/87",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C09.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/88",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C09.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/89",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C10.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/90",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C10.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/91",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C10.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/92",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C10.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/93",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C10.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/94",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C10.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/95",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C10.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/96",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C10.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/97",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C10.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/98",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C10.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/99",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C11.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/100",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C11.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/101",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C11.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/102",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C11.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/103",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C11.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/104",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C11.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/105",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C11.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/106",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C11.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/107",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C11.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/108",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C11.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/109",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C12.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/110",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C12.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/111",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C12.LIGHTING",
+      "source_pointer": "/segment/shots/0/factor_ids/112",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C12.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/113",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C12.MOTION",
+      "source_pointer": "/segment/shots/0/factor_ids/114",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C12.ENDPOINT",
+      "source_pointer": "/segment/shots/0/factor_ids/115",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C12.PRODUCT",
+      "source_pointer": "/segment/shots/0/factor_ids/116",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C12.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/117",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C12.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/118",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    },
+    {
+      "factor_id": "HFH.C12.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/119",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "SINGLE_TAKE_C01_C12",
+      "prompt_span": {
+        "start": 179,
+        "end": 1116
+      }
+    }
+  ],
+  "checks": {
+    "approved_cut_order": true,
+    "character_lock": true,
+    "product_lock": true,
+    "duration_and_timing": true,
+    "voiceover_and_audio": true,
+    "camera_action_continuity": true,
+    "selling_point_evidence": true,
+    "timeline_region_routing": true,
+    "reference_role_mapping": true,
+    "provider_parameters": true,
+    "forbidden_fields": true,
+    "zero_ambiguity": true,
+    "no_unresolved_placeholders": true
+  },
+  "ambiguities": [],
+  "unresolved_placeholders": [],
+  "fixed_b": {
+    "model": "seedance-2.0-fast-token",
+    "resolution": "720p",
+    "duration": "15",
+    "ratio": "9:16",
+    "generateAudio": true,
+    "realPersonMode": true,
+    "image_count": 3,
+    "video_count": 1,
+    "audio_count": 0,
+    "source_slice_sha256": "59c64c792be5462a1cf1e29f7f5ee46e0a858ae9d20eb10d3199863401c343ac"
+  }
+}

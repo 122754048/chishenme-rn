@@ -225,6 +225,27 @@ def test_compiler_names_the_confirmed_performer_for_verified_singing(tmp_path):
     assert 'CHARACTER_A sings exactly, "Open it slowly."' in artifact["prompt"]
 
 
+def test_compiler_rejects_lyrics_or_tempo_only_conflicts_for_verified_singing(tmp_path):
+    files = _skill_files(tmp_path)
+    line = _line()
+    line["content_type"] = "sung"
+    performance = _performance_line()
+    performance["content_type"] = "sung"
+    performance["performance_mode"] = "singing"
+    segment = _segment()
+    segment["shots"][0]["audio"] = "Use @Audio1 controls tempo only; no lyrics or lip-sync."
+
+    with pytest.raises(ValueError, match="verified singing conflicts"):
+        module.compile_prompt(
+            segment=segment,
+            line_contracts=[line],
+            performance_lines=[performance],
+            factors={"audio": True, "performance": True},
+            skill_files=files,
+            compiler_checks={name: True for name in module.COMPILER_CHECKS},
+        )
+
+
 def _review_bindings():
     return {
         "output_language": "en",

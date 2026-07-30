@@ -1,0 +1,23 @@
+{
+  "prompt": "Segment S02, 5.00 seconds. @Video1 controls only the matching original lake-shot camera, blocking, timing, environment, and action rhythm. @Image1 controls the approved director storyboard. @Image2 controls only the adult woman identity: same deep-brown skin, oval face, long dark loose waves, soft expression. Keep the same black sleeveless layered tulle dress, overcast lakeshore, pale driftwood at frame left, cool grey-blue light, and stable vertical medium composition. CHARACTER_A is the only visible and audible performer. @Audio1 is the uploaded continuous-song window and is the exact singing and lip-sync clock: CHARACTER_A sings exactly “我会受不了” from 00:00.000 through 00:02.287, then naturally closes her mouth and holds a quiet relaxed performance pose through 00:05.000. Keep her face clearly visible and frontal, with precise Chinese mouth shapes synchronized to every sung syllable of @Audio1; only a subtle head movement and breathing. No other speaker, voice, lyric, or mouth movement. Do not generate readable scene text, subtitles, logos, or watermarks; approved Chinese overlays are added deterministically after generation.",
+  "resolution": "720p",
+  "duration": "5",
+  "imageUrls": [
+    "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/c8f59a6c16700e42dca9e439f23f4a40fa7eab3fa5e70f51f57661f2553e2959.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785401614%3B1785488014&q-key-time=1785401614%3B1785488014&q-header-list=host&q-url-param-list=&q-signature=b3908aacb243ba47f68277d10ae35678389a42e9",
+    "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/f3c0321fba54367f04fdff6468123c2cd3b8d69e93e07610c9a44eb74189a033.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785401615%3B1785488015&q-key-time=1785401615%3B1785488015&q-header-list=host&q-url-param-list=&q-signature=016375b3053c34d782de7271c44857570c52ac6a"
+  ],
+  "videoUrls": [
+    "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/517a9c9e7217b298bbfb6474f6cbbcf21eaae83b072a1bcb1c22d7a7e6c463c6.mp4?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785401616%3B1785488016&q-key-time=1785401616%3B1785488016&q-header-list=host&q-url-param-list=&q-signature=8cd96c4df85c9841bc5db5552207d6cf9733ef50"
+  ],
+  "audioUrls": [
+    "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/36e69de398f976ba1e21e27fd1f0418a52a7d9420af12d6b14982331eecc6c1d.wav?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785401615%3B1785488015&q-key-time=1785401615%3B1785488015&q-header-list=host&q-url-param-list=&q-signature=786909049049900c7e6115ce1570530d708831a6"
+  ],
+  "generateAudio": true,
+  "ratio": "9:16",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

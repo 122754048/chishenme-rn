@@ -1,0 +1,3 @@
+[
+  {"source_claim":"音乐创作流程的视觉呈现","status":"reinterpreted","feature":"用户提供的 UI 操作视频","mechanism":null,"benefit":"由用户素材表达，不新增功能宣称","proof":[{"kind":"opaque_ui_video","time_range":"05.00-10.00s","ref":"inputs/ui_operation_video.mp4"}],"cta":"用户提供的尾部素材","route":"OPAQUE_SPLICE","confidence":1.0}
+]

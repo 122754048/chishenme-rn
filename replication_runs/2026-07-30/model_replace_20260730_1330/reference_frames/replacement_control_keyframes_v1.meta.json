@@ -1,0 +1,27 @@
+{
+  "generator_kind": "image_model",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "task_id": "2082698463659253762",
+  "source_keyframe_sheet": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\reference_frames\\source_keyframes_sheet.jpg",
+  "target_reference": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\inputs\\new_model_image.png",
+  "source_keyframe_sheet_sha256": "a18a6d091c1238d837e9b0ea0f5746c51113d0786af96a928b380a4e52ea3dd7",
+  "target_reference_sha256": "c6e97d5599ae08dcfaeee1871985006353a95de0501910b0b6e7fc80d0c27ba1",
+  "output_sha256": "11619952574966092b7bc5f861c1706bdd0a45bc6bd35dd0cdf8ae11452e6dd8",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 142.187,
+  "panel_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10"
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "schema_version": "fixed-input-slots/v1",
+  "slot_order": [
+    "source_video",
+    "new_product_image",
+    "new_model_image",
+    "ui_screenshot",
+    "app_store_url",
+    "ui_operation_video",
+    "tail_video"
+  ],
+  "admission": {
+    "source_required": true,
+    "source_present": true,
+    "minimum_optional_slots": 1,
+    "optional_present_count": 1,
+    "can_proceed": true,
+    "language_only": false,
+    "change_input_present": true,
+    "enabled_extension_present": false,
+    "blocker_code": null
+  },
+  "slots": {
+    "source_video": {
+      "slot_id": "source_video",
+      "role": "source_video",
+      "kind": "video",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\inputs\\source_video.mp4"
+      ],
+      "sha256": [
+        "5cd83cdf89f0f274d8f64d70dc561291ae77f78590a755114f85e6c1b128e79f"
+      ]
+    },
+    "new_product_image": {
+      "slot_id": "new_product_image",
+      "role": "target_product_truth",
+      "kind": "image",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "new_model_image": {
+      "slot_id": "new_model_image",
+      "role": "target_character_truth",
+      "kind": "image",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\inputs\\new_model_image.png"
+      ],
+      "sha256": [
+        "c6e97d5599ae08dcfaeee1871985006353a95de0501910b0b6e7fc80d0c27ba1"
+      ]
+    },
+    "ui_screenshot": {
+      "slot_id": "ui_screenshot",
+      "role": "target_ui_truth",
+      "kind": "image",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "app_store_url": {
+      "slot_id": "app_store_url",
+      "role": "app_store_evidence",
+      "kind": "url",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "ui_operation_video": {
+      "slot_id": "ui_operation_video",
+      "role": "opaque_ui_demo",
+      "kind": "video",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "tail_video": {
+      "slot_id": "tail_video",
+      "role": "opaque_app_tail_card",
+      "kind": "video",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    }
+  },
+  "routes": {
+    "product": "source_preserve",
+    "character": "replace_from_slot",
+    "ui": "source_ui_keep",
+    "tail": "omit_source_end_card",
+    "background_music": "none"
+  },
+  "extensions": {
+    "ui_rebuild_enabled": false
+  }
+}

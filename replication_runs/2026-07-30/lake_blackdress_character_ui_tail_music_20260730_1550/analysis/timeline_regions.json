@@ -1,0 +1,10 @@
+{
+  "source_end_ms": 17033,
+  "final_output_end_ms": 19426,
+  "regions": [
+    {"region_id":"R01","source_cut_ids":["C01"],"start_ms":0,"end_ms":5000,"media_origin":"generated","assembly_policy":"seedance_segment","include_in_script":true,"include_in_storyboard":true,"include_in_seedance":true,"audio_policy":"generated_audio_contract"},
+    {"region_id":"R02","source_cut_ids":["C02"],"start_ms":5000,"end_ms":10000,"media_origin":"ui_operation_video","assembly_policy":"splice_opaque_ui","include_in_script":false,"include_in_storyboard":false,"include_in_seedance":false,"audio_policy":"opaque_audio_keep","transition_shell":{"entry":"hard_cut","exit":"hard_cut"}},
+    {"region_id":"R03","source_cut_ids":["C03"],"start_ms":10000,"end_ms":15000,"media_origin":"generated","assembly_policy":"seedance_segment","include_in_script":true,"include_in_storyboard":true,"include_in_seedance":true,"audio_policy":"generated_audio_contract"},
+    {"region_id":"R04","source_cut_ids":["C04"],"start_ms":15000,"end_ms":17033,"media_origin":"tail_video","assembly_policy":"splice_opaque_tail","include_in_script":false,"include_in_storyboard":false,"include_in_seedance":false,"audio_policy":"opaque_audio_keep","transition_shell":{"entry":"hard_cut"}}
+  ]
+}

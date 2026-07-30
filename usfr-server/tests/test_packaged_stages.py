@@ -198,6 +198,22 @@ def test_bind_inputs_publishes_the_sha_bound_uploaded_audio_classification(tmp_p
     )
 
 
+def test_song_audio_is_excluded_from_the_seedance_audio_prompt() -> None:
+    """Uploaded songs are rendered by the dedicated post-generation workflow."""
+
+    from server.packaged_stages import SeedancePromptStage
+
+    context = SimpleNamespace(
+        snapshot=SimpleNamespace(slots_manifest={"extensions": {"background_music": {"values": ["song.mp3"]}}})
+    )
+
+    assert SeedancePromptStage._audio_instruction(
+        context,
+        source_music_windows=[{"segment_start_ms": 0, "segment_end_ms": 5_000}],
+        uploaded_audio_kind="song",
+    ) == ""
+
+
 class _StoryboardContext:
     def __init__(self, *, reference: Path) -> None:
         self.reference = reference
@@ -1316,7 +1332,7 @@ def _verified_uploaded_song_prompt_context(tmp_path: Path):
     return Context(), values, performance_line
 
 
-def test_seedance_prompt_passes_verified_uploaded_song_lyrics_and_confirmed_performer_to_compiler(monkeypatch, tmp_path: Path) -> None:
+def test_seedance_prompt_keeps_verified_uploaded_song_lyrics_out_of_the_seedance_compiler(monkeypatch, tmp_path: Path) -> None:
     from server.packaged_stages import SeedancePromptStage
     import server.packaged_stages as stages
 
@@ -1327,8 +1343,7 @@ def test_seedance_prompt_passes_verified_uploaded_song_lyrics_and_confirmed_perf
         @staticmethod
         def compile_prompt(**kwargs):
             captured.update(kwargs)
-            line = kwargs["performance_lines"][0]
-            return {"prompt": f'Use @Audio1. {line["speaker_assignment"]["speaker_id"]} sings exactly, "{line["exact_sung_text"]}".'}
+            return {"prompt": "Generated-person visual only; no dialogue."}
 
     monkeypatch.setattr(stages, "_read_json_artifact", lambda _context, *, kind, **_kwargs: artifacts[kind])
     monkeypatch.setattr(stages, "_load_module", lambda *_args, **_kwargs: Compiler)
@@ -1345,13 +1360,12 @@ def test_seedance_prompt_passes_verified_uploaded_song_lyrics_and_confirmed_perf
     ).run(context=context, input_artifacts=[])
 
     assert transcriptions == []
-    assert captured["performance_lines"] == [performance_line]
-    prompt = result["seedance_input_contract"]["segments"][0]["compiled_prompt"]["prompt"]
-    assert "@Audio1" in prompt
-    assert "CHARACTER_A sings exactly" in prompt
-    assert '"I will meet you by the lake"' in prompt
-    assert "0-4000ms" in captured["segment"]["shots"][0]["audio"]
-    assert "silent outside" in captured["segment"]["shots"][0]["audio"]
+    assert captured["line_contracts"] == []
+    assert captured["performance_lines"] == []
+    assert "@Audio1" not in result["seedance_input_contract"]["segments"][0]["compiled_prompt"]["prompt"]
+    assert "sings exactly" not in result["seedance_input_contract"]["segments"][0]["compiled_prompt"]["prompt"]
+    assert captured["segment"]["shots"][0]["audio"] == "no dialogue"
+    assert result["seedance_input_contract"]["segments"][0]["song_lip_sync_contract"]["performance_lines"] == [performance_line]
 
 
 def test_seedance_prompt_uses_confirmed_source_lyrics_without_an_uploaded_song(monkeypatch, tmp_path: Path) -> None:
@@ -1383,7 +1397,7 @@ def test_seedance_prompt_uses_confirmed_source_lyrics_without_an_uploaded_song(m
     assert '"I will meet you by the lake"' in prompt
 
 
-def test_seedance_prompt_binds_approved_replacement_song_lyrics_to_the_confirmed_source_singer(monkeypatch, tmp_path: Path) -> None:
+def test_seedance_prompt_carries_replacement_song_lyrics_only_in_the_post_process_contract(monkeypatch, tmp_path: Path) -> None:
     from server.packaged_stages import SeedancePromptStage
     import server.packaged_stages as stages
 
@@ -1402,21 +1416,23 @@ def test_seedance_prompt_binds_approved_replacement_song_lyrics_to_the_confirmed
         @staticmethod
         def compile_prompt(**kwargs):
             captured.update(kwargs)
-            return {"prompt": "@Audio1 CHARACTER_A sings exactly."}
+            return {"prompt": "Generated-person visual only; no dialogue."}
 
     monkeypatch.setattr(stages, "_read_json_artifact", lambda _context, *, kind, **_kwargs: artifacts[kind])
     monkeypatch.setattr(stages, "_load_module", lambda *_args, **_kwargs: Compiler)
     adapter = SimpleNamespace(prompt_skill_files={"seedance-20": tmp_path / "seedance.md"})
 
-    SeedancePromptStage(
+    result = SeedancePromptStage(
         invocation_adapter=adapter,
         uploaded_song_transcriber=lambda *_args, **_kwargs: [
             {"start": 0.0, "end": 4.0, "text": replacement_lyric}
         ],
     ).run(context=context, input_artifacts=[])
 
-    assert captured["performance_lines"][0]["speaker_assignment"]["speaker_id"] == "CHARACTER_A"
-    assert captured["performance_lines"][0]["exact_sung_text"] == replacement_lyric
+    assert captured["performance_lines"] == []
+    post_line = result["seedance_input_contract"]["segments"][0]["song_lip_sync_contract"]["performance_lines"][0]
+    assert post_line["speaker_assignment"]["speaker_id"] == "CHARACTER_A"
+    assert post_line["exact_sung_text"] == replacement_lyric
 
 
 def test_seedance_prompt_uses_an_uploaded_non_song_as_window_bound_replacement_without_singing(monkeypatch, tmp_path: Path) -> None:

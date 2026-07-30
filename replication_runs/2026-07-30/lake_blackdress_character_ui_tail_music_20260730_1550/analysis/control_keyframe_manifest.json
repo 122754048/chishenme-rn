@@ -1,0 +1,21 @@
+{
+  "schema_version":"usfr-control-keyframes/v2",
+  "source_cut_ids":["C01","C02","C03","C04"],
+  "panel_count":4,
+  "fixed_panel_count":null,
+  "panels":[{"panel_index":1,"cut_id":"C01"},{"panel_index":2,"cut_id":"C02"},{"panel_index":3,"cut_id":"C03"},{"panel_index":4,"cut_id":"C04"}],
+  "source_keyframe_lineage":{
+    "source_video_sha256":"df7984360c0ddd62fa6b1232bda8eecb546b89f3afb3cb7a1fc58e607b4d7441",
+    "source_keyframes":[
+      {"cut_id":"C01","timestamp_us":2500000,"sha256":"c41372179157cb54279d8e1df10b554be7f4abf94c4e90b2d6719667e1d6d777"},
+      {"cut_id":"C02","timestamp_us":7500000,"sha256":"b5dee17762904a31bc142ceb82b30eda6bfb5dec7ca2e246f99206255ac19b77"},
+      {"cut_id":"C03","timestamp_us":12500000,"sha256":"62741fe791c3d9e99f1a6ffc49b45affc8e9389462634a5c94852322549a34cb"},
+      {"cut_id":"C04","timestamp_us":16000000,"sha256":"03844eb43d8bce376926bade61a0b7644d8c7f338c1623d98fda48f382badeb9"}
+    ],
+    "source_keyframe_sheet_sha256":"71fbbe77f2c0c9ba8c37b4d1a0e173db450c543858a89b39702b68339c9a08a7",
+    "replacement_control_sheet_sha256":"cf03e98a8b8351dfafdbb75e0787278fa8d6b4aa83d1cfbeec6231dddb2d32d7",
+    "replacement_target_sha256s":["f3c0321fba54367f04fdff6468123c2cd3b8d69e93e07610c9a44eb74189a033"],
+    "control_generation":{"provider":"runninghub_image2","mode":"single_sheet_image_to_image","source_sheet_count":1,"output_sheet_count":1,"image2_call_count":1},
+    "seedance_video_reference_required":true
+  }
+}

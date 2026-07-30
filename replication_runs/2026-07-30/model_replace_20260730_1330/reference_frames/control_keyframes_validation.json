@@ -1,0 +1,34 @@
+{
+  "schema_version": "usfr-control-keyframes-validation/v1",
+  "status": "passed",
+  "source_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10"
+  ],
+  "panel_count": 10,
+  "manifest_sha256": "7dc6c51ba69012d95aff7465e408247c04ae3e3f15657c656b156dc8b2891479",
+  "source_video_sha256": "5cd83cdf89f0f274d8f64d70dc561291ae77f78590a755114f85e6c1b128e79f",
+  "source_keyframe_sheet_sha256": "a18a6d091c1238d837e9b0ea0f5746c51113d0786af96a928b380a4e52ea3dd7",
+  "replacement_control_sheet_sha256": "11619952574966092b7bc5f861c1706bdd0a45bc6bd35dd0cdf8ae11452e6dd8",
+  "replacement_target_sha256s": [
+    "c6e97d5599ae08dcfaeee1871985006353a95de0501910b0b6e7fc80d0c27ba1"
+  ],
+  "required_director_board_reference_sha256": "11619952574966092b7bc5f861c1706bdd0a45bc6bd35dd0cdf8ae11452e6dd8",
+  "required_seedance_video_reference_sha256": "5cd83cdf89f0f274d8f64d70dc561291ae77f78590a755114f85e6c1b128e79f",
+  "final_seedance_reference_contract": {
+    "source_video_required": true,
+    "director_board_required_at_image_slot": 1,
+    "internal_artifacts_forbidden": [
+      "source_keyframe_sheet",
+      "replacement_control_sheet"
+    ]
+  }
+}

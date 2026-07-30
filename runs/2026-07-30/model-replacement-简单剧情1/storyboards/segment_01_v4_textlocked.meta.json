@@ -1,0 +1,21 @@
+{
+  "generator_kind": "image_model",
+  "base_board": "segment_01_v1.png",
+  "base_model": "gpt-image-2/image-to-image-official-stable via RunningHub OpenAPI v2",
+  "revision_number": 4,
+  "revision_reason": "Deterministic approved-text layer added after initial director-board review.",
+  "output_path": "segment_01_v4_textlocked.png",
+  "output_dimensions": [2736, 1536],
+  "approved_text_layer": {
+    "render_mode": "deterministic_typography",
+    "source": "approved reverse storyboard script",
+    "regions": [
+      {"cut_id": "C01", "start_ms": 0, "end_ms": 2800, "text": "Free chat nahi?", "placement": "center of first full paper sign"},
+      {"cut_id": "C03", "start_ms": 3200, "end_ms": 6800, "text": "Recharge karna parega?", "placement": "center of second full paper sign"},
+      {"cut_id": "C05", "start_ms": 7533, "end_ms": 9800, "text": "Ek bhi ladki An install?", "placement": "center of third full paper sign"}
+    ],
+    "excluded_torn_paper_cuts": ["C02", "C04", "C06"]
+  },
+  "base_board_sha256": "705826c0eca7abf9f00cb3076f03a03520d739e3b35451bb782c0b9a1931d66",
+  "output_sha256": "b7e3619be1d7780f942301356f0aa8eef350994f22691b952150c854d5af67ec"
+}

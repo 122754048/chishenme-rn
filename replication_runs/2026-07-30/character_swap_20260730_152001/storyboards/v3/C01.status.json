@@ -1,0 +1,30 @@
+{
+  "taskId": "2082735772261769218",
+  "status": "FAILED",
+  "errorCode": "1501",
+  "errorMessage": "Content security audit did not pass | 内容安全审查未通过",
+  "results": null,
+  "clientId": "",
+  "promptTips": "",
+  "failedReason": {},
+  "usage": {
+    "consumeMoney": null,
+    "consumeCoins": null,
+    "taskCostTime": "0",
+    "thirdPartyConsumeMoney": null
+  },
+  "parentTaskId": null,
+  "taskUsageList": [
+    {
+      "taskId": "2082735772261769218",
+      "parentTaskId": null,
+      "taskStatus": "FAILED",
+      "usage": {
+        "consumeMoney": null,
+        "consumeCoins": null,
+        "taskCostTime": "0",
+        "thirdPartyConsumeMoney": null
+      }
+    }
+  ]
+}

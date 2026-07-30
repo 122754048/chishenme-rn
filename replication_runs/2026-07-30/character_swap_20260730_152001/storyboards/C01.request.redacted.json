@@ -1,0 +1,24 @@
+{
+  "prompt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\character_swap_20260730_152001\\analysis\\director_board_image2_prompt.txt",
+    "characters": 1056
+  },
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/8c263fcda35bd2fa92382638cf370b6b343f5ca355e611ff047e288e43b94916.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/02be5a036a442c4b323faee6adc6238cedea8d31d8f139ef918f3b3b48df0e20.jpg"
+  ],
+  "aspectRatio": "16:9",
+  "resolution": "2k",
+  "quality": "medium",
+  "timeline_scope_receipt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\character_swap_20260730_152001\\analysis\\timeline_scope_receipt.json",
+    "scope_sha256": null
+  },
+  "covered_cut_ids": [
+    "C01"
+  ],
+  "reference_images": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\character_swap_20260730_152001\\reference_frames\\replacement_control_keyframes.png",
+    "C:\\Users\\zhaocx04\\Downloads\\eb062cc7-a4f1-4a68-85f8-226d32b29c6d.jpg"
+  ]
+}

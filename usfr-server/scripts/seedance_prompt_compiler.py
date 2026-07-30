@@ -908,6 +908,32 @@ def _render_performance_line(line: Mapping[str, Any]) -> str:
     )
 
 
+def _reject_verified_singing_conflicts(
+    prompt: str,
+    performance_lines: Sequence[Mapping[str, Any]],
+) -> None:
+    """Reject instructions that negate a confirmed lyric lip-sync contract."""
+
+    has_verified_singing = any(
+        line.get("lyric_status") == "verified"
+        and line.get("performance_mode") in {"sung", "singing"}
+        for line in performance_lines
+    )
+    if not has_verified_singing:
+        return
+    normalized = " ".join(prompt.casefold().split())
+    conflicts = (
+        "no lyrics",
+        "no singing",
+        "no lip-sync",
+        "no lip sync",
+        "@audio1 controls tempo only",
+        "@audio1 controls timing only",
+    )
+    if any(conflict in normalized for conflict in conflicts):
+        raise ValueError("verified singing conflicts with a no-lyrics, no-lip-sync, or tempo-only instruction")
+
+
 def _validate_approval_binding(
     value: Any,
     *,
@@ -1028,6 +1054,7 @@ def compile_prompt(
         prompt_lines.append(_render_performance_line(line))
     prompt_lines.extend(no_speech_renderings)
     prompt = " ".join(part.strip() for part in prompt_lines if part and part.strip()).strip()
+    _reject_verified_singing_conflicts(prompt, canonical_performance_lines)
     if len(prompt) > MAX_PROMPT_CHARS:
         raise ValueError("compiled prompt exceeds 5000 characters")
     _reject_route_leakage(prompt)

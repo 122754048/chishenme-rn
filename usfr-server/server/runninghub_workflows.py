@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import mimetypes
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import re
 import time
@@ -204,6 +205,7 @@ class RunningHubWorkflowClient:
         base_url: str,
         request_json: Callable[..., Mapping[str, Any]] | None = None,
         upload_file: Callable[[Path], str] | None = None,
+        download_file: Callable[[str], bytes] | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
         timeout_seconds: float = 120.0,
@@ -217,6 +219,9 @@ class RunningHubWorkflowClient:
         self.base_url = _public_https_base(base_url)
         self._request_json = request_json or _post_json
         self._upload_file = upload_file or self._upload
+        self._download_file = download_file or (
+            lambda url: _download_binary(url=url, timeout_seconds=self.timeout_seconds)
+        )
         self._sleep = sleep
         self._clock = clock
         self.timeout_seconds = float(timeout_seconds)
@@ -426,6 +431,111 @@ class RunningHubWorkflowClient:
             if self._clock() >= deadline:
                 raise RunningHubWorkflowError("RunningHub Image2 task timed out")
             self._sleep(self.poll_interval_seconds)
+
+    def run_song_lip_sync_segments(
+        self,
+        *,
+        uploaded_audio_kind: str,
+        audio_path: Path,
+        segments: Sequence[Mapping[str, Any]],
+    ) -> dict[str, Any]:
+        """Run the pinned song-only AI App for one or two generated-person segments.
+
+        UI/tail/non-song eligibility is rejected before any upload or paid
+        create.  Each successfully created task is known by task ID and is
+        polled only within its own worker; a create request is never retried.
+        """
+
+        if str(uploaded_audio_kind or "").strip() != "song":
+            raise RunningHubWorkflowError("RUNNINGHUB_SONG_LIP_SYNC_REQUIRES_SONG_AUDIO")
+        items = [dict(item) for item in segments if isinstance(item, Mapping)]
+        if not 1 <= len(items) <= 2 or len(items) != len(segments):
+            raise RunningHubWorkflowError("RUNNINGHUB_SONG_LIP_SYNC_REQUIRES_ONE_OR_TWO_SEGMENTS")
+        source = Path(audio_path)
+        if not source.is_file() or source.stat().st_size <= 0:
+            raise RunningHubWorkflowError("RUNNINGHUB_SONG_LIP_SYNC_AUDIO_UNAVAILABLE")
+        audio_sha256 = _sha256(source.read_bytes())
+        seen_ids: set[str] = set()
+        from .runninghub_song_lip_sync import build_song_lip_sync_provider_request
+
+        for item in items:
+            segment_id = str(item.get("segment_id") or "").strip()
+            if not segment_id or segment_id in seen_ids or item.get("segment_type") != "generated_person":
+                raise RunningHubWorkflowError("RUNNINGHUB_SONG_LIP_SYNC_SEGMENT_INELIGIBLE")
+            seen_ids.add(segment_id)
+            video_path = Path(str(item.get("video_path") or ""))
+            if not video_path.is_file() or video_path.stat().st_size <= 0:
+                raise RunningHubWorkflowError("RUNNINGHUB_SONG_LIP_SYNC_VIDEO_UNAVAILABLE")
+            build_song_lip_sync_provider_request(
+                audio_input="validated-audio", video_input="validated-video",
+                song_start=item.get("song_start"), song_end=item.get("song_end"),
+            )
+
+        uploaded_audio_url = self.upload_media(source)
+        prepared: list[dict[str, Any]] = []
+        for item in items:
+            segment_id = str(item["segment_id"]).strip()
+            video_path = Path(str(item["video_path"]))
+            video_bytes = video_path.read_bytes()
+            request = build_song_lip_sync_provider_request(
+                audio_input=uploaded_audio_url,
+                video_input=self.upload_media(video_path),
+                song_start=item.get("song_start"),
+                song_end=item.get("song_end"),
+            )
+            prepared.append({
+                "segment_id": segment_id,
+                "song_start": str(item["song_start"]),
+                "song_end": str(item["song_end"]),
+                "video_sha256": _sha256(video_bytes),
+                "request": request,
+            })
+
+        def run_one(item: Mapping[str, Any]) -> dict[str, Any]:
+            request = item["request"]
+            workflow_id = str(request["workflow_id"])
+            payload = request["payload"]
+            submitted = self._post(url=f"{self.base_url}/openapi/v2/run/ai-app/{workflow_id}", payload=payload)
+            task_id = str(submitted.get("taskId") or "").strip()
+            if not task_id:
+                raise RunningHubWorkflowError("RunningHub song lip-sync create response omitted taskId; do not retry automatically")
+            deadline = self._clock() + self.timeout_seconds
+            last_response: Mapping[str, Any] = submitted
+            while True:
+                response = self._post(url=f"{self.base_url}/openapi/v2/query", payload={"taskId": task_id})
+                last_response = response
+                status = str(response.get("status") or "").upper()
+                if status == "SUCCESS":
+                    results = response.get("results")
+                    mp4 = next((row for row in results or [] if isinstance(row, Mapping) and str(row.get("outputType") or "").casefold() == "mp4" and isinstance(row.get("url"), str)), None)
+                    if not isinstance(mp4, Mapping):
+                        raise RunningHubWorkflowError("RunningHub song lip-sync success omitted an MP4 result")
+                    result_url = str(mp4["url"])
+                    data = self._download_file(result_url)
+                    if not data or b"ftyp" not in data[:64]:
+                        raise RunningHubWorkflowError("RunningHub song lip-sync result is not MP4 bytes")
+                    return {
+                        "segment_id": item["segment_id"], "task_id": task_id, "result_url": result_url,
+                        "video_bytes": data,
+                        "receipt": {
+                            "schema_version": "runninghub-song-lip-sync/v1", "workflow_id": workflow_id,
+                            "request_sha256": _sha256(payload), "response_sha256": _sha256(last_response),
+                            "task_id": task_id, "input_video_sha256": item["video_sha256"],
+                            "input_audio_sha256": audio_sha256, "song_start": item["song_start"],
+                            "song_end": item["song_end"], "output_video_sha256": _sha256(data),
+                        },
+                    }
+                if status in _FAILED:
+                    raise RunningHubWorkflowError(f"RunningHub song lip-sync task {task_id} ended with {status}")
+                if status not in _RUNNING:
+                    raise RunningHubWorkflowError("RunningHub song lip-sync returned an unsupported task status")
+                if self._clock() >= deadline:
+                    raise RunningHubWorkflowError("RunningHub song lip-sync task timed out")
+                self._sleep(self.poll_interval_seconds)
+
+        with ThreadPoolExecutor(max_workers=len(prepared)) as executor:
+            completed = list(executor.map(run_one, prepared))
+        return {"schema_version": "runninghub-song-lip-sync/v1", "uploaded_audio_url": uploaded_audio_url, "segments": completed}
 
 
 __all__ = ["RunningHubWorkflowClient", "RunningHubWorkflowError", "parse_timestamped_txt"]

@@ -1,0 +1,23 @@
+{
+  "prompt": "Segment S01. Duration 5.00s. Opening state: overcast lakeshore, pale driftwood at frame left, the adult woman in a black sleeveless layered tulle dress faces camera Reference @Image1 (slot 1): approved director storyboard for the lake-person cuts only. Reference @Image2 (slot 2): supplied adult woman identity only. Shot C01, 0.00-5.00s, vertical medium-full to medium portrait. Scene: overcast lakeshore, pale driftwood at frame left, the adult woman in a black sleeveless layered tulle dress faces camera. Camera: smooth vertical push from medium-full to medium framing, ending in a stable medium view. Lighting: soft even overcast daylight from above and camera side, cool grey-blue reflection, no hard added light. Performance: calm soft smile, subtle breathing and slight natural head adjustment. Action: stand beside the driftwood and hold a gentle music-performance expression. Endpoint: stable medium view; same face, black dress, shoreline and driftwood position. Product/UI truth: the supplied adult woman identity is preserved exactly; no product or written scene text. Commercial proof: preserve the approved attention and emotional music hook without adding a claim. Transition: continuous source rhythm; end cleanly for a hard cut. Continuity: same woman, black dress, cool overcast light, shoreline, driftwood at frame left, and screen direction. Audio: @Audio1 controls background music timing only; no dialogue, no lyrics, no generated text; soft lakeshore ambience. Lock: @Video1 controls matching source motion, timing, camera path, blocking, and environment only. Lock: @Image1 controls approved composition; @Image2 controls adult woman identity only. Lock: keep black sleeveless layered tulle dress, lake, driftwood, cool overcast light, and screen direction. Lock: approved Chinese copy is deterministic post-production, never generated as scene text. Constraint: no source blonde identity, extra people, new props, changed wardrobe, logo, watermark, subtitles, or readable generated words. Constraint: no identity drift, face distortion, hand error, time stretch, freeze frame, black frame, or scene change. Cut C01: No dialogue. Allowed audio: background music and lakeshore ambience. Forbidden audio: dialogue, synthetic voice, lyrics.",
+  "resolution": "720p",
+  "duration": "5",
+  "imageUrls": [
+    "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/c8f59a6c16700e42dca9e439f23f4a40fa7eab3fa5e70f51f57661f2553e2959.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785399341%3B1785485741&q-key-time=1785399341%3B1785485741&q-header-list=host&q-url-param-list=&q-signature=39fca64f8f097b0e4f42a3bb502c0b830d38010e",
+    "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/f3c0321fba54367f04fdff6468123c2cd3b8d69e93e07610c9a44eb74189a033.png?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785399342%3B1785485742&q-key-time=1785399342%3B1785485742&q-header-list=host&q-url-param-list=&q-signature=ea3ee07c22b90803182adb98e7feb2c3b7d33303"
+  ],
+  "videoUrls": [
+    "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/61d74e11de732bb8282f990d512a38fb1aabd36d551377e4967b4d47e6627fb5.mp4?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785399343%3B1785485743&q-key-time=1785399343%3B1785485743&q-header-list=host&q-url-param-list=&q-signature=c3fd6016f5c0df15f77f1c88904a41e4bdfd17cb"
+  ],
+  "audioUrls": [
+    "https://rh-images-switch-1252422369.cos.ap-guangzhou.myqcloud.com/input/openapi/930ff98421ce573ea700a4497ecb847bdeb1fbeb0d1e276ae0b884b974199cd7.wav?q-sign-algorithm=sha1&q-ak=AKIDv56FISEJUsKsMeELk0gmbNCGKTYSaZ3N&q-sign-time=1785399342%3B1785485742&q-key-time=1785399342%3B1785485742&q-header-list=host&q-url-param-list=&q-signature=7e726b423540be2f66f994ba50ae25d07eedb472"
+  ],
+  "generateAudio": true,
+  "ratio": "9:16",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

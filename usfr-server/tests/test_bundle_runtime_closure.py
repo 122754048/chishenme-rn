@@ -46,6 +46,7 @@ class BundleRuntimeClosureTest(unittest.TestCase):
         self.assertIn("server/audio_mixer.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/performance_audio_contracts.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/runninghub_final_lip_sync.py", REQUIRED_SERVER_FILES)
+        self.assertIn("server/runninghub_song_lip_sync.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/singing_audio_router.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/uploaded_audio_contract.py", REQUIRED_SERVER_FILES)
         for relative in (
@@ -77,6 +78,7 @@ class BundleRuntimeClosureTest(unittest.TestCase):
             "server/audio_mixer.py",
             "server/performance_audio_contracts.py",
             "server/runninghub_final_lip_sync.py",
+            "server/runninghub_song_lip_sync.py",
             "server/singing_audio_router.py",
             "server/uploaded_audio_contract.py",
             "bundled-skills/seedance-storyboard-replication/scripts/config.py",

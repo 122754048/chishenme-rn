@@ -1,0 +1,101 @@
+{
+  "contract": "universal-fidelity-skill-routing/v1",
+  "analysis_pass_count": 1,
+  "generated_regions": 1,
+  "modules": [
+    "analyze-reference-video-dynamics",
+    "seedance-storyboard-replication",
+    "seedance-20",
+    "seedance-prompt",
+    "seedance-antislop",
+    "seedance-characters",
+    "seedance-camera",
+    "seedance-motion",
+    "seedance-lighting",
+    "seedance-audio",
+    "seedance-sequence"
+  ],
+  "provider_modules": [
+    "seedance-storyboard-replication"
+  ],
+  "dependency_snapshot": {
+    "analyze-reference-video-dynamics": {
+      "name": "analyze-reference-video-dynamics",
+      "source": "bundled",
+      "package_path": "bundled-skills/analyze-reference-video-dynamics/SKILL.md",
+      "role": "one frame-zero-to-end source dynamics pass",
+      "digest_required": true
+    },
+    "seedance-storyboard-replication": {
+      "name": "seedance-storyboard-replication",
+      "source": "bundled",
+      "package_path": "bundled-skills/seedance-storyboard-replication/SKILL.md",
+      "role": "existing storyboard/provider/assembly adapter",
+      "digest_required": true
+    },
+    "seedance-20": {
+      "name": "seedance-20",
+      "source": "injected",
+      "package_path": "dependencies/seedance-20/SKILL.md",
+      "role": "mandatory final prompt compiler/auditor",
+      "digest_required": true
+    },
+    "seedance-prompt": {
+      "name": "seedance-prompt",
+      "source": "injected",
+      "package_path": "dependencies/seedance-20/skills/seedance-prompt/SKILL.md",
+      "role": "production prompt compiler",
+      "digest_required": true
+    },
+    "seedance-antislop": {
+      "name": "seedance-antislop",
+      "source": "injected",
+      "package_path": "dependencies/seedance-20/skills/seedance-antislop/SKILL.md",
+      "role": "observable production-language cleanup",
+      "digest_required": true
+    },
+    "seedance-characters": {
+      "name": "seedance-characters",
+      "source": "injected",
+      "package_path": "dependencies/seedance-20/skills/seedance-characters/SKILL.md",
+      "role": "identity/performance/hand safety",
+      "digest_required": true
+    },
+    "seedance-camera": {
+      "name": "seedance-camera",
+      "source": "injected",
+      "package_path": "dependencies/seedance-20/skills/seedance-camera/SKILL.md",
+      "role": "camera and framing contract",
+      "digest_required": true
+    },
+    "seedance-motion": {
+      "name": "seedance-motion",
+      "source": "injected",
+      "package_path": "dependencies/seedance-20/skills/seedance-motion/SKILL.md",
+      "role": "physical action and endpoint contract",
+      "digest_required": true
+    },
+    "seedance-lighting": {
+      "name": "seedance-lighting",
+      "source": "injected",
+      "package_path": "dependencies/seedance-20/skills/seedance-lighting/SKILL.md",
+      "role": "motivated light and shadow contract",
+      "digest_required": true
+    },
+    "seedance-audio": {
+      "name": "seedance-audio",
+      "source": "injected",
+      "package_path": "dependencies/seedance-20/skills/seedance-audio/SKILL.md",
+      "role": "dialogue, Foley, silence, and lip-sync contract",
+      "digest_required": true
+    },
+    "seedance-sequence": {
+      "name": "seedance-sequence",
+      "source": "injected",
+      "package_path": "dependencies/seedance-20/skills/seedance-sequence/SKILL.md",
+      "role": "multi-region continuity and handoff",
+      "digest_required": true
+    }
+  },
+  "route_sha256": "ea6d05baa21e11fe5a0116966217cee9ba445520987cfbba62c3f5737d345732"
+}

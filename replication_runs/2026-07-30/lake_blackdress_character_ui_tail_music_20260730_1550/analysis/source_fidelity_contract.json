@@ -1,0 +1,14 @@
+{
+  "contract": "universal-source-fidelity-contract",
+  "fidelity_level": 1,
+  "source_analysis": "analysis/source_dynamics_analysis.json",
+  "slots_manifest": "analysis/input_slots.json",
+  "cut_routes": {
+    "C01": {"generation_route":"REPLACE","media_origin":"generated","assembly_policy":"seedance_segment","replacement_layers":["character_identity","song_title_text","background_music"]},
+    "C02": {"generation_route":"OPAQUE_SPLICE","media_origin":"ui_operation_video","assembly_policy":"splice_opaque_ui","replacement_layers":["source_ui"]},
+    "C03": {"generation_route":"REPLACE","media_origin":"generated","assembly_policy":"seedance_segment","replacement_layers":["character_identity","promotional_text","background_music"]},
+    "C04": {"generation_route":"OPAQUE_SPLICE","media_origin":"tail_video","assembly_policy":"splice_opaque_tail","replacement_layers":["source_end_card"]}
+  },
+  "source_truth_boundary":"Source identity, app/UI semantics and original song are not target truth. Opaque supplied media is technical splice material only.",
+  "target_truth":{"character":"inputs/new_model_image.png","ui":"inputs/ui_operation_video.mp4","tail":"inputs/tail_video.mp4","music":"修炼爱情.mp3 from 01:30.000"}
+}

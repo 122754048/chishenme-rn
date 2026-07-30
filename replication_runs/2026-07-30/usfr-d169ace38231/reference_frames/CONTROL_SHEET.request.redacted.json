@@ -1,0 +1,37 @@
+{
+  "prompt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\reference_frames\\replacement_control_prompt.txt",
+    "characters": 3586
+  },
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/db3215c139f39e4b843953466a159cb00d95ea2b8c5602aeda00dd90d00c3f6c.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/10ce8a6b58e262385400a154e5f3526ae75f9dae3ddefca26e7598d9f22d3f21.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/f94d8a7ccead6523aaedd5f9f893f35fb613a65a7e1170d1a7d1afb6a57a0004.jpeg"
+  ],
+  "aspectRatio": "16:9",
+  "resolution": "2k",
+  "quality": "medium",
+  "timeline_scope_receipt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\analysis\\timeline_scope_receipt_control.json",
+    "scope_sha256": "8f77accf5523b7d038f9e48a99a1acb83e55edee815bce920d7f0f0fb7791778"
+  },
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "C11",
+    "C12"
+  ],
+  "reference_images": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\reference_frames\\source_cut_contact_sheet.png",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\inputs\\new_model_image.png",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\usfr-d169ace38231\\inputs\\new_product_image.jpeg"
+  ]
+}

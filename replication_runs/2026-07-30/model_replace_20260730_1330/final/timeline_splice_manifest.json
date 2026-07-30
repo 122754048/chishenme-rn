@@ -1,0 +1,252 @@
+{
+  "contract": "universal-timeline-regions",
+  "contract_version": 2,
+  "source_duration": 13.2,
+  "source_duration_us": 13200000,
+  "planned_output_duration": 11.066667,
+  "actual_output_duration": 11.066667,
+  "actual_container_duration": 11.066667,
+  "final_output_sha256": "ee8977099f06222c93267460128beacf674f1131a5251286a6e9a1e767047501",
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\final\\result.mp4",
+  "target": {
+    "width": 720,
+    "height": 1280,
+    "fps": 30
+  },
+  "placements": [
+    {
+      "region_id": "R01_live_identity_replace",
+      "region_type": "generated",
+      "legacy_kind": null,
+      "source_start": 0.0,
+      "source_end": 6.8,
+      "source_duration": 6.8,
+      "source_start_us": 0,
+      "source_end_us": 6800000,
+      "media_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\analysis\\..\\seedance\\S01\\result_with_subtitles.mp4",
+      "media_origin": "generated_media",
+      "assembly_policy": "generate_region",
+      "actual_media_duration": 6.8,
+      "actual_video_duration": 6.8,
+      "actual_audio_duration": 6.8,
+      "input_video_start_time": 0.0,
+      "input_audio_start_time": 0.0,
+      "input_relative_av_start_offset": 0.0,
+      "normalized_residual_av_start_offset": 0.0,
+      "audio_policy": "source_audio_keep",
+      "encoded_dimensions": [
+        720,
+        1280
+      ],
+      "display_rotation_deg": 0,
+      "display_dimensions": [
+        720,
+        1280
+      ],
+      "spatial_normalization": {
+        "mode": "fit_pad",
+        "crop_fraction": 0.0,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      },
+      "effective_media_duration": 6.8,
+      "normalized_media_duration": 6.8,
+      "normalized_container_duration": 6.8,
+      "output_start": 0.0,
+      "output_end": 6.8,
+      "output_duration": 6.8,
+      "duration_policy": "natural_media_duration",
+      "retimed": false,
+      "allowed_normalization_operations": [
+        "scale",
+        "spatial_pad",
+        "frame_rate",
+        "video_pts_reset",
+        "video_codec",
+        "pixel_format",
+        "audio_codec",
+        "sample_rate",
+        "channel_layout",
+        "audio_boundary_trim",
+        "audio_pts_reset",
+        "container",
+        "audio_boundary_fade"
+      ],
+      "semantic_analysis_performed": null,
+      "transition_shell": null,
+      "transition_shell_applied": null,
+      "tail_append": false,
+      "planned_transition": false,
+      "source_to_output_duration_delta": 0.0,
+      "final_interval_authority": "provider_video_stream"
+    },
+    {
+      "region_id": "R02_source_ui_keep",
+      "region_type": "generated",
+      "legacy_kind": null,
+      "source_start": 6.8,
+      "source_end": 11.066667,
+      "source_duration": 4.266667000000001,
+      "source_start_us": 6800000,
+      "source_end_us": 11066667,
+      "media_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\analysis\\..\\final\\source_ui_6800_11067.mp4",
+      "media_origin": "source_interval",
+      "assembly_policy": "splice_source_interval",
+      "actual_media_duration": 4.266667,
+      "actual_video_duration": 4.266667,
+      "actual_audio_duration": 4.266,
+      "input_video_start_time": 0.0,
+      "input_audio_start_time": 0.0,
+      "input_relative_av_start_offset": 0.0,
+      "normalized_residual_av_start_offset": 0.0,
+      "audio_policy": "source_audio_keep",
+      "encoded_dimensions": [
+        720,
+        1280
+      ],
+      "display_rotation_deg": 0,
+      "display_dimensions": [
+        720,
+        1280
+      ],
+      "spatial_normalization": {
+        "mode": "fit_pad",
+        "crop_fraction": 0.0,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      },
+      "effective_media_duration": 4.266667,
+      "normalized_media_duration": 4.266667,
+      "normalized_container_duration": 4.266667,
+      "output_start": 6.8,
+      "output_end": 11.066667,
+      "output_duration": 4.266667,
+      "duration_policy": "match_source_interval",
+      "retimed": false,
+      "allowed_normalization_operations": [
+        "scale",
+        "spatial_pad",
+        "frame_rate",
+        "video_pts_reset",
+        "video_codec",
+        "pixel_format",
+        "audio_codec",
+        "sample_rate",
+        "channel_layout",
+        "audio_boundary_trim",
+        "audio_pts_reset",
+        "container",
+        "audio_boundary_fade"
+      ],
+      "semantic_analysis_performed": null,
+      "transition_shell": null,
+      "transition_shell_applied": null,
+      "tail_append": false,
+      "planned_transition": false
+    }
+  ],
+  "omitted_intervals": [
+    {
+      "region_id": "R03_terminal_exclusion",
+      "region_type": "excluded_app_end_card",
+      "source_start": 11.066667,
+      "source_end": 13.2,
+      "source_duration": 2.1333329999999986,
+      "source_start_us": 11066667,
+      "source_end_us": 13200000,
+      "output_start": 11.066667,
+      "output_end": 11.066667,
+      "reason": "tail_video_absent"
+    }
+  ],
+  "transition_renders": [],
+  "final_media_qc": {
+    "status": "passed",
+    "video_duration": 11.066667,
+    "audio_duration": 11.066,
+    "av_duration_delta": 0.000667,
+    "leading_black_duration": 0.0,
+    "trailing_black_duration": 0.0,
+    "internal_black_intervals": [],
+    "freeze_intervals": [],
+    "splice_windows_checked": [
+      [
+        6.766667,
+        6.833333
+      ]
+    ],
+    "black_scan": "low_resolution_one_frame_blackdetect",
+    "freeze_scan": "low_resolution_freezedetect"
+  },
+  "rules": {
+    "opaque_semantic_analysis": false,
+    "opaque_generation": false,
+    "missing_tail_card_behavior": "omit_source_tail",
+    "missing_opaque_ui_behavior": "block",
+    "source_interval_behavior": "preserve",
+    "tail_card_duration_policy": "trim_to_active_content",
+    "tail_card_content_retime": false,
+    "tail_card_black_filler": false,
+    "opaque_ui_time_stretch": false,
+    "opaque_ui_duration_policy": "trim_to_active_content",
+    "opaque_ui_final_frame_padding": false,
+    "generated_ui_qc_required": true
+  },
+  "audio_policy": "source_audio_keep_0_to_11.066667",
+  "assembly_backend": "canonical_timeline_splice_prepass_then_ffmpeg_timestamp_closed_concat",
+  "overlay_render_mapping_sha256": "5fa60750dc615a4c3316a11e44dbf4b9e3b39f97dc3bc7de1f0337d6d8777e47",
+  "overlay_render_receipts": [
+    {
+      "region_id": "R01_live_identity_replace",
+      "overlay_id": "subtitle_live_01",
+      "source_overlay_contract_sha256": "8942a87edae06440edddfef7a11736d7c19ee226921669376fd355e0825018b6",
+      "overlay_render_mapping_sha256": "5fa60750dc615a4c3316a11e44dbf4b9e3b39f97dc3bc7de1f0337d6d8777e47",
+      "payload_sha256": "d570e8a32f1db6021e4e86cb33cf6c214760b3cb4d8b1a390322b3372de31f59",
+      "output_sha256": "ee8977099f06222c93267460128beacf674f1131a5251286a6e9a1e767047501",
+      "frame_windows": [
+        [
+          0,
+          3240
+        ]
+      ],
+      "renderer": "libass-ass-deterministic-text",
+      "status": "rendered_and_visually_verified"
+    },
+    {
+      "region_id": "R01_live_identity_replace",
+      "overlay_id": "subtitle_live_02",
+      "source_overlay_contract_sha256": "8942a87edae06440edddfef7a11736d7c19ee226921669376fd355e0825018b6",
+      "overlay_render_mapping_sha256": "5fa60750dc615a4c3316a11e44dbf4b9e3b39f97dc3bc7de1f0337d6d8777e47",
+      "payload_sha256": "2958ef849b6c1f4e466787129e772e6963f1c22b7592e5543d612638ce3c9350",
+      "output_sha256": "ee8977099f06222c93267460128beacf674f1131a5251286a6e9a1e767047501",
+      "frame_windows": [
+        [
+          3240,
+          6480
+        ]
+      ],
+      "renderer": "libass-ass-deterministic-text",
+      "status": "rendered_and_visually_verified"
+    },
+    {
+      "region_id": "R01_live_identity_replace",
+      "overlay_id": "subtitle_live_03",
+      "source_overlay_contract_sha256": "8942a87edae06440edddfef7a11736d7c19ee226921669376fd355e0825018b6",
+      "overlay_render_mapping_sha256": "5fa60750dc615a4c3316a11e44dbf4b9e3b39f97dc3bc7de1f0337d6d8777e47",
+      "payload_sha256": "720e1195649766885e6b222d51a21ee52ab9a1cb29188d7751d2953e7a4f3c27",
+      "output_sha256": "ee8977099f06222c93267460128beacf674f1131a5251286a6e9a1e767047501",
+      "frame_windows": [
+        [
+          6480,
+          6800
+        ]
+      ],
+      "renderer": "libass-ass-deterministic-text",
+      "status": "rendered_and_visually_verified"
+    }
+  ]
+}

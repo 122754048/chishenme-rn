@@ -1,0 +1,49 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082741580867256322",
+  "revision_number": 1,
+  "revision_reason": "initial approved-script director storyboard",
+  "provider_submitted_prompt": "storyboards/segment_01_v1_prompt.submitted.txt",
+  "provider_submitted_prompt_sha256": "057dda2a76be4e6e7b547cc7bb8144000ceb7ad4783b0320dcad70f020f81f95",
+  "canonical_validation_prompt": "storyboards/segment_01_v1_prompt.txt",
+  "canonical_validation_prompt_sha256": "061cff66f594eeba356759bd3e2eb3e52fbf50c13c2e134c2dd8ea675a1a7496",
+  "provider_scope_receipt_sha256": "dfbf0df7e708a30240783af79489efa163e9c3936df59e732633c7fc397d63be",
+  "reference_inputs": [
+    {"role": "replacement_control_sheet", "path": "reference_frames/control_keyframes.png", "sha256": "d6c0b498b27275830a4371603d8d733f0c1a48a6b593bed8c636d01012cf95f9"},
+    {"role": "target_character_truth", "path": "inputs/new_model_image.png", "sha256": "10ce8a6b58e262385400a154e5f3526ae75f9dae3ddefca26e7598d9f22d3f21"},
+    {"role": "target_product_truth", "path": "inputs/new_product_image.jpeg", "sha256": "f94d8a7ccead6523aaedd5f9f893f35fb613a65a7e1170d1a7d1afb6a57a0004"}
+  ],
+  "covered_cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08", "C09", "C10", "C11", "C12"],
+  "output_path": "storyboards/segment_01_v1.png",
+  "output_dimensions": [2736, 1536],
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium",
+  "generation_duration_seconds": 94.765,
+  "raw_image_sha256": "284744b3ea32b26432606315eca47b5112f124d7026c0a2432a730a5b889290b",
+  "final_image_sha256": "be1825caa34f62fed1829cd9db14715ada228a07b3c2aeb7468408d28f840f42",
+  "approved_text_layer": {
+    "kind": "deterministic_typography_correction",
+    "reason": "Image model rendered the C07 approved end time as 8.75 instead of 8.15.",
+    "exact_text": "C07  6.74-8.15  REMOVE TISSUE · SAME DRESS",
+    "bounding_box": {"x": 1290, "y": 857, "width": 449, "height": 47},
+    "font": "DejaVuSansCondensed-Bold",
+    "font_size": 17,
+    "raw_preserved_at": "storyboards/segment_01_v1.raw.png"
+  },
+  "validation": {
+    "contract": "storyboards/segment_01_v1_validation.json",
+    "status": "passed",
+    "visual_inspection": "passed at original resolution",
+    "panel_count": 12,
+    "cut_order": "C01-C12",
+    "identity_lock": "passed",
+    "product_lock": "passed",
+    "environment_camera_continuity": "passed",
+    "source_brand_absence": "passed",
+    "visible_text": "passed after deterministic correction"
+  }
+}

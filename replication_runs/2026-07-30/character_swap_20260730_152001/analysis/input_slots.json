@@ -1,0 +1,113 @@
+{
+  "schema_version": "fixed-input-slots/v1",
+  "slot_order": [
+    "source_video",
+    "new_product_image",
+    "new_model_image",
+    "ui_screenshot",
+    "app_store_url",
+    "ui_operation_video",
+    "tail_video"
+  ],
+  "admission": {
+    "source_required": true,
+    "source_present": true,
+    "minimum_optional_slots": 1,
+    "optional_present_count": 1,
+    "can_proceed": true,
+    "language_only": false,
+    "change_input_present": true,
+    "enabled_extension_present": false,
+    "blocker_code": null
+  },
+  "slots": {
+    "source_video": {
+      "slot_id": "source_video",
+      "role": "source_video",
+      "kind": "video",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Downloads\\社交AI视频\\简单剧情2.mp4"
+      ],
+      "sha256": [
+        "0eb8afc9c8e46c97102b2047f7dce321a502c6709d6464ad0c0a48eaed47a80e"
+      ]
+    },
+    "new_product_image": {
+      "slot_id": "new_product_image",
+      "role": "target_product_truth",
+      "kind": "image",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "new_model_image": {
+      "slot_id": "new_model_image",
+      "role": "target_character_truth",
+      "kind": "image",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Downloads\\eb062cc7-a4f1-4a68-85f8-226d32b29c6d.jpg"
+      ],
+      "sha256": [
+        "02be5a036a442c4b323faee6adc6238cedea8d31d8f139ef918f3b3b48df0e20"
+      ]
+    },
+    "ui_screenshot": {
+      "slot_id": "ui_screenshot",
+      "role": "target_ui_truth",
+      "kind": "image",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "app_store_url": {
+      "slot_id": "app_store_url",
+      "role": "app_store_evidence",
+      "kind": "url",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "ui_operation_video": {
+      "slot_id": "ui_operation_video",
+      "role": "opaque_ui_demo",
+      "kind": "video",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "tail_video": {
+      "slot_id": "tail_video",
+      "role": "opaque_app_tail_card",
+      "kind": "video",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    }
+  },
+  "routes": {
+    "product": "source_preserve",
+    "character": "replace_from_slot",
+    "ui": "source_ui_keep",
+    "tail": "omit_source_end_card",
+    "background_music": "none"
+  },
+  "extensions": {
+    "ui_rebuild_enabled": false
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "prompt": {
+    "characters": 875
+  },
+  "reference_images": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\reference_frames\\source_keyframes_sheet.jpg",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\inputs\\new_model_image.png"
+  ],
+  "reference_sha256": [
+    "a18a6d091c1238d837e9b0ea0f5746c51113d0786af96a928b380a4e52ea3dd7",
+    "c6e97d5599ae08dcfaeee1871985006353a95de0501910b0b6e7fc80d0c27ba1"
+  ],
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

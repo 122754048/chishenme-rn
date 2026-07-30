@@ -1,0 +1,907 @@
+{
+  "schema_version": "seedance20-prompt/v1",
+  "prompt": "Segment S01. Duration 6.80s. Opening state: The supplied adult woman appears in the warm corridor in the source brown fitted long-sleeve outfit, holding a phone and pale card at waist height while angled left. Reference @Image1 (slot 1): approved S01 director storyboard. Reference @Image2 (slot 2): adult-woman identity only. Shot C01, 0.00-3.24s, vertical full-body handheld follow. Scene: Warm hotel corridor, pale walls, left doorway, patterned carpet, deep hallway perspective.. Camera: Match source handheld forward drift; full-body left-facing follow, end at doorway.. Lighting: Stable warm overhead practicals with soft camera-side fill.. Performance: Calm left-facing walk, natural breathing and arm swing; identity fixed to @Image2.. Action: Walk leftward; right hand keeps phone and pale card together at waist.. Endpoint: At doorway, still angled left, phone and card stable at waist.. Product/UI truth: Phone and pale card unchanged; no extra object.. Commercial proof: No added claim.. Transition: Continuous into C02 at 3.24s; no reframing jump.. Continuity: Same identity, wardrobe, props, corridor, direction, and light.. Audio: No dialogue; room tone and physical sounds; no music.. Shot C02, 3.24-4.20s, vertical medium-full doorway framing. Scene: Same corridor and doorway, subject left-center, hallway depth preserved.. Camera: Continue subtle handheld follow; doorway left, corridor depth right.. Lighting: Same warm practical sources, direction, temperature, and shadows as C01.. Performance: Walking slows; left arm reaches; head begins a controlled turn toward lens.. Action: Reach toward doorway with left hand; right hand keeps phone and pale card.. Endpoint: Left arm extended, body slowed, head beginning to turn to camera.. Product/UI truth: Phone and pale card unchanged; no extra object.. Commercial proof: No added claim.. Transition: Continuous turn into C03 at 4.20s.. Continuity: Same identity, wardrobe, props, corridor, direction, and light.. Audio: No dialogue; room tone and physical sounds; no music.. Shot C03, 4.20-6.48s, handheld push from medium-full portrait to chest-and-head framing. Scene: Same warm corridor and doorway, framing tightens as subject approaches.. Camera: Match source approach rhythm; gentle handheld push as subject takes one step toward lens.. Lighting: Stable warm practical key and soft camera-side fill.. Performance: Complete turn, lift gaze, form a small friendly closed-mouth smile; hands simple.. Action: Turn from profile and take one small step while holding phone and card low.. Endpoint: Direct gaze, friendly expression, both hands gathered around phone and card.. Product/UI truth: Phone and pale card unchanged; no extra object.. Commercial proof: No added claim.. Transition: Continuous settling move into C04 at 6.48s.. Continuity: Same identity, wardrobe, props, corridor, direction, and light.. Audio: No dialogue; room tone and physical sounds; no music.. Shot C04, 6.48-6.80s, stable handheld close portrait. Scene: Close corridor portrait with doorway and warm hallway depth behind subject.. Camera: Hold close portrait with subtle handheld breathing sway; no extra push or reframe.. Lighting: Unchanged warm practical light and soft frontal fill.. Performance: Maintain direct gaze and friendly closed-mouth expression; hands steady at waist.. Action: Settle into final pose with phone and pale card stable.. Endpoint: Direct gaze, friendly expression, phone and pale card at waist on final frame.. Product/UI truth: Phone and pale card unchanged; no extra object.. Commercial proof: No added claim.. Transition: End cleanly at 6.80s on the stable pose required by the next edit.. Continuity: Same identity, wardrobe, props, corridor, direction, and light.. Audio: No dialogue; room tone and physical sounds; no music.. Lock: @Video1 controls source motion, camera, timing, blocking, and corridor continuity. Lock: @Image1 controls the four-Cut plan; @Image2 controls identity only. Lock: keep brown outfit, heels, bracelets, phone, pale card, corridor, and warm light. Lock: keep C01-C04 and exact 0.00-6.80s timing. Constraint: no generated subtitles, readable text, extra logo, or extra person. Constraint: do not import pool, swimwear, tattoos, necklace, or furniture from @Image2. Constraint: no identity drift, wardrobe drift, prop errors, reordered action, freeze, or speed change. Cut C01: No dialogue. Allowed audio: room tone and physical sounds. Forbidden audio: dialogue, synthetic voice, music. Cut C02: No dialogue. Allowed audio: room tone and physical sounds. Forbidden audio: dialogue, synthetic voice, music. Cut C03: No dialogue. Allowed audio: room tone and physical sounds. Forbidden audio: dialogue, synthetic voice, music. Cut C04: No dialogue. Allowed audio: room tone and physical sounds. Forbidden audio: dialogue, synthetic voice, music.",
+  "compiler": {
+    "contract": "seedance20-prompt-compiler/v1",
+    "profile": "high_fidelity_hybrid_v1",
+    "skill": "seedance-20",
+    "version": "6.6.0",
+    "skill_sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+    "loaded_modules": [
+      "seedance-20",
+      "seedance-prompt",
+      "seedance-antislop",
+      "seedance-camera",
+      "seedance-motion",
+      "seedance-lighting",
+      "seedance-characters",
+      "seedance-audio",
+      "seedance-sequence"
+    ],
+    "required_specialists": [
+      "seedance-camera",
+      "seedance-motion",
+      "seedance-lighting",
+      "seedance-characters",
+      "seedance-audio",
+      "seedance-sequence"
+    ],
+    "dependency_snapshot": {
+      "seedance-20": {
+        "name": "seedance-20",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+        "package_path": "dependencies/seedance-20/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-prompt": {
+        "name": "seedance-prompt",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "ce558207516a6408de3425956c911dac4dbaa5da0d024d29ef03a01186d964a6",
+        "package_path": "dependencies/seedance-20/skills/seedance-prompt/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-antislop": {
+        "name": "seedance-antislop",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "3303e4ae1de3dc2fcf784e965c4df95b91c8d6522e04a11df9533440d9117eb1",
+        "package_path": "dependencies/seedance-20/skills/seedance-antislop/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-camera": {
+        "name": "seedance-camera",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "9785dee770590268ee98eab9fa7b2f7580cce8ad92764ee7b9c4a6613686b4bf",
+        "package_path": "dependencies/seedance-20/skills/seedance-camera/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-motion": {
+        "name": "seedance-motion",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "29dcb5b1718fe9742fea8498da3b468f47309d595ad56c9c62d65edccdbf52c7",
+        "package_path": "dependencies/seedance-20/skills/seedance-motion/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-lighting": {
+        "name": "seedance-lighting",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "8dd249bd1bc380801b624cb90cc37d46ac725ac20e7ec2b8efce02ac67cd21f7",
+        "package_path": "dependencies/seedance-20/skills/seedance-lighting/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-characters": {
+        "name": "seedance-characters",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "355500e3f0e00f789d736438e395501d7eac8136d40bac4b39b1b98a6e271148",
+        "package_path": "dependencies/seedance-20/skills/seedance-characters/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-audio": {
+        "name": "seedance-audio",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "3a5a906f9775222389520c9b4d426842d0fc3cb9d20621491a91e884d774e424",
+        "package_path": "dependencies/seedance-20/skills/seedance-audio/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-sequence": {
+        "name": "seedance-sequence",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "cbaecde282c0efb73120366dc54628a3f9988919ae545237f6cdd1b2e40f5758",
+        "package_path": "dependencies/seedance-20/skills/seedance-sequence/SKILL.md",
+        "digest_required": true
+      }
+    },
+    "route_sha256": "e63e77d7f62a3712350686c6d446c9727525946cacf040560d313a347b4ba8ed",
+    "checks": {
+      "professional_gate": true,
+      "capability_check": true,
+      "allocation_check": true,
+      "reference_role_check": true,
+      "directing_coherence_check": true,
+      "anti_slop_check": true,
+      "route_exclusion_check": true,
+      "line_parity_check": true
+    },
+    "rule_audit": {
+      "engine": "seedance-20",
+      "version": "seedance20-rules/v2",
+      "skill_sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3",
+      "checks_sha256": "b3b46181a642414bfd4a657d96f0724cf67c7b1033fda62b7d7b297ccc6bbda1",
+      "source": "immutable_skill_bytes_and_compiler_rules"
+    },
+    "review_bindings": {
+      "output_language": null,
+      "approved_script_sha256": "3b867f50bd623ca2fb6788b3b34f8d24e33f9fc5363f04582d73e4a72f7f2fc7",
+      "approved_storyboard_manifest_sha256": "109a8cba43ed0703fc67706df522b922201a13745c0cbe22cf3e5f9f76a03ecf",
+      "approved_storyboard_cut_sha256s": [
+        "c8366322228b76326bf2e24b2df60e6b6886bf40daa9507a6dc190292692c4f4",
+        "c8366322228b76326bf2e24b2df60e6b6886bf40daa9507a6dc190292692c4f4",
+        "c8366322228b76326bf2e24b2df60e6b6886bf40daa9507a6dc190292692c4f4",
+        "c8366322228b76326bf2e24b2df60e6b6886bf40daa9507a6dc190292692c4f4"
+      ],
+      "segment_plan_sha256": "4ef2b1be021dd7b304c2d5e8390624e93fe6a95ef343db2d9185aca5f5438176"
+    },
+    "professional_gate": true,
+    "capability_check": true,
+    "allocation_check": true,
+    "reference_role_check": true,
+    "directing_coherence_check": true,
+    "anti_slop_check": true,
+    "route_exclusion_check": true,
+    "line_parity_check": true,
+    "output_sha256": "b90d456145301f23d5229fc946b6eeec50f2ed9fc641eeed5fc21948f640e90a"
+  },
+  "line_contracts": [],
+  "line_contract_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "performance_line_contracts": [],
+  "performance_line_contract_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "no_speech_contracts": [
+    {
+      "cut_id": "C01",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "room tone and physical sounds"
+      ],
+      "forbidden_audio": [
+        "dialogue",
+        "synthetic voice",
+        "music"
+      ]
+    },
+    {
+      "cut_id": "C02",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "room tone and physical sounds"
+      ],
+      "forbidden_audio": [
+        "dialogue",
+        "synthetic voice",
+        "music"
+      ]
+    },
+    {
+      "cut_id": "C03",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "room tone and physical sounds"
+      ],
+      "forbidden_audio": [
+        "dialogue",
+        "synthetic voice",
+        "music"
+      ]
+    },
+    {
+      "cut_id": "C04",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "room tone and physical sounds"
+      ],
+      "forbidden_audio": [
+        "dialogue",
+        "synthetic voice",
+        "music"
+      ]
+    }
+  ],
+  "no_speech_contract_sha256": "e6cf4f3fd93c1dbf76f3b1a5ccd2a2a70890d91b21da20a44b34709a8e4be84d",
+  "required_factor_ids": [
+    "S01.C01.SCENE",
+    "S01.C01.CAMERA",
+    "S01.C01.LIGHT",
+    "S01.C01.PERFORMANCE",
+    "S01.C01.ACTION",
+    "S01.C01.IDENTITY",
+    "S01.C01.PROOF",
+    "S01.C01.TRANSITION",
+    "S01.C01.CONTINUITY",
+    "S01.C01.AUDIO",
+    "S01.C02.SCENE",
+    "S01.C02.CAMERA",
+    "S01.C02.LIGHT",
+    "S01.C02.PERFORMANCE",
+    "S01.C02.ACTION",
+    "S01.C02.IDENTITY",
+    "S01.C02.PROOF",
+    "S01.C02.TRANSITION",
+    "S01.C02.CONTINUITY",
+    "S01.C02.AUDIO",
+    "S01.C03.SCENE",
+    "S01.C03.CAMERA",
+    "S01.C03.LIGHT",
+    "S01.C03.PERFORMANCE",
+    "S01.C03.ACTION",
+    "S01.C03.IDENTITY",
+    "S01.C03.PROOF",
+    "S01.C03.TRANSITION",
+    "S01.C03.CONTINUITY",
+    "S01.C03.AUDIO",
+    "S01.C04.SCENE",
+    "S01.C04.CAMERA",
+    "S01.C04.LIGHT",
+    "S01.C04.PERFORMANCE",
+    "S01.C04.ACTION",
+    "S01.C04.IDENTITY",
+    "S01.C04.PROOF",
+    "S01.C04.TRANSITION",
+    "S01.C04.CONTINUITY",
+    "S01.C04.AUDIO"
+  ],
+  "required_factor_ids_sha256": "97ff4347f92f5296cd772131ba0d5a5849d68fd15203f5eeddc4fafdd877152a",
+  "prompt_factor_coverage": [
+    {
+      "factor_id": "S01.C01.SCENE",
+      "source_pointer": "/segment/shots/0/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01",
+      "prompt_span": {
+        "start": 327,
+        "end": 1200
+      }
+    },
+    {
+      "factor_id": "S01.C01.CAMERA",
+      "source_pointer": "/segment/shots/0/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01",
+      "prompt_span": {
+        "start": 327,
+        "end": 1200
+      }
+    },
+    {
+      "factor_id": "S01.C01.LIGHT",
+      "source_pointer": "/segment/shots/0/factor_ids/2",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01",
+      "prompt_span": {
+        "start": 327,
+        "end": 1200
+      }
+    },
+    {
+      "factor_id": "S01.C01.PERFORMANCE",
+      "source_pointer": "/segment/shots/0/factor_ids/3",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01",
+      "prompt_span": {
+        "start": 327,
+        "end": 1200
+      }
+    },
+    {
+      "factor_id": "S01.C01.ACTION",
+      "source_pointer": "/segment/shots/0/factor_ids/4",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01",
+      "prompt_span": {
+        "start": 327,
+        "end": 1200
+      }
+    },
+    {
+      "factor_id": "S01.C01.IDENTITY",
+      "source_pointer": "/segment/shots/0/factor_ids/5",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01",
+      "prompt_span": {
+        "start": 327,
+        "end": 1200
+      }
+    },
+    {
+      "factor_id": "S01.C01.PROOF",
+      "source_pointer": "/segment/shots/0/factor_ids/6",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01",
+      "prompt_span": {
+        "start": 327,
+        "end": 1200
+      }
+    },
+    {
+      "factor_id": "S01.C01.TRANSITION",
+      "source_pointer": "/segment/shots/0/factor_ids/7",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01",
+      "prompt_span": {
+        "start": 327,
+        "end": 1200
+      }
+    },
+    {
+      "factor_id": "S01.C01.CONTINUITY",
+      "source_pointer": "/segment/shots/0/factor_ids/8",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01",
+      "prompt_span": {
+        "start": 327,
+        "end": 1200
+      }
+    },
+    {
+      "factor_id": "S01.C01.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/9",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01",
+      "prompt_span": {
+        "start": 327,
+        "end": 1200
+      }
+    },
+    {
+      "factor_id": "S01.C02.SCENE",
+      "source_pointer": "/segment/shots/1/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C02",
+      "prompt_span": {
+        "start": 1201,
+        "end": 2043
+      }
+    },
+    {
+      "factor_id": "S01.C02.CAMERA",
+      "source_pointer": "/segment/shots/1/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C02",
+      "prompt_span": {
+        "start": 1201,
+        "end": 2043
+      }
+    },
+    {
+      "factor_id": "S01.C02.LIGHT",
+      "source_pointer": "/segment/shots/1/factor_ids/2",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C02",
+      "prompt_span": {
+        "start": 1201,
+        "end": 2043
+      }
+    },
+    {
+      "factor_id": "S01.C02.PERFORMANCE",
+      "source_pointer": "/segment/shots/1/factor_ids/3",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C02",
+      "prompt_span": {
+        "start": 1201,
+        "end": 2043
+      }
+    },
+    {
+      "factor_id": "S01.C02.ACTION",
+      "source_pointer": "/segment/shots/1/factor_ids/4",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C02",
+      "prompt_span": {
+        "start": 1201,
+        "end": 2043
+      }
+    },
+    {
+      "factor_id": "S01.C02.IDENTITY",
+      "source_pointer": "/segment/shots/1/factor_ids/5",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C02",
+      "prompt_span": {
+        "start": 1201,
+        "end": 2043
+      }
+    },
+    {
+      "factor_id": "S01.C02.PROOF",
+      "source_pointer": "/segment/shots/1/factor_ids/6",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C02",
+      "prompt_span": {
+        "start": 1201,
+        "end": 2043
+      }
+    },
+    {
+      "factor_id": "S01.C02.TRANSITION",
+      "source_pointer": "/segment/shots/1/factor_ids/7",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C02",
+      "prompt_span": {
+        "start": 1201,
+        "end": 2043
+      }
+    },
+    {
+      "factor_id": "S01.C02.CONTINUITY",
+      "source_pointer": "/segment/shots/1/factor_ids/8",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C02",
+      "prompt_span": {
+        "start": 1201,
+        "end": 2043
+      }
+    },
+    {
+      "factor_id": "S01.C02.AUDIO",
+      "source_pointer": "/segment/shots/1/factor_ids/9",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C02",
+      "prompt_span": {
+        "start": 1201,
+        "end": 2043
+      }
+    },
+    {
+      "factor_id": "S01.C03.SCENE",
+      "source_pointer": "/segment/shots/2/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C03",
+      "prompt_span": {
+        "start": 2044,
+        "end": 2942
+      }
+    },
+    {
+      "factor_id": "S01.C03.CAMERA",
+      "source_pointer": "/segment/shots/2/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C03",
+      "prompt_span": {
+        "start": 2044,
+        "end": 2942
+      }
+    },
+    {
+      "factor_id": "S01.C03.LIGHT",
+      "source_pointer": "/segment/shots/2/factor_ids/2",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C03",
+      "prompt_span": {
+        "start": 2044,
+        "end": 2942
+      }
+    },
+    {
+      "factor_id": "S01.C03.PERFORMANCE",
+      "source_pointer": "/segment/shots/2/factor_ids/3",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C03",
+      "prompt_span": {
+        "start": 2044,
+        "end": 2942
+      }
+    },
+    {
+      "factor_id": "S01.C03.ACTION",
+      "source_pointer": "/segment/shots/2/factor_ids/4",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C03",
+      "prompt_span": {
+        "start": 2044,
+        "end": 2942
+      }
+    },
+    {
+      "factor_id": "S01.C03.IDENTITY",
+      "source_pointer": "/segment/shots/2/factor_ids/5",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C03",
+      "prompt_span": {
+        "start": 2044,
+        "end": 2942
+      }
+    },
+    {
+      "factor_id": "S01.C03.PROOF",
+      "source_pointer": "/segment/shots/2/factor_ids/6",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C03",
+      "prompt_span": {
+        "start": 2044,
+        "end": 2942
+      }
+    },
+    {
+      "factor_id": "S01.C03.TRANSITION",
+      "source_pointer": "/segment/shots/2/factor_ids/7",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C03",
+      "prompt_span": {
+        "start": 2044,
+        "end": 2942
+      }
+    },
+    {
+      "factor_id": "S01.C03.CONTINUITY",
+      "source_pointer": "/segment/shots/2/factor_ids/8",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C03",
+      "prompt_span": {
+        "start": 2044,
+        "end": 2942
+      }
+    },
+    {
+      "factor_id": "S01.C03.AUDIO",
+      "source_pointer": "/segment/shots/2/factor_ids/9",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C03",
+      "prompt_span": {
+        "start": 2044,
+        "end": 2942
+      }
+    },
+    {
+      "factor_id": "S01.C04.SCENE",
+      "source_pointer": "/segment/shots/3/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C04",
+      "prompt_span": {
+        "start": 2943,
+        "end": 3809
+      }
+    },
+    {
+      "factor_id": "S01.C04.CAMERA",
+      "source_pointer": "/segment/shots/3/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C04",
+      "prompt_span": {
+        "start": 2943,
+        "end": 3809
+      }
+    },
+    {
+      "factor_id": "S01.C04.LIGHT",
+      "source_pointer": "/segment/shots/3/factor_ids/2",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C04",
+      "prompt_span": {
+        "start": 2943,
+        "end": 3809
+      }
+    },
+    {
+      "factor_id": "S01.C04.PERFORMANCE",
+      "source_pointer": "/segment/shots/3/factor_ids/3",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C04",
+      "prompt_span": {
+        "start": 2943,
+        "end": 3809
+      }
+    },
+    {
+      "factor_id": "S01.C04.ACTION",
+      "source_pointer": "/segment/shots/3/factor_ids/4",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C04",
+      "prompt_span": {
+        "start": 2943,
+        "end": 3809
+      }
+    },
+    {
+      "factor_id": "S01.C04.IDENTITY",
+      "source_pointer": "/segment/shots/3/factor_ids/5",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C04",
+      "prompt_span": {
+        "start": 2943,
+        "end": 3809
+      }
+    },
+    {
+      "factor_id": "S01.C04.PROOF",
+      "source_pointer": "/segment/shots/3/factor_ids/6",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C04",
+      "prompt_span": {
+        "start": 2943,
+        "end": 3809
+      }
+    },
+    {
+      "factor_id": "S01.C04.TRANSITION",
+      "source_pointer": "/segment/shots/3/factor_ids/7",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C04",
+      "prompt_span": {
+        "start": 2943,
+        "end": 3809
+      }
+    },
+    {
+      "factor_id": "S01.C04.CONTINUITY",
+      "source_pointer": "/segment/shots/3/factor_ids/8",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C04",
+      "prompt_span": {
+        "start": 2943,
+        "end": 3809
+      }
+    },
+    {
+      "factor_id": "S01.C04.AUDIO",
+      "source_pointer": "/segment/shots/3/factor_ids/9",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C04",
+      "prompt_span": {
+        "start": 2943,
+        "end": 3809
+      }
+    }
+  ],
+  "prompt_factor_coverage_sha256": "f220a73ebb84b3e35e1d6e3fcba8c3a5ddb6a6fb2d501dc262c617d302dddfd6",
+  "source_contract": {
+    "segment": {
+      "segment_id": "S01",
+      "cut_ids": [
+        "C01",
+        "C02",
+        "C03",
+        "C04"
+      ],
+      "duration_ms": 6800,
+      "opening_state": "The supplied adult woman appears in the warm corridor in the source brown fitted long-sleeve outfit, holding a phone and pale card at waist height while angled left.",
+      "shots": [
+        {
+          "shot_id": "C01",
+          "start_ms": 0,
+          "end_ms": 3240,
+          "shot_scale": "vertical full-body handheld follow",
+          "scene": "Warm hotel corridor, pale walls, left doorway, patterned carpet, deep hallway perspective.",
+          "camera": "Match source handheld forward drift; full-body left-facing follow, end at doorway.",
+          "lighting": "Stable warm overhead practicals with soft camera-side fill.",
+          "performance": "Calm left-facing walk, natural breathing and arm swing; identity fixed to @Image2.",
+          "action": "Walk leftward; right hand keeps phone and pale card together at waist.",
+          "endpoint": "At doorway, still angled left, phone and card stable at waist.",
+          "product_or_ui_truth": "Phone and pale card unchanged; no extra object.",
+          "commercial_proof": "No added claim.",
+          "transition": "Continuous into C02 at 3.24s; no reframing jump.",
+          "continuity": "Same identity, wardrobe, props, corridor, direction, and light.",
+          "audio": "No dialogue; room tone and physical sounds; no music.",
+          "factor_ids": [
+            "S01.C01.SCENE",
+            "S01.C01.CAMERA",
+            "S01.C01.LIGHT",
+            "S01.C01.PERFORMANCE",
+            "S01.C01.ACTION",
+            "S01.C01.IDENTITY",
+            "S01.C01.PROOF",
+            "S01.C01.TRANSITION",
+            "S01.C01.CONTINUITY",
+            "S01.C01.AUDIO"
+          ]
+        },
+        {
+          "shot_id": "C02",
+          "start_ms": 3240,
+          "end_ms": 4200,
+          "shot_scale": "vertical medium-full doorway framing",
+          "scene": "Same corridor and doorway, subject left-center, hallway depth preserved.",
+          "camera": "Continue subtle handheld follow; doorway left, corridor depth right.",
+          "lighting": "Same warm practical sources, direction, temperature, and shadows as C01.",
+          "performance": "Walking slows; left arm reaches; head begins a controlled turn toward lens.",
+          "action": "Reach toward doorway with left hand; right hand keeps phone and pale card.",
+          "endpoint": "Left arm extended, body slowed, head beginning to turn to camera.",
+          "product_or_ui_truth": "Phone and pale card unchanged; no extra object.",
+          "commercial_proof": "No added claim.",
+          "transition": "Continuous turn into C03 at 4.20s.",
+          "continuity": "Same identity, wardrobe, props, corridor, direction, and light.",
+          "audio": "No dialogue; room tone and physical sounds; no music.",
+          "factor_ids": [
+            "S01.C02.SCENE",
+            "S01.C02.CAMERA",
+            "S01.C02.LIGHT",
+            "S01.C02.PERFORMANCE",
+            "S01.C02.ACTION",
+            "S01.C02.IDENTITY",
+            "S01.C02.PROOF",
+            "S01.C02.TRANSITION",
+            "S01.C02.CONTINUITY",
+            "S01.C02.AUDIO"
+          ]
+        },
+        {
+          "shot_id": "C03",
+          "start_ms": 4200,
+          "end_ms": 6480,
+          "shot_scale": "handheld push from medium-full portrait to chest-and-head framing",
+          "scene": "Same warm corridor and doorway, framing tightens as subject approaches.",
+          "camera": "Match source approach rhythm; gentle handheld push as subject takes one step toward lens.",
+          "lighting": "Stable warm practical key and soft camera-side fill.",
+          "performance": "Complete turn, lift gaze, form a small friendly closed-mouth smile; hands simple.",
+          "action": "Turn from profile and take one small step while holding phone and card low.",
+          "endpoint": "Direct gaze, friendly expression, both hands gathered around phone and card.",
+          "product_or_ui_truth": "Phone and pale card unchanged; no extra object.",
+          "commercial_proof": "No added claim.",
+          "transition": "Continuous settling move into C04 at 6.48s.",
+          "continuity": "Same identity, wardrobe, props, corridor, direction, and light.",
+          "audio": "No dialogue; room tone and physical sounds; no music.",
+          "factor_ids": [
+            "S01.C03.SCENE",
+            "S01.C03.CAMERA",
+            "S01.C03.LIGHT",
+            "S01.C03.PERFORMANCE",
+            "S01.C03.ACTION",
+            "S01.C03.IDENTITY",
+            "S01.C03.PROOF",
+            "S01.C03.TRANSITION",
+            "S01.C03.CONTINUITY",
+            "S01.C03.AUDIO"
+          ]
+        },
+        {
+          "shot_id": "C04",
+          "start_ms": 6480,
+          "end_ms": 6800,
+          "shot_scale": "stable handheld close portrait",
+          "scene": "Close corridor portrait with doorway and warm hallway depth behind subject.",
+          "camera": "Hold close portrait with subtle handheld breathing sway; no extra push or reframe.",
+          "lighting": "Unchanged warm practical light and soft frontal fill.",
+          "performance": "Maintain direct gaze and friendly closed-mouth expression; hands steady at waist.",
+          "action": "Settle into final pose with phone and pale card stable.",
+          "endpoint": "Direct gaze, friendly expression, phone and pale card at waist on final frame.",
+          "product_or_ui_truth": "Phone and pale card unchanged; no extra object.",
+          "commercial_proof": "No added claim.",
+          "transition": "End cleanly at 6.80s on the stable pose required by the next edit.",
+          "continuity": "Same identity, wardrobe, props, corridor, direction, and light.",
+          "audio": "No dialogue; room tone and physical sounds; no music.",
+          "factor_ids": [
+            "S01.C04.SCENE",
+            "S01.C04.CAMERA",
+            "S01.C04.LIGHT",
+            "S01.C04.PERFORMANCE",
+            "S01.C04.ACTION",
+            "S01.C04.IDENTITY",
+            "S01.C04.PROOF",
+            "S01.C04.TRANSITION",
+            "S01.C04.CONTINUITY",
+            "S01.C04.AUDIO"
+          ]
+        }
+      ],
+      "reference_roles": [
+        {
+          "slot": 1,
+          "tag": "@Image1",
+          "role": "approved S01 director storyboard"
+        },
+        {
+          "slot": 2,
+          "tag": "@Image2",
+          "role": "adult-woman identity only"
+        }
+      ],
+      "locks": [
+        "@Video1 controls source motion, camera, timing, blocking, and corridor continuity",
+        "@Image1 controls the four-Cut plan; @Image2 controls identity only",
+        "keep brown outfit, heels, bracelets, phone, pale card, corridor, and warm light",
+        "keep C01-C04 and exact 0.00-6.80s timing"
+      ],
+      "negative_constraints": [
+        "no generated subtitles, readable text, extra logo, or extra person",
+        "do not import pool, swimwear, tattoos, necklace, or furniture from @Image2",
+        "no identity drift, wardrobe drift, prop errors, reordered action, freeze, or speed change"
+      ],
+      "no_speech_contracts": [
+        {
+          "cut_id": "C01",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "room tone and physical sounds"
+          ],
+          "forbidden_audio": [
+            "dialogue",
+            "synthetic voice",
+            "music"
+          ]
+        },
+        {
+          "cut_id": "C02",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "room tone and physical sounds"
+          ],
+          "forbidden_audio": [
+            "dialogue",
+            "synthetic voice",
+            "music"
+          ]
+        },
+        {
+          "cut_id": "C03",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "room tone and physical sounds"
+          ],
+          "forbidden_audio": [
+            "dialogue",
+            "synthetic voice",
+            "music"
+          ]
+        },
+        {
+          "cut_id": "C04",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "room tone and physical sounds"
+          ],
+          "forbidden_audio": [
+            "dialogue",
+            "synthetic voice",
+            "music"
+          ]
+        }
+      ]
+    },
+    "factors": {
+      "camera": true,
+      "motion": true,
+      "lighting": true,
+      "characters": true,
+      "audio": true,
+      "continuity": true
+    },
+    "compiler_checks": {
+      "professional_gate": true,
+      "capability_check": true,
+      "allocation_check": true,
+      "reference_role_check": true,
+      "directing_coherence_check": true,
+      "anti_slop_check": true,
+      "route_exclusion_check": true,
+      "line_parity_check": true
+    },
+    "performance_lines": []
+  }
+}

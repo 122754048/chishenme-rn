@@ -1,0 +1,33 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082699567417475073",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\storyboards\\segment_01_v1.prompt.txt",
+  "timeline_scope_receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\analysis\\timeline_scope_receipt.json",
+  "timeline_scope_receipt_sha256": "6beec22359e609a1d4c2dab0939b1b20505d4f30c7837eacc711ffc2de646d85",
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04"
+  ],
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\reference_frames\\replacement_control_keyframes_v1.png",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\inputs\\new_model_image.png"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\model_replace_20260730_1330\\storyboards\\segment_01_v3.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 79.297,
+  "revision_reason": "regenerated after rebuilding valid source-anchored replacement control sheet",
+  "revision_number": 3,
+  "artifact_stem": "segment_01_v3",
+  "cut_id": "segment_01_v3",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

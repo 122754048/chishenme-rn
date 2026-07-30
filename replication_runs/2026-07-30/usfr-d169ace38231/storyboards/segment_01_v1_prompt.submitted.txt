@@ -1,0 +1,87 @@
+Use case: infographic-diagram
+Asset type: 16:9 cinematic pre-production storyboard / visual planning board for Segment 1/1 of a 15-second physical-product UGC demonstration featuring a white lace dress. Current segment duration: 15 seconds.
+
+Input roles:
+- Reference image 1 is the validated replacement-control sheet. It is the non-negotiable visual base for every Cut card and the sole authority for exactly 12 Cut cards in order C01-C12, pose, action phase, gesture, facial expression, gaze, mouth state, head/body angle, source wardrobe, camera, crop, composition, subject position/scale, background, lighting, hands, props, occlusion, garment-box interaction and continuity.
+- Reference image 2 supplies only the authorized identity truth: the same middle-aged light-skinned man with short dark receding hair and trimmed beard/mustache. It cannot override Reference image 1 and must not replace the source blue striped over white layered wardrobe with a black T-shirt.
+- Reference image 3 supplies only the authorized target physical-product truth: the same white V-neck floral lace dress with flared half sleeves, defined waist, tiered skirt and scalloped lace edges. Ignore its lower-right watermark. It cannot override Reference image 1.
+- Reference image 1 was created upstream only by one complete source Cut contact sheet -> one RunningHub Image2 call -> one complete replacement-control sheet. Do not rearrange, duplicate or regenerate individual Cuts.
+
+Primary request:
+Create one polished landscape 16:9 director's production board for Segment 1/1 of a target 9:16 short-form UGC product video titled "LACE DRESS UNBOXING". The board covers global C01-C12 only, 12 ordered shots, total 15 seconds. Use a professional modular grid, clear hierarchy, generous spacing and realistic pre-production design. It must feel like a director's visual guide, not a plain contact sheet or ordinary nine-grid.
+
+FIXED BOARD STRUCTURE:
+1. TOP SHARED DIRECTION BAR: title LACE DRESS UNBOXING; SEGMENT 1/1; C01-C12; 12 SHOTS; TARGET 9:16; LOCKED PHONE CAMERA; WARM SUNLIGHT; WHITE / CREAM / BLUE palette.
+2. LEFT CHARACTER + DETAIL AREA: show the target man's stable face identity, receding short dark hair, trimmed beard, eyes, natural hands and the locked blue striped shirt over white long sleeves. Include useful close details, not a raw pasted portrait. State KEEP FACE and KEEP WARDROBE.
+3. CENTER STORYBOARD AREA: exactly 12 ordered generated scene cards using the replacement-control visual states. Every card must visibly contain the correct man and the correct spatial/action relationship; product-action cards must show the same garment box or same white lace dress, not separated reference panels.
+4. RIGHT TARGET EVIDENCE + MOVEMENT AREA: show the white lace dress's verified V-neck, floral lace, flared half sleeves, defined waist, tiered skirt and scalloped edges; show an unbranded neutral garment box. Add a very simple top-down diagram: camera fixed front, presenter behind microphone, box lower center, lid travels right, tissue travels left, dress travels upward to chest center.
+5. BOTTOM DIRECTION STRIP: short large labels only for lighting, camera, palette, audio/tone, mood and cinematography.
+
+Environment and movement:
+One continuous warm sunlit interior with neutral wall and angular stair/wall background, white table, large silver-gray desktop microphone fixed in the center. Presenter remains seated behind the microphone. Locked frontal vertical-phone medium close-up, eye-level/tabletop perspective. Sunlight remains from screen-right and shadows fall screen-left. The camera never moves. Closed box begins lower center; hands move down; box moves closer; lid lifts and travels screen-right; dress rises from box; plain tissue travels screen-left; dress upper bodice faces camera at chest center; hands touch visible lace detail; same dress remains centered through CTA.
+
+Shared continuity manifest:
+Same target man C01-C12; same blue striped over white layered wardrobe; same microphone, table, room, sunlight direction and camera; same unbranded neutral garment box; same white lace dress. Product state progression is irreversible and ordered: CLOSED BOX -> LID LIFT -> OPEN REVEAL -> DRESS LIFT -> TISSUE REMOVE / PARTIAL UNFOLD -> FRONT HERO HOLD -> DETAIL TOUCH -> CTA HOLD. No reset, duplicate object or scene change.
+
+Segment continuity:
+- Incoming state: target man seated centered, hands raised near microphone, neutral garment box closed at lower center, gaze into camera.
+- Outgoing state: same man smiling toward camera, same dress upper bodice centered and front-facing above the open box, same environment and light.
+- Adjacent board role: none; single segment 1/1.
+
+Storyboard cards — generate all exactly once and in this order:
+Cut C01 — 0.00-1.41: frontal medium close-up, target man looks into lens and makes small symmetrical opening hand gestures beside the microphone; closed neutral garment box lower center. Label: "C01  0.00-1.41  GREET · KEEP FACE"
+Cut C02 — 1.41-2.12: same composition; gaze and both hands lower toward the closed box during a brief pause. Label: "C02  1.41-2.12  REACH · SAME SET"
+Cut C03 — 2.12-3.62: both hands contact the same box, draw it closer and slightly lift/angle it toward camera; no branding or text. Label: "C03  2.12-3.62  FOREGROUND BOX · NO BRAND"
+Cut C04 — 3.62-4.49: both hands lift the neutral lid upward and toward screen-right, first revealing plain tissue and folded white lace dress. Label: "C04  3.62-4.49  LIFT LID · DRESS REVEAL"
+Cut C05 — 4.49-5.49: lid moves fully to screen-right while the other hand steadies the open box; folded dress clearly visible. Label: "C05  4.49-5.49  SET ASIDE · OPEN BOX"
+Cut C06 — 5.49-6.74: both hands establish a realistic soft-cloth grip and lift the folded white lace dress completely out of the box. Label: "C06  5.49-6.74  LIFT DRESS · TRUE LACE"
+Cut C07 — 6.74-8.15: one hand stabilizes the dress while the other pulls plain tissue screen-left and begins a controlled partial unfolding of the upper bodice and one flared sleeve. Label: "C07  6.74-8.15  REMOVE TISSUE · SAME DRESS"
+Cut C08 — 8.15-9.81: dress upper bodice is squared to camera at chest center; V-neck, floral lace, waist and sleeve form readable; man looks pleased. Label: "C08  8.15-9.81  HERO FRONT · V-NECK LOCK"
+Cut C09 — 9.81-10.48: stable front hold; tiny hand reposition near neckline/sleeve/lace edge while scale and orientation remain unchanged. Label: "C09  9.81-10.48  REGRIP · SAME SCALE"
+Cut C10 — 10.48-11.48: fingertips lightly touch visible lace pattern or scalloped edge in 2-3 short tactile motions; no stretching or quality claim. Label: "C10  10.48-11.48  TOUCH DETAIL · NO CLAIM"
+Cut C11 — 11.48-12.10: hands stop and stabilize the same dress front; man re-establishes direct eye contact before CTA. Label: "C11  11.48-12.10  HOLD · KEEP FACE"
+Cut C12 — 12.10-15.00: same dress remains centered and front-facing; same man delivers CTA, warms into a friendly smile and slight wink/squint; no instant try-on. Label: "C12  12.10-15.00  CTA SMILE · SAME DRESS"
+
+Visual style:
+Photorealistic warm natural-light UGC, authentic phone-camera framing, realistic adult skin, cloth drape and hands, practical director-board graphic design, crisp modular grid, spacious off-white background, production-ready visual hierarchy. Scene images must be real synthesized scenes, not pasted source frames or isolated asset thumbnails.
+Color palette: warm ivory, lace white, neutral cream, muted blue stripes, charcoal type, small warm amber light accents.
+Audio direction: English close-mic conversational voice; low indoor room tone; box, tissue and light fabric Foley synchronized to actions; no background music.
+Trademark safety: remove all source PIXL branding, source console pixels and source package graphics. Do not invent a target brand, logo, label, price, claim or pseudo-text. The product-reference watermark is forbidden.
+
+Exact allowed text only:
+LACE DRESS UNBOXING
+SEGMENT 1/1
+C01-C12
+12 SHOTS
+TARGET 9:16
+LOCKED PHONE CAMERA
+WARM SUNLIGHT
+KEEP FACE
+KEEP WARDROBE
+TRUE LACE
+NO BRAND
+NO MUSIC
+C01  0.00-1.41  GREET · KEEP FACE
+C02  1.41-2.12  REACH · SAME SET
+C03  2.12-3.62  FOREGROUND BOX · NO BRAND
+C04  3.62-4.49  LIFT LID · DRESS REVEAL
+C05  4.49-5.49  SET ASIDE · OPEN BOX
+C06  5.49-6.74  LIFT DRESS · TRUE LACE
+C07  6.74-8.15  REMOVE TISSUE · SAME DRESS
+C08  8.15-9.81  HERO FRONT · V-NECK LOCK
+C09  9.81-10.48  REGRIP · SAME SCALE
+C10  10.48-11.48  TOUCH DETAIL · NO CLAIM
+C11  11.48-12.10  HOLD · KEEP FACE
+C12  12.10-15.00  CTA SMILE · SAME DRESS
+VOICE + ROOM + FOLEY
+WARM / HONEST / CURIOUS
+NO SOURCE BRAND
+
+Identity and target-evidence locks:
+Reference image 1 always wins for non-authorized attributes. Replace only the authorized man identity and dress/product layer already embodied in the validated control sheet. Preserve source wardrobe, hands, pose/action phase, gaze/expression, camera/crop, subject placement, environment, lighting, microphone, props, product interaction order and continuity. Preserve the target dress category and visible construction; do not change it into a wedding gown, nightgown, blouse, top or different lace garment.
+
+Text constraints:
+Render only the exact allowed text above. Use large crisp high-contrast sans-serif type on clean solid caption strips. No paragraphs, dialogue, full script, tiny filler, pseudo-text or unapproved copy. If optional text cannot be rendered accurately, leave it blank instead of inventing characters.
+
+Avoid:
+garbled text, pseudo-writing, dense paragraphs, subtitles inside scene images, watermark, extra or missing storyboard cards, reordered or duplicated shots, source young male identity, source console, screen, controls, joystick, protective film, PIXL wordmark, source package graphics, black T-shirt, identity drift, changing beard/hairline/age, extra people, malformed hands, extra fingers, fused hands, duplicate dress, floating dress, hard rigid cloth, wrong product category, random lace pattern changes, changed V-neck/sleeves/waist/tier structure, invented label or brand, instant try-on, random scene change, camera movement, anime, illustration, plastic skin, shopping banner, hard-sell poster.

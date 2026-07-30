@@ -1,8 +1,7 @@
-"""Canonical request builder for the final RunningHub audio-driven lip-sync.
+"""Canonical request builder for final spoken-language lip-sync only.
 
-Language localization and verified singing use the same workflow.  Upstream
-stages decide whether a region is eligible; this module only freezes the exact
-provider request and never performs a media upload or a paid submission.
+This workflow is reserved for a localized spoken replacement after language
+change.  Songs must use ``runninghub_song_lip_sync`` and are rejected here.
 """
 
 from __future__ import annotations
@@ -24,14 +23,17 @@ def build_final_lip_sync_provider_request(
     *,
     audio_input: object,
     video_input: object,
+    audio_kind: object,
 ) -> dict[str, Any]:
-    """Build the only permitted final lip-sync request shape.
+    """Build the only permitted final spoken-language lip-sync request shape.
 
-    Node 3 consumes the exact target-language or song-audio window, and node 6
+    Node 3 consumes the exact localized spoken-audio window, and node 6
     consumes the matching generated person-video window.  The output MP4 keeps
-    the workflow's embedded audio; callers must not remux a different track.
+    the workflow's embedded speech; callers must not remux a different track.
     """
 
+    if str(audio_kind or "").strip() != "spoken_language_localization":
+        raise ValueError("RUNNINGHUB_FINAL_LIP_SYNC_SPEECH_ONLY")
     audio = _media_input(audio_input)
     video = _media_input(video_input)
     return {

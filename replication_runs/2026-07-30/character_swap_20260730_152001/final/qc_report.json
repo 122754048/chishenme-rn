@@ -1,0 +1,17 @@
+{
+  "schema_version": "usfr-final-qc/v1",
+  "result_sha256": "5e8b95dba55ffeb478a366c28974794e15e40ce16464346028efeb0cf42a4f48",
+  "passed": true,
+  "checks": {
+    "video_stream": "passed: H.264, 720x1280, 24fps",
+    "video_duration": "passed: 11.041667s",
+    "audio_stream": "passed: AAC silent carrier, 11.029002s",
+    "audio_video_boundary": "passed: audio ends before video; no audio overhang",
+    "silence_contract": "passed: measured mean -91.0 dB, max -90.3 dB",
+    "splice_black_frames": "passed: no blackdetect events",
+    "reference_mapping": "passed: @Image1 approved v4 director storyboard; @Image2 current target model image; source video binding is S01 0-10042ms",
+    "control_asset_exclusion": "passed: source/control sheets were not uploaded to Seedance"
+  },
+  "postprocess": "Trimmed only the provider-created silent AAC tail to the decoded video boundary; video pixels and playback rate are unchanged.",
+  "provider_duration_note": "RunningHub required integer task duration 11s while the source reference binding remained the exact 10.042s S01 window."
+}

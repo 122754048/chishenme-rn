@@ -1,0 +1,15 @@
+{
+  "primary_intent": "用街采问答和人物反应建立对 SUGO 的即时兴趣；本次不改变其商业表达，只更换可见人物身份。",
+  "audience_and_platform": "9:16 短视频观看者；夜间街采式快速问答。",
+  "evidence": [
+    {"time_range": "0.00-1.62s", "observation": "提问字幕与 SUGO 图形建立话题钩子。", "supports": ["attention_hook", "commercial_goal"]},
+    {"time_range": "1.62-10.67s", "observation": "连续人物笑容和高能字幕承接主观反应。", "supports": ["character_or_creator_appeal", "pacing_and_format"]}
+  ],
+  "weights": {"commercial_goal": 20, "attention_hook": 25, "character_or_creator_appeal": 20, "product_proof": 5, "emotional_promise": 10, "social_or_trust_signal": 5, "cta_conversion": 0, "pacing_and_format": 10, "platform_compliance": 5},
+  "cut_allocation": [
+    {"cut": "1", "intent": "attention_hook", "weight": 25, "script_instruction": "保留开场问句、图形和构图；仅替换身份。"},
+    {"cut": "2-5", "intent": "character_or_creator_appeal + pacing_and_format", "weight": 30, "script_instruction": "保留笑容、回答节奏、原声和字幕像素；仅替换身份。"}
+  ],
+  "compliance_boundary": ["成人受访者", "全程保留原服装", "不新增裸露、亲密区域特写、性暗示或未证实商业主张"],
+  "uncertainties": ["未提供目标产品或品牌证据，因此不得新增任何 SUGO 功能、效果或 CTA 主张。"]
+}

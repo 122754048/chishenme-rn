@@ -1,0 +1,18 @@
+{
+  "generator_kind":"image_model_with_deterministic_approved_text_layer",
+  "base_generator":"RunningHub OpenAPI v2",
+  "base_model":"gpt-image-2/image-to-image-official-stable",
+  "base_task_id":"2082738761636147202",
+  "base_board":"storyboards/segment_01_v1.png",
+  "base_board_sha256":"7ee90dcf408988cc8ce5c87883b5be0e8ebcbd99375f0205b465fdf9886eb6ba",
+  "output_sha256":"c8f59a6c16700e42dca9e439f23f4a40fa7eab3fa5e70f51f57661f2553e2959",
+  "output_dimensions":[2736,1536],
+  "reference_inputs":["reference_frames/replacement_control_sheet.png","inputs/new_model_image.png"],
+  "covered_cut_ids":["C01","C03"],
+  "deterministic_approved_text":[
+    {"cut_id":"C01","text":"修炼爱情","board_position":"lower center"},
+    {"cut_id":"C03","text":"想象一下，唱出你最爱的旋律","board_position":"lower center"}
+  ],
+  "revision_reason":"approved script director storyboard with deterministic approved-text layer",
+  "revision_number":2
+}

@@ -1,0 +1,22 @@
+{
+  "contract": "reference-video-dynamics",
+  "contract_version": 1,
+  "reference_duration_us": 17033333,
+  "source_width": 1080,
+  "source_height": 1920,
+  "fps_num": 30,
+  "fps_den": 1,
+  "source_cut_count": 4,
+  "source_cuts": [
+    {"cut":1,"start_us":0,"end_us":5000000,"subject_presence":"identifiable","content_roles":["adult woman","lakeshore","driftwood","on-screen song title"],"scene":"overcast lakeshore; woman in a sleeveless black tulle dress stands beside pale driftwood, reflected shallow water below","action":"she faces the camera with a gentle smile and subtle upper-body/head motion while the camera pushes closer","camera":"vertical medium-full to medium shot, smooth slow push-in","transition":"continuous source shot","end_state":"framing reaches a closer waist-up view; woman remains facing camera","certainty":"certain"},
+    {"cut":2,"start_us":5000000,"end_us":10000000,"subject_presence":"screen_pixels_only","content_roles":["mobile music-generation UI"],"scene":"dark mobile UI showing upload and generate flow","action":"source UI changes through upload/generate/progress states","camera":"screen-recording pixels","transition":"hard cut from lakeshore scene","end_state":"UI progress reaches completion state","certainty":"certain"},
+    {"cut":3,"start_us":10000000,"end_us":15000000,"subject_presence":"identifiable","content_roles":["adult woman","lakeshore","driftwood","promotional caption"],"scene":"same overcast lakeshore and driftwood composition","action":"woman continues gentle singing-style facial performance and slight body/head movement","camera":"vertical medium shot with modest reframing; no edit within interval","transition":"hard cut from UI back to lakeshore","end_state":"woman holds a relaxed front-facing pose beneath the lower caption","certainty":"certain"},
+    {"cut":4,"start_us":15000000,"end_us":17033333,"subject_presence":"screen_pixels_only","content_roles":["app end card","logo","CTA"],"scene":"dark terminal app promotion card","action":"brand/logo and CTA remain on the end card","camera":"static graphic page","transition":"hard cut from lakeshore scene","end_state":"terminal end card","certainty":"certain"}
+  ],
+  "source_events": [
+    {"event":1,"kind":"music","start_us":0,"end_us":17033333,"source_cut_start":1,"source_cut_end":4,"text":"source music track; replacement requested","certainty":"certain"},
+    {"event":2,"kind":"subtitle","start_us":0,"end_us":5000000,"source_cut_start":1,"source_cut_end":1,"text":"You Say","certainty":"certain"},
+    {"event":3,"kind":"subtitle","start_us":11600000,"end_us":15000000,"source_cut_start":3,"source_cut_end":3,"text":"Just imagine yourself singing your favorite track","certainty":"certain"}
+  ],
+  "notes":"Frame-zero-to-end pass. C02 is route-excluded opaque UI and C04 is route-excluded opaque tail; no semantic inspection of supplied replacement media is permitted."
+}

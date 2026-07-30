@@ -1,0 +1,91 @@
+{
+  "contract": "reference-video-dynamics",
+  "contract_version": 1,
+  "reference_duration_us": 10866667,
+  "source_width": 720,
+  "source_height": 1280,
+  "fps_num": 30,
+  "fps_den": 1,
+  "source_cut_count": 5,
+  "source_cuts": [
+    {
+      "cut": 1,
+      "start_us": 0,
+      "end_us": 1620000,
+      "subject_presence": "identifiable",
+      "content_roles": ["adult interviewee", "interviewer hand", "handheld microphone", "night street background", "blue question subtitle", "SUGO graphic"],
+      "scene": "Vertical night street interview; woman stands three-quarter facing camera beside a lit storefront, with a microphone entering from lower left.",
+      "action": "Interviewee keeps a relaxed upright posture, looks between interviewer and lens, and makes a small head/eye adjustment while the opening question is delivered.",
+      "camera": "Continuous chest-to-knee vertical framing, handheld but nearly locked; no cut or zoom.",
+      "transition": "Continuous source shot; opening blue subtitle is already visible and SUGO graphic scales/pops over the torso.",
+      "end_state": "Question delivery ends with the woman still facing camera-left and microphone held near her chest level.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 2,
+      "start_us": 1620000,
+      "end_us": 4500000,
+      "subject_presence": "identifiable",
+      "content_roles": ["adult interviewee", "interviewer hand", "handheld microphone", "night street background", "pink response subtitle"],
+      "scene": "Same uninterrupted interview composition and lighting.",
+      "action": "Interviewee smiles more broadly, answers while holding the same stance, then makes a small shoulder/head response toward the microphone.",
+      "camera": "Same vertical handheld framing; only minor operator sway.",
+      "transition": "Opening graphic clears; pink response subtitle replaces the blue question.",
+      "end_state": "Pink response line has completed and the interviewee holds a smiling, open expression.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 3,
+      "start_us": 4500000,
+      "end_us": 6000000,
+      "subject_presence": "identifiable",
+      "content_roles": ["adult interviewee", "interviewer hand", "handheld microphone", "night street background", "cyan setup subtitle"],
+      "scene": "Same source plate; no environmental or prop change.",
+      "action": "Interviewee maintains eye contact near the interviewer, smiles, and gives a short setup line with a subtle head tilt.",
+      "camera": "Locked vertical medium-full shot with minor handheld drift.",
+      "transition": "Pink response text clears; short cyan setup subtitle appears.",
+      "end_state": "Cyan setup line ends with the woman upright and microphone still entering from lower left.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 4,
+      "start_us": 6000000,
+      "end_us": 8750000,
+      "subject_presence": "identifiable",
+      "content_roles": ["adult interviewee", "interviewer hand", "handheld microphone", "night street background", "red emphasis subtitle"],
+      "scene": "Same night street interview plate, stable wardrobe and prop positions.",
+      "action": "Interviewee continues speaking with an animated but contained smile; her head angle shifts slightly toward lens while torso and hands remain relaxed.",
+      "camera": "Continuous 9:16 handheld medium-full frame; no reframe.",
+      "transition": "Cyan subtitle clears; red flame-led emphasis subtitle appears across the torso.",
+      "end_state": "Main emphasis phrase completes; woman remains in the same standing position with the red subtitle still visible.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 5,
+      "start_us": 8750000,
+      "end_us": 10866667,
+      "subject_presence": "identifiable",
+      "content_roles": ["adult interviewee", "interviewer hand", "handheld microphone", "night street background", "pink closing subtitle"],
+      "scene": "Same source plate through the exact decoded end.",
+      "action": "Interviewee delivers the closing reaction, smiles/laughs lightly, then brings both hands together in front of her skirt as the microphone lowers slightly.",
+      "camera": "Continuous vertical handheld shot, ending without a cut.",
+      "transition": "Red emphasis subtitle is replaced by a pink closing reaction subtitle, then clears before the last held smile.",
+      "end_state": "Final decoded frame shows a smiling interviewee with hands together; no end card or scene transition.",
+      "certainty": "certain"
+    }
+  ],
+  "source_events": [
+    {"event": 1, "kind": "dialogue", "start_us": 0, "end_us": 1620000, "source_cut_start": 1, "source_cut_end": 1, "text": "今話題のスゴー知ってる？", "certainty": "certain"},
+    {"event": 2, "kind": "subtitle", "start_us": 0, "end_us": 1620000, "source_cut_start": 1, "source_cut_end": 1, "text": "今話題の「SUGO」知ってる？", "certainty": "certain"},
+    {"event": 3, "kind": "subtitle", "start_us": 500000, "end_us": 1550000, "source_cut_start": 1, "source_cut_end": 1, "text": "SUGO", "certainty": "certain"},
+    {"event": 4, "kind": "dialogue", "start_us": 1620000, "end_us": 4500000, "source_cut_start": 2, "source_cut_end": 2, "text": "もちろん、私も沼ってるよ。", "certainty": "uncertain"},
+    {"event": 5, "kind": "subtitle", "start_us": 1750000, "end_us": 4250000, "source_cut_start": 2, "source_cut_end": 2, "text": "🤫もちろん！ 私も沼ってるよ！", "certainty": "certain"},
+    {"event": 6, "kind": "dialogue", "start_us": 4500000, "end_us": 6000000, "source_cut_start": 3, "source_cut_end": 3, "text": "ぶっちゃけどう？", "certainty": "uncertain"},
+    {"event": 7, "kind": "subtitle", "start_us": 4500000, "end_us": 5750000, "source_cut_start": 3, "source_cut_end": 3, "text": "😱ぶっちゃけ…", "certainty": "certain"},
+    {"event": 8, "kind": "dialogue", "start_us": 6000000, "end_us": 10660000, "source_cut_start": 4, "source_cut_end": 5, "text": "毎日刺激的すぎて正直ヤバい。", "certainty": "certain"},
+    {"event": 9, "kind": "subtitle", "start_us": 6250000, "end_us": 8500000, "source_cut_start": 4, "source_cut_end": 4, "text": "🔥毎日刺激的すぎ！", "certainty": "certain"},
+    {"event": 10, "kind": "subtitle", "start_us": 8750000, "end_us": 10500000, "source_cut_start": 5, "source_cut_end": 5, "text": "🤣正直ヤバいww", "certainty": "certain"},
+    {"event": 11, "kind": "ambience", "start_us": 0, "end_us": 10866667, "source_cut_start": 1, "source_cut_end": 5, "text": "Night street room-tone/ambient noise under recorded interview audio.", "certainty": "certain"}
+  ],
+  "notes": "Single continuous source shot. Dynamics are split at speech/subtitle and performance phases, not at scene edits. ASR was run once on the preserved source audio; event 4 and event 6 have visible-subtitle support but minor ASR lexical uncertainty."
+}

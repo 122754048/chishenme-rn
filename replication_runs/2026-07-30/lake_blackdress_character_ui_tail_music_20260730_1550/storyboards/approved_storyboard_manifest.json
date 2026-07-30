@@ -1,0 +1,14 @@
+{
+  "schema_version": "usfr-approved-storyboard/v1",
+  "status": "approved",
+  "approved_revision": 2,
+  "user_confirmation": "??",
+  "board_path": "storyboards/segment_01_v2.png",
+  "board_sha256": "c8f59a6c16700e42dca9e439f23f4a40fa7eab3fa5e70f51f57661f2553e2959",
+  "covered_cut_ids": [
+    "C01",
+    "C03"
+  ],
+  "visual_chain_verified": true,
+  "approved_at_utc": "2026-07-30T08:13:50.389166+00:00"
+}

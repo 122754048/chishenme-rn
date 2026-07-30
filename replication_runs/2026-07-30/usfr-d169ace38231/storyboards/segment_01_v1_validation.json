@@ -1,0 +1,27 @@
+{
+  "schema_version": "usfr-user-director-storyboard/v1",
+  "status": "passed",
+  "approval_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "C11",
+    "C12"
+  ],
+  "layout_anchors": [
+    "Use case: infographic-diagram",
+    "Primary request:",
+    "Fixed layout:",
+    "Storyboard cards:",
+    "Exact allowed text:",
+    "Text constraints:",
+    "Avoid:"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": "seedance-input-contract/v1",
+  "segment_plan_file": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\character_swap_20260730_152001\\analysis\\segment_plan.json",
+  "segment_id": "S01",
+  "approved_storyboard": "C:\\Users\\zhaocx04\\Documents\\New project\\replication_runs\\2026-07-30\\character_swap_20260730_152001\\storyboards\\v4\\segment_01_v4.png",
+  "target_model": "C:\\Users\\zhaocx04\\Downloads\\Ssscompigliata 🫨 (2).jpg",
+  "source_video": "C:\\Users\\zhaocx04\\Downloads\\社交AI视频\\简单剧情2.mp4",
+  "compiled_prompt_sha256": "15f4bd0432bbe16c037605980b5dfb6f88b16d74355ec993365878736ac86092",
+  "reference_order": [
+    "approved_director_storyboard",
+    "new_model_image"
+  ],
+  "forbidden_seedance_assets": [
+    "source_control_keyframes",
+    "replacement_control_keyframes",
+    "source_contact_sheet"
+  ]
+}

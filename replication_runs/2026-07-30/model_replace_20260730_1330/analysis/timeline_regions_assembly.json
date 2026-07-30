@@ -1,0 +1,41 @@
+{
+  "schema_version": "universal-timeline-regions/v2",
+  "source_duration": 13.2,
+  "target": {"width": 720, "height": 1280, "fps": 30},
+  "source_overlay_contract": "source_overlay_contract.json",
+  "overlay_render_mapping": "overlay_render_mapping.json",
+  "overlay_render_receipts_required": false,
+  "regions": [
+    {
+      "region_id": "R01_live_identity_replace",
+      "region_type": "generated",
+      "source_start": 0.0,
+      "source_end": 6.8,
+      "media_path": "../seedance/S01/result_with_subtitles.mp4",
+      "media_origin": "generated_media",
+      "assembly_policy": "generate_region",
+      "duration_policy": "natural_media_duration",
+      "audio_policy": "source_audio_keep"
+    },
+    {
+      "region_id": "R02_source_ui_keep",
+      "region_type": "generated",
+      "source_start": 6.8,
+      "source_end": 11.066667,
+      "media_path": "../final/source_ui_6800_11067.mp4",
+      "media_origin": "source_interval",
+      "assembly_policy": "splice_source_interval",
+      "audio_policy": "source_audio_keep"
+    },
+    {
+      "region_id": "R03_terminal_exclusion",
+      "region_type": "excluded_app_end_card",
+      "source_start": 11.066667,
+      "source_end": 13.2,
+      "media_origin": "source_interval",
+      "assembly_policy": "omit_source_end_card",
+      "audio_policy": "source_audio_keep"
+    }
+  ],
+  "missing_slice_behavior": "omit_source_end_card"
+}

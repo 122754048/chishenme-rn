@@ -267,7 +267,11 @@
     },
     {
       "path": "server/runninghub_final_lip_sync.py",
-      "role": "canonical pinned RunningHub request builder for final language and verified-singing lip sync"
+      "role": "canonical pinned RunningHub request builder for final localized spoken lip sync"
+    },
+    {
+      "path": "server/runninghub_song_lip_sync.py",
+      "role": "canonical pinned RunningHub AI App request builder for uploaded-song lip sync"
     },
     {
       "path": "server/singing_audio_router.py",
