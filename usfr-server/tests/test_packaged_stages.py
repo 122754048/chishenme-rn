@@ -9,6 +9,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from server.job_models import ProviderAttempt
+
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -212,6 +214,84 @@ def test_song_audio_is_excluded_from_the_seedance_audio_prompt() -> None:
         source_music_windows=[{"segment_start_ms": 0, "segment_end_ms": 5_000}],
         uploaded_audio_kind="song",
     ) == ""
+
+
+def test_wait_provider_video_replaces_song_segments_with_parallel_song_lip_sync_results(monkeypatch, tmp_path: Path) -> None:
+    import server.packaged_stages as stages
+    from server.packaged_stages import WaitProviderVideoStage
+
+    audio = tmp_path / "song.mp3"
+    audio.write_bytes(b"song")
+    attempts = [
+        ProviderAttempt("a1", "CreateVideo", "a" * 64, "RUNNING", "S01", "f" * 64, "seedance-1", "b" * 64),
+        ProviderAttempt("a2", "CreateVideo", "c" * 64, "RUNNING", "S02", "f" * 64, "seedance-2", "d" * 64),
+    ]
+
+    class Provider:
+        def lookup(self, request):
+            return {"status": "SUCCESS", "taskId": request["taskId"]}
+
+        def download(self, task_id, destination):
+            Path(destination).write_bytes(b"\x00\x00\x00\x18ftyp" + task_id.encode())
+            return {"task_id": task_id}
+
+    class LipSync:
+        def __init__(self):
+            self.calls = []
+
+        def run_song_lip_sync_segments(self, **kwargs):
+            self.calls.append(kwargs)
+            return {
+                "segments": [
+                    {"segment_id": "S01", "task_id": "lip-1", "video_bytes": b"\x00\x00\x00\x18ftyp-lip-1", "receipt": {"song_start": "1:30", "song_end": "1:35"}},
+                    {"segment_id": "S02", "task_id": "lip-2", "video_bytes": b"\x00\x00\x00\x18ftyp-lip-2", "receipt": {"song_start": "1:40", "song_end": "1:45"}},
+                ]
+            }
+
+    class Store:
+        def list_provider_attempts(self, _job_id):
+            return attempts
+
+        def get_job(self, _job_id):
+            return SimpleNamespace(version=1, expires_at_ms=10**15)
+
+        def update_provider_attempt(self, **_kwargs):
+            return None
+
+    class Context:
+        job_id = "job"
+        work_dir = tmp_path
+        job_store = Store()
+        snapshot = SimpleNamespace(slots_manifest={"extensions": {"background_music": {"values": ["song.mp3"]}}})
+        artifacts = ()
+
+        @contextmanager
+        def materialize_extension(self, extension_id, *, index=0):
+            assert (extension_id, index) == ("background_music", 0)
+            yield _Materialized(audio, _digest(audio.read_bytes()))
+
+        def publish_bytes(self, *, kind, data, content_type, expected_sha256, metadata=None):
+            return {"kind": kind, "sha256": expected_sha256, "data": data, "metadata": dict(metadata or {})}
+
+    monkeypatch.setattr(stages, "_uploaded_audio_classification", lambda _context: {"kind": "song"})
+    monkeypatch.setattr(stages, "_read_json_artifact", lambda _context, *, kind, **_kwargs: {
+        "segments": [
+            {"segment_id": "S01", "song_lip_sync_contract": {"song_start": "1:30", "song_end": "1:35"}},
+            {"segment_id": "S02", "song_lip_sync_contract": {"song_start": "1:40", "song_end": "1:45"}},
+        ]
+    } if kind == "seedance_input_contract" else {})
+
+    lip_sync = LipSync()
+    result = WaitProviderVideoStage(provider=Provider(), song_lip_sync_client=lip_sync).run(
+        context=Context(), input_artifacts=[]
+    )
+
+    assert len(lip_sync.calls) == 1
+    assert [item["segment_id"] for item in lip_sync.calls[0]["segments"]] == ["S01", "S02"]
+    assert [item["song_start"] for item in lip_sync.calls[0]["segments"]] == ["1:30", "1:40"]
+    assert [row["artifact"]["data"] for row in result["provider_videos"]] == [
+        b"\x00\x00\x00\x18ftyp-lip-1", b"\x00\x00\x00\x18ftyp-lip-2"
+    ]
 
 
 class _StoryboardContext:
@@ -1326,7 +1406,7 @@ def _verified_uploaded_song_prompt_context(tmp_path: Path):
             "kind": "song",
             "confidence": 0.97,
             "classification_evidence_sha256": "1" * 64,
-            "lyrics": [{"start_ms": 0, "end_ms": 4000, "text": "I will meet you by the lake"}],
+            "lyrics": [{"start_ms": 90000, "end_ms": 94000, "text": "I will meet you by the lake"}],
         },
     }
     return Context(), values, performance_line
@@ -1365,7 +1445,10 @@ def test_seedance_prompt_keeps_verified_uploaded_song_lyrics_out_of_the_seedance
     assert "@Audio1" not in result["seedance_input_contract"]["segments"][0]["compiled_prompt"]["prompt"]
     assert "sings exactly" not in result["seedance_input_contract"]["segments"][0]["compiled_prompt"]["prompt"]
     assert captured["segment"]["shots"][0]["audio"] == "no dialogue"
-    assert result["seedance_input_contract"]["segments"][0]["song_lip_sync_contract"]["performance_lines"] == [performance_line]
+    post_contract = result["seedance_input_contract"]["segments"][0]["song_lip_sync_contract"]
+    assert post_contract["performance_lines"][0]["uploaded_song_time"] == {"start_ms": 90000, "end_ms": 94000}
+    assert post_contract["song_start"] == "1:30"
+    assert post_contract["song_end"] == "1:34"
 
 
 def test_seedance_prompt_uses_confirmed_source_lyrics_without_an_uploaded_song(monkeypatch, tmp_path: Path) -> None:

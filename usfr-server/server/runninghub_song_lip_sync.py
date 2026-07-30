@@ -55,7 +55,9 @@ def build_song_lip_sync_provider_request(
                 {"nodeId": "228", "fieldName": "video", "fieldValue": video, "description": "video"},
                 {"nodeId": "125", "fieldName": "audio", "fieldValue": audio, "description": "audio"},
             ],
-            "instanceType": "default",
+            # This WanVideo workflow OOMs on the 24 GB default instance for
+            # the supported five-second vertical person-video inputs.
+            "instanceType": "plus",
             "usePersonalQueue": "false",
         },
     }

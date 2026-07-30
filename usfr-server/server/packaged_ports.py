@@ -580,7 +580,10 @@ def build_ports() -> dict[str, Any]:
             provider=provider,
             audit_secret=os.getenv(config.capability_secret_env, ""),
         ),
-        "wait_provider_video": WaitProviderVideoStage(provider=provider),
+        "wait_provider_video": WaitProviderVideoStage(
+            provider=provider,
+            song_lip_sync_client=workflow_client,
+        ),
     }
     stage_ports["analyze_dynamics"] = _DurableDynamicsEvidenceStage(direct_dynamics)
     stage_ports["parse_app_store_evidence"] = BundledAppStoreEvidenceParser()

@@ -496,7 +496,12 @@ class RunningHubWorkflowClient:
             workflow_id = str(request["workflow_id"])
             payload = request["payload"]
             submitted = self._post(url=f"{self.base_url}/openapi/v2/run/ai-app/{workflow_id}", payload=payload)
-            task_id = str(submitted.get("taskId") or "").strip()
+            response_data = submitted.get("data")
+            task_id = str(
+                submitted.get("taskId")
+                or (response_data.get("taskId") if isinstance(response_data, Mapping) else "")
+                or ""
+            ).strip()
             if not task_id:
                 raise RunningHubWorkflowError("RunningHub song lip-sync create response omitted taskId; do not retry automatically")
             deadline = self._clock() + self.timeout_seconds

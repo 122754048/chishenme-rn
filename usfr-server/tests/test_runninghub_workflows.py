@@ -21,7 +21,7 @@ def test_song_lip_sync_runs_two_generated_person_segments_and_returns_sha_bound_
         if "/run/ai-app/" in str(kwargs["url"]):
             submitted.append(dict(payload))
             video = next(item["fieldValue"] for item in payload["nodeInfoList"] if item["nodeId"] == "228")
-            return {"taskId": "task-01" if video.endswith("S01.mp4") else "task-02", "status": "RUNNING"}
+            return {"code": 0, "data": {"taskId": "task-01" if video.endswith("S01.mp4") else "task-02"}, "status": "RUNNING"}
         task_id = payload["taskId"]
         return {"taskId": task_id, "status": "SUCCESS", "results": [{"outputType": "mp4", "url": f"https://result.example/{task_id}.mp4"}]}
 
@@ -45,6 +45,7 @@ def test_song_lip_sync_runs_two_generated_person_segments_and_returns_sha_bound_
     )
 
     assert len(submitted) == 2
+    assert all(payload["instanceType"] == "plus" for payload in submitted)
     assert {row["segment_id"] for row in result["segments"]} == {"S01", "S02"}
     assert all(row["video_bytes"].startswith(b"\x00\x00\x00\x18ftyp") for row in result["segments"])
     assert all(row["receipt"]["workflow_id"] == "2082759080288296961" for row in result["segments"])

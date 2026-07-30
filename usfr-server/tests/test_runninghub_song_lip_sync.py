@@ -23,7 +23,7 @@ def test_builds_the_pinned_song_lip_sync_ai_app_request_with_the_exact_song_wind
                 {"nodeId": "228", "fieldName": "video", "fieldValue": "https://media.example/generated-person.mp4", "description": "video"},
                 {"nodeId": "125", "fieldName": "audio", "fieldValue": "https://media.example/song.mp3", "description": "audio"},
             ],
-            "instanceType": "default",
+            "instanceType": "plus",
             "usePersonalQueue": "false",
         },
     }

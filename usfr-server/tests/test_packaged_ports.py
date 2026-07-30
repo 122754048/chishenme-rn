@@ -117,9 +117,11 @@ def test_packaged_ports_use_the_seedance_key_for_audit_media_uploads_not_the_wor
     ports = packaged_ports.build_ports()
 
     audit_stage = ports["stage_ports"]["audit_seedance_request"].handler
+    wait_stage = ports["stage_ports"]["wait_provider_video"]
     assert workflow_keys == ["test-runninghub-key"]
     assert standard_keys == ["RUNNINGHUB_SEEDANCE_API_KEY"]
     assert type(audit_stage.media_uploader) is SeedanceMediaUploader
+    assert type(wait_stage.song_lip_sync_client) is WorkflowClient
 
 
 def test_gateway_semantic_backend_binds_gpt_cuts_to_decoded_frame_bytes(tmp_path: Path) -> None:

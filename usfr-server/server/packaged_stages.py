@@ -1545,16 +1545,19 @@ class SeedancePromptStage:
                     observed.append((int(raw["start_ms"]), int(raw["end_ms"]), str(raw["text"]).strip()))
                 except (KeyError, TypeError, ValueError):
                     return {}
-            expected = [
-                (
-                    line["source_time"]["start_ms"],
-                    line["source_time"]["end_ms"],
-                    line["exact_sung_text"],
-                )
-                for line in canonical_performance
-            ]
-            if observed != expected:
-                return {}
+            for line in canonical_performance:
+                expected_text = " ".join(str(line["exact_sung_text"]).split()).casefold()
+                matches = [
+                    (start_ms, end_ms)
+                    for start_ms, end_ms, text in observed
+                    if " ".join(text.split()).casefold() == expected_text
+                ]
+                if len(matches) != 1:
+                    return {}
+                start_ms, end_ms = matches[0]
+                if start_ms < 0 or end_ms <= start_ms:
+                    return {}
+                line["uploaded_song_time"] = {"start_ms": start_ms, "end_ms": end_ms}
             by_cut = {str(line.get("cut_id") or ""): line for line in canonical_performance}
             result: dict[str, list[dict[str, Any]]] = {}
             for segment in generated_segments:
@@ -1691,9 +1694,10 @@ class SeedancePromptStage:
         if not script_cuts or set(script_cuts) != set(board_cuts):
             raise _replication_error("PROMPT_INTEGRITY_FAILED", "approved script and storyboard Cut coverage differs")
         lines = self._approval_lines(context)
+        extensions = getattr(getattr(context, "snapshot", None), "slots_manifest", {}).get("extensions", {})
         uploaded_audio = (
             _uploaded_audio_classification(context)
-            if self._uploaded_music_present(context)
+            if isinstance(extensions, Mapping) and isinstance(extensions.get("background_music"), Mapping)
             else None
         )
         uploaded_audio_kind = str(uploaded_audio.get("kind") or "") if uploaded_audio else None
@@ -1826,11 +1830,32 @@ class SeedancePromptStage:
                 raise _replication_error("PROMPT_INTEGRITY_FAILED", f"Seedance-20 compiler rejected {segment_id}") from exc
             row = {"segment_id": segment_id, "compiled_prompt": artifact, "segment_plan_sha256": plan_sha}
             if uploaded_audio_kind == "song":
+                song_starts = [
+                    int(line["uploaded_song_time"]["start_ms"])
+                    for line in local_performance
+                    if isinstance(line.get("uploaded_song_time"), Mapping)
+                ]
+                if not song_starts:
+                    raise _replication_error(
+                        "PERFORMANCE_LINE_CONTRACT_REQUIRED",
+                        f"{segment_id} has no unambiguous uploaded-song time binding",
+                    )
+                song_start_seconds = min(song_starts) // 1000
+                song_end_seconds = (min(song_starts) + duration_ms + 999) // 1000
+                if song_end_seconds <= song_start_seconds:
+                    raise _replication_error(
+                        "PERFORMANCE_LINE_CONTRACT_REQUIRED",
+                        f"{segment_id} has an invalid uploaded-song lip-sync window",
+                    )
+                song_start = f"{song_start_seconds // 60}:{song_start_seconds % 60:02d}"
+                song_end = f"{song_end_seconds // 60}:{song_end_seconds % 60:02d}"
                 row["song_lip_sync_contract"] = {
                     "schema_version": "uploaded-song-lip-sync-contract/v1",
                     "segment_id": segment_id,
                     "segment_plan_sha256": plan_sha,
                     "performance_lines": local_performance,
+                    "song_start": song_start,
+                    "song_end": song_end,
                 }
             outputs.append(row)
         envelope = {"schema_version": "seedance-input-contract/v1", "segment_plan": plan, "segment_plan_sha256": plan_sha, "segments": outputs}
@@ -2999,8 +3024,16 @@ class SubmitProviderVideoStage:
 class WaitProviderVideoStage:
     """Poll known RunningHub tasks and publish verified MP4 bytes immediately."""
 
-    def __init__(self, *, provider: Any, poll_seconds: float = 5.0, timeout_seconds: float = 1800.0) -> None:
+    def __init__(
+        self,
+        *,
+        provider: Any,
+        song_lip_sync_client: Any | None = None,
+        poll_seconds: float = 5.0,
+        timeout_seconds: float = 1800.0,
+    ) -> None:
         self.provider = provider
+        self.song_lip_sync_client = song_lip_sync_client
         self.poll_seconds = float(poll_seconds)
         self.timeout_seconds = float(timeout_seconds)
 
@@ -3008,6 +3041,7 @@ class WaitProviderVideoStage:
         del input_artifacts
         started = time.monotonic()
         results: list[dict[str, Any]] = []
+        downloaded_results: list[dict[str, Any]] = []
         for attempt in context.job_store.list_provider_attempts(context.job_id):
             if attempt.operation != "CreateVideo" or attempt.status == "SUCCEEDED":
                 continue
@@ -3027,28 +3061,111 @@ class WaitProviderVideoStage:
                     data = destination.read_bytes()
                     if not data or not data.startswith(b"\x00\x00\x00") and b"ftyp" not in data[:64]:
                         raise _replication_error("PROVIDER_RESULT_INVALID", "RunningHub result is not an MP4 byte stream", category="provider")
-                    published = context.publish_bytes(
-                        kind="provider_video",
-                        data=data,
-                        content_type="video/mp4",
-                        expected_sha256=hashlib.sha256(data).hexdigest(),
-                        metadata={
-                            "segment_id": str(attempt.segment_id or ""),
-                            "segment_plan_sha256": str(attempt.segment_plan_sha256 or "").lower(),
-                            "provider_task_id": str(attempt.provider_task_id or ""),
-                        },
-                    )
-                    current = context.job_store.get_job(context.job_id)
-                    if current is None:
-                        raise _replication_error("JOB_GONE", "job expired during provider download", category="worker")
-                    context.job_store.update_provider_attempt(job_id=context.job_id, expected_version=current.version, attempt=replace(attempt, status="SUCCEEDED"), ttl_seconds=max(1, (current.expires_at_ms - time.time_ns() // 1_000_000) // 1000))
-                    results.append({"segment_id": attempt.segment_id, "artifact": published, "download": dict(downloaded)})
+                    downloaded_results.append({
+                        "attempt": attempt,
+                        "destination": destination,
+                        "data": data,
+                        "download": dict(downloaded),
+                    })
                     break
                 if time.monotonic() - started >= self.timeout_seconds:
                     raise _replication_error("PROVIDER_TIMEOUT", "RunningHub video task did not finish before the configured provider wait limit", retryable=True, category="provider")
                 time.sleep(self.poll_seconds)
-        if not results:
+        if not downloaded_results:
             raise _replication_error("PROVIDER_RESULT_INVALID", "no successful provider video was available for assembly", category="provider")
+
+        extensions = getattr(getattr(context, "snapshot", None), "slots_manifest", {}).get("extensions", {})
+        uploaded_audio = (
+            _uploaded_audio_classification(context)
+            if isinstance(extensions, Mapping) and isinstance(extensions.get("background_music"), Mapping)
+            else None
+        )
+        if uploaded_audio and uploaded_audio.get("kind") == "song":
+            if not callable(getattr(self.song_lip_sync_client, "run_song_lip_sync_segments", None)):
+                raise _replication_error(
+                    "CAPABILITY_UNAVAILABLE",
+                    "song lip-sync workflow client is unavailable",
+                    retryable=True,
+                    category="capability",
+                )
+            contract = _read_json_artifact(context, kind="seedance_input_contract")
+            contract_rows = contract.get("segments") if isinstance(contract, Mapping) else None
+            if not isinstance(contract_rows, list):
+                raise _replication_error("PROMPT_INTEGRITY_FAILED", "song lip-sync contracts are unavailable")
+            contracts = {
+                str(row.get("segment_id") or ""): row.get("song_lip_sync_contract")
+                for row in contract_rows if isinstance(row, Mapping)
+            }
+            segments: list[dict[str, Any]] = []
+            for item in downloaded_results:
+                attempt = item["attempt"]
+                segment_id = str(attempt.segment_id or "")
+                lip_contract = contracts.get(segment_id)
+                if not isinstance(lip_contract, Mapping) or not lip_contract.get("song_start") or not lip_contract.get("song_end"):
+                    raise _replication_error(
+                        "PERFORMANCE_LINE_CONTRACT_REQUIRED",
+                        f"{segment_id} is missing its uploaded-song lip-sync time window",
+                    )
+                segments.append({
+                    "segment_id": segment_id,
+                    "segment_type": "generated_person",
+                    "video_path": item["destination"],
+                    "song_start": lip_contract["song_start"],
+                    "song_end": lip_contract["song_end"],
+                })
+            try:
+                with context.materialize_extension("background_music") as materialized:
+                    lip_result = self.song_lip_sync_client.run_song_lip_sync_segments(
+                        uploaded_audio_kind="song",
+                        audio_path=Path(materialized.path),
+                        segments=segments,
+                    )
+            except Exception as exc:
+                raise _replication_error(
+                    "PROVIDER_FAILED",
+                    "RunningHub song lip-sync workflow failed",
+                    retryable=True,
+                    category="provider",
+                ) from exc
+            lip_rows = lip_result.get("segments") if isinstance(lip_result, Mapping) else None
+            if not isinstance(lip_rows, list):
+                raise _replication_error("PROVIDER_RESULT_INVALID", "song lip-sync workflow returned no segments", category="provider")
+            lip_by_segment = {
+                str(row.get("segment_id") or ""): row
+                for row in lip_rows if isinstance(row, Mapping)
+            }
+        else:
+            lip_by_segment = {}
+
+        for item in downloaded_results:
+            attempt = item["attempt"]
+            segment_id = str(attempt.segment_id or "")
+            lip_row = lip_by_segment.get(segment_id)
+            data = lip_row.get("video_bytes") if isinstance(lip_row, Mapping) else item["data"]
+            if not isinstance(data, bytes) or not data or b"ftyp" not in data[:64]:
+                raise _replication_error("PROVIDER_RESULT_INVALID", "final provider result is not an MP4 byte stream", category="provider")
+            metadata = {
+                "segment_id": segment_id,
+                "segment_plan_sha256": str(attempt.segment_plan_sha256 or "").lower(),
+                "provider_task_id": str(attempt.provider_task_id or ""),
+            }
+            if isinstance(lip_row, Mapping):
+                metadata.update({
+                    "song_lip_sync_task_id": str(lip_row.get("task_id") or ""),
+                    "song_lip_sync_receipt": dict(lip_row.get("receipt") or {}),
+                })
+            published = context.publish_bytes(
+                kind="provider_video",
+                data=data,
+                content_type="video/mp4",
+                expected_sha256=hashlib.sha256(data).hexdigest(),
+                metadata=metadata,
+            )
+            current = context.job_store.get_job(context.job_id)
+            if current is None:
+                raise _replication_error("JOB_GONE", "job expired during provider download", category="worker")
+            context.job_store.update_provider_attempt(job_id=context.job_id, expected_version=current.version, attempt=replace(attempt, status="SUCCEEDED"), ttl_seconds=max(1, (current.expires_at_ms - time.time_ns() // 1_000_000) // 1000))
+            results.append({"segment_id": attempt.segment_id, "artifact": published, "download": item["download"]})
         return {"status": "ready", "provider_videos": results}
 
 
