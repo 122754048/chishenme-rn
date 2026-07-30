@@ -223,8 +223,8 @@ The contract freezes before script, storyboard, and Seedance input. Opaque
 media is never sent to a generation provider. Every source-fidelity generated
 segment sends exactly one matching original 2-15 second source segment at
 `videoUrls[0]`, bound by `usfr-video-reference/v1` to the source and slice
-SHA-256 values and frozen segment window; it sends the approved director board
-at `imageUrls[0]` / `@Image1`; and it sends only fixed-slot target references
+SHA-256 values and frozen segment window; it sends the approved-board-bound
+`seedance_visual_carrier` at `imageUrls[0]` / `@Image1`; and it sends only fixed-slot target references
 afterward. The required upstream chain is source Cut frames →
 replacement-control sheet → approved director board. Source Cut/keyframe sheets
 and replacement-control sheets must never be sent to Seedance. Generated regions inherit exact global
@@ -232,13 +232,11 @@ Cut numbers, source timecodes, continuity handoff, voiceover/audio events,
 selling-point evidence, and negative constraints. A route change invalidates the
 downstream contract and returns to the relevant existing approval gate.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved director board at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets and replacement-control sheets must never be sent to Seedance. The full source video must never be uploaded to Seedance.
+The user-facing director board uses the deterministic `usfr-professional-director-board/v1` five-region layout and requires an exact layout receipt. A distinct labels-free execution carrier is derived from its `storyboard_grid` ROI and mutually SHA-bound to the approved board. Generic grids, missing regions, wrong Cut count/order, missing receipt, or stale carrier binding fail closed.
 
-Confirmed visible text is a deterministic approved-text layer on the approved
-director board or a deterministic overlay; Seedance must not generate, read, or
-transcribe its glyphs. A normal `no screen text` negative applies only to
-model-generated scene text and does not suppress the deterministic approved-text
-layer.
+Reference order: matching original source segment at `videoUrls[0]`; approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets, replacement-control sheets, user-facing approval boards, and layout receipts must never be sent to Seedance. The full source video must never be uploaded to Seedance.
+
+Visible text is carrier-routed. Scene-surface text is generated on its physical carrier before motion and must be written explicitly into the Seedance Cut prompt; it moves, bends, folds, rotates, occludes, and tears with its carrier. Subtitle, caption, CTA, headline, lower-third, and sticker text use the deterministic overlay lane. UI text stays in the UI/source-pixel/opaque lane.
 
 If routing produces zero generated regions, the existing local-only branch is
 mandatory: no reverse script, no storyboard, no Image Gen request, no

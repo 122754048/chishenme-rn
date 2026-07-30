@@ -127,12 +127,13 @@ def _visual_payload_and_lineage(job_id: str):
 
     payload = _payload()
     payload.update({
-        "imageUrls": ["https://media.example/board.png", "https://media.example/model.png"],
+        "imageUrls": ["https://media.example/seedance-visual-carrier.png", "https://media.example/model.png"],
         "videoUrls": ["https://media.example/source.mp4"], "audioUrls": [],
         "realPersonMode": True, "conversionSlots": ["all"],
     })
     source_video, source_slice, plan, target = _sha("a"), _sha("b"), _sha("c"), _sha("d")
     board_sha, source_sheet, control_sheet, control_receipt = _sha("e"), _sha("f"), _sha("0"), _sha("1")
+    carrier_sha, layout_receipt_sha = _sha("4"), _sha("5")
     binding = {
         "schema_version": "usfr-video-reference/v1", "url": payload["videoUrls"][0],
         "source_video_sha256": source_video, "source_slice_sha256": source_slice,
@@ -149,13 +150,22 @@ def _visual_payload_and_lineage(job_id: str):
             "source_video_sha256": source_video, "source_keyframe_sheet_sha256": source_sheet,
             "replacement_control_keyframe_sheet_sha256": control_sheet, "replacement_control_keyframe_receipt_sha256": control_receipt,
             "replacement_target_sha256s": [target], "approved_visible_text_locks_sha256": _sha("3"),
+            "execution_carrier_artifact_id": f"carrier-{job_id}",
+            "execution_carrier_object_key": f"jobs/{job_id}/seedance-visual-carrier.png",
+            "execution_carrier_sha256": carrier_sha,
+            "storyboard_layout_receipt_sha256": layout_receipt_sha,
+            "execution_carrier_source_roi_sha256": carrier_sha,
         },
         "source_reference": {
             "artifact_id": f"source-{job_id}", "object_key": f"jobs/{job_id}/source.mp4", "kind": "source_video_reference", "sha256": source_slice,
             "source_video_sha256": source_video, "segment_id": "S01", "segment_plan_sha256": plan, "start_ms": 0, "end_ms": 4000, "url": payload["videoUrls"][0],
         },
         "allowed_target_changes": [{"kind": "new_model_image", "sha256": target, "image_slot": 2, "url": payload["imageUrls"][1]}],
-        "forbidden_artifact_kinds": ["source_keyframe_sheet", "replacement_control_keyframe_sheet", "replacement_control_keyframe_receipt"],
+        "forbidden_artifact_kinds": [
+            "source_keyframe_sheet", "replacement_control_keyframe_sheet",
+            "replacement_control_keyframe_receipt", "storyboard_image",
+            "storyboard_layout_receipt",
+        ],
     }
     artifacts = [
         ArtifactRef(f"board-{job_id}", "storyboard_image", f"jobs/{job_id}/board.png", board_sha, "image/png", 1),
@@ -163,6 +173,8 @@ def _visual_payload_and_lineage(job_id: str):
         ArtifactRef(f"source-sheet-{job_id}", "source_keyframe_sheet", f"jobs/{job_id}/source-sheet.png", source_sheet, "image/png", 1),
         ArtifactRef(f"control-sheet-{job_id}", "replacement_control_keyframe_sheet", f"jobs/{job_id}/control-sheet.png", control_sheet, "image/png", 1),
         ArtifactRef(f"control-receipt-{job_id}", "replacement_control_keyframe_receipt", f"jobs/{job_id}/control.json", control_receipt, "application/json", 1),
+        ArtifactRef(f"carrier-{job_id}", "seedance_visual_carrier", f"jobs/{job_id}/seedance-visual-carrier.png", carrier_sha, "image/png", 1),
+        ArtifactRef(f"layout-{job_id}", "storyboard_layout_receipt", f"jobs/{job_id}/storyboard-layout.json", layout_receipt_sha, "application/json", 1),
     ]
     return payload, binding, lineage, artifacts
 

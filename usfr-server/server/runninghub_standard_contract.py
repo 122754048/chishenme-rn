@@ -134,6 +134,11 @@ _FINAL_REFERENCE_BOARD_FIELDS = frozenset(
         "replacement_control_keyframe_receipt_sha256",
         "replacement_target_sha256s",
         "approved_visible_text_locks_sha256",
+        "execution_carrier_artifact_id",
+        "execution_carrier_object_key",
+        "execution_carrier_sha256",
+        "storyboard_layout_receipt_sha256",
+        "execution_carrier_source_roi_sha256",
     }
 )
 _FINAL_REFERENCE_SOURCE_FIELDS = frozenset(
@@ -155,6 +160,8 @@ _FORBIDDEN_FINAL_ARTIFACT_KINDS = (
     "source_keyframe_sheet",
     "replacement_control_keyframe_sheet",
     "replacement_control_keyframe_receipt",
+    "storyboard_image",
+    "storyboard_layout_receipt",
 )
 _AUDIO_REFERENCE_FIELDS = frozenset(
     {
@@ -363,9 +370,10 @@ def validate_final_reference_lineage(
     """Validate the private binding for every source-fidelity Seedance request.
 
     The public RunningHub payload deliberately remains unchanged.  This sidecar
-    proves its fixed media order: approved director board at ``@Image1``, only
-    fixed user model/product targets after it, and the matching source slice at
-    ``videoUrls[0]``.  Internal source/control sheets are never admissible.
+    proves its fixed media order: approved-board-bound execution carrier at
+    ``@Image1``, only fixed user model/product targets after it, and the matching
+    source slice at ``videoUrls[0]``.  The user-facing board and internal
+    source/control/layout artifacts are never admissible.
     """
 
     if not isinstance(lineage, Mapping) or set(lineage) != _FINAL_REFERENCE_LINEAGE_FIELDS:
@@ -389,13 +397,22 @@ def validate_final_reference_lineage(
     ):
         _final_reference_lineage_error("ordered provider URLs do not exactly match the payload")
     if not image_urls or not all(isinstance(url, str) and url for url in image_urls):
-        _final_reference_lineage_error("requires the approved director board at imageUrls[0]")
+        _final_reference_lineage_error("requires the approved-board-bound Seedance execution carrier at imageUrls[0]")
     if len(video_urls) != 1 or not isinstance(video_urls[0], str) or not video_urls[0]:
         _final_reference_lineage_error("requires exactly one matching source segment at videoUrls[0]")
     if lineage.get("forbidden_artifact_kinds") != list(_FORBIDDEN_FINAL_ARTIFACT_KINDS):
         _final_reference_lineage_error("must forbid every internal keyframe/control artifact kind")
 
     board = lineage.get("approved_board")
+    carrier_fields = {
+        "execution_carrier_artifact_id",
+        "execution_carrier_object_key",
+        "execution_carrier_sha256",
+        "storyboard_layout_receipt_sha256",
+        "execution_carrier_source_roi_sha256",
+    }
+    if isinstance(board, Mapping) and not carrier_fields.issubset(set(board)):
+        _final_reference_lineage_error("approved board execution carrier binding is incomplete")
     if not isinstance(board, Mapping) or set(board) != _FINAL_REFERENCE_BOARD_FIELDS:
         _final_reference_lineage_error("approved board descriptor is incomplete")
     if board.get("kind") != "storyboard_image":
@@ -403,6 +420,15 @@ def validate_final_reference_lineage(
     _final_reference_text(board.get("artifact_id"), "approved board artifact identity")
     _final_reference_text(board.get("object_key"), "approved board object identity")
     board_sha256 = _final_reference_sha256(board.get("sha256"), "approved board")
+    _final_reference_text(board.get("execution_carrier_artifact_id"), "Seedance execution carrier artifact identity")
+    _final_reference_text(board.get("execution_carrier_object_key"), "Seedance execution carrier object identity")
+    carrier_sha256 = _final_reference_sha256(board.get("execution_carrier_sha256"), "Seedance execution carrier")
+    _final_reference_sha256(board.get("storyboard_layout_receipt_sha256"), "storyboard layout receipt")
+    roi_sha256 = _final_reference_sha256(board.get("execution_carrier_source_roi_sha256"), "Seedance execution carrier source ROI")
+    if carrier_sha256 == board_sha256:
+        _final_reference_lineage_error("execution carrier must be distinct from the user-facing approved board")
+    if carrier_sha256 != roi_sha256:
+        _final_reference_lineage_error("execution carrier is not bound to the approved storyboard ROI")
     if board.get("segment_id") != segment_id or board.get("url") != image_urls[0]:
         _final_reference_lineage_error("approved board does not occupy imageUrls[0] for this segment")
     revision = board.get("storyboard_revision")
@@ -424,6 +450,7 @@ def validate_final_reference_lineage(
         _final_reference_lineage_error("approved board replacement target SHA list is invalid")
     internal_board_hashes = {
         board_sha256,
+        carrier_sha256,
         str(board["source_keyframe_sheet_sha256"]),
         str(board["replacement_control_keyframe_sheet_sha256"]),
         str(board["replacement_control_keyframe_receipt_sha256"]),

@@ -169,6 +169,14 @@ garbled text, pseudo-writing, dense paragraphs, subtitles inside scene images, w
 - 故事板图片比例为 16:9，成片目标比例单独写明。
 - 目标证据 fidelity 优先于视觉新奇，人物一致性仅在人物适用时优先于姿势变化。
 - 默认只规划口播、环境声、动作声、Foley 和转场声，不默认添加背景音乐。
+## Hard execution contract
+
+This template is content input only. The provider must not decide the approval layout. The server renders `usfr-professional-director-board/v1` with exactly these fixed regions: `direction_header`, `character_target_column`, `storyboard_grid`, `camera_column`, and `continuity_footer`.
+
+The route is exactly: **one complete source Cut contact sheet → one RunningHub Image2 call → one complete replacement-control sheet**. Per-Cut replacement generation and per-Cut source-frame validation are forbidden. Local face swap, ComfyUI, InsightFace, desktop image editors, and any non-Image2 generator are forbidden. A fixed-slot target image is target truth only and must never be accepted as the replacement-control sheet. The director-board Image2 request must use the replacement-control sheet as reference image 1. Later target references authorize only replacement layers; every other visual attribute from the replacement-control sheet must remain unchanged. Do not alter the source pose, action, gesture, expression, gaze, mouth state, camera, crop, background, lighting, hands, props, occlusion, or continuity.
+
+The user approves `director_board_approval.png`. Seedance receives only the distinct labels-free `seedance_visual_carrier.png` derived from the approved `storyboard_grid` ROI. A layout receipt must bind fixed regions, exact Cut-card count/order, approval-board SHA, carrier SHA, and ROI SHA. A generic grid, missing region, wrong Cut count, missing receipt, or reused approval/control image is invalid and must not be shown or submitted.
+
 ## Revision-scoped Cut outputs
 
 Storyboard generation is revision-scoped and Cut-scoped. Every approved Cut may

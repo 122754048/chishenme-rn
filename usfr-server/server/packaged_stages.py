@@ -46,6 +46,11 @@ from .production_ports import (
 )
 from .review_models import RevisionManifest, StoryboardCutRef
 from .source_evidence_bundle import build_source_evidence_bundle
+from .storyboard_layout_contract import (
+    StoryboardLayoutError,
+    render_director_board,
+    validate_storyboard_layout_receipt,
+)
 from .runninghub_standard_contract import (
     RunningHubStandardPayloadError,
     build_provider_audit_proof,
@@ -59,6 +64,7 @@ from .ui_interaction_contract import UiInteractionContractError, build_source_ui
 from .visible_text_contract import (
     VisibleTextContractError,
     canonicalize_visible_text_locks,
+    split_visible_text_locks_by_render_route,
     visible_text_locks_sha256,
 )
 
@@ -1062,19 +1068,51 @@ class StoryboardStage:
         source_dynamics: Mapping[str, Any],
         source_sheet: Mapping[str, Any],
         target_references: Sequence[Path],
+        visible_text_locks: Sequence[Mapping[str, Any]],
     ) -> dict[str, Any]:
         """Generate the internal, source-anchored replacement control sheet."""
 
         source_path = Path(source_sheet["path"])
         cut_ids = [str(item.get("cut_id") or f"C{index:02d}") for index, item in enumerate(source_dynamics["source_cuts"], start=1)]
+        target_roles: list[str] = []
+        reference_index = 2
+        if _present(context, "new_model_image"):
+            target_roles.append(
+                f"Reference image {reference_index} authorizes only the replacement model identity. Preserve the source pose, action, "
+                "gesture, expression, gaze, mouth state, head/body angle, wardrobe, hands, props and interaction."
+            )
+            reference_index += 1
+        if _present(context, "new_product_image"):
+            for product_index in range(min(2, len(_slot_sha256s(context, "new_product_image")))):
+                target_roles.append(
+                    f"Reference image {reference_index} authorizes only new_product_image[{product_index}] at the matching source location. "
+                    "Preserve its source scale, orientation, state, hand contact, occlusion and action timing."
+                )
+                reference_index += 1
+        try:
+            surface_locks = split_visible_text_locks_by_render_route(visible_text_locks)["generation_surface"]
+        except VisibleTextContractError as exc:
+            raise _replication_error("CONTRACT_INVALID", "visible text carrier routing is invalid") from exc
+        surface_text = " ".join(
+            (
+                f"In Cuts {', '.join(lock['cut_ids'])}, render the exact text {json.dumps(lock['approved_text'], ensure_ascii=False)} "
+                f"on physical carrier {json.dumps(lock['placement']['carrier_id'], ensure_ascii=False)}, "
+                f"{lock['placement']['surface_relation']}; it {lock['placement']['motion_behavior']}. "
+                "The glyphs are part of the carrier surface and share its perspective, occlusion, lighting, texture and deformation."
+            )
+            for lock in surface_locks
+        )
         prompt = (
             "Create exactly one ordered-panel replacement control keyframe sheet. "
             f"It contains exactly {len(cut_ids)} panels in this order: {', '.join(cut_ids)}. "
-            "Use the source keyframe sheet as the non-negotiable visual base for every matching panel. "
-            "Preserve source background, environment topology, image quality, lighting, color treatment, composition, "
-            "camera angle, camera distance, pose, gesture, facial expression, gaze, timing state, and continuity. "
-            "Replace only the identities/products explicitly supplied in the target reference images. "
-            "Do not invent scenery, change framing, add text, UI, logos, props, or people. This is an internal control sheet, not a director storyboard."
+            "Reference image 1 is the complete source Cut contact sheet and is the sole authority for panel count/order and every non-replacement visual property. "
+            "Transform that one complete source sheet into one complete replacement-control sheet in this single Image2 operation. "
+            "Do not split the sheet, generate separate Cut images, redesign panels, restage the performance, or reinterpret the scene. "
+            + " ".join(target_roles)
+            + (" " + surface_text if surface_text else "")
+            + " Preserve source background, environment topology, image quality, lighting, color treatment, composition, camera angle, camera distance, "
+            "crop, subject scale/position, pose, action, gesture, facial expression, gaze, mouth state, hands, props, occlusion and continuity. "
+            "Do not invent scenery, change framing, add unapproved text, UI, logos, props, products or people. This is an internal control sheet, not a director storyboard."
         )
         try:
             generated = self._image_client.run_image2(
@@ -1116,6 +1154,10 @@ class StoryboardStage:
         selected = [cuts[str(cut_id)] for cut_id in cut_ids if str(cut_id) in cuts] if isinstance(cut_ids, list) else []
         if not selected:
             raise _replication_error("SEGMENT_PLAN_INVALID", "storyboard segment has no approved script Cuts")
+        try:
+            routed_text = split_visible_text_locks_by_render_route(visible_text_locks)
+        except VisibleTextContractError as exc:
+            raise _replication_error("CONTRACT_INVALID", "storyboard visible text routing is invalid") from exc
         beats = []
         for cut in selected:
             beats.append(
@@ -1123,23 +1165,32 @@ class StoryboardStage:
                 + "; action=" + str(cut.get("action") or "approved action")
                 + "; camera=" + str(cut.get("camera") or "approved source camera")
             )
-        text_instruction = (
-            "Reserve clean high-contrast caption strips at the approved source placements for these exact labels; "
-            "the deterministic post-Image2 layer will render the final glyphs: "
+        surface_instruction = (
+            "The following exact scene-surface text is part of its physical carrier and must already be visible in the generated Cut art: "
+            + " | ".join(
+                f"{','.join(str(value) for value in lock['cut_ids'])} {lock['start_ms']}-{lock['end_ms']}ms: "
+                f"{lock['approved_text']} on {lock['placement']['carrier_id']} at {lock['placement']['surface_relation']}; "
+                f"it {lock['placement']['motion_behavior']}"
+                for lock in routed_text["generation_surface"]
+            )
+            if routed_text["generation_surface"]
+            else "This segment has no approved scene-surface text."
+        )
+        overlay_instruction = (
+            "Do not generate or transcribe these deterministic overlay glyphs; the fixed approval-board layer and final compositor render them: "
             + " | ".join(
                 f"{','.join(str(value) for value in lock['cut_ids'])} {lock['start_ms']}-{lock['end_ms']}ms: {lock['approved_text']}"
-                for lock in visible_text_locks
+                for lock in routed_text["deterministic_overlay"]
             )
-            if visible_text_locks
-            else "Reserve no caption strip; this segment has no approved visible text."
+            if routed_text["deterministic_overlay"]
+            else "There is no deterministic overlay text in this segment."
         )
         return (
-            "Create one polished landscape 16:9 director production board using the packaged director-storyboard layout: "
-            "shared direction, character/target evidence, ordered Cut cards, environment/camera plan, and concise bottom notes. "
-            "Use the replacement-control sheet as the non-negotiable visual base. Preserve source background, composition, "
+            "Create one clean landscape 16:9 visual Cut sheet for deterministic professional director-board assembly. "
+            "Reference image 1 is the replacement-control sheet and remains the non-negotiable visual base. Preserve source background, composition, "
             "image quality, camera language, lighting, action order, and continuity; replace only fixed target identity/product layers. "
-            "Do not invent scenery, UI, logos, end cards, props, people, or claims. "
-            + text_instruction
+            "Return only the Cut visual content in the exact approved Cut order; do not draw headers, sidebars, notes, metadata panels, generic grids, UI, logos or end cards. "
+            + surface_instruction + " " + overlay_instruction
             + " Approved segment beats: " + " | ".join(beats)
         )
 
@@ -1192,6 +1243,7 @@ class StoryboardStage:
                 source_dynamics=source_dynamics,
                 source_sheet=source_sheet,
                 target_references=target_references,
+                visible_text_locks=approved_visible_text_locks,
             )
             references = [Path(control_sheet["path"]), *target_references]
             upstream_artifacts.extend(list(source_sheet.get("published_artifacts") or []))
@@ -1221,12 +1273,57 @@ class StoryboardStage:
                     raise
                 except Exception as exc:
                     raise _replication_error("CAPABILITY_UNAVAILABLE", f"RunningHub Image2 storyboard generation failed for {segment_id}", retryable=True, category="provider") from exc
-                image_bytes = generated.get("image_bytes") if isinstance(generated, Mapping) else None
-                image_bytes = self._render_visible_text_layer(
-                    image_bytes if isinstance(image_bytes, bytes) else b"", segment_text_locks
-                )
+                raw_visual_bytes = generated.get("image_bytes") if isinstance(generated, Mapping) else None
+                self._png_dimensions(raw_visual_bytes if isinstance(raw_visual_bytes, bytes) else b"")
+                try:
+                    routed_segment_text = split_visible_text_locks_by_render_route(segment_text_locks)
+                    selected_cuts = [script_by_id[str(cut_id)] for cut_id in cut_ids]
+                    rendered = render_director_board(
+                        visual_sheet_bytes=raw_visual_bytes,
+                        segment_id=segment_id,
+                        cuts=selected_cuts,
+                        direction_text="Preserve the approved source composition, performance and Cut order.",
+                        character_target_text="Use only fixed-slot replacement identity/product evidence; all other source attributes stay locked.",
+                        camera_text=" | ".join(str(cut.get("camera") or "approved source camera") for cut in selected_cuts),
+                        continuity_text="Scene-surface text stays physically attached to its carrier. Subtitles/CTA/lower-thirds use deterministic overlay rendering.",
+                    )
+                    image_bytes = self._render_visible_text_layer(
+                        rendered["approval_image_bytes"], routed_segment_text["deterministic_overlay"]
+                    )
+                    carrier_bytes = rendered["execution_carrier_bytes"]
+                    layout_receipt = dict(rendered["layout_receipt"])
+                    layout_receipt["approval_board_sha256"] = hashlib.sha256(image_bytes).hexdigest()
+                    validate_storyboard_layout_receipt(layout_receipt, expected_cut_ids=[str(value) for value in cut_ids])
+                except (StoryboardLayoutError, VisibleTextContractError, KeyError) as exc:
+                    raise _replication_error("STORYBOARD_LAYOUT_QC_FAILED", f"director-board fixed layout failed for {segment_id}", category="artifact") from exc
                 width, height = self._png_dimensions(image_bytes)
                 digest = hashlib.sha256(image_bytes).hexdigest()
+                carrier_digest = hashlib.sha256(carrier_bytes).hexdigest()
+                layout_artifact = _publish_json(
+                    context,
+                    kind="storyboard_layout_receipt",
+                    value=layout_receipt,
+                    metadata={"segment_id": segment_id, "storyboard_revision": manifest.revision},
+                )
+                carrier_artifact = context.publish_bytes(
+                    kind="seedance_visual_carrier",
+                    data=carrier_bytes,
+                    content_type="image/png",
+                    expected_sha256=carrier_digest,
+                    metadata={
+                        "segment_id": segment_id,
+                        "storyboard_revision": manifest.revision,
+                        "storyboard_manifest_sha256": manifest.sha256,
+                        "approval_board_sha256": digest,
+                        "layout_receipt_sha256": str(layout_artifact.get("sha256") or "").lower(),
+                        "layout_id": layout_receipt["layout_id"],
+                        "execution_carrier_source_roi": layout_receipt["execution_carrier_source_roi"],
+                        "execution_carrier_source_roi_sha256": layout_receipt["execution_carrier_source_roi_sha256"],
+                        "cut_ids": [str(value) for value in cut_ids],
+                    },
+                )
+                if not isinstance(carrier_artifact, Mapping) or str(carrier_artifact.get("sha256") or "").lower() != carrier_digest:
+                    raise _replication_error("ARTIFACT_HASH_MISMATCH", "published Seedance execution carrier digest differs from rendered bytes", category="artifact")
                 segment_number = segment_index + 1
                 metadata = {
                     "segment_id": segment_id,
@@ -1243,6 +1340,12 @@ class StoryboardStage:
                     "replacement_target_sha256s": self._visual_target_sha256s(context),
                     "approved_visible_text_locks_sha256": approved_visible_text_locks_sha256,
                     "visible_text_lock_ids": [str(lock["text_id"]) for lock in segment_text_locks],
+                    "storyboard_layout_id": layout_receipt["layout_id"],
+                    "storyboard_layout_receipt_sha256": str(layout_artifact.get("sha256") or "").lower(),
+                    "execution_carrier_artifact_id": str(carrier_artifact.get("artifact_id") or ""),
+                    "execution_carrier_object_key": str(carrier_artifact.get("object_key") or ""),
+                    "execution_carrier_sha256": carrier_digest,
+                    "execution_carrier_source_roi_sha256": layout_receipt["execution_carrier_source_roi_sha256"],
                 }
                 published = context.publish_bytes(
                     kind="storyboard_image",
@@ -1254,6 +1357,7 @@ class StoryboardStage:
                 if not isinstance(published, Mapping) or str(published.get("sha256") or "").lower() != digest:
                     raise _replication_error("ARTIFACT_HASH_MISMATCH", "published storyboard image digest differs from Image2 bytes", category="artifact")
                 published_images.append(dict(published))
+                upstream_artifacts.extend([dict(layout_artifact), dict(carrier_artifact)])
                 for cut_id in cut_ids:
                     cut_images.append(
                         StoryboardCutRef(
@@ -1690,6 +1794,11 @@ class SeedancePromptStage:
         if not isinstance(segments, list) or not 1 <= len(segments) <= 2:
             raise _replication_error("SEGMENT_PLAN_INVALID", "frozen segment plan must contain one or two segments")
         script_cuts = {str(item.get("cut_id") or ""): dict(item) for item in script.get("cuts") or [] if isinstance(item, Mapping)}
+        try:
+            visible_text_routes = split_visible_text_locks_by_render_route(script.get("visible_text_locks") or [])
+        except VisibleTextContractError as exc:
+            raise _replication_error("CONTRACT_INVALID", "approved visible text carrier routing is invalid") from exc
+        surface_text_locks = visible_text_routes["generation_surface"]
         board_cuts = {str(item.get("cut_id") or ""): dict(item) for item in storyboard.get("cuts") or [] if isinstance(item, Mapping)}
         if not script_cuts or set(script_cuts) != set(board_cuts):
             raise _replication_error("PROMPT_INTEGRITY_FAILED", "approved script and storyboard Cut coverage differs")
@@ -1758,6 +1867,16 @@ class SeedancePromptStage:
                     raise _replication_error("PROMPT_INTEGRITY_FAILED", "segment references an unapproved Cut")
                 start_ms = int(cut.get("start_ms")) - global_start
                 end_ms = int(cut.get("end_ms")) - global_start
+                cut_surface_text = [lock for lock in surface_text_locks if str(cut_id) in lock["cut_ids"]]
+                surface_text_instruction = " ".join(
+                    (
+                        f"Exact scene-surface text {json.dumps(lock['approved_text'], ensure_ascii=False)} is physically bound to "
+                        f"carrier {lock['placement']['carrier_id']} at {lock['placement']['surface_relation']}; "
+                        f"it {lock['placement']['motion_behavior']}. Its glyphs follow the carrier perspective, hand motion, bending, "
+                        "folding, occlusion and tearing, and never float or stay screen-fixed."
+                    )
+                    for lock in cut_surface_text
+                )
                 shots.append({
                     "shot_id": str(cut_id), "start_ms": start_ms, "end_ms": end_ms,
                     "shot_scale": str(board.get("composition") or "approved composition"),
@@ -1765,9 +1884,9 @@ class SeedancePromptStage:
                     "camera": str(cut.get("camera") or board.get("camera") or "approved camera"),
                     "lighting": "match the approved storyboard lighting and source evidence",
                     "performance": str(cut.get("delivery") or "natural source-equivalent delivery"),
-                    "action": str(cut.get("action") or "complete the approved action"),
+                    "action": " ".join(filter(None, (str(cut.get("action") or "complete the approved action"), surface_text_instruction))),
                     "endpoint": str(board.get("continuity") or "reach the approved Cut endpoint"),
-                    "product_or_ui_truth": str(cut.get("visual") or "use only approved target evidence"),
+                    "product_or_ui_truth": " ".join(filter(None, (str(cut.get("visual") or "use only approved target evidence"), surface_text_instruction))),
                     "commercial_proof": str((cut.get("selling_point") or {}).get("proof", {}).get("evidence_id") or "approved target evidence"),
                     "transition": "match the source Cut transition", "continuity": str(board.get("continuity") or "preserve continuity"),
                     "audio": "no dialogue" if uploaded_audio_kind == "song" else " ".join(filter(None, (str(cut.get("dialogue") or "no dialogue"), uploaded_music_instruction))),
@@ -1798,7 +1917,11 @@ class SeedancePromptStage:
                 "opening_state": str(board_cuts[str(cut_ids[0])].get("composition") or "approved opening storyboard state"),
                 "reference_roles": self._reference_roles(context),
                 "shots": shots,
-                "locks": ["preserve approved Cut order", "preserve approved character and product evidence"],
+                "locks": [
+                    "preserve approved Cut order",
+                    "preserve approved character and product evidence",
+                    "scene-surface text remains physically attached to its approved carrier with exact spelling and deformation behavior",
+                ],
                 "negative_constraints": ["no unapproved text", "no UI or tail media generation", "no generic quality filler"],
                 "no_speech_contracts": [] if local_lines and uploaded_audio_kind not in {"non_song", "song"} else self._no_speech([str(item) for item in cut_ids]),
             }
@@ -1988,17 +2111,61 @@ class SeedanceAuditStage:
             raise _replication_error("CONTRACT_INVALID", "storyboard artifact descriptor is invalid", category="artifact")
         return descriptor
 
+    @staticmethod
+    def _execution_carrier_descriptor(context: Any, *, segment_id: str) -> Mapping[str, Any]:
+        board = SeedanceAuditStage._storyboard_descriptor(context, segment_id=segment_id)
+        board_metadata = board.get("metadata")
+        if not isinstance(board_metadata, Mapping):
+            raise _replication_error("CONTRACT_INVALID", "approved storyboard has no execution-carrier binding", category="artifact")
+        carrier_id = str(board_metadata.get("execution_carrier_artifact_id") or "").strip()
+        carrier_key = str(board_metadata.get("execution_carrier_object_key") or "").strip()
+        carrier_sha = str(board_metadata.get("execution_carrier_sha256") or "").lower()
+        layout_sha = str(board_metadata.get("storyboard_layout_receipt_sha256") or "").lower()
+        roi_sha = str(board_metadata.get("execution_carrier_source_roi_sha256") or "").lower()
+        if (
+            not carrier_id
+            or not carrier_key
+            or _SHA256.fullmatch(carrier_sha) is None
+            or _SHA256.fullmatch(layout_sha) is None
+            or _SHA256.fullmatch(roi_sha) is None
+        ):
+            raise _replication_error("CONTRACT_INVALID", "approved storyboard execution-carrier binding is incomplete", category="artifact")
+        matches = []
+        for artifact in (getattr(context, "artifacts", ()) or ()):
+            if not isinstance(artifact, Mapping) or artifact.get("kind") != "seedance_visual_carrier":
+                continue
+            if artifact.get("artifact_id") != carrier_id or artifact.get("object_key") != carrier_key or artifact.get("sha256") != carrier_sha:
+                continue
+            metadata = artifact.get("metadata")
+            if (
+                not isinstance(metadata, Mapping)
+                or metadata.get("segment_id") != segment_id
+                or metadata.get("storyboard_revision") != board_metadata.get("storyboard_revision")
+                or str(metadata.get("approval_board_sha256") or "").lower() != str(board.get("sha256") or "").lower()
+                or str(metadata.get("layout_receipt_sha256") or "").lower() != layout_sha
+                or str(metadata.get("execution_carrier_source_roi_sha256") or "").lower() != roi_sha
+            ):
+                continue
+            matches.append(artifact)
+        if len(matches) != 1:
+            raise _replication_error(
+                "ARTIFACT_NOT_FOUND",
+                f"exactly one layout-validated Seedance execution carrier is required for {segment_id}",
+                category="artifact",
+            )
+        return matches[0]
+
     def _upload_storyboard(self, context: Any, *, segment_id: str) -> str:
-        descriptor = self._storyboard_descriptor(context, segment_id=segment_id)
+        descriptor = self._execution_carrier_descriptor(context, segment_id=segment_id)
         artifact_id = str(descriptor["artifact_id"])
         digest = str(descriptor["sha256"]).lower()
         try:
-            with context.materialize_artifact("storyboard_image", artifact_id=artifact_id, sha256=digest) as media:
+            with context.materialize_artifact("seedance_visual_carrier", artifact_id=artifact_id, sha256=digest) as media:
                 path = Path(media.path)
                 data = path.read_bytes()
                 StoryboardStage._png_dimensions(data)
                 if hashlib.sha256(data).hexdigest() != digest:
-                    raise _replication_error("ARTIFACT_HASH_MISMATCH", "storyboard bytes differ from the approved artifact", category="artifact")
+                    raise _replication_error("ARTIFACT_HASH_MISMATCH", "Seedance execution carrier bytes differ from the approved binding", category="artifact")
                 url = self.media_uploader.upload_media(path)
         except ReplicationError:
             raise
@@ -2108,6 +2275,9 @@ class SeedanceAuditStage:
             "replacement_control_keyframe_sheet_sha256",
             "replacement_control_keyframe_receipt_sha256",
             "approved_visible_text_locks_sha256",
+            "storyboard_layout_receipt_sha256",
+            "execution_carrier_sha256",
+            "execution_carrier_source_roi_sha256",
         )
         if (
             not artifact_id
@@ -2212,6 +2382,17 @@ class SeedanceAuditStage:
             if list(lock_ids) != expected_lock_ids:
                 raise _replication_error("CONTRACT_INVALID", "approved storyboard visible text placement is incomplete", category="artifact")
 
+        carrier = SeedanceAuditStage._execution_carrier_descriptor(context, segment_id=segment_id)
+        carrier_metadata = carrier.get("metadata")
+        if (
+            not isinstance(carrier_metadata, Mapping)
+            or str(carrier.get("artifact_id") or "") != str(metadata.get("execution_carrier_artifact_id") or "")
+            or str(carrier.get("object_key") or "") != str(metadata.get("execution_carrier_object_key") or "")
+            or str(carrier.get("sha256") or "").lower() != str(metadata.get("execution_carrier_sha256") or "").lower()
+            or str(carrier_metadata.get("approval_board_sha256") or "").lower() != digest
+        ):
+            raise _replication_error("CONTRACT_INVALID", "approved storyboard and Seedance execution carrier binding differs", category="artifact")
+
         return {
             "artifact_id": artifact_id,
             "object_key": object_key,
@@ -2227,6 +2408,11 @@ class SeedanceAuditStage:
             "replacement_control_keyframe_receipt_sha256": str(metadata["replacement_control_keyframe_receipt_sha256"]).lower(),
             "replacement_target_sha256s": [str(value).lower() for value in targets],
             "approved_visible_text_locks_sha256": str(metadata["approved_visible_text_locks_sha256"]).lower(),
+            "execution_carrier_artifact_id": str(carrier["artifact_id"]),
+            "execution_carrier_object_key": str(carrier["object_key"]),
+            "execution_carrier_sha256": str(carrier["sha256"]).lower(),
+            "storyboard_layout_receipt_sha256": str(metadata["storyboard_layout_receipt_sha256"]).lower(),
+            "execution_carrier_source_roi_sha256": str(metadata["execution_carrier_source_roi_sha256"]).lower(),
         }
 
     @staticmethod
@@ -2552,6 +2738,8 @@ class SeedanceAuditStage:
                 "source_keyframe_sheet",
                 "replacement_control_keyframe_sheet",
                 "replacement_control_keyframe_receipt",
+                "storyboard_image",
+                "storyboard_layout_receipt",
             ],
         }
         try:
@@ -2729,10 +2917,9 @@ class SeedanceAuditStage:
             if not segment_id or segment_id in seen_compiled_segments:
                 raise _replication_error("PROMPT_INTEGRITY_FAILED", "compiled Seedance segment is missing its ID")
             seen_compiled_segments.add(segment_id)
-            # @Image1 is the exact Image2 PNG shown in the sole storyboard
-            # confirmation. It is uploaded only from immutable current-job
-            # bytes; neither client URLs nor a text-only board can reach paid
-            # Seedance submission.
+            # @Image1 is the labels-free execution carrier derived from the
+            # fixed storyboard-grid ROI and cryptographically bound to the
+            # exact director board shown at the sole storyboard confirmation.
             storyboard_url = self._upload_storyboard(context, segment_id=segment_id)
             target_urls, target_changes = self._target_reference_urls(context, prompt=prompt)
             if not target_changes:

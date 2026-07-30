@@ -52,17 +52,19 @@ The final fixed-B request may include it only as one 2–15 second, current-
 segment RunningHub Standard Model `audioUrls` entry. The approved visual
 request must retain at least one storyboard or target image. For every
 source-fidelity generated segment, the exact current 2-15 second matching
-original source segment is mandatory at `videoUrls[0]`, the approved director
-board is mandatory at `imageUrls[0]` / `@Image1`, and later image positions
-contain only fixed-slot target references. Source Cut/keyframe sheets and
-replacement-control sheets must never be sent to Seedance; the full source
-video must never be uploaded. The compiled prompt names the audio entry as
+original source segment is mandatory at `videoUrls[0]`, the approved-board-
+bound `seedance_visual_carrier` is mandatory at `imageUrls[0]` / `@Image1`, and
+later image positions contain only fixed-slot target references. The approved
+director board, source Cut/keyframe sheets, replacement-control sheets, and
+storyboard layout receipt must never be sent to Seedance; the full source video
+must never be uploaded. The compiled prompt names the audio entry as
 `@Audio1`.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved
-director board at `imageUrls[0]` / `@Image1`; then only fixed-slot target
-references. Source Cut/keyframe sheets and replacement-control sheets must never
-be sent to Seedance.
+Reference order: matching original source segment at `videoUrls[0]`;
+approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`;
+then only fixed-slot target references. The approved director board, source
+Cut/keyframe sheets, replacement-control sheets, and storyboard layout receipt
+must never be sent to Seedance.
 Top-level `reference_audios` remains forbidden.
 
 Store evidence is parsed once per run in a server Worker and persisted as a

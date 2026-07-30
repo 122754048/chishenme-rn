@@ -42,19 +42,13 @@ that control sheet plus fixed-slot targets. After storyboard approval retain the
 source evidence as server-side, verified tenant-private object storage.
 
 Every source-fidelity generated Seedance request uploads exactly the matching
-2-15 second original source segment at `videoUrls[0]`, the approved director
-board at `imageUrls[0]` / `@Image1`, then only fixed-slot target references.
+2-15 second original source segment at `videoUrls[0]`, the approved-board-bound
+`seedance_visual_carrier` at `imageUrls[0]` / `@Image1`, then only fixed-slot target references.
 Its `usfr-video-reference/v1` receipt binds source-video/source-slice SHA-256,
 segment ID/time window, the approved board, and at least one authorized target
 change. Source keyframe sheets and replacement-control sheets are upstream-only
 director-board evidence: they must never be sent to Seedance or occupy an
-`@Image` slot in the final request. Confirmed visible text is deterministically
-materialized on the approved director board before approval; Image2 and
-Seedance must not be relied on to spell it. The deterministic approved-text
-layer is rendered before approval; Seedance must not generate, read, or
-transcribe its glyphs. A normal `no screen text` negative applies only to
-model-generated scene text and does not suppress the deterministic
-approved-text layer. The full source video must never be uploaded. Opaque
+`@Image` slot in the final request. Scene-surface text must be generated on its physical carrier in the replacement-control sheet and Cut art, then repeated explicitly in the Seedance Cut prompt so it moves, bends, folds, rotates, occludes, and tears with its carrier. Subtitle/CTA/lower-third text uses the deterministic overlay lane; UI text stays in the UI lane. The full source video must never be uploaded. Opaque
 UI-operation media and tail media remain forbidden. The exact fixed-B payload uses `generateAudio=true`; legacy
 `reference_videos` is forbidden, there is no legacy `reference_audios` field,
 and implicit audio references are forbidden. The approved
@@ -62,7 +56,9 @@ and implicit audio references are forbidden. The approved
 duration-bounded fragment as `audioUrls[0]` and require `@Audio1` in the
 compiled prompt.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved director board at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets and replacement-control sheets must never be sent to Seedance.
+The provider-generated visual sheet is never directly approvable. Render the fixed `usfr-professional-director-board/v1` five-region template with `direction_header`, `character_target_column`, `storyboard_grid`, `camera_column`, and `continuity_footer`; validate exact Cut cards, publish a layout receipt, and derive a distinct labels-free `seedance_visual_carrier` from the approved `storyboard_grid` ROI. Missing receipt or mismatch fails closed.
+
+Reference order: matching original source segment at `videoUrls[0]`; approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets, replacement-control sheets, approval-board labels, and layout receipts must never be sent to Seedance.
 This rule also applies to Route 1 even when the user supplied an approved script
 together with a reference video.
 
@@ -328,10 +324,11 @@ Never send a whole-video storyboard to both tasks. Keep the full reference
 video in verified tenant-private object storage or a lease-owned server-side
 temporary volume; it remains the source-analysis master and must never be
 uploaded to Seedance. For each generated task, upload its exact current 2-15
-second matching original source segment at `videoUrls[0]`, the approved director
-board at `imageUrls[0]` / `@Image1`, then only fixed-slot target references.
-Source Cut/keyframe sheets and replacement-control sheets must never be sent to
-Seedance. If there are too many product photos, instruct the user to combine
+second matching original source segment at `videoUrls[0]`, the approved-board-
+bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`, then only fixed-
+slot target references. The approved director board, source Cut/keyframe
+sheets, replacement-control sheets, and storyboard layout receipt must never
+be sent to Seedance. If there are too many product photos, instruct the user to combine
 them into one or two product boards before submission.
 
 ## Seedance Internal Integrity Gate
@@ -391,11 +388,12 @@ Standard Model fixed-B plus the approved `background_music` extension when suppl
 `seedance-2.0-fast-token`, `720p`, `9:16`, duration 4–15, `generateAudio=true`,
 and documented direct image/audio/video URL fields: at most one exact `audioUrls`
 item carrying `@Audio1`, one exact matching original source segment at
-`videoUrls[0]` under `usfr-video-reference/v1`, and the approved director board
-at `imageUrls[0]` / `@Image1`; later image positions contain only fixed-slot
-target references. It enables `realPersonMode` and has a non-empty target change
-receipt. It must not upload the source-keyframe sheet or replacement-control
-sheet; those have already done their work upstream. The normal unauthorised dry run cannot carry
+`videoUrls[0]` under `usfr-video-reference/v1`, and the approved-board-bound
+`seedance_visual_carrier` at `imageUrls[0]` / `@Image1`; later image positions
+contain only fixed-slot target references. It enables `realPersonMode` and has
+a non-empty target change receipt. It must not upload the approved director
+board, source-keyframe sheet, replacement-control sheet, or storyboard layout
+receipt; those have already done their work upstream. The normal unauthorised dry run cannot carry
 `--approved-request-sha256`. Actual submission uses only
 `--approved-request-sha256 <dry-run-request-sha256>` for the exact saved
 payload. Every uploaded URL must bind to the exact local input SHA-256 and
@@ -425,15 +423,15 @@ Calculate duration only from the ordered contiguous generated regions in
 Read `references/seedance-prompt.md` and `references/runninghub-standard-seedance-api.md` before assembling the final request.
 
 1. Confirm the user approved the storyboard and understands the four-image allocation.
-2. Upload the approved director board first, then the populated fixed-slot target references, optional duration-bounded audio fragment, and the matching 2-15 second original source segment. For a local source intake, pass `--source-video-file`, `--segment-plan-file`, and `--segment-id` to `scripts/runninghub_seedance_submit.py`: it materializes that exact frozen window locally before upload, reuses the complete source only when it is itself the 2-15 second window, and otherwise writes a cached FFmpeg slice. Bind every returned public HTTPS URL to its exact input SHA-256; do not reuse an expired URL from another account.
-3. Run `scripts/runninghub_seedance_submit.py --dry-run` with those URLs as the pre-submit request. The request uses exactly the matching original source segment at `videoUrls[0]` plus `usfr-video-reference/v1`, the approved director board at `imageUrls[0]` / `@Image1`, then only fixed-slot target references. Do not upload source keyframe sheets or replacement-control sheets at this stage. The approved dry run and paid submission must reuse the same source-slice SHA-256. Opaque UI and tail media are forbidden.
+2. Upload the approved-board-bound `seedance_visual_carrier` first, then the populated fixed-slot target references, optional duration-bounded audio fragment, and the matching 2-15 second original source segment. Never upload the user-facing approved director board, source/control sheets, or storyboard layout receipt. For a local source intake, pass `--source-video-file`, `--segment-plan-file`, and `--segment-id` to `scripts/runninghub_seedance_submit.py`: it materializes that exact frozen window locally before upload, reuses the complete source only when it is itself the 2-15 second window, and otherwise writes a cached FFmpeg slice. Bind every returned public HTTPS URL to its exact input SHA-256; do not reuse an expired URL from another account.
+3. Run `scripts/runninghub_seedance_submit.py --dry-run` with those URLs as the pre-submit request. The request uses exactly the matching original source segment at `videoUrls[0]` plus `usfr-video-reference/v1`, the approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`, then only fixed-slot target references. Do not upload the approved director board, source keyframe sheets, replacement-control sheets, or storyboard layout receipt at this stage. The approved dry run and paid submission must reuse the same source-slice SHA-256. Opaque UI and tail media are forbidden.
 4. Build each segment prompt under 5000 characters. Repeat that segment's complete approved Cuts as text, with global Cut numbers, local timecodes, actual `@图片1` to `@图片4` mapping, incoming/outgoing continuity anchors, 脚本描述, camera/action direction, product/person identity lock, 口播内容, sound, continuity, and 备注. Never replace these fields with “follow the storyboard image.”
 5. Do not use any legacy `reference_audios` field. Approved uploaded music is
    accepted only as one `audioUrls` item plus an explicit `@Audio1` prompt
    reference.
 6. Audio policy: request voiceover plus environment/action sound, and **不默认添加背景音乐** unless the user explicitly asks for music or uploads `background_music`.
 7. Run one dry-run, save the exact prompt/request and `approval_preview.json`, then complete the `seedance-20` parity audit, write the audit artifact, and authorize the exact digest.
-8. Submit through `seedance-2.0-fast-token/multimodal-video` at `720p`, `9:16`, duration 4–15, with the matching original source segment at `videoUrls[0]`, the approved director board at `imageUrls[0]` / `@Image1`, only fixed-slot target references afterward, and optional one `audioUrls` entry for `@Audio1`. Use `generateAudio=true` and an `--approved-request-sha256` matching the audited dry run.
+8. Submit through `seedance-2.0-fast-token/multimodal-video` at `720p`, `9:16`, duration 4–15, with the matching original source segment at `videoUrls[0]`, the approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`, only fixed-slot target references afterward, and optional one `audioUrls` entry for `@Audio1`. Use `generateAudio=true` and an `--approved-request-sha256` matching the audited dry run.
 9. When `opaque_ui_demo` or supplied `excluded_app_end_card` exists, submit only contiguous generated regions. Never upload or send those opaque videos to RunningHub Seedance, and never mention their visual contents in the Seedance prompt.
 
 Never make a paid Seedance call until the latest storyboard has been approved and the internal parity audit authorizes the exact audited digest. Normal submission does not require a user prompt confirmation.
@@ -529,9 +527,10 @@ through `scripts/seedance_prompt_compiler.py` and the same packaged
 timing verbatim, then run the existing unauthorized dry-run and 13-check audit.
 No paid task is allowed before zero ambiguity, no unresolved placeholders, and
 fixed-B closure. Every source-fidelity generated run sends its exact approved
-source segment in `videoUrls[0]` under `usfr-video-reference/v1`, the approved
-director board at `imageUrls[0]` / `@Image1`, and only fixed-slot target
-references afterward; opaque media never enters the request. The approved `background_music` extension uses one
+source segment in `videoUrls[0]` under `usfr-video-reference/v1`, the approved-
+board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`, and only
+fixed-slot target references afterward; the approved director board and opaque
+media never enter the request. The approved `background_music` extension uses one
 `audioUrls` item plus prompt `@Audio1`.
 Bind `@Audio1` to a silence-padded reference audible only in original source
 music cut-in/cut-out windows; never loop, stretch, advance, delay, or fill

@@ -14,11 +14,24 @@ class UserDirectorStoryboardError(ValueError):
 REQUIRED_ANCHORS = (
     "Use case: infographic-diagram",
     "Primary request:",
+    "Layout contract: usfr-professional-director-board/v1",
     "Fixed layout:",
     "Storyboard cards:",
     "Exact allowed text:",
     "Text constraints:",
     "Avoid:",
+)
+REQUIRED_LAYOUT_REGIONS = (
+    "direction_header:",
+    "character_target_column:",
+    "storyboard_grid:",
+    "camera_column:",
+    "continuity_footer:",
+)
+FORBIDDEN_GENERIC_LAYOUTS = (
+    "generic seven-panel grid",
+    "ordinary seven-grid",
+    "seven equal panels",
 )
 CUT_CARD_PATTERN = re.compile(r"^\s*\d+\.\s+Cut\s+(C\d{2})\s*,", re.MULTILINE)
 CUT_ID_PATTERN = re.compile(r"\bC\d{2}\b")
@@ -35,8 +48,14 @@ def validate_user_director_storyboard(
         raise UserDirectorStoryboardError("director storyboard scope has no allowed Cut IDs")
 
     missing = [anchor for anchor in REQUIRED_ANCHORS if anchor not in prompt]
+    missing.extend(region for region in REQUIRED_LAYOUT_REGIONS if region not in prompt)
     if missing:
         raise UserDirectorStoryboardError("director storyboard layout is incomplete: " + ", ".join(missing))
+
+    normalized = " ".join(prompt.casefold().split())
+    generic = [pattern for pattern in FORBIDDEN_GENERIC_LAYOUTS if pattern in normalized]
+    if generic:
+        raise UserDirectorStoryboardError("director storyboard generic layout is forbidden: " + ", ".join(generic))
 
     card_ids = CUT_CARD_PATTERN.findall(prompt)
     if card_ids != expected:
@@ -59,6 +78,8 @@ def validate_user_director_storyboard(
         "status": "passed",
         "approval_cut_ids": card_ids,
         "layout_anchors": list(REQUIRED_ANCHORS),
+        "layout_regions": list(REQUIRED_LAYOUT_REGIONS),
+        "layout_id": "usfr-professional-director-board/v1",
     }
 
 

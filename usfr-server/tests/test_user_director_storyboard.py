@@ -21,12 +21,13 @@ def _scope() -> dict:
 def _prompt() -> str:
     return """Use case: infographic-diagram
 Primary request:
+Layout contract: usfr-professional-director-board/v1
 Fixed layout:
-- Top: direction.
-- Left: character.
-- Center: storyboard.
-- Right: camera.
-- Bottom: notes.
+- direction_header: top direction lock.
+- character_target_column: left character and target evidence.
+- storyboard_grid: center ordered Cut cards.
+- camera_column: right camera and lighting contract.
+- continuity_footer: bottom continuity and text-route notes.
 Storyboard cards:
 1. Cut C01, 0.0-1.0s: opening.
 2. Cut C02, 1.0-2.0s: action.
@@ -51,3 +52,20 @@ def test_rejects_partial_board_created_from_provider_segments() -> None:
 
     with pytest.raises(module.UserDirectorStoryboardError, match="coverage"):
         module.validate_user_director_storyboard(partial_prompt, _scope())
+
+
+def test_rejects_a_generic_seven_panel_grid_even_when_all_cuts_are_mentioned() -> None:
+    generic = _prompt().replace(
+        "- storyboard_grid: center ordered Cut cards.",
+        "- storyboard_grid: generic seven-panel grid.",
+    )
+
+    with pytest.raises(module.UserDirectorStoryboardError, match="generic"):
+        module.validate_user_director_storyboard(generic, _scope())
+
+
+def test_rejects_a_prompt_missing_one_fixed_professional_region() -> None:
+    missing_camera = _prompt().replace("- camera_column: right camera and lighting contract.\n", "")
+
+    with pytest.raises(module.UserDirectorStoryboardError, match="layout"):
+        module.validate_user_director_storyboard(missing_camera, _scope())

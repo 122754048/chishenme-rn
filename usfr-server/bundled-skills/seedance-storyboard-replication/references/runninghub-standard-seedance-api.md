@@ -21,7 +21,7 @@ URL. It expires after one day.
   "prompt": "approved compiled prompt",
   "resolution": "720p",
   "duration": "4",
-  "imageUrls": ["approved director board at @Image1, then fixed-slot target-image URLs"],
+  "imageUrls": ["approved-board-bound seedance_visual_carrier at @Image1, then fixed-slot target-image URLs"],
   "videoUrls": ["matching original source-video segment URL"],
   "audioUrls": [],
   "generateAudio": true,
@@ -36,12 +36,14 @@ URL. It expires after one day.
 Every source-fidelity generated fixed-B request carries exactly one
 `videoUrls[0]`: the matching original 2-15 second source segment only. It must
 bind `usfr-video-reference/v1` with the source-video and source-slice SHA-256
-values, exact segment time window, approved director board at `imageUrls[0]` /
-`@Image1`, and at least one target change. Only fixed-slot target references
-may follow the board in `imageUrls`. The mandatory upstream visual chain is
+values, exact segment time window, approved-board-bound
+`seedance_visual_carrier` at `imageUrls[0]` / `@Image1`, and at least one target
+change. Only fixed-slot target references may follow the execution carrier in
+`imageUrls`. The mandatory upstream visual chain is
 source Cut frames → replacement-control sheet → approved director board.
-Source Cut/keyframe sheets and replacement-control sheets must never be sent to
-Seedance. Target changes are a new
+The approved director board, source Cut/keyframe sheets, replacement-control
+sheets, and storyboard layout receipt must never be sent to Seedance. Target
+changes are a new
 model/product/App/UI asset, approved script/selling-point/dialogue/lyric change,
 localized language, or uploaded background music. Set `realPersonMode=true` and
 `conversionSlots=["all"]`. Opaque UI-operation media and tail video remain
@@ -51,7 +53,7 @@ The selected background-music or singing segment may provide one
 duration-bounded `audioUrls` item, and its compiled prompt must name it
 `@Audio1`.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved director board at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets and replacement-control sheets must never be sent to Seedance.
+Reference order: matching original source segment at `videoUrls[0]`; approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. The approved director board, source Cut/keyframe sheets, replacement-control sheets, and storyboard layout receipt must never be sent to Seedance.
 
 For a local source intake, do not pre-cut or substitute another video manually.
 Use `--source-video-file <source_video> --segment-plan-file <frozen_plan>

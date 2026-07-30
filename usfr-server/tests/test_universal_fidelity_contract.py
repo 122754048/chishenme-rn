@@ -271,7 +271,7 @@ class UniversalFidelityFactoryContractTest(unittest.TestCase):
         for required in (
             "`generateAudio=true`",
             "matching original source segment at `videoUrls[0]`",
-            "approved director board at `imageUrls[0]` / `@Image1`",
+            "approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`",
             "no legacy `reference_audios` field",
             "`background_music` extension is the sole exception",
             "`audioUrls[0]`",

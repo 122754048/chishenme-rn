@@ -211,6 +211,12 @@ into script, storyboard, Seedance input, timeline assembly, and QC.
 
 ### Mandatory visual and text handoff
 
+The replacement-control route is fixed: **one complete source Cut contact sheet → one RunningHub Image2 call → one complete replacement-control sheet**. Per-Cut replacement generation and per-Cut source-frame validation are forbidden during this stage. Local face swap, ComfyUI, InsightFace, desktop image editors, and any non-Image2 generator are forbidden. A fixed-slot target image is target truth only and must never be accepted as the replacement-control sheet. The director-board Image2 request must use the replacement-control sheet as reference image 1.
+
+The user-facing director board is not a free-form provider output. AI produces only the ordered Cut visual sheet. The server deterministically renders `usfr-professional-director-board/v1` with exactly five fixed regions: `direction_header`, `character_target_column`, `storyboard_grid`, `camera_column`, and `continuity_footer`. Its Cut-card count and order must exactly match the approved Segment. A layout receipt binds every region, Cut card, approval-board SHA, and execution-carrier SHA. Missing region, generic grid, wrong Cut count, missing receipt, or stale SHA fails with `STORYBOARD_LAYOUT_QC_FAILED`; the image cannot be shown, approved, or submitted.
+
+The approval artifact and Seedance reference are separate immutable files. `director_board_approval.png` is the only user-facing storyboard confirmation. `seedance_visual_carrier.png` is a labels-free image derived from the approved board's `storyboard_grid` visual layer. It must carry the approval-board SHA, layout-receipt SHA, exact ROI, Cut IDs, and its own SHA. The approval board itself, its headers, notes, control sheet, and layout receipt are forbidden in the paid Seedance payload.
+
 For every source-fidelity generated region, the visual provenance chain is
 mandatory and ordered: **source Cut frames → replacement-control sheet →
 approved director board**. Extract the Cut frames from the frozen source
@@ -221,13 +227,9 @@ from that control sheet plus the user-provided fixed-slot targets. The control
 sheet is internal evidence, never a user-facing board and never a final
 Seedance reference.
 
-User-confirmed visible text is a source-fidelity lock. It must be
-deterministically materialized on the approved director board with its approved
-wording, Cut/time window, and placement. Image generation and Seedance are not
-trusted to spell it. This deterministic approved-text layer is rendered before
-approval; Seedance must not generate, read, or transcribe its glyphs. A normal
-`no screen text` negative applies only to model-generated scene text and does
-not suppress the deterministic approved-text layer. The editable user Markdown
+User-confirmed visible text is routed by physical carrier. **Scene-surface text** printed, written, painted, embroidered, displayed, or attached to a prop must be present in the replacement-control Image2 output and director-board Cut art. Freeze its exact wording, Cut/time window, carrier ID, surface relation, placement, style, and motion behavior. The same exact wording and carrier relation must be written explicitly into the Seedance Cut prompt. It moves, bends, folds, rotates, occludes, and tears with its carrier and must never become a screen-fixed post layer.
+
+**Deterministic overlay text** such as subtitles, captions, CTA, headline, lower-third, or sticker is rendered on the approval board and final output by the deterministic compositor. Image2 and Seedance must not generate, read, or transcribe those glyphs. UI text stays in the deterministic UI/source-pixel/opaque UI lane. A normal `no unapproved text` negative suppresses invented text without suppressing approved scene-surface or overlay text. The editable user Markdown
 document contains exactly these two top-level sections and no explanatory
 preface, QA prose, or provider prompt:
 
@@ -236,7 +238,7 @@ preface, QA prose, or provider prompt:
 ## 逐镜反解
 
 Every source-fidelity Seedance request is fixed: use the matching original
-source segment at `videoUrls[0]`; use the approved director board at
+source segment at `videoUrls[0]`; use the approved-board-bound `seedance_visual_carrier` at
 `imageUrls[0]` / `@Image1`; then include only fixed-slot target references in
 the remaining image positions. Source Cut/keyframe sheets and
 replacement-control sheets must never be sent to Seedance. A route with zero
@@ -244,7 +246,7 @@ generated regions creates no Seedance request. The exact current 2-15 second
 matching original source segment is mandatory at `videoUrls[0]`; the full
 source video must never be uploaded to Seedance.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved director board at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets and replacement-control sheets must never be sent to Seedance.
+Reference order: matching original source segment at `videoUrls[0]`; approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets, replacement-control sheets, user-facing director boards, and layout receipts must never be sent to Seedance.
 
 ## Fixed Input Slot Contract
 
@@ -739,8 +741,9 @@ two Provider tasks for deployment audits.
     - Use the bundled content-type-neutral storyboard prompt and RunningHub image2
       client. Keep the required `16:9`, `2k`, `medium` settings and real model-
       generated Cut scenes.
-    - Save real PNG artifacts and provenance; never substitute a deterministic
-      collage for generated Cut scenes.
+    - Image2 produces only the ordered Cut visual sheet from the replacement-control sheet. The server then renders the fixed five-region professional approval board deterministically; generated Cut scenes remain real Image2 pixels.
+    - Publish both `director_board_approval.png` and `seedance_visual_carrier.png` plus the validated layout receipt. They must have distinct SHA-256 values and mutual lineage.
+    - Reject generic grids, missing fixed regions, wrong Cut-card count/order, missing layout receipt, or an execution carrier not bound to the approved `storyboard_grid` ROI.
     - Derived source contact sheets or boundary frames may carry only structure,
       timing, camera, or environment evidence. Source identity, brand, UI, or text
       must not leak into an authorized replacement board or fixed-B asset map.
@@ -753,12 +756,12 @@ two Provider tasks for deployment audits.
       Recompile the final prompt through `seedance-20`, then build exactly one
       unauthorised pre-submit dry-run payload for that prompt version. Do not
       pass `--approved-request-sha256` on the dry run.
-    - Upload the approved director storyboard and populated target reference images from
+    - Upload the layout-validated `seedance_visual_carrier` and populated target reference images from
       the fixed slot manifest with RunningHub Standard Model binary upload. Every
       source-fidelity generated run also uploads exactly the matching current
       2-15 second original source segment as `videoUrls[0]`, bound by
       `usfr-video-reference/v1` to source/slice SHA-256 values, the frozen
-      segment window, the director storyboard at `@Image1`, and at least one target change.
+      segment window, the approved-board-bound execution carrier at `@Image1`, and at least one target change.
       Source keyframe sheets and replacement-control sheets are never uploaded to
       Seedance; they are used only upstream to generate the director board. Opaque UI media
       and tail media remain forbidden. For a local source file, provide the
@@ -969,8 +972,10 @@ afterward. The RunningHub Standard Model route is fixed to
 `seedance-2.0-fast-token`, `720p`, `9:16`, and no legacy `reference_audios`
 field. Every source-fidelity generated fixed-B request uses only the matching
 original source segment at `videoUrls[0]` under `usfr-video-reference/v1`, the
-approved director board at `imageUrls[0]` / `@Image1`, and only fixed-slot target
-references afterward. It has a non-empty authorized target change. One
+approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`,
+and only fixed-slot target references afterward. The approved director board,
+source/control sheets, and layout receipt are forbidden Provider inputs. It has
+a non-empty authorized target change. One
 duration-bounded `audioUrls` item is
 permitted only for the approved `background_music` extension, which must render
 as `@Audio1` and remain bound to its music execution contract. Resume known task

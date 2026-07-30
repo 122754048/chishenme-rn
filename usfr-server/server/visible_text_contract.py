@@ -11,6 +11,33 @@ from typing import Any
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _DISPOSITIONS = frozenset({"keep", "replace", "remove"})
+_GENERATION_SURFACE_KINDS = frozenset(
+    {
+        "scene_surface_text",
+        "diegetic_surface_text",
+        "prop_text",
+        "paper_text",
+        "paper_sign_text",
+        "packaging_text",
+        "product_label_text",
+        "wardrobe_text",
+        "physical_sign_text",
+        "device_body_text",
+    }
+)
+_DETERMINISTIC_OVERLAY_KINDS = frozenset(
+    {
+        "subtitle",
+        "caption",
+        "overlay_text",
+        "headline",
+        "cta",
+        "wordmark",
+        "lower_third",
+        "sticker_text",
+    }
+)
+_DETERMINISTIC_UI_KINDS = frozenset({"ui_text", "screen_ui_text", "app_ui_text"})
 _LOCK_FIELDS = frozenset(
     {
         "text_id",
@@ -122,6 +149,42 @@ def visible_text_locks_sha256(locks: Sequence[Mapping[str, Any]]) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def visible_text_render_route(lock: Mapping[str, Any]) -> str:
+    """Choose the render lane from the text's physical carrier."""
+
+    canonical = _canonical_lock(lock)
+    kind = canonical["kind"].strip().casefold().replace("-", "_").replace(" ", "_")
+    if kind in _GENERATION_SURFACE_KINDS:
+        placement = canonical["placement"]
+        required = ("carrier_id", "surface_relation", "motion_behavior")
+        missing = [field for field in required if not str(placement.get(field) or "").strip()]
+        if missing:
+            raise VisibleTextContractError(
+                f"scene-surface visible text placement is missing carrier fields: {missing}"
+            )
+        return "generation_surface"
+    if kind in _DETERMINISTIC_OVERLAY_KINDS:
+        return "deterministic_overlay"
+    if kind in _DETERMINISTIC_UI_KINDS:
+        return "deterministic_ui"
+    raise VisibleTextContractError(
+        "visible text kind has no carrier-aware render route; classify it as scene-surface, overlay, or UI text"
+    )
+
+
+def split_visible_text_locks_by_render_route(
+    locks: Sequence[Mapping[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    routed = {
+        "generation_surface": [],
+        "deterministic_overlay": [],
+        "deterministic_ui": [],
+    }
+    for lock in canonicalize_visible_text_locks(locks):
+        routed[visible_text_render_route(lock)].append(lock)
+    return routed
+
+
 def _source_row(value: Mapping[str, Any]) -> dict[str, Any]:
     placement = value.get("placement", {})
     if not isinstance(placement, Mapping):
@@ -177,4 +240,6 @@ __all__ = [
     "canonicalize_visible_text_locks",
     "validate_visible_text_locks",
     "visible_text_locks_sha256",
+    "visible_text_render_route",
+    "split_visible_text_locks_by_render_route",
 ]

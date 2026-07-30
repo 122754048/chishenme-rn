@@ -274,6 +274,14 @@
       "role": "canonical pinned RunningHub AI App request builder for uploaded-song lip sync"
     },
     {
+      "path": "server/storyboard_layout_contract.py",
+      "role": "deterministic five-region director-board renderer, layout validator, and approved-board-bound Seedance execution carrier receipt"
+    },
+    {
+      "path": "server/visible_text_contract.py",
+      "role": "immutable visible-text lock validation and carrier-aware generation, overlay, and UI routing"
+    },
+    {
       "path": "server/singing_audio_router.py",
       "role": "constant-cost source-evidence router for uploaded-song singing versus background-music replacement"
     },

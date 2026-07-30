@@ -116,7 +116,7 @@ def test_final_reference_lineage_rejects_an_internal_control_asset_or_wrong_sour
         "@Image1 fixes the approved director board while @Image2 fixes the model identity.",
         4,
         "9:16",
-        ["https://media.example/board.png", "https://media.example/model.png"],
+        ["https://media.example/seedance-visual-carrier.png", "https://media.example/model.png"],
         [],
         video_urls=["https://media.example/source-s01.mp4"],
         real_person_mode=True,
@@ -142,6 +142,11 @@ def test_final_reference_lineage_rejects_an_internal_control_asset_or_wrong_sour
             "replacement_control_keyframe_receipt_sha256": "0" * 64,
             "replacement_target_sha256s": ["1" * 64],
             "approved_visible_text_locks_sha256": "2" * 64,
+            "execution_carrier_artifact_id": "carrier-artifact",
+            "execution_carrier_object_key": "temporary/job/seedance-visual-carrier.png",
+            "execution_carrier_sha256": "4" * 64,
+            "storyboard_layout_receipt_sha256": "5" * 64,
+            "execution_carrier_source_roi_sha256": "4" * 64,
         },
         "source_reference": {
             "artifact_id": "source-reference-artifact",
@@ -167,12 +172,20 @@ def test_final_reference_lineage_rejects_an_internal_control_asset_or_wrong_sour
             "source_keyframe_sheet",
             "replacement_control_keyframe_sheet",
             "replacement_control_keyframe_receipt",
+            "storyboard_image",
+            "storyboard_layout_receipt",
         ],
     }
 
     validator = getattr(standard_contract, "validate_final_reference_lineage", None)
     assert callable(validator)
     validator(payload, lineage)
+
+    missing_carrier_binding = dict(lineage)
+    missing_carrier_binding["approved_board"] = dict(lineage["approved_board"])
+    missing_carrier_binding["approved_board"].pop("execution_carrier_sha256")
+    with pytest.raises(RunningHubStandardPayloadError, match="execution carrier"):
+        validator(payload, missing_carrier_binding)
 
     forged = {
         **lineage,
