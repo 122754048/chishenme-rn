@@ -52,19 +52,19 @@ The final fixed-B request may include it only as one 2–15 second, current-
 segment RunningHub Standard Model `audioUrls` entry. The approved visual
 request must retain at least one storyboard or target image. For every
 source-fidelity generated segment, the exact current 2-15 second matching
-original source segment is mandatory at `videoUrls[0]`, the approved-board-
-bound `seedance_visual_carrier` is mandatory at `imageUrls[0]` / `@Image1`, and
-later image positions contain only fixed-slot target references. The approved
-director board, source Cut/keyframe sheets, replacement-control sheets, and
-storyboard layout receipt must never be sent to Seedance; the full source video
-must never be uploaded. The compiled prompt names the audio entry as
+original source segment is mandatory at `videoUrls[0]`, and the one-to-nine
+image array must use `continuous-present-role-order/v1` plus
+`usfr-multimodal-reference-binding/v2`: model identity when present, product/App
+truth when present, every approved director-board PNG page, then explicitly
+scoped additional references. Source Cut/keyframe sheets and
+replacement-control sheets must never be sent to Seedance; the full source
+video must never be uploaded. The compiled prompt names the audio entry as
 `@Audio1`.
 
-Reference order: matching original source segment at `videoUrls[0]`;
-approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`;
-then only fixed-slot target references. The approved director board, source
-Cut/keyframe sheets, replacement-control sheets, and storyboard layout receipt
-must never be sent to Seedance.
+Every approved storyboard page is uploaded as its original confirmed PNG;
+`seedance_execution_carrier.png` and single `storyboard_url` bindings are
+forbidden. Enforce `uploaded_tags == binding_tags == prompt_tags`. @Video1 and
+@Audio1 use independent namespaces and never consume image indices.
 Top-level `reference_audios` remains forbidden.
 
 Store evidence is parsed once per run in a server Worker and persisted as a
@@ -126,3 +126,13 @@ loop, or source-duration padding.
 In production, “source-origin interval” and “assembled locally” mean a
 server-side worker reading a verified object-store reference; they never mean
 the user's workstation or a required client-local file.
+
+The deployment switch `USFR_UI_REBUILD_ENABLED` defaults to `false` and is
+frozen into `extensions.ui_rebuild_enabled`. It only permits automatic UI
+rebuild fallback for product/model/language replacement. A supplied UI
+screenshot or official Apple App Store/Google Play URL is explicit target UI
+evidence and always enables `generated_ui_demo`, even when the switch is
+false. A supplied `ui_operation_video` always wins and remains
+`opaque_ui_demo`. With no UI target evidence and the switch disabled, source UI
+operations remain untouched and their OCR/App Store/UI-render stages are
+skipped.

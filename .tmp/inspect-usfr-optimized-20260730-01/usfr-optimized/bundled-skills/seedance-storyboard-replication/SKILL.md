@@ -12,6 +12,29 @@ formats; source camera style and content type come from the contract. It owns
 route selection, approval gates, prompt assembly, RunningHub media upload,
 Seedance submission, timeline assembly, and final QC.
 
+## Fixed user surface
+
+This module inherits the root two-artifact user contract. Do not invoke
+`brainstorming`, create or request approval of a design document, present
+multiple processing approaches, or pause for a scope/plan/technical decision.
+The first user pause is the downloadable `user_script_markdown` file at
+`analysis/reverse_storyboard_script.md`. Pasting
+the script inline in chat is not a valid script-approval artifact. The second
+user pause is the actual `image/png` director storyboard image set at
+`storyboards/segment_XX_vN.png`. A text-only
+storyboard description is not a valid storyboard-approval artifact.
+
+The replacement-control sheet is internal-only and must never be presented, linked, previewed, or bundled in the user approval response. The second gate publishes only the ordered director-board PNG page set. The approval set supports at most two director-board PNG pages, and a page may contain at most four Cut cards. When a Segment has five to eight Cuts, paginate it into exactly two contiguous pages before Image2. All pages for the current storyboard revision form one ordered approval set and receive one confirmation together. Board pages do not create extra approvals or additional Seedance tasks.
+
+A director-board page may contain at most four Cut cards.
+
+No scope, approach, design, plan, duration, split, reference-allocation, prompt, generation, or QC confirmation is permitted. Non-blocking progress
+updates may request no reply. Lyrics, performer assignment, duration and split
+decisions, and reference allocation must be exposed inside the script document
+or director board as applicable, never as another question. After the director
+board is approved, compilation, upload, submission, waiting, assembly, and QC
+continue automatically.
+
 ## Route Selection
 
 The top-level binder has already frozen the seven fixed input slots. The slot
@@ -31,7 +54,23 @@ provider intent.
   least one optional slot. Reverse-engineer the source video and stop for
   **确认反解分镜脚本** before storyboard generation.
 
-Both routes must tell the user before Seedance submission that this workflow accepts **最多 4 张** image references: one storyboard image, optional one character board, and one or two product boards. If product assets exceed the remaining slots, ask the user to prepare a product board that combines product photos while preserving product pixels.
+Both routes support at most nine images and enforce
+`continuous-present-role-order/v1`. @Image1 is the new model identity when a
+model replacement is populated; product or App truth follows the model
+identity when populated; approved director storyboard PNG pages follow the
+populated target-truth images; and additional verified references follow only
+with an explicit purpose and Cut scope. Absent logical roles do not create
+placeholder images: later present roles compact left and the actual index/tag
+is frozen in the binding manifest. Record the allocation inside existing
+artifacts; never create a separate reference-allocation confirmation.
+
+Every approved storyboard page is uploaded as its original confirmed PNG. The
+workflow must not generate, merge, crop, or substitute an execution carrier.
+`seedance_execution_carrier.png` is forbidden. A single `storyboard_url` is
+invalid. The exact invariant is
+`uploaded_tags == binding_tags == prompt_tags`. @Video1 is a video-slot
+reference and never consumes an image index. @Audio1 is an audio-slot reference
+and never consumes an image index.
 
 Both routes use the **固定 B 方案**. For every source-fidelity generated region,
 the mandatory visual chain is **source Cut frames → replacement-control sheet →
@@ -41,20 +80,39 @@ replaces only authorized target layers; the director board is generated from
 that control sheet plus fixed-slot targets. After storyboard approval retain the
 source evidence as server-side, verified tenant-private object storage.
 
+The control transformation is exactly **one complete source Cut contact sheet → one RunningHub Image2 call → one complete replacement-control sheet**. Per-Cut replacement generation and per-Cut source-frame validation are forbidden during control creation. Local face swap, ComfyUI, InsightFace, desktop image editors, and any non-Image2 generator are forbidden. A fixed-slot target image is target truth only and must never be accepted as the replacement-control sheet. The result must be a distinct Image2-generated PNG whose receipt records `single_sheet_image_to_image` and `image2_call_count=1`.
+
+After that one internal control transformation, paginate the director-board publication independently of Segment/task planning. Keep global Cut order and use at most two pages with at most four Cut cards per page; seven portrait Cuts require a 3+4 split. On a four-Cut 9:16 page, use four equal-width full-height portrait cards in one row, with proportional fit-contain scaling. Empty card margins are acceptable; crop-to-fill, horizontal compression, vertical stretching, and body-proportion changes are forbidden. Cut scene images must remain large enough to judge face identity, pose, hands, microphone/product/prop relations, action endpoint and composition. A page with squeezed or distorted people, cropped required evidence, unreadable actions, or less visual evidence than its source Cut fails publication and must be regenerated.
+
+Cut scene images must preserve the source portrait-frame aspect ratio without horizontal or vertical stretching. Proportional fit-contain scaling is the required four-Cut portrait-page operation.
+
+For that single Image2 call, reference image 1 is the complete source contact
+sheet and controls every non-replacement property. The prompt names each later
+reference from the fixed manifest and limits it to its authorized model,
+product, or App-product replacement layer. Pose, action, gesture, facial
+expression, gaze, mouth state, head/body angle, wardrobe unless explicitly
+authorized, hands, product interaction, camera, crop, subject scale/position,
+background, lighting, props, occlusion, panel count/order, and continuity must
+remain unchanged. The director-board Image2 request must use the
+replacement-control sheet as reference image 1; fixed-slot targets follow only
+as identity/product truth and cannot override the control sheet.
+
 Every source-fidelity generated Seedance request uploads exactly the matching
-2-15 second original source segment at `videoUrls[0]`, the approved director
-board at `imageUrls[0]` / `@Image1`, then only fixed-slot target references.
+2-15 second original source segment at `videoUrls[0]` plus the ordered image set
+from `usfr-multimodal-reference-binding/v2`.
 Its `usfr-video-reference/v1` receipt binds source-video/source-slice SHA-256,
 segment ID/time window, the approved board, and at least one authorized target
 change. Source keyframe sheets and replacement-control sheets are upstream-only
 director-board evidence: they must never be sent to Seedance or occupy an
-`@Image` slot in the final request. Confirmed visible text is deterministically
-materialized on the approved director board before approval; Image2 and
-Seedance must not be relied on to spell it. The deterministic approved-text
-layer is rendered before approval; Seedance must not generate, read, or
-transcribe its glyphs. A normal `no screen text` negative applies only to
-model-generated scene text and does not suppress the deterministic
-approved-text layer. The full source video must never be uploaded. Opaque
+`@Image` slot in the final request. Route confirmed visible text by carrier.
+**Scene-surface text** on paper, packaging, clothing, signs, or physical props
+must be generated into the replacement-control sheet and director board with
+exact wording, carrier ID, surface relation, placement, and style. It moves,
+bends, folds, rotates, occludes, and tears with its carrier. The exact wording
+and physical behavior must be written explicitly into the Seedance Cut prompt.
+**Deterministic overlay text** such as subtitles, captions, CTAs, headlines, or
+lower-thirds is rendered before approval and in final post; Seedance must not
+generate, read, or transcribe those overlay glyphs. The full source video must never be uploaded. Opaque
 UI-operation media and tail media remain forbidden. The exact fixed-B payload uses `generateAudio=true`; legacy
 `reference_videos` is forbidden, there is no legacy `reference_audios` field,
 and implicit audio references are forbidden. The approved
@@ -62,7 +120,9 @@ and implicit audio references are forbidden. The approved
 duration-bounded fragment as `audioUrls[0]` and require `@Audio1` in the
 compiled prompt.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved director board at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets and replacement-control sheets must never be sent to Seedance.
+Reference order is the actual continuous provider image order frozen by the
+binding sidecar; source Cut/keyframe sheets and replacement-control sheets must
+never be sent to Seedance.
 This rule also applies to Route 1 even when the user supplied an approved script
 together with a reference video.
 
@@ -232,34 +292,54 @@ Use the smallest necessary upstream analysis and cache every result in the curre
 - For Route 2, use `$analyze-reference-video-dynamics` once before writing the reverse script. Reuse its probe, scene candidates, Cut boundaries, action/camera phases, and event timing instead of repeating free-form video analysis.
 - Use `$replicate-source-ui-overlays` only when the source contains a visible moving or timed Logo, UI, subtitle, CTA, wordmark, or graphic layer whose geometry must be preserved. Skip it when no such overlay exists or when overlay placement is irrelevant to the approved replacement. Do not run semantic overlay analysis inside `opaque_ui_demo` or supplied `excluded_app_end_card`; retain only their source boundaries and transition shells.
 - Overlay analysis preserves source timing and geometry only. Replacement pixels must come from the verified product evidence, never from the source-video brand.
-- Derived source contact sheets and boundary frames may carry only structure,
-  timing, camera, or environment evidence. Source identity, brand, UI, or text
-  must not leak into a replacement storyboard or the fixed-B provider asset map.
+- Derived source contact sheets and boundary frames may carry structure,
+  timing, camera, environment, and approved scene-surface text evidence. Source
+  identity, unauthorized brand/UI, and deterministic overlay text must not leak
+  into a replacement storyboard or the fixed-B provider asset map.
 - Before Route 2 reverse-writing, run one concise intent pass and save `analysis/intent_weighted_contract.json`. Read `references/intent-analysis.md` for the schema. The pass must identify the source video's primary commercial intent, audience hook, character appeal, product proof, emotional promise, CTA/conversion role, pacing role, and platform-safety boundary, then assign integer weights totaling 100. Reuse this cached contract; do not repeatedly speculate about intent during every Cut.
 - Intent weights are constraints on the reverse script, not decoration. The weighted categories must be reflected in the script's opening hook, action emphasis, product/UI evidence, voiceover, CTA, and negative constraints. If a source uses an attractive adult model or mild body movement to stop the scroll, describe it neutrally as an adult-attractiveness/attention hook and preserve only non-explicit, platform-compliant framing: no nudity, exposed intimate areas, fetish focus, coercion, or sexual acts. Do not infer sexual intent from appearance alone; require framing, movement, copy, or repeated emphasis as evidence.
 
 Time budget: one deterministic parser/probe pass per input, one concise semantic pass over selected boundary/key frames, and no repeated full-video inspection unless validation fails. Prefer cached contracts and omit optional analysis that cannot change the storyboard or final prompt.
 
-Immediately after upload, validate and explain duration before doing creative work:
+Immediately after upload, validate duration internally before creative work.
+Record the resulting duration/split decision in the downloadable script file;
+an optional progress update must remain non-blocking and request no reply:
 
 - **参考视频最长 30 秒**. Reject anything longer and ask the user to trim it before reverse engineering.
 - **15 秒以内最稳定**: one storyboard and one Seedance generation avoid cross-task identity and motion drift.
 - `>15s` through `17s`: retime to one 15-second storyboard/task under the approved threshold rule.
-- **18-30 秒**: exactly two independently submitted but continuity-locked clips, therefore **最多两张故事板**. Tell the user that separate generations cannot guarantee pixel-identical boundary frames; the workflow reduces drift with shared references and explicit handoff state. A 30-second source must have a natural handoff at 15 seconds.
+- **18-30 秒**: exactly two independently submitted but continuity-locked clips, therefore **最多两张故事板**. Record the boundary limitation and continuity handoff in the script document instead of asking for a separate confirmation. A 30-second source must have a natural handoff at 15 seconds.
 
 ## Route 1: Existing Storyboard Script
 
 Use this route when the user already uploaded or pasted a confirmed storyboard script.
 
-1. Validate the reference-video duration and give the duration guidance above.
-2. Analyze the confirmed script's action completions, spoken-sentence endings, story beats, and scene transitions. For more than 17 seconds, select one explicit **剧情切点** in the legal range and pass it to `scripts/segment_plan.py --split-boundary`; 禁止为了均衡时长自动选择.
-3. If no approved Cut boundary is safe, stop with a blocker requiring the user to revise or approve the storyboard script; do not create a separate boundary approval gate. Never hard-cut or create a third segment.
-4. Read `references/daohuo_storyboard_prompt.md`. Write `continuity_manifest.json`, then run `scripts/runninghub_image2.py` once per planned segment to generate `storyboards/segment_01_v1.png` and, only when required, `storyboards/segment_02_v1.png`.
-5. Stop once for **确认故事板**. When two segments exist, generate and automatically continuity-check the complete pair before showing either board to the user. Show the pair together with the segment durations and boundary handoff; it is one storyboard-set revision and one user confirmation, never two sequential approvals.
-6. If the user requests changes, revise only the affected board. A change to segment 1 regenerates and rechecks segment 2 because its incoming state depends on segment 1; a change isolated to segment 2 does not regenerate segment 1. Return the repaired set to the same single storyboard confirmation entry.
-7. Only after all storyboard approvals, compile one complete Seedance prompt per segment through `seedance-20`, then run the internal Seedance Integrity Gate before any API submission.
-
-Do not ask the user to reconfirm the script in this route. The only creative approval loop is the storyboard image.
+1. Validate the reference-video duration internally.
+2. Materialize the supplied script as the downloadable
+   `user_script_markdown` artifact and stop once for **确认反解分镜脚本**. The
+   user must receive the file, not an inline transcription.
+3. Analyze the approved script's action completions, spoken-sentence endings,
+   story beats, and scene transitions. For more than 17 seconds, select one
+   explicit **剧情切点** in the legal range and pass it to
+   `scripts/segment_plan.py --split-boundary`; 禁止为了均衡时长自动选择.
+4. If no approved Cut boundary is safe, return the issue inside the existing
+   script-file revision gate; do not create a separate boundary approval.
+   Never hard-cut or create a third segment.
+5. Read `references/daohuo_storyboard_prompt.md`. Write
+   `continuity_manifest.json`, then run `scripts/runninghub_image2.py` once per
+   planned segment to generate `storyboards/segment_01_v1.png` and, only when
+   required, `storyboards/segment_02_v1.png`.
+6. Stop once for **确认故事板** with the actual PNG image set. When two segments
+   exist, generate and automatically continuity-check the complete pair before
+   showing either board to the user. Show the pair together as one
+   storyboard-set revision and one user confirmation.
+7. If the user requests changes, revise only the affected board. A change to
+   segment 1 regenerates and rechecks segment 2 because its incoming state
+   depends on segment 1; a change isolated to segment 2 does not regenerate
+   segment 1. Return the repaired set to the same storyboard confirmation.
+8. Only after storyboard approval, compile one complete Seedance prompt per
+   segment through `seedance-20`, then run the internal Seedance Integrity Gate
+   before any API submission.
 
 ## Route 2: Fixed-Slot Source Video
 
@@ -274,18 +354,26 @@ absent slots remain source-preserve KEEP evidence.
    overlay contract, and only the populated fixed-slot evidence. Keep absent
    character/product/UI truth on the source-preserve route.
 4. Write `analysis/intent_weighted_contract.json` from the source evidence, then apply its weighted intent to the reverse script. The script must state the primary intent, weight table, evidence, and which Cuts carry each high-weight intent. Do not add a new character or claim that the source does not support.
-5. Stop for **确认反解分镜脚本**. Do not generate storyboard images yet.
+5. Publish the real `user_script_markdown` file and stop only for
+   **确认反解分镜脚本**. Present a file link; do not paste the document inline
+   as a substitute. Do not generate storyboard images yet.
 6. After script approval, select and validate an existing approved Cut boundary with `scripts/segment_plan.py --split-boundary`; 禁止为了均衡时长自动选择. If no approved boundary is safe, stop with a blocker requiring storyboard-script revision or approval.
 7. Read `references/daohuo_storyboard_prompt.md`. Write `continuity_manifest.json`, then run `scripts/runninghub_image2.py` once per planned segment to generate one or exactly two `16:9 横版电影制作板` images.
-8. Stop once for **确认故事板**. For two segments, first generate both boards, make segment 2 consume segment 1 plus the frozen continuity locks, and complete automatic pair QA. Then show every saved segment board, duration, and boundary handoff together as one storyboard-set revision. Revise with `scripts/runninghub_image2.py` until the user approves the set-wide continuity through this one confirmation entry.
+8. Stop once for **确认故事板** only after the actual PNG director board or
+   complete PNG set exists. For two segments, first generate both boards, make
+   segment 2 consume segment 1 plus the frozen continuity locks, and complete
+   automatic pair QA. Show every PNG together as one storyboard-set revision;
+   a text description is not a review artifact. Revise with
+   `scripts/runninghub_image2.py` until the user approves the set-wide
+   continuity through this one confirmation entry.
 9. Only after all storyboard approvals, compile one complete Seedance prompt per segment through `seedance-20`, then run the internal Seedance Integrity Gate before any API submission.
 
 ## Storyboard Approval Loop
 
 The storyboard is the main user-facing quality gate.
 
-- Use `references/daohuo_storyboard_prompt.md` as the only storyboard prompt source. Follow its **固定骨架 + 动态填充** contract: keep the layout and constraints fixed, then replace every placeholder with the current approved script, character, product, reference-video role, and exact short labels before calling image2. Never maintain or improvise a second generic storyboard prompt.
-- Keep the two visual artifacts strictly separate. `reference_frames/control_keyframes.png` is an internal replication-control sheet with exactly one ordered panel for every source Cut. Its panel count and Cut ID order must equal `source_dynamics_analysis.source_cuts`; no fixed panel count, range, or grid size is allowed. It may be supplied only to the upstream Image2 director-board call, but it must never be shown to the user as the director storyboard, be used as the board layout, or be uploaded to Seedance. The user-facing deliverable and final `@Image1` are always the image-model-generated 16:9 director board defined by `daohuo_storyboard_prompt.md`.
+- Use `references/daohuo_storyboard_prompt.md` as the only storyboard prompt and layout source. Reading and compiling this exact file is a mandatory runtime dependency for every generation and revision, not optional guidance. Follow its **固定骨架 + 动态填充** contract: keep the layout and constraints fixed, replace every placeholder with the current approved script, character, product, reference-video role, and exact short labels, reject unresolved placeholders, and bind the file's exact byte SHA-256 into the Image2 request, layout receipt, storyboard metadata, and approval artifact. Missing bytes/SHA, an embedded fallback prompt, the obsolete five-region information board, or any alternate template fails closed. Never maintain, remember, or improvise a second generic storyboard prompt.
+- Keep the two visual artifacts strictly separate. `reference_frames/control_keyframes.png` is an internal replication-control sheet with exactly one ordered panel for every source Cut. Its panel count and Cut ID order must equal `source_dynamics_analysis.source_cuts`; no fixed panel count, range, or grid size is allowed. It may be supplied only to the upstream Image2 director-board call, but it must never be shown to the user as the director storyboard, be used as the board layout, or be uploaded to Seedance. The user-facing deliverables are the image-model-generated 16:9 director-board PNG pages defined by `daohuo_storyboard_prompt.md`; their final `@ImageN` values come only from the ordered multimodal binding.
 - Before the control-keyframe image2 call, build and validate `reference_frames/control_keyframes_manifest.json` using `scripts/control_keyframe_contract.py`. The validation receipt must prove that every source Cut appears once, in source order, and that no legacy fixed-panel rule is present. The control sheet only locks replacement identity, camera, action, expression, and environment; it never replaces the approved script or director storyboard.
 - Before an image2 call, reject the prompt as `DIRECTOR_STORYBOARD_LAYOUT_REQUIRED` unless it has the template's director-board structure: shared top direction, character/style and detail reference area, ordered Cut-card storyboard area, environment/camera movement plan, and concise bottom lighting/camera/palette/audio/mood/cinematography notes. A generic equal-cell contact sheet, a bare control-keyframe grid, blank Cut placeholders, or a post-generated collage of source UI screenshots is not a director storyboard and must not be presented for approval.
 - Use the RunningHub `gpt-image-2/image-to-image-official-stable` actual image-generation model through `scripts/runninghub_image2.py` for storyboard generation and targeted revisions. The Cut scene images must be model-generated visualizations, not a deterministic collage of source photos and screenshots.
@@ -317,22 +405,23 @@ The storyboard is the main user-facing quality gate.
 
 ## Image Allocation Gate
 
-Before calling Seedance, explicitly map the image references:
-
-- `@图片1`: 当前分段故事板 only (`segment_01` for task 1 or `segment_02` for task 2).
-- `@图片2`: optional character board if a stable person identity is needed.
-- `@图片3`: product board 1.
-- `@图片4`: optional product board 2.
+Before calling Seedance, compile one ordered image-role manifest and its
+`usfr-multimodal-reference-binding/v2` sidecar. The actual provider array is
+continuous and contains one to nine images: present model identity first,
+present product/App truth second, every original approved director-board page
+next, then only explicitly scoped additional references. Each descriptor binds
+the exact URL, SHA-256, artifact name, `@ImageN`, role, Cut IDs, purpose, and
+storyboard page/approval-set data where applicable. Duplicate indices, tags,
+URLs, SHA values, page numbers, or overlapping storyboard Cut scopes fail
+closed. Uploads without Prompt use and Prompt tags without uploads also fail.
 
 Never send a whole-video storyboard to both tasks. Keep the full reference
 video in verified tenant-private object storage or a lease-owned server-side
 temporary volume; it remains the source-analysis master and must never be
 uploaded to Seedance. For each generated task, upload its exact current 2-15
-second matching original source segment at `videoUrls[0]`, the approved director
-board at `imageUrls[0]` / `@Image1`, then only fixed-slot target references.
-Source Cut/keyframe sheets and replacement-control sheets must never be sent to
-Seedance. If there are too many product photos, instruct the user to combine
-them into one or two product boards before submission.
+second matching original source segment at `videoUrls[0]` and the complete
+ordered image set. Source Cut/keyframe sheets and replacement-control sheets
+must never be sent to Seedance.
 
 ## Seedance Internal Integrity Gate
 
@@ -342,7 +431,7 @@ The external installed `seedance-20` skill is mandatory for this compile/audit
 step and is not vendored by this bundled module. If it is unavailable, stop
 before any paid request.
 
-1. Compile through `seedance-20`, preserving the complete approved Cuts, four-image mapping, fixed-B payload, and all negative constraints.
+1. Compile through `seedance-20`, preserving the complete approved Cuts, one-to-nine-image binding, fixed-B payload, and all negative constraints.
 2. Build the exact final payload and run `scripts/runninghub_seedance_submit.py --dry-run` once as the pre-submit preview; do not create a paid task at this step.
 3. Run the `seedance-20` script-to-prompt parity audit against that exact dry-run request and write the required audit JSON artifact (`auditor`, `status`, exact request/prompt digests, approved script digest, compiler provenance, contract digests, factor coverage, zero ambiguities, and every required check in `references/seedance-20-integrity-gate.md`).
 4. Submit only the exact audited payload with `--approved-request-sha256 <digest>` matching the saved dry-run request SHA-256; audit, script, and contract artifacts remain server-side integrity evidence.
@@ -392,8 +481,7 @@ Standard Model fixed-B plus the approved `background_music` extension when suppl
 and documented direct image/audio/video URL fields: at most one exact `audioUrls`
 item carrying `@Audio1`, one exact matching original source segment at
 `videoUrls[0]` under `usfr-video-reference/v1`, and the approved director board
-at `imageUrls[0]` / `@Image1`; later image positions contain only fixed-slot
-target references. It enables `realPersonMode` and has a non-empty target change
+    with the complete ordered image-binding digest. It enables `realPersonMode` and has a non-empty target change
 receipt. It must not upload the source-keyframe sheet or replacement-control
 sheet; those have already done their work upstream. The normal unauthorised dry run cannot carry
 `--approved-request-sha256`. Actual submission uses only
@@ -424,16 +512,18 @@ Calculate duration only from the ordered contiguous generated regions in
 
 Read `references/seedance-prompt.md` and `references/runninghub-standard-seedance-api.md` before assembling the final request.
 
-1. Confirm the user approved the storyboard and understands the four-image allocation.
+1. Verify the stored storyboard approval receipt and the internal one-to-nine-image
+   allocation contract. Do not ask the user to confirm or acknowledge the
+   allocation again.
 2. Upload the approved director board first, then the populated fixed-slot target references, optional duration-bounded audio fragment, and the matching 2-15 second original source segment. For a local source intake, pass `--source-video-file`, `--segment-plan-file`, and `--segment-id` to `scripts/runninghub_seedance_submit.py`: it materializes that exact frozen window locally before upload, reuses the complete source only when it is itself the 2-15 second window, and otherwise writes a cached FFmpeg slice. Bind every returned public HTTPS URL to its exact input SHA-256; do not reuse an expired URL from another account.
-3. Run `scripts/runninghub_seedance_submit.py --dry-run` with those URLs as the pre-submit request. The request uses exactly the matching original source segment at `videoUrls[0]` plus `usfr-video-reference/v1`, the approved director board at `imageUrls[0]` / `@Image1`, then only fixed-slot target references. Do not upload source keyframe sheets or replacement-control sheets at this stage. The approved dry run and paid submission must reuse the same source-slice SHA-256. Opaque UI and tail media are forbidden.
-4. Build each segment prompt under 5000 characters. Repeat that segment's complete approved Cuts as text, with global Cut numbers, local timecodes, actual `@图片1` to `@图片4` mapping, incoming/outgoing continuity anchors, 脚本描述, camera/action direction, product/person identity lock, 口播内容, sound, continuity, and 备注. Never replace these fields with “follow the storyboard image.”
+3. Run `scripts/runninghub_seedance_submit.py --dry-run` with `--image-role-manifest`. The request uses exactly the matching original source segment at `videoUrls[0]` plus `usfr-video-reference/v1` and the complete ordered image binding. Do not upload source keyframe sheets or replacement-control sheets at this stage. The approved dry run and paid submission must reuse the same source-slice SHA-256. Opaque UI and tail media are forbidden.
+4. Build each segment prompt under 5000 characters. Repeat that segment's complete approved Cuts as text, with global Cut numbers, local timecodes, the actual `@Image1` through `@Image9` mapping in use, incoming/outgoing continuity anchors, 脚本描述, camera/action direction, product/person identity lock, 口播内容, sound, continuity, and 备注. Never replace these fields with “follow the storyboard image.”
 5. Do not use any legacy `reference_audios` field. Approved uploaded music is
    accepted only as one `audioUrls` item plus an explicit `@Audio1` prompt
    reference.
 6. Audio policy: request voiceover plus environment/action sound, and **不默认添加背景音乐** unless the user explicitly asks for music or uploads `background_music`.
 7. Run one dry-run, save the exact prompt/request and `approval_preview.json`, then complete the `seedance-20` parity audit, write the audit artifact, and authorize the exact digest.
-8. Submit through `seedance-2.0-fast-token/multimodal-video` at `720p`, `9:16`, duration 4–15, with the matching original source segment at `videoUrls[0]`, the approved director board at `imageUrls[0]` / `@Image1`, only fixed-slot target references afterward, and optional one `audioUrls` entry for `@Audio1`. Use `generateAudio=true` and an `--approved-request-sha256` matching the audited dry run.
+8. Submit through `seedance-2.0-fast-token/multimodal-video` at `720p`, `9:16`, duration 4–15, with the matching original source segment at `videoUrls[0]`, the complete ordered image binding, and optional one `audioUrls` entry for `@Audio1`. Use `generateAudio=true` and an `--approved-request-sha256` matching the audited dry run.
 9. When `opaque_ui_demo` or supplied `excluded_app_end_card` exists, submit only contiguous generated regions. Never upload or send those opaque videos to RunningHub Seedance, and never mention their visual contents in the Seedance prompt.
 
 Never make a paid Seedance call until the latest storyboard has been approved and the internal parity audit authorizes the exact audited digest. Normal submission does not require a user prompt confirmation.
@@ -473,8 +563,12 @@ When a Seedance task completes, immediately download the returned `results[].url
 - Use `--resume-task-id` to continue a known Seedance task instead of submitting a duplicate paid task.
 - Retry 429 and transient 5xx responses only for idempotent query/readiness calls. RunningHub media upload is never automatically retried after a 429, 5xx, timeout, connection reset, or ambiguous response. Paid Seedance create is never automatically retried after a 429, 5xx, timeout, connection reset, or ambiguous response. Preserve the audited request, reconcile provider state, and resume only a known task ID. Treat 401/403 as configuration errors.
 - If a required RunningHub upload fails, expires, or cannot be bound to its local SHA-256, do not submit Seedance.
-- Reject a planned or dry-run payload with a non-empty `videoUrls` unless it has exactly one current-segment URL and a valid `usfr-video-reference/v1` receipt. Missing target changes, a missing `@Image1` storyboard, a wrong segment window, opaque UI, or tail media blocks before submission.
-- `[SY_ERR:10] PROVIDER_MODERATION_ERROR: TRADEMARK`: do not retry unchanged. Clearly report the trademark moderation point, return to the storyboard prompt/image approval loop, and explain that changing the prompt may not be enough when the uploaded product image itself contains the mark. Never silently remove a product logo; obtain user approval before a compliant debranded or replacement asset is used.
+- Reject a planned or dry-run payload with a non-empty `videoUrls` unless it has exactly one current-segment URL, a valid `usfr-video-reference/v1` receipt, and a complete `usfr-multimodal-reference-binding/v2` sidecar. Missing target changes, any missing approved storyboard page, a wrong segment window, opaque UI, or tail media blocks before submission.
+- `[SY_ERR:10] PROVIDER_MODERATION_ERROR: TRADEMARK`: do not retry unchanged.
+  Clearly report the trademark moderation point. Any compliant copy or asset
+  change must return through the existing script-file or storyboard-image
+  revision gate; never create a separate moderation or asset approval. Never
+  silently remove a product logo.
 - A bare `[SY_ERR:10] PROVIDER_MODERATION_ERROR` has no known subtype. Report it as an unspecified moderation failure and preserve the raw message; never infer `TRADEMARK` unless the provider returned that token.
 - `[SY_ERR:10] Read timed out`, `s3 upload failed`, or `connection reset by peer`: treat as an ambiguous provider media-fetch failure. Do not change the prompt or create a replacement paid task. Preserve the original audited request, enter the existing provider-reconciliation/user-action blocker, and resume only when a known task ID or authoritative provider lookup resolves the outcome.
 - `video_reference ... DURATION_TOO_LONG`: keep the existing task unmodified, report the invalid reference window, and require a current source segment shortened to 15 seconds or less. Do not submit another paid task until the corrected dry run is approved.
@@ -492,7 +586,7 @@ dual-stage requirements captured in the canonical profile reference
 `2026-07-17-universal-high-fidelity-hybrid-seedance20-dual-stage-design.md`)
 and deepen the
 existing stages without changing routes, approvals, provider limits, or the
-four-image map. The single dynamics pass may emit
+one-to-nine-image map. The single dynamics pass may emit
 `analysis/high_fidelity_analysis.json` (Source Intent Graph, Target Value
 Graph, claim atoms, affordance ledger, and layer ledger). Use the bundled
 `analyze-reference-video-dynamics` and `replicate-source-ui-overlays` modules;
@@ -530,8 +624,7 @@ timing verbatim, then run the existing unauthorized dry-run and 13-check audit.
 No paid task is allowed before zero ambiguity, no unresolved placeholders, and
 fixed-B closure. Every source-fidelity generated run sends its exact approved
 source segment in `videoUrls[0]` under `usfr-video-reference/v1`, the approved
-director board at `imageUrls[0]` / `@Image1`, and only fixed-slot target
-references afterward; opaque media never enters the request. The approved `background_music` extension uses one
+complete ordered image binding; opaque media never enters the request. The approved `background_music` extension uses one
 `audioUrls` item plus prompt `@Audio1`.
 Bind `@Audio1` to a silence-padded reference audible only in original source
 music cut-in/cut-out windows; never loop, stretch, advance, delay, or fill

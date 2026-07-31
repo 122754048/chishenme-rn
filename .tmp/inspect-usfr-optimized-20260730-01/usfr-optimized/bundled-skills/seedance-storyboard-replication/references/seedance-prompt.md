@@ -11,34 +11,46 @@ the approved director board. The current matching original source segment and
 the approved director board supply the fixed Seedance references.
 
 The storyboard image is a visual reference; do not rely on text rendered inside
-the storyboard image for script instructions. Confirmed visible text is first
-rendered as a deterministic approved-text layer on the approved director board
-or deterministic overlay. Seedance must not generate, read, or transcribe those
-glyphs. A normal `no screen text` negative applies only to model-generated scene
-text and does not suppress the deterministic approved-text layer. 不要依赖故事板图片中的文字，也不要要求 Seedance 自行识别图片里的完整脚本、口播或备注。Repeat the complete approved script as prompt text.
+the storyboard image for script instructions. Route visible text by carrier.
+**Scene-surface text** is part of a physical prop or material and must already
+exist in the replacement-control sheet and director board. Repeat its exact
+wording, carrier, surface location, and physical behavior in the relevant Cut:
+it moves, bends, folds, rotates, occludes, and tears with its carrier. This
+scene-surface text must be written explicitly into the Seedance Cut prompt.
+**Deterministic overlay text** such as subtitles/captions/CTAs is composited in
+post and Seedance must not generate, read, or transcribe those overlay glyphs.
+不要依赖故事板图片自行识别完整脚本、口播或备注。Repeat the complete approved script as prompt text.
 
 Use the fixed B route for every source-fidelity generated segment: upload exactly
-one matching frozen original source segment at `videoUrls[0]`, the approved
-director board at `imageUrls[0]` / `@Image1`, then only fixed-slot target
-references. Source Cut/keyframe sheets and replacement-control sheets must
-never be sent to Seedance. The matching source segment is the exact current
-2-15 second window; the full source video must never be uploaded. 禁止发送
-`reference_videos`.
+one matching frozen original source segment at `videoUrls[0]` plus at most nine
+images bound by `usfr-multimodal-reference-binding/v2` under
+`continuous-present-role-order/v1`. @Image1 is the new model
+identity when a model replacement is populated; product or App truth follows
+the model identity when populated; approved director storyboard PNG pages
+follow the populated target-truth images; additional verified references follow
+only with explicit purpose and Cut scope. Absent roles compact left without a
+placeholder, and the actual index/tag is frozen in the binding sidecar. Source
+Cut/keyframe sheets and replacement-control sheets must never be sent to
+Seedance. The matching source segment is the exact current 2-15 second window;
+the full source video must never be uploaded. 禁止发送 `reference_videos`.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved director board at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets and replacement-control sheets must never be sent to Seedance.
+Every approved storyboard page is uploaded as its original confirmed PNG. The
+workflow must not generate, merge, crop, or substitute an execution carrier.
+`seedance_execution_carrier.png` is forbidden. A single `storyboard_url` is
+invalid. Enforce `uploaded_tags == binding_tags == prompt_tags`. @Video1 is a
+video-slot reference and never consumes an image index. @Audio1 is an
+audio-slot reference and never consumes an image index.
 
-1. Actual image-number mapping. Upload only approved storyboard and target
-   images to the RunningHub Standard Model account and bind each returned
-   public HTTPS URL to its immutable input SHA-256. The fixed-B request places
-   the approved director board at `imageUrls[0]` / `@Image1`, then only
-   fixed-slot target references, and uploads the matching frozen original source
-   slice to `videoUrls[0]` with its `usfr-video-reference/v1` binding:
-   - `@图片1` is the approved director board for the current segment only, such as `storyboards/segment_01_v1.png` for task 1 or `storyboards/segment_02_v1.png` for task 2.
-   - `@图片2` is the optional character board only when `new_model_image` is populated.
-   - `@图片3` is product board 1 only when `new_product_image` is populated.
-   - `@图片4` is optional product board 2 only when additional supplied product evidence is populated.
-   - Do not invent an image reference for an absent slot. Source-origin KEEP
-     intervals are excluded from the prompt and provider payload.
+1. Actual image-number mapping. Upload only approved target truth, original
+   approved storyboard pages, and explicitly scoped additional references.
+   Bind each returned public HTTPS URL to immutable SHA-256 evidence. Compile
+   the actual continuous order from present roles:
+   - `@Image1` is the new model identity when populated.
+   - The next `@ImageN` is product or App truth when populated.
+   - The next one or two `@ImageN` values are the original approved director-board pages in page order.
+   - `@Image5` through `@Image9` may be used only for additional verified references with explicit Cut scope and purpose.
+   - An absent role creates no placeholder. The next present role compacts left
+     and its actual index/tag is recorded in the sidecar and repeated in the Prompt.
 2. State the global segment plan, selected narrative split, current segment index, source time range, segment-local duration, incoming continuity state, outgoing continuity state, and adjacent segment handoff. `videoUrls[0]` controls only the matching source motion, camera rhythm, and environment continuity; it never replaces the approved director board or target truth.
 3. Global product and character identity locks. Keep product shape, color, logo, packaging, material, scale, and use method consistent. Keep face, hairstyle, outfit, body proportion, and temperament consistent when a character board exists.
 4. 当前分段的完整分镜脚本, repeated Cut by Cut. Keep global Cut numbers and segment-local timecodes. Every Cut must include all of these fields:
@@ -50,10 +62,10 @@ Reference order: matching original source segment at `videoUrls[0]`; approved di
    - `备注`: environment/action sound, lighting, mood, speed, continuity, and Cut-local negative constraints.
 5. Voiceover plus environment/action sound; no background music by default.
 6. Boundary continuity constraints. For segment 1, end in the exact outgoing state needed by segment 2. For segment 2, start from the exact incoming state produced by segment 1. Separate generations may not perfectly match frames, so the prompt must lock pose, product position, environment direction, screen direction, lighting, and audio handoff in text.
-7. Global negative constraints: no subtitles and no screen text generated by
-   the model, no invented shots, no reordered Cuts, no product deformation, and
-   no identity drift. This does not suppress the deterministic approved-text
-   layer already rendered on the approved director board or deterministic overlay.
+7. Global negative constraints: no model-generated subtitles, no unapproved
+   floating text, no invented shots, no reordered Cuts, no unapproved product
+   deformation, and no identity drift. This does not suppress approved scene-
+   surface text or deterministic overlay text.
 8. Keep the whole prompt under 5000 characters with no unresolved image-number placeholders and no generic time placeholders. Compress repeated global wording before shortening any Cut's script facts. If the approved segment prompt cannot fit without losing facts, ask the user to simplify the segment instead of omitting them.
 
 Never use vague substitutions such as “follow the storyboard,” “same as the reference,” or “continue similarly” in place of the Cut fields above.
@@ -102,7 +114,7 @@ This is a physical-product example only. It is not the default structure or
 visual language for App, service, brand, creator/story, or no-product routes;
 those routes compile from their approved Source Fidelity Contract and Cut text.
 
-Use `@图片1` as the approved director board, `@图片2` as the character board, and `@图片3` as the product board. Do not read instructions from text inside `@图片1`. Follow the full Cut text for timing, motion, and transitions. Keep the exact person identity from `@图片2`. Keep the exact product appearance from `@图片3`: same color, shape, material, logo placement, packaging details, and real use method. Do not redraw or redesign the product. The matching original source slice is always `videoUrls[0]` under `usfr-video-reference/v1`; opaque UI and tail media never enter the request.
+Use `@Image1` as the character identity, `@Image2` as product truth, and `@Image3` as the approved director-board page in this three-image example. Do not read instructions from text inside `@Image3`. Follow the full Cut text for timing, motion, and transitions. Keep the exact person identity from `@Image1`. Keep the exact product appearance from `@Image2`: same color, shape, material, logo placement, packaging details, and real use method. Do not redraw or redesign the product. The matching original source slice is always `videoUrls[0]` / `@Video1` under `usfr-video-reference/v1`; opaque UI and tail media never enter the request.
 
 Segment context: Segment 1/2, global source `00.0-14.0s`, local duration `14.0s`. Incoming state: opening state, product off-screen in the user's right hand. Outgoing state: product held upright at chest height, front logo facing camera, character looking toward product, soft window light from camera left. Segment 2 must start from that outgoing state.
 
@@ -112,7 +124,7 @@ Cut 1
 - 时间: `00.0-03.0s`
 - 脚本描述: At a kitchen counter, the user reaches into frame, takes the product from beside a cup, raises it to chest height, and turns its front toward camera.
 - 镜头: Medium shot at counter height; stable handheld phone feeling; slight push-in following the hand; hard cut at the completed turn.
-- 人物与产品: Match the face, hair, outfit, and body proportion from `@图片2`; product must match `@图片3` and remain unobstructed.
+- 人物与产品: Match the face, hair, outfit, and body proportion from `@Image1`; product must match `@Image2` and remain unobstructed.
 - 口播内容: “这个小东西我最近每天都会用。”
 - 备注: Soft window daylight; light room tone and hand contact sound; no subtitles, no extra product, no deformed fingers.
 
@@ -120,7 +132,7 @@ Cut 2
 - 时间: `03.0-06.5s`
 - 脚本描述: The hand slowly rotates the product from front to side, pauses on the key texture, then tilts it so the material catches the light.
 - 镜头: Tight close-up; small controlled arc movement; shallow depth of field; match cut from Cut 1 hand position.
-- 人物与产品: Same hand, sleeve, product scale, color, material, and logo placement as Cut 1 and `@图片3`; no redesign.
+- 人物与产品: Same hand, sleeve, product scale, color, material, and logo placement as Cut 1 and `@Image2`; no redesign.
 - 口播内容: “主要是细节做得很扎实。”
 - 备注: Subtle handling and material-friction sound; preserve left-to-right motion continuity; no model-generated screen text, no warped logo.
 
@@ -128,7 +140,7 @@ Cut 3
 - 时间: `06.5-11.0s`
 - 脚本描述: Over the user's shoulder, show the complete real use action: open the product, apply it to the intended area, finish the action, and set it beside the result.
 - 镜头: Over-shoulder medium close-up; follow the hand with a small downward tilt; no missing action steps.
-- 人物与产品: Same character identity and outfit from `@图片2`; exact product construction and real use method from `@图片3`.
+- 人物与产品: Same character identity and outfit from `@Image1`; exact product construction and real use method from `@Image2`.
 - 口播内容: “用起来比我想的顺手很多。”
 - 备注: Realistic use sound and small countertop movement; natural speed; no invented usage, no product-body intersection.
 
@@ -140,7 +152,7 @@ Cut 4
 - 口播内容: “想要省事一点，可以直接试这个。”
 - 备注: Natural room tone, no background music; no sales banner, subtitle, extra logo, extra character, or identity drift.
 
-Negative: no model-generated subtitles, no model-generated floating text, no extra logo, no extra character, no invented scene, no reordered Cuts, no product shape change, no wrong color, no identity drift. These negatives do not suppress the deterministic approved-text layer.
+Negative: no model-generated subtitles, no unapproved floating text, no extra logo, no extra character, no invented scene, no reordered Cuts, no product shape change, no wrong color, no identity drift. These negatives do not suppress approved scene-surface text or deterministic overlay text.
 The exact dry-run payload is audited by `seedance-20`; write the audit JSON
 artifact before submitting with `--approved-request-sha256`. The artifact must
 bind the request and compiled prompt digests and pass every required boolean
@@ -158,8 +170,8 @@ exact-byte hash, and metadata version must match compiler provenance.
 The audited payload is fixed-B only: RunningHub model
 `seedance-2.0-fast-token`, `720p`, `9:16`, 4–15 seconds,
 `generateAudio=true`, the matching original source slice at `videoUrls[0]` under
-`usfr-video-reference/v1`, the approved director board at `imageUrls[0]` /
-`@Image1`, and only fixed-slot target references afterward. Source Cut/keyframe
+`usfr-video-reference/v1`, and the complete ordered one-to-nine-image binding.
+Source Cut/keyframe
 sheets and replacement-control sheets must never be sent to Seedance. The request
 uses documented `imageUrls`, optional one duration-bounded `audioUrls`
 item for approved `background_music`, no unknown

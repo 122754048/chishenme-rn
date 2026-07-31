@@ -14,6 +14,7 @@ in their existing authoritative modules.
 from __future__ import annotations
 
 from contextlib import ExitStack, contextmanager
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 import hashlib
 import importlib.util
@@ -29,8 +30,8 @@ import time
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from .analysis_scope import build_analysis_scope, build_execution_scope, promote_deferred_tool
 from .errors import ReplicationError
+from .ffmpeg_encoding import video_encoder_args
 from .audio_provider_authorization import (
     AudioProviderAuthorizationError,
     mint_audio_provider_authorization,
@@ -45,20 +46,14 @@ from .production_ports import (
     _StoryboardRevisionStage,
 )
 from .review_models import RevisionManifest, StoryboardCutRef
-from .source_evidence_bundle import build_source_evidence_bundle
-from .storyboard_layout_contract import (
-    StoryboardLayoutError,
-    TEMPLATE_PATH as STORYBOARD_TEMPLATE_PATH,
-    compile_daohuo_storyboard_prompt,
-    render_director_board,
-    validate_storyboard_layout_receipt,
-)
 from .runninghub_standard_contract import (
     RunningHubStandardPayloadError,
     build_provider_audit_proof,
+    image_reference_binding_sha256,
     validate_audio_reference_artifact_receipt,
     validate_audio_reference_binding,
     validate_final_reference_lineage,
+    validate_image_reference_binding,
     validate_runninghub_standard_payload_contract,
     validate_video_reference_binding,
 )
@@ -69,6 +64,27 @@ from .visible_text_contract import (
     split_visible_text_locks_by_render_route,
     visible_text_locks_sha256,
 )
+
+
+def _run_ordered_parallel(
+    items: Sequence[Any],
+    operation: Any,
+    *,
+    max_workers: int = 2,
+) -> list[Any]:
+    values = list(items)
+    if len(values) <= 1 or max_workers <= 1:
+        return [operation(value) for value in values]
+    with ThreadPoolExecutor(
+        max_workers=min(max_workers, len(values)),
+        thread_name_prefix="usfr-provider-io",
+    ) as executor:
+        return list(executor.map(operation, values))
+
+
+def _provider_poll_delay(poll_index: int) -> float:
+    schedule = (3.0, 5.0, 8.0, 12.0, 15.0)
+    return schedule[min(max(int(poll_index), 0), len(schedule) - 1)]
 
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -548,91 +564,6 @@ class RouteRegionsStage:
                 return candidate.strip()
         return "und"
 
-    @staticmethod
-    def _cut_has_vocal_content(cut: Mapping[str, Any]) -> bool:
-        if any(
-            cut.get(field) is True
-            for field in (
-                "contains_speech",
-                "contains_dialogue",
-                "visible_singing",
-                "contains_singing",
-                "speaking",
-                "singing",
-            )
-        ):
-            return True
-        return any(
-            isinstance(cut.get(field), str) and bool(str(cut.get(field)).strip())
-            for field in ("dialogue", "speech", "lyrics", "transcript", "spoken_text", "sung_text")
-        )
-
-    @classmethod
-    def _promotion_receipts(
-        cls,
-        *,
-        context: Any,
-        manifest: Mapping[str, Any],
-        cuts: Sequence[Mapping[str, Any]],
-        regions: Sequence[Mapping[str, Any]],
-    ) -> list[dict[str, Any]]:
-        analysis_scope = getattr(context, "analysis_scope", None)
-        if not isinstance(analysis_scope, Mapping) or not analysis_scope:
-            analysis_scope = build_analysis_scope(manifest)
-        tools = analysis_scope.get("tools")
-        tools = tools if isinstance(tools, Mapping) else {}
-        receipts: list[dict[str, Any]] = []
-
-        def promote(tool_name: str, region_ids: Sequence[str], reason: str) -> None:
-            decision = tools.get(tool_name)
-            if not isinstance(decision, Mapping) or decision.get("status") != "deferred" or not region_ids:
-                return
-            receipts.append(
-                promote_deferred_tool(
-                    scope=analysis_scope,
-                    tool_name=tool_name,
-                    region_ids=region_ids,
-                    reason=reason,
-                )
-            )
-
-        generated_ui_ids = [
-            str(item.get("region_id"))
-            for item in regions
-            if item.get("media_origin") == "generated_ui"
-        ]
-        generated_video_ids = [
-            str(item.get("region_id"))
-            for item in regions
-            if item.get("media_origin") == "generated"
-        ]
-        generated_ids = [*generated_ui_ids, *generated_video_ids]
-        if generated_ui_ids:
-            for tool_name, reason in (
-                ("source_ocr", "generated UI regions require source ROI text evidence"),
-                ("target_ui_ocr", "generated UI regions require target UI text evidence"),
-                ("ui_rebuild", "generated UI regions require deterministic reconstruction"),
-                ("app_store_evidence", "generated UI regions consume official App Store evidence"),
-            ):
-                promote(tool_name, generated_ui_ids, reason)
-        promote("storyboard", generated_ids, "generated regions require the approved director board set")
-        promote("seedance_video", generated_video_ids, "non-UI generated regions require Seedance video")
-
-        cuts_by_id = {
-            str(cut.get("cut_id") or f"C{index:02d}"): cut
-            for index, cut in enumerate(cuts, start=1)
-            if isinstance(cut, Mapping)
-        }
-        vocal_region_ids: list[str] = []
-        for region in regions:
-            if region.get("media_origin") not in {"generated", "generated_ui"}:
-                continue
-            cut_ids = region.get("cut_ids") or ()
-            if any(cls._cut_has_vocal_content(cuts_by_id.get(str(cut_id), {})) for cut_id in cut_ids):
-                vocal_region_ids.append(str(region.get("region_id")))
-        promote("source_asr", vocal_region_ids, "generated vocal regions require one timestamped source transcription")
-        return receipts
-
     def run(self, *, context: Any, input_artifacts: Sequence[Mapping[str, Any]]) -> Mapping[str, Any]:
         del input_artifacts
         dynamics = _stage_output(context, "analyze_dynamics").get("source_dynamics_analysis")
@@ -642,9 +573,6 @@ class RouteRegionsStage:
             raise _replication_error("CONTRACT_INVALID", "source dynamics has no ordered Cuts")
         snapshot = getattr(context, "snapshot", None)
         manifest = getattr(snapshot, "slots_manifest", None)
-        analysis_scope = getattr(context, "analysis_scope", None)
-        if not isinstance(analysis_scope, Mapping) or not analysis_scope:
-            analysis_scope = build_analysis_scope(manifest if isinstance(manifest, Mapping) else {})
         routes = manifest.get("routes") if isinstance(manifest, Mapping) else None
         routes = dict(routes) if isinstance(routes, Mapping) else {}
         model_change = _present(context, "new_model_image")
@@ -733,50 +661,8 @@ class RouteRegionsStage:
             "seedance_generation_required": any(item["media_origin"] == "generated" for item in regions),
         }
         envelope["timeline_regions_sha256"] = _sha(envelope)
-        promotion_receipts = self._promotion_receipts(
-            context=context,
-            manifest=dict(manifest) if isinstance(manifest, Mapping) else {},
-            cuts=[dict(item) for item in cuts if isinstance(item, Mapping)],
-            regions=regions,
-        )
-        final_execution_scope = build_execution_scope(
-            analysis_scope,
-            promotion_receipts=promotion_receipts,
-            finalized=True,
-        )
-        generated_ui_ids = [
-            str(item.get("region_id"))
-            for item in regions
-            if item.get("media_origin") == "generated_ui"
-        ]
-        prior_outputs = getattr(context, "stage_outputs", {})
-        prior_outputs = prior_outputs if isinstance(prior_outputs, Mapping) else {}
-        probe_output = prior_outputs.get("probe_source")
-        probe = probe_output.get("probe", probe_output) if isinstance(probe_output, Mapping) else {}
-        analysis_output = prior_outputs.get("analyze_dynamics")
-        analysis_output = analysis_output if isinstance(analysis_output, Mapping) else {}
-        dynamics_evidence = analysis_output.get("source_dynamics_analysis")
-        dynamics_evidence = dynamics_evidence if isinstance(dynamics_evidence, Mapping) else {}
-        bundle = build_source_evidence_bundle(
-            probe=probe if isinstance(probe, Mapping) else {},
-            timeline=envelope,
-            execution_scope=final_execution_scope,
-            semantic_evidence=dynamics_evidence,
-            audio_evidence=analysis_output.get("audio_contract") if isinstance(analysis_output.get("audio_contract"), Mapping) else {},
-            ui_evidence={
-                "generated_region_ids": generated_ui_ids,
-                "source_ui_cut_ids": [str(item.get("region_id")) for item in regions if item.get("media_origin") == "source_interval" and item.get("region_type") == "source_interval"],
-            },
-        )
         published = _publish_json(context, kind="timeline_regions", value=envelope)
-        published_bundle = _publish_json(context, kind="source_evidence_bundle", value=bundle)
-        return {
-            "status": "ready",
-            "timeline_regions": envelope,
-            "tool_promotion_receipts": promotion_receipts,
-            "source_evidence_bundle": bundle,
-            "published_artifacts": [published, published_bundle],
-        }
+        return {"status": "ready", "timeline_regions": envelope, "published_artifacts": [published]}
 
 
 class StoryboardStage:
@@ -1002,6 +888,11 @@ class StoryboardStage:
                 source_sha256 = str(media.sha256 or "").lower()
                 if _SHA256.fullmatch(source_sha256) is None:
                     raise _replication_error("ARTIFACT_HASH_MISMATCH", "source video has no immutable SHA-256", category="artifact")
+                fps_num = int(source_dynamics.get("fps_num") or 30)
+                fps_den = int(source_dynamics.get("fps_den") or 1)
+                if fps_num <= 0 or fps_den <= 0:
+                    fps_num, fps_den = 30, 1
+                frame_specs: list[dict[str, Any]] = []
                 for index, raw_cut in enumerate(cuts, start=1):
                     cut = _mapping(raw_cut, f"source Cut {index}")
                     cut_id = str(cut.get("cut_id") or f"C{index:02d}")
@@ -1011,18 +902,44 @@ class StoryboardStage:
                     # A point inside the Cut avoids cross-cut decode ambiguity while
                     # keeping the frame maximally close to the recorded transition.
                     timestamp_us = start_us + min(100_000, max(0, (end_us - start_us - 1) // 2))
-                    frame_path = work_dir / f"source-{cut_id}.png"
-                    command = [
-                        "ffmpeg", "-v", "error", "-y", "-i", str(source_path),
-                        "-ss", f"{timestamp_us / 1_000_000:.6f}", "-frames:v", "1",
-                        "-map_metadata", "-1", "-f", "image2", str(frame_path),
-                    ]
-                    subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+                    frame_index = max(
+                        0,
+                        int(round(timestamp_us * fps_num / (1_000_000 * fps_den))),
+                    )
+                    frame_specs.append(
+                        {
+                            "cut_id": cut_id,
+                            "timestamp_us": timestamp_us,
+                            "frame_index": frame_index,
+                        }
+                    )
+                unique_indices = list(dict.fromkeys(item["frame_index"] for item in frame_specs))
+                select_expression = "+".join(
+                    f"eq(n\\,{frame_index})" for frame_index in unique_indices
+                )
+                batch_pattern = work_dir / "source-batch-%03d.png"
+                command = [
+                    "ffmpeg", "-v", "error", "-y", "-i", str(source_path),
+                    "-vf", f"select='{select_expression}'", "-vsync", "0",
+                    "-map_metadata", "-1", "-f", "image2", str(batch_pattern),
+                ]
+                subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+                extracted = sorted(work_dir.glob("source-batch-*.png"))
+                if len(extracted) != len(unique_indices):
+                    raise _replication_error(
+                        "PROVIDER_RESULT_INVALID",
+                        "source keyframe batch extraction returned an unexpected frame count",
+                        category="artifact",
+                    )
+                by_frame_index = dict(zip(unique_indices, extracted))
+                for spec in frame_specs:
+                    frame_path = work_dir / f"source-{spec['cut_id']}.png"
+                    shutil.copyfile(by_frame_index[spec["frame_index"]], frame_path)
                     if not frame_path.is_file() or frame_path.stat().st_size <= 0:
-                        raise _replication_error("PROVIDER_RESULT_INVALID", f"source keyframe extraction failed for {cut_id}", category="artifact")
+                        raise _replication_error("PROVIDER_RESULT_INVALID", f"source keyframe extraction failed for {spec['cut_id']}", category="artifact")
                     frame_bytes = frame_path.read_bytes()
                     StoryboardStage._png_dimensions(frame_bytes)
-                    frames.append((frame_path, {"cut_id": cut_id, "timestamp_us": timestamp_us, "sha256": hashlib.sha256(frame_bytes).hexdigest()}))
+                    frames.append((frame_path, {"cut_id": spec["cut_id"], "timestamp_us": spec["timestamp_us"], "sha256": hashlib.sha256(frame_bytes).hexdigest()}))
         except ReplicationError:
             raise
         except (OSError, subprocess.SubprocessError, KeyError, TypeError, ValueError) as exc:
@@ -1080,17 +997,21 @@ class StoryboardStage:
         reference_index = 2
         if _present(context, "new_model_image"):
             target_roles.append(
-                f"Reference image {reference_index} authorizes only the replacement model identity. Preserve the source pose, action, "
-                "gesture, expression, gaze, mouth state, head/body angle, wardrobe, hands, props and interaction."
+                f"Reference image {reference_index} is new_model_image target truth: replace only the authorized model identity layer "
+                "(identity-bearing face, hair, skin and body appearance). Preserve the source person's exact pose, action, gesture, "
+                "facial expression, gaze, mouth state, head angle, body orientation, wardrobe, hand state and interaction."
             )
             reference_index += 1
         if _present(context, "new_product_image"):
             for product_index in range(min(2, len(_slot_sha256s(context, "new_product_image")))):
                 target_roles.append(
-                    f"Reference image {reference_index} authorizes only new_product_image[{product_index}] at the matching source location. "
-                    "Preserve its source scale, orientation, state, hand contact, occlusion and action timing."
+                    f"Reference image {reference_index} is new_product_image[{product_index}] target truth: replace only the authorized "
+                    "product/App-product layer at the matching source location. Preserve exact source scale, orientation, open/closed state, "
+                    "hand contact, occlusion, action state and screen position."
                 )
                 reference_index += 1
+        if not target_roles:
+            target_roles.append("No target visual layer is populated; preserve every source layer unchanged.")
         try:
             surface_locks = split_visible_text_locks_by_render_route(visible_text_locks)["generation_surface"]
         except VisibleTextContractError as exc:
@@ -1100,20 +1021,21 @@ class StoryboardStage:
                 f"In Cuts {', '.join(lock['cut_ids'])}, render the exact text {json.dumps(lock['approved_text'], ensure_ascii=False)} "
                 f"on physical carrier {json.dumps(lock['placement']['carrier_id'], ensure_ascii=False)}, "
                 f"{lock['placement']['surface_relation']}; it {lock['placement']['motion_behavior']}. "
-                "The glyphs are part of the carrier surface and share its perspective, occlusion, lighting, texture and deformation."
+                "The glyphs are part of the carrier surface, with the same perspective, occlusion, lighting, texture and deformation."
             )
             for lock in surface_locks
         )
         prompt = (
             "Create exactly one ordered-panel replacement control keyframe sheet. "
             f"It contains exactly {len(cut_ids)} panels in this order: {', '.join(cut_ids)}. "
-            "Reference image 1 is the complete source Cut contact sheet and is the sole authority for panel count/order and every non-replacement visual property. "
-            "Transform that one complete source sheet into one complete replacement-control sheet in this single Image2 operation. "
+            "Reference image 1 is the complete source Cut contact sheet and is the sole authority for panel layout and all non-replacement pixels. "
+            "Transform that one complete source sheet into one complete replacement-control sheet in this single image-to-image operation. "
             "Do not split the sheet, generate separate Cut images, redesign panels, restage the performance, or reinterpret the scene. "
             + " ".join(target_roles)
             + (" " + surface_text if surface_text else "")
-            + " Preserve source background, environment topology, image quality, lighting, color treatment, composition, camera angle, camera distance, "
-            "crop, subject scale/position, pose, action, gesture, facial expression, gaze, mouth state, hands, props, occlusion and continuity. "
+            + " Every non-authorized source property must remain unchanged: panel count and order, background, environment topology, image quality, "
+            "lighting, color treatment, composition, camera angle, camera distance, crop, subject position and scale, pose, action, gesture, "
+            "facial expression, gaze, mouth state, head angle, body orientation, hands, product interaction, props, occlusion and continuity. "
             "Do not invent scenery, change framing, add unapproved text, UI, logos, props, products or people. This is an internal control sheet, not a director storyboard."
         )
         try:
@@ -1136,11 +1058,24 @@ class StoryboardStage:
             source_keyframe_sheet_sha256=str(source_sheet["source_keyframe_sheet_sha256"]),
             replacement_control_sheet_sha256=digest,
             replacement_target_sha256s=self._visual_target_sha256s(context),
+            control_generation={
+                "provider": "runninghub_image2",
+                "mode": "single_sheet_image_to_image",
+                "source_sheet_count": 1,
+                "output_sheet_count": 1,
+                "image2_call_count": 1,
+            },
         )
         receipt = contract.validate_control_keyframe_manifest(source_dynamics, manifest)
         published = context.publish_bytes(
             kind="replacement_control_keyframe_sheet", data=image_bytes, content_type="image/png", expected_sha256=digest,
-            metadata={"source_keyframe_sheet_sha256": str(source_sheet["source_keyframe_sheet_sha256"]), "control_receipt_sha256": _sha(receipt)},
+            metadata={
+                "source_keyframe_sheet_sha256": str(source_sheet["source_keyframe_sheet_sha256"]),
+                "control_receipt_sha256": _sha(receipt),
+                "generator_kind": "runninghub_image2",
+                "generation_mode": "single_sheet_image_to_image",
+                "image2_call_count": 1,
+            },
         )
         published_receipt = _publish_json(context, kind="replacement_control_keyframe_receipt", value=receipt)
         return {"path": destination, "sha256": digest, "receipt": receipt, "published_artifacts": [published, published_receipt]}
@@ -1151,87 +1086,117 @@ class StoryboardStage:
         segment: Mapping[str, Any],
         cuts: Mapping[str, Mapping[str, Any]],
         visible_text_locks: Sequence[Mapping[str, Any]],
-        template_bytes: bytes,
-        character_reference_role: str,
-        product_reference_role: str,
     ) -> str:
         cut_ids = segment.get("cut_ids")
         selected = [cuts[str(cut_id)] for cut_id in cut_ids if str(cut_id) in cuts] if isinstance(cut_ids, list) else []
         if not selected:
             raise _replication_error("SEGMENT_PLAN_INVALID", "storyboard segment has no approved script Cuts")
+        beats = []
+        shot_cards: list[str] = []
+        exact_labels: list[str] = []
+        for cut in selected:
+            cut_id = str(cut.get("cut_id") or "CXX")
+            start_ms = int(cut.get("start_ms") or 0)
+            end_ms = int(cut.get("end_ms") or 0)
+            scene = str(cut.get("scene") or "approved source scene")
+            action = str(cut.get("action") or "approved action")
+            camera = str(cut.get("camera") or "approved source camera")
+            beats.append(
+                "scene=" + scene + "; action=" + action + "; camera=" + camera
+            )
+            shot_cards.append(
+                f"Cut {cut_id}\n"
+                f"画面：{scene}; {action}; {camera}\n"
+                f"标签：{cut_id}  {start_ms}-{end_ms}  KEEP SOURCE PERFORMANCE"
+            )
+            exact_labels.append(f"{cut_id}; {start_ms}-{end_ms}; KEEP PERFORMANCE")
         try:
             routed_text = split_visible_text_locks_by_render_route(visible_text_locks)
         except VisibleTextContractError as exc:
-            raise _replication_error("CONTRACT_INVALID", "storyboard visible text routing is invalid") from exc
-        beats: list[str] = []
-        labels: list[str] = []
-        for index, cut in enumerate(selected, start=1):
-            cut_id = str(cut.get("cut_id") or f"C{index:02d}")
-            start_ms = int(cut.get("start_ms") or 0)
-            end_ms = int(cut.get("end_ms") or 0)
-            action = str(cut.get("action") or "approved source action").strip()
-            scene = str(cut.get("scene") or "approved source scene").strip()
-            camera = str(cut.get("camera") or "approved source camera").strip()
-            action_tag = re.sub(r"[^A-Za-z0-9 ]+", " ", action).strip().upper()[:28] or "SOURCE ACTION"
-            label = f"{cut_id} {start_ms / 1000:.2f}-{end_ms / 1000:.2f} {action_tag} • KEEP SOURCE STATE"
-            labels.append(label)
-            beats.append(
-                f"{index}. Cut {cut_id}, {start_ms / 1000:.2f}-{end_ms / 1000:.2f}s: "
-                f"scene={scene}; action={action}; camera={camera}. Label: {label}."
+            raise _replication_error("CONTRACT_INVALID", "visible text carrier routing is invalid") from exc
+        for lock in routed_text["generation_surface"]:
+            exact_labels.append(
+                f"SCENE-SURFACE TEXT: exact {json.dumps(lock['approved_text'], ensure_ascii=False)} on "
+                f"{lock['placement']['carrier_id']}, {lock['placement']['surface_relation']}; "
+                f"{lock['placement']['motion_behavior']}"
             )
-        surface_instruction = (
-            "The following exact scene-surface text is part of its physical carrier and must already be visible in the generated Cut art: "
-            + " | ".join(
-                f"{','.join(str(value) for value in lock['cut_ids'])} {lock['start_ms']}-{lock['end_ms']}ms: "
-                f"{lock['approved_text']} on {lock['placement']['carrier_id']} at {lock['placement']['surface_relation']}; "
-                f"it {lock['placement']['motion_behavior']}"
-                for lock in routed_text["generation_surface"]
-            )
-            if routed_text["generation_surface"]
-            else "This segment has no approved scene-surface text."
+        for lock in routed_text["deterministic_overlay"]:
+            exact_labels.append(f"POST OVERLAY TEXT: {lock['approved_text']}")
+        template_path = (
+            Path(__file__).resolve().parents[1]
+            / "bundled-skills/seedance-storyboard-replication/references/daohuo_storyboard_prompt.md"
         )
-        overlay_instruction = (
-            "Do not generate or transcribe these deterministic overlay glyphs; the fixed approval-board layer and final compositor render them: "
-            + " | ".join(
-                f"{','.join(str(value) for value in lock['cut_ids'])} {lock['start_ms']}-{lock['end_ms']}ms: {lock['approved_text']}"
-                for lock in routed_text["deterministic_overlay"]
-            )
-            if routed_text["deterministic_overlay"]
-            else "There is no deterministic overlay text in this segment."
-        )
-        start_ms = int(segment.get("start_ms") or selected[0].get("start_ms") or 0)
-        end_ms = int(segment.get("end_ms") or selected[-1].get("end_ms") or 0)
-        duration_ms = int(segment.get("duration_ms") or (end_ms - start_ms))
-        values = {
-            "CONTENT_TYPE": "source-fidelity creator performance",
-            "PRODUCT_OR_SERVICE_TYPE": "none",
-            "VIDEO_TITLE": "SOURCE-FIDELITY CHARACTER REPLACEMENT",
-            "DURATION": f"{duration_ms / 1000:.3f}s",
-            "SEGMENT_INDEX": str(segment.get("segment_id") or "1/1"),
-            "SEGMENT_DURATION": f"{duration_ms / 1000:.3f}s",
-            "GLOBAL_CUT_RANGE": f"{selected[0].get('cut_id')}–{selected[-1].get('cut_id')}",
-            "SHOT_COUNT": str(len(selected)),
-            "TARGET_VIDEO_RATIO": "9:16",
-            "CHARACTER_REFERENCE_ROLE": character_reference_role,
-            "PRODUCT_REFERENCE_ROLE": product_reference_role,
-            "REFERENCE_VIDEO_ROLE": "Reference image 1 is the upstream replacement-control sheet; it alone locks Cut order and all non-replaced source attributes.",
-            "VISUAL_STYLE": "Realistic source-matched smartphone footage; preserve the observed lighting, texture and camera language.",
-            "COLOR_PALETTE": "Observed source palette only; preserve wardrobe, environment and approved deterministic overlay colors.",
-            "ENVIRONMENT_PLAN": "Preserve the approved source environment, subject position, screen direction and continuous action path.",
-            "CONTINUITY_MANIFEST": "Same authorized identity, source wardrobe, hands, props, environment, lighting, camera and action handoff across every Cut.",
-            "INCOMING_CONTINUITY": "Begin from the approved source opening state.",
-            "OUTGOING_CONTINUITY": "End at the approved source endpoint without freeze, extension or invented transition.",
-            "ADJACENT_BOARD_ROLE": "none",
-            "SHOT_CARDS": "\n".join(beats),
-            "EXACT_LABELS": "; ".join(labels),
-            "AUDIO_NOTE": "Preserve original dialogue, ambience and timing; no new music.",
-            "TRADEMARK_SAFETY_NOTE": "Do not invent or copy branding; preserve only authorized target evidence.",
-            "TASK_NEGATIVES": surface_instruction + " " + overlay_instruction,
-        }
         try:
-            return compile_daohuo_storyboard_prompt(template_bytes=template_bytes, values=values)["prompt"]
-        except StoryboardLayoutError as exc:
-            raise _replication_error("STORYBOARD_TEMPLATE_INVALID", "mandatory daohuo storyboard template could not compile", category="artifact") from exc
+            template = template_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise _replication_error(
+                "CAPABILITY_UNAVAILABLE",
+                "packaged director-storyboard prompt template is unavailable",
+                retryable=True,
+                category="capability",
+            ) from exc
+        prompt_start = template.find("Use case: infographic-diagram")
+        prompt_end = template.find("```", prompt_start)
+        if prompt_start < 0 or prompt_end < 0:
+            raise _replication_error(
+                "CONTRACT_INVALID",
+                "packaged director-storyboard template is missing its Image2 prompt block",
+            )
+        # The Markdown file contains operating guidance plus exactly one
+        # provider-ready fenced prompt. Only that fixed skeleton is admissible
+        # to Image2; documentation prose must never influence board layout.
+        template = template[prompt_start:prompt_end].strip()
+        values = {
+            "CONTENT_TYPE": "source-fidelity social video replication",
+            "PRODUCT_OR_SERVICE_TYPE": "none",
+            "VIDEO_TITLE": "Source Fidelity Director Board",
+            "DURATION": f"{int(segment.get('duration_ms') or 0)}ms",
+            "SEGMENT_INDEX": str(segment.get("segment_id") or "S01"),
+            "SEGMENT_DURATION": f"{int(segment.get('duration_ms') or 0)}ms",
+            "GLOBAL_CUT_RANGE": ", ".join(str(cut.get("cut_id") or "") for cut in selected),
+            "SHOT_COUNT": str(len(selected)),
+            "BOARD_PAGE_COUNT": "1",
+            "BOARD_PAGE_INDEX": "1",
+            "PAGE_CUT_RANGE": ", ".join(str(cut.get("cut_id") or "") for cut in selected),
+            "TARGET_VIDEO_RATIO": "9:16",
+            "CHARACTER_REFERENCE_ROLE": "Later target references cannot override Reference image 1; they provide authorized identity/product truth only.",
+            "PRODUCT_REFERENCE_ROLE": "none",
+            "REFERENCE_VIDEO_ROLE": "Reference image 1 is the replacement-control sheet and is the non-negotiable visual base for every Cut card.",
+            "VISUAL_STYLE": "source-faithful realistic live-action photography; preserve source camera, lighting, composition and color treatment",
+            "COLOR_PALETTE": "derive only from the replacement-control sheet",
+            "ENVIRONMENT_PLAN": "derive only from the replacement-control sheet; do not redesign the source environment",
+            "CONTINUITY_MANIFEST": "Preserve every approved Cut's identity/product layer, source environment, camera, lighting, direction, props and action handoff.",
+            "INCOMING_CONTINUITY": "first frame matches the replacement-control sheet",
+            "OUTGOING_CONTINUITY": "last frame preserves the approved source action endpoint",
+            "ADJACENT_BOARD_ROLE": "none",
+            "SHOT_CARDS": "\n\n".join(shot_cards),
+            "EXACT_LABELS": " | ".join(exact_labels) if exact_labels else "NO APPROVED VISIBLE TEXT",
+            "AUDIO_NOTE": "Follow approved source audio and action/ambient sound contract; do not invent music.",
+            "TRADEMARK_SAFETY_NOTE": "Do not copy source branding or invent brand marks; use only authorized target evidence.",
+            "TASK_NEGATIVES": "changed pose, changed expression, changed camera, changed composition, changed background, changed lighting, extra Cut cards, extra people, invented props",
+            "CUT_NUMBER": str(selected[0].get("cut_id") or "C01"),
+            "COMPLETE_VISUAL_DESCRIPTION_FOR_IMAGE_GENERATION": "Use the corresponding approved Storyboard cards entry.",
+            "NN": str(selected[0].get("cut_id") or "C01"),
+            "START": str(selected[0].get("start_ms") or 0),
+            "END": str(selected[0].get("end_ms") or 0),
+            "KEY_ACTION_TAG": "KEEP ACTION",
+            "IDENTITY_OR_PRODUCT_LOCK_TAG": "KEEP TARGET IDENTITY",
+        }
+        prompt = re.sub(
+            r"\{\{([A-Z_]+)\}\}",
+            lambda match: values.get(match.group(1), match.group(0)),
+            template,
+        )
+        # The packaged template documents its placeholder convention with a
+        # literal ``{{...}}`` example. It is not a dynamic field and must not
+        # leak as braces into the provider request.
+        prompt = prompt.replace("{{...}}", "placeholders")
+        if re.search(r"\{\{[A-Z_]+\}\}", prompt):
+            raise _replication_error(
+                "CONTRACT_INVALID",
+                "director-storyboard prompt template contains unresolved placeholders",
+            )
+        return prompt
 
     def run(self, *, context: Any, input_artifacts: Sequence[Mapping[str, Any]]) -> Mapping[str, Any]:
         script_cuts = self._script_cuts(context)
@@ -1270,16 +1235,6 @@ class StoryboardStage:
         published_images: list[dict[str, Any]] = []
         cut_images: list[StoryboardCutRef] = []
         upstream_artifacts: list[dict[str, Any]] = []
-        template_path = Path(__file__).resolve().parents[1] / STORYBOARD_TEMPLATE_PATH
-        try:
-            storyboard_template_bytes = template_path.read_bytes()
-        except OSError as exc:
-            raise _replication_error(
-                "STORYBOARD_TEMPLATE_REQUIRED",
-                "mandatory daohuo_storyboard_prompt.md is unavailable",
-                category="artifact",
-            ) from exc
-        storyboard_template_sha256 = hashlib.sha256(storyboard_template_bytes).hexdigest()
         with self._target_reference_images(context) as target_references:
             # Every semantic generated region uses the exact same visual
             # provenance chain, including source-preserve/language-only work:
@@ -1297,7 +1252,8 @@ class StoryboardStage:
             references = [Path(control_sheet["path"]), *target_references]
             upstream_artifacts.extend(list(source_sheet.get("published_artifacts") or []))
             upstream_artifacts.extend(list(control_sheet.get("published_artifacts") or []))
-            for segment_index, raw_segment in enumerate(segments):
+
+            def generate_board(raw_segment: Any) -> tuple[dict[str, Any], list[Any], Mapping[str, Any]]:
                 segment = _mapping(raw_segment, "storyboard segment")
                 segment_id = str(segment.get("segment_id") or "").strip()
                 cut_ids = segment.get("cut_ids")
@@ -1312,17 +1268,6 @@ class StoryboardStage:
                             segment=segment,
                             cuts=script_by_id,
                             visible_text_locks=segment_text_locks,
-                            template_bytes=storyboard_template_bytes,
-                            character_reference_role=(
-                                "The populated new_model_image slot authorizes identity, face and hair only."
-                                if _present(context, "new_model_image")
-                                else "none; preserve the source character"
-                            ),
-                            product_reference_role=(
-                                "Use only the populated target product/App/service evidence."
-                                if any(_present(context, slot_id) for slot_id in ("new_product_image", "ui_screenshot"))
-                                else "none; preserve source target truth"
-                            ),
                         ),
                         reference_images=references,
                         aspect_ratio="16:9",
@@ -1333,58 +1278,24 @@ class StoryboardStage:
                     raise
                 except Exception as exc:
                     raise _replication_error("CAPABILITY_UNAVAILABLE", f"RunningHub Image2 storyboard generation failed for {segment_id}", retryable=True, category="provider") from exc
-                raw_visual_bytes = generated.get("image_bytes") if isinstance(generated, Mapping) else None
-                self._png_dimensions(raw_visual_bytes if isinstance(raw_visual_bytes, bytes) else b"")
-                try:
-                    routed_segment_text = split_visible_text_locks_by_render_route(segment_text_locks)
-                    selected_cuts = [script_by_id[str(cut_id)] for cut_id in cut_ids]
-                    rendered = render_director_board(
-                        visual_sheet_bytes=raw_visual_bytes,
-                        template_bytes=storyboard_template_bytes,
-                        segment_id=segment_id,
-                        cuts=selected_cuts,
-                        direction_text="Preserve the approved source composition, performance and Cut order.",
-                        character_target_text="Use only fixed-slot replacement identity/product evidence; all other source attributes stay locked.",
-                        camera_text=" | ".join(str(cut.get("camera") or "approved source camera") for cut in selected_cuts),
-                        continuity_text="Scene-surface text stays physically attached to its carrier. Subtitles/CTA/lower-thirds use deterministic overlay rendering.",
-                    )
-                    image_bytes = self._render_visible_text_layer(
-                        rendered["approval_image_bytes"], routed_segment_text["deterministic_overlay"]
-                    )
-                    carrier_bytes = rendered["execution_carrier_bytes"]
-                    layout_receipt = dict(rendered["layout_receipt"])
-                    layout_receipt["approval_board_sha256"] = hashlib.sha256(image_bytes).hexdigest()
-                    validate_storyboard_layout_receipt(layout_receipt, expected_cut_ids=[str(value) for value in cut_ids])
-                except (StoryboardLayoutError, VisibleTextContractError, KeyError) as exc:
-                    raise _replication_error("STORYBOARD_LAYOUT_QC_FAILED", f"director-board fixed layout failed for {segment_id}", category="artifact") from exc
+                return dict(segment), list(segment_text_locks), generated
+
+            generated_boards = _run_ordered_parallel(
+                segments,
+                generate_board,
+                max_workers=2,
+            )
+            for segment_index, (segment, segment_text_locks, generated) in enumerate(generated_boards):
+                segment_id = str(segment["segment_id"])
+                cut_ids = list(segment["cut_ids"])
+                image_bytes = generated.get("image_bytes") if isinstance(generated, Mapping) else None
+                routed_segment_text = split_visible_text_locks_by_render_route(segment_text_locks)
+                image_bytes = self._render_visible_text_layer(
+                    image_bytes if isinstance(image_bytes, bytes) else b"",
+                    routed_segment_text["deterministic_overlay"],
+                )
                 width, height = self._png_dimensions(image_bytes)
                 digest = hashlib.sha256(image_bytes).hexdigest()
-                carrier_digest = hashlib.sha256(carrier_bytes).hexdigest()
-                layout_artifact = _publish_json(
-                    context,
-                    kind="storyboard_layout_receipt",
-                    value=layout_receipt,
-                    metadata={"segment_id": segment_id, "storyboard_revision": manifest.revision},
-                )
-                carrier_artifact = context.publish_bytes(
-                    kind="seedance_visual_carrier",
-                    data=carrier_bytes,
-                    content_type="image/png",
-                    expected_sha256=carrier_digest,
-                    metadata={
-                        "segment_id": segment_id,
-                        "storyboard_revision": manifest.revision,
-                        "storyboard_manifest_sha256": manifest.sha256,
-                        "approval_board_sha256": digest,
-                        "layout_receipt_sha256": str(layout_artifact.get("sha256") or "").lower(),
-                        "layout_id": layout_receipt["layout_id"],
-                        "execution_carrier_source_roi": layout_receipt["execution_carrier_source_roi"],
-                        "execution_carrier_source_roi_sha256": layout_receipt["execution_carrier_source_roi_sha256"],
-                        "cut_ids": [str(value) for value in cut_ids],
-                    },
-                )
-                if not isinstance(carrier_artifact, Mapping) or str(carrier_artifact.get("sha256") or "").lower() != carrier_digest:
-                    raise _replication_error("ARTIFACT_HASH_MISMATCH", "published Seedance execution carrier digest differs from rendered bytes", category="artifact")
                 segment_number = segment_index + 1
                 metadata = {
                     "segment_id": segment_id,
@@ -1401,14 +1312,6 @@ class StoryboardStage:
                     "replacement_target_sha256s": self._visual_target_sha256s(context),
                     "approved_visible_text_locks_sha256": approved_visible_text_locks_sha256,
                     "visible_text_lock_ids": [str(lock["text_id"]) for lock in segment_text_locks],
-                    "storyboard_layout_id": layout_receipt["layout_id"],
-                    "storyboard_layout_receipt_sha256": str(layout_artifact.get("sha256") or "").lower(),
-                    "storyboard_template_path": STORYBOARD_TEMPLATE_PATH,
-                    "storyboard_template_sha256": storyboard_template_sha256,
-                    "execution_carrier_artifact_id": str(carrier_artifact.get("artifact_id") or ""),
-                    "execution_carrier_object_key": str(carrier_artifact.get("object_key") or ""),
-                    "execution_carrier_sha256": carrier_digest,
-                    "execution_carrier_source_roi_sha256": layout_receipt["execution_carrier_source_roi_sha256"],
                 }
                 published = context.publish_bytes(
                     kind="storyboard_image",
@@ -1420,7 +1323,6 @@ class StoryboardStage:
                 if not isinstance(published, Mapping) or str(published.get("sha256") or "").lower() != digest:
                     raise _replication_error("ARTIFACT_HASH_MISMATCH", "published storyboard image digest differs from Image2 bytes", category="artifact")
                 published_images.append(dict(published))
-                upstream_artifacts.extend([dict(layout_artifact), dict(carrier_artifact)])
                 for cut_id in cut_ids:
                     cut_images.append(
                         StoryboardCutRef(
@@ -1528,15 +1430,18 @@ class SeedancePromptStage:
     def _reference_roles(context: Any) -> list[dict[str, Any]]:
         """Mirror the immutable Fixed-B upload order in the compiled prompt."""
 
-        roles: list[dict[str, Any]] = [
-            {"slot": 1, "tag": "@Image1", "role": "approved storyboard visual control"}
-        ]
-        for slot_id, limit in (("new_model_image", 1), ("new_product_image", 2)):
-            if not _present(context, slot_id):
-                continue
-            for _index, _digest in enumerate(_slot_sha256s(context, slot_id)[:limit], start=1):
-                slot = len(roles) + 1
-                roles.append({"slot": slot, "tag": f"@Image{slot}", "role": f"fixed {slot_id} target truth"})
+        roles: list[dict[str, Any]] = []
+        if _present(context, "new_model_image"):
+            roles.append({"slot": 1, "tag": "@Image1", "role": "fixed new_model_image target truth"})
+        product_hashes = _slot_sha256s(context, "new_product_image")[:2] if _present(context, "new_product_image") else []
+        if product_hashes:
+            slot = len(roles) + 1
+            roles.append({"slot": slot, "tag": f"@Image{slot}", "role": "fixed new_product_image target truth"})
+        slot = len(roles) + 1
+        roles.append({"slot": slot, "tag": f"@Image{slot}", "role": "approved storyboard visual control page 1"})
+        for _digest in product_hashes[1:]:
+            slot = len(roles) + 1
+            roles.append({"slot": slot, "tag": f"@Image{slot}", "role": "additional verified new_product_image detail"})
         return roles
 
     @staticmethod
@@ -1549,10 +1454,6 @@ class SeedancePromptStage:
         extensions = getattr(getattr(context, "snapshot", None), "slots_manifest", {}).get("extensions", {})
         music = extensions.get("background_music") if isinstance(extensions, Mapping) else None
         if not isinstance(music, Mapping):
-            return ""
-        # Songs are applied only by the dedicated RunningHub song-lip-sync
-        # post-process.  Seedance must receive neither @Audio1 nor lyrics.
-        if uploaded_audio_kind == "song":
             return ""
         if source_music_windows is not None:
             if not source_music_windows:
@@ -1712,19 +1613,16 @@ class SeedancePromptStage:
                     observed.append((int(raw["start_ms"]), int(raw["end_ms"]), str(raw["text"]).strip()))
                 except (KeyError, TypeError, ValueError):
                     return {}
-            for line in canonical_performance:
-                expected_text = " ".join(str(line["exact_sung_text"]).split()).casefold()
-                matches = [
-                    (start_ms, end_ms)
-                    for start_ms, end_ms, text in observed
-                    if " ".join(text.split()).casefold() == expected_text
-                ]
-                if len(matches) != 1:
-                    return {}
-                start_ms, end_ms = matches[0]
-                if start_ms < 0 or end_ms <= start_ms:
-                    return {}
-                line["uploaded_song_time"] = {"start_ms": start_ms, "end_ms": end_ms}
+            expected = [
+                (
+                    line["source_time"]["start_ms"],
+                    line["source_time"]["end_ms"],
+                    line["exact_sung_text"],
+                )
+                for line in canonical_performance
+            ]
+            if observed != expected:
+                return {}
             by_cut = {str(line.get("cut_id") or ""): line for line in canonical_performance}
             result: dict[str, list[dict[str, Any]]] = {}
             for segment in generated_segments:
@@ -1866,10 +1764,9 @@ class SeedancePromptStage:
         if not script_cuts or set(script_cuts) != set(board_cuts):
             raise _replication_error("PROMPT_INTEGRITY_FAILED", "approved script and storyboard Cut coverage differs")
         lines = self._approval_lines(context)
-        extensions = getattr(getattr(context, "snapshot", None), "slots_manifest", {}).get("extensions", {})
         uploaded_audio = (
             _uploaded_audio_classification(context)
-            if isinstance(extensions, Mapping) and isinstance(extensions.get("background_music"), Mapping)
+            if self._uploaded_music_present(context)
             else None
         )
         uploaded_audio_kind = str(uploaded_audio.get("kind") or "") if uploaded_audio else None
@@ -1895,11 +1792,6 @@ class SeedancePromptStage:
         uploaded_song_performance = self._uploaded_song_performance_lines(
             context=context, plan=plan, line_contracts=lines
         )
-        if uploaded_audio_kind == "song" and not uploaded_song_performance:
-            raise _replication_error(
-                "PERFORMANCE_LINE_CONTRACT_REQUIRED",
-                "uploaded lyric song is missing the source-verified lyric and performer contract required for lip-sync compilation",
-            )
         outputs: list[dict[str, Any]] = []
         for raw_segment in segments:
             segment_row = _mapping(raw_segment, "segment plan row")
@@ -1933,10 +1825,10 @@ class SeedancePromptStage:
                 cut_surface_text = [lock for lock in surface_text_locks if str(cut_id) in lock["cut_ids"]]
                 surface_text_instruction = " ".join(
                     (
-                        f"Exact scene-surface text {json.dumps(lock['approved_text'], ensure_ascii=False)} is physically bound to "
-                        f"carrier {lock['placement']['carrier_id']} at {lock['placement']['surface_relation']}; "
-                        f"it {lock['placement']['motion_behavior']}. Its glyphs follow the carrier perspective, hand motion, bending, "
-                        "folding, occlusion and tearing, and never float or stay screen-fixed."
+                        f"Exact scene-surface text {json.dumps(lock['approved_text'], ensure_ascii=False)} is centered/bound as specified on "
+                        f"physical carrier {lock['placement']['carrier_id']} ({lock['placement']['surface_relation']}); "
+                        f"it {lock['placement']['motion_behavior']}. The text is part of the material surface: it follows perspective, "
+                        "hand motion, bending, folding, occlusion and tearing, and never floats or stays screen-fixed."
                     )
                     for lock in cut_surface_text
                 )
@@ -1952,18 +1844,14 @@ class SeedancePromptStage:
                     "product_or_ui_truth": " ".join(filter(None, (str(cut.get("visual") or "use only approved target evidence"), surface_text_instruction))),
                     "commercial_proof": str((cut.get("selling_point") or {}).get("proof", {}).get("evidence_id") or "approved target evidence"),
                     "transition": "match the source Cut transition", "continuity": str(board.get("continuity") or "preserve continuity"),
-                    "audio": "no dialogue" if uploaded_audio_kind == "song" else " ".join(filter(None, (str(cut.get("dialogue") or "no dialogue"), uploaded_music_instruction))),
-                    "factor_ids": [f"{cut_id}.scene", f"{cut_id}.camera", f"{cut_id}.action", f"{cut_id}.audio"],
+                    "audio": " ".join(filter(None, (str(cut.get("dialogue") or "no dialogue"), uploaded_music_instruction))),
+                    "factor_ids": [f"{cut_id}.scene", f"{cut_id}.camera", f"{cut_id}.action", f"{cut_id}.audio"]
+                    + ([f"{cut_id}.scene_surface_text"] if cut_surface_text else []),
                 })
             local_lines = [line for line in lines if str(line.get("cut_id") or "") in set(cut_ids)]
             local_performance = source_song_performance.get(
                 segment_id, uploaded_song_performance.get(segment_id, [])
             )
-            if uploaded_audio_kind == "song" and not local_performance:
-                raise _replication_error(
-                    "PERFORMANCE_LINE_CONTRACT_REQUIRED",
-                    f"{segment_id} has an uploaded lyric song without a verified lyric lip-sync contract",
-                )
             expected_sung_lines = [
                 line for line in local_lines if line.get("content_type") == "sung"
             ] if uploaded_audio_kind != "non_song" else []
@@ -1983,20 +1871,16 @@ class SeedancePromptStage:
                 "locks": [
                     "preserve approved Cut order",
                     "preserve approved character and product evidence",
-                    "scene-surface text remains physically attached to its approved carrier with exact spelling and deformation behavior",
+                    "scene-surface text must be written explicitly into the Seedance Cut prompt and remain physically attached to its carrier",
                 ],
                 "negative_constraints": ["no unapproved text", "no UI or tail media generation", "no generic quality filler"],
-                "no_speech_contracts": [] if local_lines and uploaded_audio_kind not in {"non_song", "song"} else self._no_speech([str(item) for item in cut_ids]),
+                "no_speech_contracts": [] if local_lines and uploaded_audio_kind != "non_song" else self._no_speech([str(item) for item in cut_ids]),
             }
             try:
                 artifact = compiler.compile_prompt(
                     segment=segment,
-                    # Uploaded lyric songs are lip-synced only after the
-                    # generated-person video exists.  Keep their verified
-                    # contract outside Seedance rather than asking Seedance
-                    # to render audio, lyrics, or mouth timing.
-                    line_contracts=[] if uploaded_audio_kind in {"non_song", "song"} else local_lines,
-                    performance_lines=[] if uploaded_audio_kind == "song" else local_performance,
+                    line_contracts=[] if uploaded_audio_kind == "non_song" else local_lines,
+                    performance_lines=local_performance,
                     factors=self._factor_flags(context),
                     skill_files=skill_files,
                     compiler_checks={
@@ -2014,36 +1898,7 @@ class SeedancePromptStage:
                 )
             except Exception as exc:
                 raise _replication_error("PROMPT_INTEGRITY_FAILED", f"Seedance-20 compiler rejected {segment_id}") from exc
-            row = {"segment_id": segment_id, "compiled_prompt": artifact, "segment_plan_sha256": plan_sha}
-            if uploaded_audio_kind == "song":
-                song_starts = [
-                    int(line["uploaded_song_time"]["start_ms"])
-                    for line in local_performance
-                    if isinstance(line.get("uploaded_song_time"), Mapping)
-                ]
-                if not song_starts:
-                    raise _replication_error(
-                        "PERFORMANCE_LINE_CONTRACT_REQUIRED",
-                        f"{segment_id} has no unambiguous uploaded-song time binding",
-                    )
-                song_start_seconds = min(song_starts) // 1000
-                song_end_seconds = (min(song_starts) + duration_ms + 999) // 1000
-                if song_end_seconds <= song_start_seconds:
-                    raise _replication_error(
-                        "PERFORMANCE_LINE_CONTRACT_REQUIRED",
-                        f"{segment_id} has an invalid uploaded-song lip-sync window",
-                    )
-                song_start = f"{song_start_seconds // 60}:{song_start_seconds % 60:02d}"
-                song_end = f"{song_end_seconds // 60}:{song_end_seconds % 60:02d}"
-                row["song_lip_sync_contract"] = {
-                    "schema_version": "uploaded-song-lip-sync-contract/v1",
-                    "segment_id": segment_id,
-                    "segment_plan_sha256": plan_sha,
-                    "performance_lines": local_performance,
-                    "song_start": song_start,
-                    "song_end": song_end,
-                }
-            outputs.append(row)
+            outputs.append({"segment_id": segment_id, "compiled_prompt": artifact, "segment_plan_sha256": plan_sha})
         envelope = {"schema_version": "seedance-input-contract/v1", "segment_plan": plan, "segment_plan_sha256": plan_sha, "segments": outputs}
         published = _publish_json(context, kind="seedance_input_contract", value=envelope)
         return {"status": "ready", "seedance_input_contract": envelope, "published_artifacts": [published]}
@@ -2081,7 +1936,7 @@ class SeedanceAuditStage:
         command = [
             "ffmpeg", "-v", "error", "-y", "-ss", f"{start_ms / 1000:.3f}", "-i", str(source_path),
             "-t", f"{duration_ms / 1000:.3f}", "-map", "0:v:0", "-map", "0:a?",
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-c:a", "aac",
+            *video_encoder_args(), "-c:a", "aac",
             "-movflags", "+faststart", "-map_metadata", "-1", str(destination),
         ]
         try:
@@ -2174,61 +2029,17 @@ class SeedanceAuditStage:
             raise _replication_error("CONTRACT_INVALID", "storyboard artifact descriptor is invalid", category="artifact")
         return descriptor
 
-    @staticmethod
-    def _execution_carrier_descriptor(context: Any, *, segment_id: str) -> Mapping[str, Any]:
-        board = SeedanceAuditStage._storyboard_descriptor(context, segment_id=segment_id)
-        board_metadata = board.get("metadata")
-        if not isinstance(board_metadata, Mapping):
-            raise _replication_error("CONTRACT_INVALID", "approved storyboard has no execution-carrier binding", category="artifact")
-        carrier_id = str(board_metadata.get("execution_carrier_artifact_id") or "").strip()
-        carrier_key = str(board_metadata.get("execution_carrier_object_key") or "").strip()
-        carrier_sha = str(board_metadata.get("execution_carrier_sha256") or "").lower()
-        layout_sha = str(board_metadata.get("storyboard_layout_receipt_sha256") or "").lower()
-        roi_sha = str(board_metadata.get("execution_carrier_source_roi_sha256") or "").lower()
-        if (
-            not carrier_id
-            or not carrier_key
-            or _SHA256.fullmatch(carrier_sha) is None
-            or _SHA256.fullmatch(layout_sha) is None
-            or _SHA256.fullmatch(roi_sha) is None
-        ):
-            raise _replication_error("CONTRACT_INVALID", "approved storyboard execution-carrier binding is incomplete", category="artifact")
-        matches = []
-        for artifact in (getattr(context, "artifacts", ()) or ()):
-            if not isinstance(artifact, Mapping) or artifact.get("kind") != "seedance_visual_carrier":
-                continue
-            if artifact.get("artifact_id") != carrier_id or artifact.get("object_key") != carrier_key or artifact.get("sha256") != carrier_sha:
-                continue
-            metadata = artifact.get("metadata")
-            if (
-                not isinstance(metadata, Mapping)
-                or metadata.get("segment_id") != segment_id
-                or metadata.get("storyboard_revision") != board_metadata.get("storyboard_revision")
-                or str(metadata.get("approval_board_sha256") or "").lower() != str(board.get("sha256") or "").lower()
-                or str(metadata.get("layout_receipt_sha256") or "").lower() != layout_sha
-                or str(metadata.get("execution_carrier_source_roi_sha256") or "").lower() != roi_sha
-            ):
-                continue
-            matches.append(artifact)
-        if len(matches) != 1:
-            raise _replication_error(
-                "ARTIFACT_NOT_FOUND",
-                f"exactly one layout-validated Seedance execution carrier is required for {segment_id}",
-                category="artifact",
-            )
-        return matches[0]
-
     def _upload_storyboard(self, context: Any, *, segment_id: str) -> str:
-        descriptor = self._execution_carrier_descriptor(context, segment_id=segment_id)
+        descriptor = self._storyboard_descriptor(context, segment_id=segment_id)
         artifact_id = str(descriptor["artifact_id"])
         digest = str(descriptor["sha256"]).lower()
         try:
-            with context.materialize_artifact("seedance_visual_carrier", artifact_id=artifact_id, sha256=digest) as media:
+            with context.materialize_artifact("storyboard_image", artifact_id=artifact_id, sha256=digest) as media:
                 path = Path(media.path)
                 data = path.read_bytes()
                 StoryboardStage._png_dimensions(data)
                 if hashlib.sha256(data).hexdigest() != digest:
-                    raise _replication_error("ARTIFACT_HASH_MISMATCH", "Seedance execution carrier bytes differ from the approved binding", category="artifact")
+                    raise _replication_error("ARTIFACT_HASH_MISMATCH", "storyboard bytes differ from the approved artifact", category="artifact")
                 url = self.media_uploader.upload_media(path)
         except ReplicationError:
             raise
@@ -2241,16 +2052,12 @@ class SeedanceAuditStage:
     def _target_reference_urls(self, context: Any, *, prompt: str) -> tuple[list[str], list[dict[str, str]]]:
         urls: list[str] = []
         target_changes: list[dict[str, str]] = []
-        # Fixed slot order is also the RunningHub reference order: @Image1 is
-        # storyboard, then one model board, then up to two product boards.
+        # Continuous present-role order: model, product/App, storyboard pages.
         for slot_id, maximum in (("new_model_image", 1), ("new_product_image", 2)):
             if not _present(context, slot_id):
                 continue
             hashes = _slot_sha256s(context, slot_id)
             for index in range(min(maximum, len(hashes))):
-                tag = f"@Image{len(urls) + 2}"
-                if tag not in prompt:
-                    raise _replication_error("PROMPT_INTEGRITY_FAILED", f"compiled Seedance prompt omits required {tag} {slot_id} reference")
                 try:
                     with context.materialize_slot(slot_id, index=index) as media:
                         path = Path(media.path)
@@ -2280,6 +2087,79 @@ class SeedanceAuditStage:
                 raise _replication_error("INPUT_SLOT_INVALID", "background_music immutable upload evidence is invalid", category="input")
             target_changes.append({"kind": "background_music", "sha256": str(hashes[0]).lower()})
         return urls, target_changes
+
+    @staticmethod
+    def _image_reference_binding(
+        *,
+        payload: Mapping[str, Any],
+        segment: Mapping[str, Any],
+        storyboard: Mapping[str, Any],
+        target_entries: Sequence[Mapping[str, str]],
+    ) -> dict[str, Any]:
+        cut_ids = [str(value) for value in segment.get("cut_ids") or [] if isinstance(value, str) and value]
+        if not cut_ids:
+            raise _replication_error("SEGMENT_PLAN_INVALID", "image reference binding requires segment Cut scope")
+        manifest_sha = str(storyboard.get("storyboard_manifest_sha256") or "").lower()
+        if _SHA256.fullmatch(manifest_sha) is None:
+            raise _replication_error("CONTRACT_INVALID", "approved storyboard set digest is invalid")
+        ordered_entries: list[dict[str, Any]] = []
+        model = [dict(item) for item in target_entries if item.get("kind") == "new_model_image"]
+        products = [dict(item) for item in target_entries if item.get("kind") == "new_product_image"]
+        for item in model:
+            item["role"] = "new_model_identity"
+            item["purpose"] = "replace model identity only"
+            ordered_entries.append(item)
+        if products:
+            primary = products.pop(0)
+            primary["role"] = "product_or_app_truth"
+            primary["purpose"] = "lock product or App truth"
+            ordered_entries.append(primary)
+        ordered_entries.append(
+            {
+                "role": "director_storyboard",
+                "artifact_name": Path(str(storyboard.get("logical_name") or f"{segment.get('segment_id')}_storyboard.png")).name,
+                "sha256": str(storyboard.get("sha256") or "").lower(),
+                "url": str(storyboard.get("url") or ""),
+                "page": int(storyboard.get("page") or 1),
+                "approval_set_sha256": manifest_sha,
+                "purpose": "approved director storyboard page 1",
+            }
+        )
+        for item in products:
+            item["role"] = "additional_reference"
+            item["purpose"] = "additional verified product detail reference"
+            ordered_entries.append(item)
+        rows: list[dict[str, Any]] = []
+        for index, item in enumerate(ordered_entries, start=1):
+            rows.append(
+                {
+                    "image_index": index,
+                    "tag": f"@Image{index}",
+                    "role": item["role"],
+                    "artifact_name": str(item.get("artifact_name") or f"{item.get('kind', 'reference')}-{index}.png"),
+                    "sha256": str(item.get("sha256") or "").lower(),
+                    "url": str(item.get("url") or ""),
+                    "cut_ids": list(cut_ids),
+                    "page": item.get("page"),
+                    "approval_set_sha256": item.get("approval_set_sha256"),
+                    "purpose": str(item["purpose"]),
+                }
+            )
+        binding = {
+            "schema_version": "usfr-multimodal-reference-binding/v2",
+            "ordered_image_urls": [row["url"] for row in rows],
+            "approval_set_sha256": manifest_sha,
+            "image_bindings": rows,
+            "slot_policy": "continuous-present-role-order/v1",
+            "forbidden_artifact_names": ["seedance_execution_carrier.png"],
+        }
+        if list(payload.get("imageUrls") or []) != binding["ordered_image_urls"]:
+            raise _replication_error("PROMPT_INTEGRITY_FAILED", "payload image order differs from the compiled image binding")
+        try:
+            validate_image_reference_binding(payload, binding)
+        except RunningHubStandardPayloadError as exc:
+            raise _replication_error("PROMPT_INTEGRITY_FAILED", "multimodal image binding is invalid") from exc
+        return binding
 
     @staticmethod
     def _final_target_descriptors(
@@ -2338,9 +2218,6 @@ class SeedanceAuditStage:
             "replacement_control_keyframe_sheet_sha256",
             "replacement_control_keyframe_receipt_sha256",
             "approved_visible_text_locks_sha256",
-            "storyboard_layout_receipt_sha256",
-            "execution_carrier_sha256",
-            "execution_carrier_source_roi_sha256",
         )
         if (
             not artifact_id
@@ -2445,17 +2322,6 @@ class SeedanceAuditStage:
             if list(lock_ids) != expected_lock_ids:
                 raise _replication_error("CONTRACT_INVALID", "approved storyboard visible text placement is incomplete", category="artifact")
 
-        carrier = SeedanceAuditStage._execution_carrier_descriptor(context, segment_id=segment_id)
-        carrier_metadata = carrier.get("metadata")
-        if (
-            not isinstance(carrier_metadata, Mapping)
-            or str(carrier.get("artifact_id") or "") != str(metadata.get("execution_carrier_artifact_id") or "")
-            or str(carrier.get("object_key") or "") != str(metadata.get("execution_carrier_object_key") or "")
-            or str(carrier.get("sha256") or "").lower() != str(metadata.get("execution_carrier_sha256") or "").lower()
-            or str(carrier_metadata.get("approval_board_sha256") or "").lower() != digest
-        ):
-            raise _replication_error("CONTRACT_INVALID", "approved storyboard and Seedance execution carrier binding differs", category="artifact")
-
         return {
             "artifact_id": artifact_id,
             "object_key": object_key,
@@ -2471,11 +2337,6 @@ class SeedanceAuditStage:
             "replacement_control_keyframe_receipt_sha256": str(metadata["replacement_control_keyframe_receipt_sha256"]).lower(),
             "replacement_target_sha256s": [str(value).lower() for value in targets],
             "approved_visible_text_locks_sha256": str(metadata["approved_visible_text_locks_sha256"]).lower(),
-            "execution_carrier_artifact_id": str(carrier["artifact_id"]),
-            "execution_carrier_object_key": str(carrier["object_key"]),
-            "execution_carrier_sha256": str(carrier["sha256"]).lower(),
-            "storyboard_layout_receipt_sha256": str(metadata["storyboard_layout_receipt_sha256"]).lower(),
-            "execution_carrier_source_roi_sha256": str(metadata["execution_carrier_source_roi_sha256"]).lower(),
         }
 
     @staticmethod
@@ -2566,7 +2427,7 @@ class SeedanceAuditStage:
         context: Any,
         *,
         segment: Mapping[str, Any],
-        storyboard_url: str,
+        image_reference_binding: Mapping[str, Any],
         target_changes: list[dict[str, str]],
         plan_sha256: str,
         segment_plan: Mapping[str, Any],
@@ -2658,7 +2519,7 @@ class SeedanceAuditStage:
             "source_video_reference_artifact_id": source_reference_artifact_id,
             "start_ms": start_ms,
             "end_ms": end_ms,
-            "storyboard_url": storyboard_url,
+            "image_reference_binding_sha256": image_reference_binding_sha256(image_reference_binding),
             "target_changes": target_changes,
         }
         return url.strip(), binding, published
@@ -2757,10 +2618,9 @@ class SeedanceAuditStage:
         payload: Mapping[str, Any],
         segment_id: str,
         plan_sha256: str,
-        approved_board: Mapping[str, Any],
+        image_reference_binding: Mapping[str, Any],
         source_artifact: Mapping[str, Any],
         source_url: str,
-        target_descriptors: Sequence[Mapping[str, Any]],
     ) -> dict[str, Any]:
         """Build the private proof of the only legal final media ordering."""
 
@@ -2789,20 +2649,17 @@ class SeedanceAuditStage:
             "url": source_url,
         }
         lineage = {
-            "schema_version": "seedance-final-reference-lineage/v1",
+            "schema_version": "seedance-final-reference-lineage/v2",
             "segment_id": segment_id,
             "segment_plan_sha256": plan_sha256,
             "ordered_image_urls": list(payload.get("imageUrls") or []),
             "ordered_video_urls": list(payload.get("videoUrls") or []),
-            "approved_board": dict(approved_board),
+            "image_reference_binding": dict(image_reference_binding),
             "source_reference": source_reference,
-            "allowed_target_changes": [dict(item) for item in target_descriptors],
             "forbidden_artifact_kinds": [
                 "source_keyframe_sheet",
                 "replacement_control_keyframe_sheet",
                 "replacement_control_keyframe_receipt",
-                "storyboard_image",
-                "storyboard_layout_receipt",
             ],
         }
         try:
@@ -2980,13 +2837,12 @@ class SeedanceAuditStage:
             if not segment_id or segment_id in seen_compiled_segments:
                 raise _replication_error("PROMPT_INTEGRITY_FAILED", "compiled Seedance segment is missing its ID")
             seen_compiled_segments.add(segment_id)
-            # @Image1 is the labels-free execution carrier derived from the
-            # fixed storyboard-grid ROI and cryptographically bound to the
-            # exact director board shown at the sole storyboard confirmation.
-            storyboard_url = self._upload_storyboard(context, segment_id=segment_id)
             target_urls, target_changes = self._target_reference_urls(context, prompt=prompt)
             if not target_changes:
                 raise _replication_error("PROMPT_INTEGRITY_FAILED", "source video reference requires an approved target change")
+            # Upload target truth first, then every approved storyboard PNG.
+            # The provider array is assembled only after role ordering is known.
+            storyboard_url = self._upload_storyboard(context, segment_id=segment_id)
             segment_plan = planned.get(segment_id)
             if not isinstance(segment_plan, Mapping):
                 raise _replication_error("SEGMENT_PLAN_INVALID", "compiled Seedance segment has no frozen plan row")
@@ -2999,57 +2855,83 @@ class SeedanceAuditStage:
                 raise _replication_error("SEGMENT_PLAN_INVALID", "frozen segment plan duration is invalid") from exc
             if duration != planned_duration:
                 raise _replication_error("SEGMENT_PLAN_INVALID", "compiled Seedance segment duration differs from the frozen plan")
-            video_url, video_binding, published_video_reference = self._source_reference(
-                context,
-                segment=segment_plan,
-                storyboard_url=storyboard_url,
-                target_changes=target_changes,
-                plan_sha256=plan_sha,
-                segment_plan=plan,
-            )
-            # A classified song is intentionally not a Seedance audio input:
-            # its original full audio and exact time window go to the
-            # dedicated song-lip-sync workflow after this video is generated.
-            uploaded_kind = None
-            if SeedancePromptStage._uploaded_music_present(context):
-                try:
-                    uploaded_kind = str(_uploaded_audio_classification(context).get("kind") or "")
-                except Exception:
-                    uploaded_kind = None
-            if uploaded_kind == "song" and "@Audio1" in prompt:
-                raise _replication_error("PROMPT_INTEGRITY_FAILED", "song Seedance prompt must not reference @Audio1")
-            audio_reference = None if uploaded_kind == "song" else self._background_music_reference(
+            audio_reference = self._background_music_reference(
                 context, segment=segment_plan, plan_sha256=plan_sha, prompt=prompt.strip()
             )
             audio_urls = [audio_reference[0]] if audio_reference is not None else []
+            visual_changes = [
+                dict(change)
+                for change in target_changes
+                if change.get("kind") in {"new_model_image", "new_product_image"}
+            ]
+            if len(visual_changes) != len(target_urls):
+                raise _replication_error("PROMPT_INTEGRITY_FAILED", "visual target URLs differ from target authorization")
+            target_entries = [
+                {
+                    **change,
+                    "url": url,
+                    "artifact_name": f"{change['kind']}-{index}.png",
+                }
+                for index, (url, change) in enumerate(zip(target_urls, visual_changes, strict=True), start=1)
+            ]
+            model_urls = [item["url"] for item in target_entries if item["kind"] == "new_model_image"]
+            product_urls = [item["url"] for item in target_entries if item["kind"] == "new_product_image"]
+            ordered_image_urls = [*model_urls, *product_urls[:1], storyboard_url, *product_urls[1:]]
             payload_template = {
                 "prompt": prompt.strip(), "resolution": "720p", "duration": str(max(4, min(15, round(duration / 1000)))),
-                "imageUrls": [storyboard_url, *target_urls], "videoUrls": [video_url], "audioUrls": audio_urls, "generateAudio": True,
+                "imageUrls": ordered_image_urls, "videoUrls": [], "audioUrls": audio_urls, "generateAudio": True,
                 "ratio": "9:16", "realPersonMode": True, "conversionSlots": ["all"],
                 "returnLastFrame": False, "seed": -1,
             }
+            raw_storyboard_descriptor = self._storyboard_descriptor(context, segment_id=segment_id)
             storyboard_descriptor = self._approved_board_descriptor(
                 context,
                 segment_id=segment_id,
                 segment=segment_plan,
-                descriptor=self._storyboard_descriptor(context, segment_id=segment_id),
+                descriptor=raw_storyboard_descriptor,
                 storyboard_url=storyboard_url,
             )
             self._validate_internal_board_lineage(context, approved_board=storyboard_descriptor)
-            target_descriptors = self._final_target_descriptors(
-                target_urls=target_urls, target_changes=target_changes
+            raw_metadata = raw_storyboard_descriptor.get("metadata")
+            binding_storyboard = {
+                **storyboard_descriptor,
+                "logical_name": (
+                    str(raw_metadata.get("logical_name") or "")
+                    if isinstance(raw_metadata, Mapping)
+                    else ""
+                ),
+                "page": (
+                    raw_metadata.get("storyboard_page", 1)
+                    if isinstance(raw_metadata, Mapping)
+                    else 1
+                ),
+            }
+            image_reference_binding = self._image_reference_binding(
+                payload=payload_template,
+                segment=segment_plan,
+                storyboard=binding_storyboard,
+                target_entries=target_entries,
             )
+            video_url, video_binding, published_video_reference = self._source_reference(
+                context,
+                segment=segment_plan,
+                image_reference_binding=image_reference_binding,
+                target_changes=target_changes,
+                plan_sha256=plan_sha,
+                segment_plan=plan,
+            )
+            payload_template["videoUrls"] = [video_url]
             final_reference_lineage = self._final_reference_lineage(
                 payload=payload_template,
                 segment_id=segment_id,
                 plan_sha256=plan_sha,
-                approved_board=storyboard_descriptor,
+                image_reference_binding=image_reference_binding,
                 source_artifact=published_video_reference,
                 source_url=video_url,
-                target_descriptors=target_descriptors,
             )
             try:
                 validate_runninghub_standard_payload_contract(payload_template)
+                validate_image_reference_binding(payload_template, image_reference_binding)
                 validate_video_reference_binding(payload_template, video_binding)
                 validate_final_reference_lineage(payload_template, final_reference_lineage)
                 validate_audio_reference_binding(
@@ -3075,6 +2957,7 @@ class SeedanceAuditStage:
                 "segment_plan_sha256": plan_sha,
                 "compiled_prompt_sha256": str(artifact.get("compiler", {}).get("output_sha256") or ""),
                 "payload_template": payload_template,
+                "image_reference_binding": image_reference_binding,
                 "video_reference_binding": video_binding,
                 "source_video_reference_artifact": published_video_reference,
                 "final_reference_lineage": final_reference_lineage,
@@ -3274,16 +3157,8 @@ class SubmitProviderVideoStage:
 class WaitProviderVideoStage:
     """Poll known RunningHub tasks and publish verified MP4 bytes immediately."""
 
-    def __init__(
-        self,
-        *,
-        provider: Any,
-        song_lip_sync_client: Any | None = None,
-        poll_seconds: float = 5.0,
-        timeout_seconds: float = 1800.0,
-    ) -> None:
+    def __init__(self, *, provider: Any, poll_seconds: float = 3.0, timeout_seconds: float = 1800.0) -> None:
         self.provider = provider
-        self.song_lip_sync_client = song_lip_sync_client
         self.poll_seconds = float(poll_seconds)
         self.timeout_seconds = float(timeout_seconds)
 
@@ -3291,131 +3166,81 @@ class WaitProviderVideoStage:
         del input_artifacts
         started = time.monotonic()
         results: list[dict[str, Any]] = []
-        downloaded_results: list[dict[str, Any]] = []
-        for attempt in context.job_store.list_provider_attempts(context.job_id):
-            if attempt.operation != "CreateVideo" or attempt.status == "SUCCEEDED":
-                continue
+        attempts = [
+            attempt
+            for attempt in context.job_store.list_provider_attempts(context.job_id)
+            if attempt.operation == "CreateVideo" and attempt.status != "SUCCEEDED"
+        ]
+        pending = {attempt.attempt_id: attempt for attempt in attempts}
+        for attempt in pending.values():
             if attempt.status == "AMBIGUOUS" or not attempt.provider_task_id:
                 raise _replication_error("PROVIDER_AMBIGUOUS", "provider attempt must be reconciled before waiting", category="provider")
-            while True:
-                try:
-                    state = self.provider.lookup({"taskId": attempt.provider_task_id})
-                except RunningHubTaskFailed as exc:
+
+        def lookup(attempt: ProviderAttempt) -> tuple[ProviderAttempt, Mapping[str, Any] | None, Exception | None]:
+            try:
+                return attempt, self.provider.lookup({"taskId": attempt.provider_task_id}), None
+            except Exception as exc:
+                return attempt, None, exc
+
+        def download(attempt: ProviderAttempt) -> tuple[ProviderAttempt, Path, Mapping[str, Any]]:
+            destination = Path(context.work_dir) / f"{attempt.segment_id or attempt.attempt_id}.mp4"
+            downloaded = self.provider.download(attempt.provider_task_id, destination)
+            return attempt, destination, _mapping(downloaded, "provider download receipt")
+
+        poll_index = 0
+        while pending:
+            lookup_results = _run_ordered_parallel(
+                list(pending.values()),
+                lookup,
+                max_workers=len(pending),
+            )
+            ready: list[ProviderAttempt] = []
+            for attempt, state, error in lookup_results:
+                if isinstance(error, RunningHubTaskFailed):
                     current = context.job_store.get_job(context.job_id)
                     if current is not None:
                         context.job_store.update_provider_attempt(job_id=context.job_id, expected_version=current.version, attempt=replace(attempt, status="FAILED"), ttl_seconds=max(1, (current.expires_at_ms - time.time_ns() // 1_000_000) // 1000))
-                    raise _replication_error("PROVIDER_FAILED", "RunningHub video task failed", category="provider") from exc
-                if state.get("status") == "SUCCESS":
-                    destination = Path(context.work_dir) / f"{attempt.segment_id or attempt.attempt_id}.mp4"
-                    downloaded = self.provider.download(attempt.provider_task_id, destination)
-                    data = destination.read_bytes()
-                    if not data or not data.startswith(b"\x00\x00\x00") and b"ftyp" not in data[:64]:
-                        raise _replication_error("PROVIDER_RESULT_INVALID", "RunningHub result is not an MP4 byte stream", category="provider")
-                    downloaded_results.append({
-                        "attempt": attempt,
-                        "destination": destination,
-                        "data": data,
-                        "download": dict(downloaded),
-                    })
-                    break
-                if time.monotonic() - started >= self.timeout_seconds:
-                    raise _replication_error("PROVIDER_TIMEOUT", "RunningHub video task did not finish before the configured provider wait limit", retryable=True, category="provider")
-                time.sleep(self.poll_seconds)
-        if not downloaded_results:
-            raise _replication_error("PROVIDER_RESULT_INVALID", "no successful provider video was available for assembly", category="provider")
+                    raise _replication_error("PROVIDER_FAILED", "RunningHub video task failed", category="provider") from error
+                if error is not None:
+                    raise error
+                if isinstance(state, Mapping) and state.get("status") == "SUCCESS":
+                    ready.append(attempt)
 
-        extensions = getattr(getattr(context, "snapshot", None), "slots_manifest", {}).get("extensions", {})
-        uploaded_audio = (
-            _uploaded_audio_classification(context)
-            if isinstance(extensions, Mapping) and isinstance(extensions.get("background_music"), Mapping)
-            else None
-        )
-        if uploaded_audio and uploaded_audio.get("kind") == "song":
-            if not callable(getattr(self.song_lip_sync_client, "run_song_lip_sync_segments", None)):
-                raise _replication_error(
-                    "CAPABILITY_UNAVAILABLE",
-                    "song lip-sync workflow client is unavailable",
-                    retryable=True,
-                    category="capability",
+            downloaded_results = _run_ordered_parallel(
+                ready,
+                download,
+                max_workers=len(ready),
+            ) if ready else []
+            for attempt, destination, downloaded in downloaded_results:
+                data = destination.read_bytes()
+                if not data or not data.startswith(b"\x00\x00\x00") and b"ftyp" not in data[:64]:
+                    raise _replication_error("PROVIDER_RESULT_INVALID", "RunningHub result is not an MP4 byte stream", category="provider")
+                published = context.publish_bytes(
+                    kind="provider_video",
+                    data=data,
+                    content_type="video/mp4",
+                    expected_sha256=hashlib.sha256(data).hexdigest(),
+                    metadata={
+                        "segment_id": str(attempt.segment_id or ""),
+                        "segment_plan_sha256": str(attempt.segment_plan_sha256 or "").lower(),
+                        "provider_task_id": str(attempt.provider_task_id or ""),
+                    },
                 )
-            contract = _read_json_artifact(context, kind="seedance_input_contract")
-            contract_rows = contract.get("segments") if isinstance(contract, Mapping) else None
-            if not isinstance(contract_rows, list):
-                raise _replication_error("PROMPT_INTEGRITY_FAILED", "song lip-sync contracts are unavailable")
-            contracts = {
-                str(row.get("segment_id") or ""): row.get("song_lip_sync_contract")
-                for row in contract_rows if isinstance(row, Mapping)
-            }
-            segments: list[dict[str, Any]] = []
-            for item in downloaded_results:
-                attempt = item["attempt"]
-                segment_id = str(attempt.segment_id or "")
-                lip_contract = contracts.get(segment_id)
-                if not isinstance(lip_contract, Mapping) or not lip_contract.get("song_start") or not lip_contract.get("song_end"):
-                    raise _replication_error(
-                        "PERFORMANCE_LINE_CONTRACT_REQUIRED",
-                        f"{segment_id} is missing its uploaded-song lip-sync time window",
-                    )
-                segments.append({
-                    "segment_id": segment_id,
-                    "segment_type": "generated_person",
-                    "video_path": item["destination"],
-                    "song_start": lip_contract["song_start"],
-                    "song_end": lip_contract["song_end"],
-                })
-            try:
-                with context.materialize_extension("background_music") as materialized:
-                    lip_result = self.song_lip_sync_client.run_song_lip_sync_segments(
-                        uploaded_audio_kind="song",
-                        audio_path=Path(materialized.path),
-                        segments=segments,
-                    )
-            except Exception as exc:
-                raise _replication_error(
-                    "PROVIDER_FAILED",
-                    "RunningHub song lip-sync workflow failed",
-                    retryable=True,
-                    category="provider",
-                ) from exc
-            lip_rows = lip_result.get("segments") if isinstance(lip_result, Mapping) else None
-            if not isinstance(lip_rows, list):
-                raise _replication_error("PROVIDER_RESULT_INVALID", "song lip-sync workflow returned no segments", category="provider")
-            lip_by_segment = {
-                str(row.get("segment_id") or ""): row
-                for row in lip_rows if isinstance(row, Mapping)
-            }
-        else:
-            lip_by_segment = {}
+                current = context.job_store.get_job(context.job_id)
+                if current is None:
+                    raise _replication_error("JOB_GONE", "job expired during provider download", category="worker")
+                context.job_store.update_provider_attempt(job_id=context.job_id, expected_version=current.version, attempt=replace(attempt, status="SUCCEEDED"), ttl_seconds=max(1, (current.expires_at_ms - time.time_ns() // 1_000_000) // 1000))
+                results.append({"segment_id": attempt.segment_id, "artifact": published, "download": dict(downloaded)})
+                pending.pop(attempt.attempt_id, None)
 
-        for item in downloaded_results:
-            attempt = item["attempt"]
-            segment_id = str(attempt.segment_id or "")
-            lip_row = lip_by_segment.get(segment_id)
-            data = lip_row.get("video_bytes") if isinstance(lip_row, Mapping) else item["data"]
-            if not isinstance(data, bytes) or not data or b"ftyp" not in data[:64]:
-                raise _replication_error("PROVIDER_RESULT_INVALID", "final provider result is not an MP4 byte stream", category="provider")
-            metadata = {
-                "segment_id": segment_id,
-                "segment_plan_sha256": str(attempt.segment_plan_sha256 or "").lower(),
-                "provider_task_id": str(attempt.provider_task_id or ""),
-            }
-            if isinstance(lip_row, Mapping):
-                metadata.update({
-                    "song_lip_sync_task_id": str(lip_row.get("task_id") or ""),
-                    "song_lip_sync_receipt": dict(lip_row.get("receipt") or {}),
-                })
-            published = context.publish_bytes(
-                kind="provider_video",
-                data=data,
-                content_type="video/mp4",
-                expected_sha256=hashlib.sha256(data).hexdigest(),
-                metadata=metadata,
-            )
-            current = context.job_store.get_job(context.job_id)
-            if current is None:
-                raise _replication_error("JOB_GONE", "job expired during provider download", category="worker")
-            context.job_store.update_provider_attempt(job_id=context.job_id, expected_version=current.version, attempt=replace(attempt, status="SUCCEEDED"), ttl_seconds=max(1, (current.expires_at_ms - time.time_ns() // 1_000_000) // 1000))
-            results.append({"segment_id": attempt.segment_id, "artifact": published, "download": item["download"]})
+            if not pending:
+                break
+            if time.monotonic() - started >= self.timeout_seconds:
+                raise _replication_error("PROVIDER_TIMEOUT", "RunningHub video task did not finish before the configured provider wait limit", retryable=True, category="provider")
+            time.sleep(_provider_poll_delay(poll_index))
+            poll_index += 1
+        if not results:
+            raise _replication_error("PROVIDER_RESULT_INVALID", "no successful provider video was available for assembly", category="provider")
         return {"status": "ready", "provider_videos": results}
 
 

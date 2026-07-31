@@ -198,7 +198,7 @@ class UniversalFidelityFactoryContractTest(unittest.TestCase):
             "transition render receipt",
             "VIDEO_ENDS_BEFORE_AUDIO",
             "AUDIO_VIDEO_DURATION_DRIFT",
-            "source identity, brand, UI, or text",
+            "source identity, unauthorized brand/UI",
         ):
             self.assertIn(required, combined)
 
@@ -271,7 +271,8 @@ class UniversalFidelityFactoryContractTest(unittest.TestCase):
         for required in (
             "`generateAudio=true`",
             "matching original source segment at `videoUrls[0]`",
-            "approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`",
+            "`usfr-multimodal-reference-binding/v2`",
+            "`continuous-present-role-order/v1`",
             "no legacy `reference_audios` field",
             "`background_music` extension is the sole exception",
             "`audioUrls[0]`",

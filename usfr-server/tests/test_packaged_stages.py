@@ -9,25 +9,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from server.job_models import ProviderAttempt
-
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+import server.runninghub_standard_contract as standard_contract
+
 
 def _digest(value: bytes) -> str:
     return sha256(value).hexdigest()
-
-
-def _real_png_bytes(*, width: int, height: int, color: tuple[int, int, int]) -> bytes:
-    import io
-    from PIL import Image
-
-    image = Image.new("RGB", (width, height), color)
-    output = io.BytesIO()
-    image.save(output, format="PNG")
-    return output.getvalue()
 
 
 def _canonical_digest(value: object) -> str:
@@ -210,100 +200,6 @@ def test_bind_inputs_publishes_the_sha_bound_uploaded_audio_classification(tmp_p
     )
 
 
-def test_song_audio_is_excluded_from_the_seedance_audio_prompt() -> None:
-    """Uploaded songs are rendered by the dedicated post-generation workflow."""
-
-    from server.packaged_stages import SeedancePromptStage
-
-    context = SimpleNamespace(
-        snapshot=SimpleNamespace(slots_manifest={"extensions": {"background_music": {"values": ["song.mp3"]}}})
-    )
-
-    assert SeedancePromptStage._audio_instruction(
-        context,
-        source_music_windows=[{"segment_start_ms": 0, "segment_end_ms": 5_000}],
-        uploaded_audio_kind="song",
-    ) == ""
-
-
-def test_wait_provider_video_replaces_song_segments_with_parallel_song_lip_sync_results(monkeypatch, tmp_path: Path) -> None:
-    import server.packaged_stages as stages
-    from server.packaged_stages import WaitProviderVideoStage
-
-    audio = tmp_path / "song.mp3"
-    audio.write_bytes(b"song")
-    attempts = [
-        ProviderAttempt("a1", "CreateVideo", "a" * 64, "RUNNING", "S01", "f" * 64, "seedance-1", "b" * 64),
-        ProviderAttempt("a2", "CreateVideo", "c" * 64, "RUNNING", "S02", "f" * 64, "seedance-2", "d" * 64),
-    ]
-
-    class Provider:
-        def lookup(self, request):
-            return {"status": "SUCCESS", "taskId": request["taskId"]}
-
-        def download(self, task_id, destination):
-            Path(destination).write_bytes(b"\x00\x00\x00\x18ftyp" + task_id.encode())
-            return {"task_id": task_id}
-
-    class LipSync:
-        def __init__(self):
-            self.calls = []
-
-        def run_song_lip_sync_segments(self, **kwargs):
-            self.calls.append(kwargs)
-            return {
-                "segments": [
-                    {"segment_id": "S01", "task_id": "lip-1", "video_bytes": b"\x00\x00\x00\x18ftyp-lip-1", "receipt": {"song_start": "1:30", "song_end": "1:35"}},
-                    {"segment_id": "S02", "task_id": "lip-2", "video_bytes": b"\x00\x00\x00\x18ftyp-lip-2", "receipt": {"song_start": "1:40", "song_end": "1:45"}},
-                ]
-            }
-
-    class Store:
-        def list_provider_attempts(self, _job_id):
-            return attempts
-
-        def get_job(self, _job_id):
-            return SimpleNamespace(version=1, expires_at_ms=10**15)
-
-        def update_provider_attempt(self, **_kwargs):
-            return None
-
-    class Context:
-        job_id = "job"
-        work_dir = tmp_path
-        job_store = Store()
-        snapshot = SimpleNamespace(slots_manifest={"extensions": {"background_music": {"values": ["song.mp3"]}}})
-        artifacts = ()
-
-        @contextmanager
-        def materialize_extension(self, extension_id, *, index=0):
-            assert (extension_id, index) == ("background_music", 0)
-            yield _Materialized(audio, _digest(audio.read_bytes()))
-
-        def publish_bytes(self, *, kind, data, content_type, expected_sha256, metadata=None):
-            return {"kind": kind, "sha256": expected_sha256, "data": data, "metadata": dict(metadata or {})}
-
-    monkeypatch.setattr(stages, "_uploaded_audio_classification", lambda _context: {"kind": "song"})
-    monkeypatch.setattr(stages, "_read_json_artifact", lambda _context, *, kind, **_kwargs: {
-        "segments": [
-            {"segment_id": "S01", "song_lip_sync_contract": {"song_start": "1:30", "song_end": "1:35"}},
-            {"segment_id": "S02", "song_lip_sync_contract": {"song_start": "1:40", "song_end": "1:45"}},
-        ]
-    } if kind == "seedance_input_contract" else {})
-
-    lip_sync = LipSync()
-    result = WaitProviderVideoStage(provider=Provider(), song_lip_sync_client=lip_sync).run(
-        context=Context(), input_artifacts=[]
-    )
-
-    assert len(lip_sync.calls) == 1
-    assert [item["segment_id"] for item in lip_sync.calls[0]["segments"]] == ["S01", "S02"]
-    assert [item["song_start"] for item in lip_sync.calls[0]["segments"]] == ["1:30", "1:40"]
-    assert [row["artifact"]["data"] for row in result["provider_videos"]] == [
-        b"\x00\x00\x00\x18ftyp-lip-1", b"\x00\x00\x00\x18ftyp-lip-2"
-    ]
-
-
 class _StoryboardContext:
     def __init__(self, *, reference: Path) -> None:
         self.reference = reference
@@ -370,16 +266,17 @@ class _Image2:
         self.calls: list[dict[str, object]] = []
 
     def run_image2(self, **kwargs):
-        import io
-        from PIL import Image
-
         self.calls.append(kwargs)
-        image = Image.new("RGB", (1280, 720), (24 + len(self.calls), 48, 72))
-        output = io.BytesIO()
-        image.save(output, format="PNG")
         return {
             "task_id": "image2-task",
-            "image_bytes": output.getvalue(),
+            "image_bytes": (
+                b"\x89PNG\r\n\x1a\n"
+                b"\x00\x00\x00\rIHDR\x00\x00\x02\xd0\x00\x00\x05\x00\x08\x02\x00\x00\x00"
+                # Each provider invocation is a distinct generated artifact.
+                # In particular, a replacement-control sheet cannot reuse the
+                # bytes of a source sheet or fixed-slot target reference.
+                + f"image2-output-{len(self.calls)}".encode("ascii")
+            ),
             "receipt": {"request_sha256": "c" * 64, "response_sha256": "d" * 64, "task_id": "image2-task"},
         }
 
@@ -387,49 +284,24 @@ class _Image2:
 class _AuditContext:
     def __init__(self, *, board: Path) -> None:
         self.board = board
-        self.carrier = board.with_name("seedance-visual-carrier.png")
-        self.carrier.write_bytes(_real_png_bytes(width=1040, height=600, color=(36, 64, 96)))
-        board_sha = _digest(board.read_bytes())
-        carrier_sha = _digest(self.carrier.read_bytes())
         self.snapshot = SimpleNamespace(slots_manifest={"slots": {}})
         self.artifacts = (
             {
                 "artifact_id": "board-artifact",
                 "object_key": "temporary/job/board-artifact.png",
                 "kind": "storyboard_image",
-                "sha256": board_sha,
-                "metadata": {
-                    "segment_id": "S01",
-                    "storyboard_revision": 1,
-                    "execution_carrier_artifact_id": "carrier-artifact",
-                    "execution_carrier_object_key": "temporary/job/seedance-visual-carrier.png",
-                    "execution_carrier_sha256": carrier_sha,
-                    "storyboard_layout_receipt_sha256": "8" * 64,
-                    "execution_carrier_source_roi_sha256": carrier_sha,
-                },
-            },
-            {
-                "artifact_id": "carrier-artifact",
-                "object_key": "temporary/job/seedance-visual-carrier.png",
-                "kind": "seedance_visual_carrier",
-                "sha256": carrier_sha,
-                "metadata": {
-                    "segment_id": "S01",
-                    "storyboard_revision": 1,
-                    "approval_board_sha256": board_sha,
-                    "layout_receipt_sha256": "8" * 64,
-                    "execution_carrier_source_roi_sha256": carrier_sha,
-                },
+                "sha256": _digest(board.read_bytes()),
+                "metadata": {"segment_id": "S01", "storyboard_revision": 1},
             },
         )
         self.published: list[dict[str, object]] = []
 
     @contextmanager
     def materialize_artifact(self, kind: str, *, artifact_id: str | None = None, sha256: str | None = None, **_kwargs):
-        assert kind == "seedance_visual_carrier"
-        assert artifact_id == "carrier-artifact"
-        assert sha256 == _digest(self.carrier.read_bytes())
-        yield _Materialized(self.carrier, sha256)
+        assert kind == "storyboard_image"
+        assert artifact_id == "board-artifact"
+        assert sha256 == _digest(self.board.read_bytes())
+        yield _Materialized(self.board, sha256)
 
     def publish_bytes(self, *, kind: str, data: bytes, content_type: str, expected_sha256: str, metadata=None):
         item = {
@@ -452,65 +324,6 @@ class _Uploader:
     def upload_media(self, path: Path) -> str:
         self.paths.append(Path(path))
         return f"https://media.example.test/{Path(path).name}"
-
-
-def test_seedance_storyboard_upload_uses_only_the_execution_carrier_bound_to_the_approved_board(tmp_path: Path) -> None:
-    from server.packaged_stages import SeedanceAuditStage
-
-    board = tmp_path / "director-board-approval.png"
-    carrier = tmp_path / "seedance-visual-carrier.png"
-    board.write_bytes(_real_png_bytes(width=1600, height=900, color=(20, 40, 80)))
-    carrier.write_bytes(_real_png_bytes(width=1040, height=600, color=(30, 60, 90)))
-    board_sha = _digest(board.read_bytes())
-    carrier_sha = _digest(carrier.read_bytes())
-
-    class Context:
-        snapshot = SimpleNamespace(current_storyboard_revision=1)
-        artifacts = (
-            {
-                "artifact_id": "board-artifact",
-                "object_key": "temporary/job/director-board-approval.png",
-                "kind": "storyboard_image",
-                "sha256": board_sha,
-                "metadata": {
-                    "segment_id": "S01",
-                    "storyboard_revision": 1,
-                    "execution_carrier_artifact_id": "carrier-artifact",
-                    "execution_carrier_object_key": "temporary/job/seedance-visual-carrier.png",
-                    "execution_carrier_sha256": carrier_sha,
-                    "storyboard_layout_receipt_sha256": "a" * 64,
-                    "execution_carrier_source_roi_sha256": carrier_sha,
-                },
-            },
-            {
-                "artifact_id": "carrier-artifact",
-                "object_key": "temporary/job/seedance-visual-carrier.png",
-                "kind": "seedance_visual_carrier",
-                "sha256": carrier_sha,
-                "metadata": {
-                    "segment_id": "S01",
-                    "storyboard_revision": 1,
-                    "approval_board_sha256": board_sha,
-                    "layout_receipt_sha256": "a" * 64,
-                    "execution_carrier_source_roi_sha256": carrier_sha,
-                },
-            },
-        )
-
-        @contextmanager
-        def materialize_artifact(self, kind: str, *, artifact_id: str, sha256: str):
-            assert kind == "seedance_visual_carrier"
-            assert artifact_id == "carrier-artifact"
-            assert sha256 == carrier_sha
-            yield _Materialized(carrier, carrier_sha)
-
-    stage = SeedanceAuditStage.__new__(SeedanceAuditStage)
-    stage.media_uploader = _Uploader()
-
-    url = stage._upload_storyboard(Context(), segment_id="S01")
-
-    assert url.endswith("seedance-visual-carrier.png")
-    assert stage.media_uploader.paths == [carrier]
 
 
 class _VideoAuditContext(_AuditContext):
@@ -721,13 +534,32 @@ def test_storyboard_stage_publishes_a_real_image2_board_and_binds_it_to_the_revi
     assert control_call["quality"] == "medium"
     assert control_call["reference_images"] == [source_sheet, reference]
     assert "replacement control keyframe sheet" in control_call["prompt"]
+    assert "Reference image 1 is the complete source Cut contact sheet" in control_call["prompt"]
+    assert "one complete replacement-control sheet" in control_call["prompt"]
+    assert "replace only the authorized model identity layer" in control_call["prompt"]
+    assert "must remain unchanged" in control_call["prompt"]
     assert board_call["reference_images"][1:] == [reference]
     assert board_call["reference_images"][0].name == "replacement-control-keyframes.png"
-    assert "source-keyframes.png" not in {path.name for path in board_call["reference_images"]}
-    assert "Asset type: 16:9 cinematic pre-production storyboard" in board_call["prompt"]
-    assert "- Left: CHARACTER section" in board_call["prompt"]
-    assert "- Right: TARGET EVIDENCE section" in board_call["prompt"]
+    assert "Reference image 1 is the replacement-control sheet" in board_call["prompt"]
+    assert "Later target references cannot override" in board_call["prompt"]
+    # The production request must be the filled packaged director-board
+    # template, not a short hand-written prompt that merely says "layout".
+    for required_layout_section in (
+        "Use case: infographic-diagram",
+        "Fixed layout:",
+        "- Top: shared creative direction",
+        "- Left: CHARACTER section",
+        "- Center: STORYBOARD section",
+        "- Right: TARGET EVIDENCE section",
+        "- Bottom: large short labels",
+        "Storyboard cards:",
+        "Exact allowed text:",
+    ):
+        assert required_layout_section in board_call["prompt"]
+    assert board_call["prompt"].lstrip().startswith("Use case: infographic-diagram")
+    assert "## Revision-scoped Cut outputs" not in board_call["prompt"]
     assert "{{" not in board_call["prompt"]
+    assert "source-keyframes.png" not in {path.name for path in board_call["reference_images"]}
     manifest = result["storyboard_revision"]
     assert manifest.grid_object_key and manifest.grid_sha256
     assert [(cut.cut_id, cut.object_key, cut.sha256) for cut in manifest.cut_images] == [
@@ -749,19 +581,11 @@ def test_storyboard_stage_publishes_a_real_image2_board_and_binds_it_to_the_revi
     assert board["metadata"]["approved_visible_text_locks_sha256"] == visible_text_locks_sha256([])
     assert len(board["metadata"]["replacement_control_keyframe_sheet_sha256"]) == 64
     assert len(board["metadata"]["replacement_control_keyframe_receipt_sha256"]) == 64
-    assert board["metadata"]["storyboard_layout_id"] == "usfr-cinematic-director-production-board/v1"
-    assert len(board["metadata"]["storyboard_template_sha256"]) == 64
-    assert board["metadata"]["storyboard_template_path"].endswith("daohuo_storyboard_prompt.md")
-    assert len(board["metadata"]["storyboard_layout_receipt_sha256"]) == 64
-    carrier = next(item for item in context.published if item["kind"] == "seedance_visual_carrier")
-    layout_receipt = next(item for item in context.published if item["kind"] == "storyboard_layout_receipt")
-    assert carrier["sha256"] != board["sha256"]
-    assert carrier["metadata"]["approval_board_sha256"] == board["sha256"]
-    assert carrier["metadata"]["layout_receipt_sha256"] == layout_receipt["sha256"]
-    assert board["metadata"]["execution_carrier_artifact_id"] == carrier["artifact_id"]
-    assert board["metadata"]["execution_carrier_sha256"] == carrier["sha256"]
     control = next(item for item in context.published if item["kind"] == "replacement_control_keyframe_sheet")
     assert control["metadata"]["source_keyframe_sheet_sha256"] == _digest(source_sheet.read_bytes())
+    assert control["metadata"]["generator_kind"] == "runninghub_image2"
+    assert control["metadata"]["generation_mode"] == "single_sheet_image_to_image"
+    assert control["metadata"]["image2_call_count"] == 1
 
 
 def test_storyboard_stage_keeps_the_source_control_chain_when_no_visual_target_is_supplied(
@@ -863,15 +687,19 @@ def test_source_keyframe_sheet_extracts_one_real_frame_for_each_source_cut(monke
 
     def fake_ffmpeg(command, **_kwargs):
         calls.append(list(command))
-        output = Path(command[-1])
-        output.parent.mkdir(parents=True, exist_ok=True)
-        Image.new("RGB", (16, 9), "black").save(output, format="PNG")
+        output_pattern = str(command[-1])
+        for index in range(1, 3):
+            output = Path(output_pattern.replace("%03d", f"{index:03d}"))
+            output.parent.mkdir(parents=True, exist_ok=True)
+            Image.new("RGB", (16, 9), "black").save(output, format="PNG")
         return SimpleNamespace(returncode=0)
 
     monkeypatch.setattr(stages.subprocess, "run", fake_ffmpeg)
     result = StoryboardStage._source_keyframe_sheet(
         Context(),
         {
+            "fps_num": 30,
+            "fps_den": 1,
             "source_cuts": [
                 {"cut_id": "C01", "start_us": 0, "end_us": 1_000_000},
                 {"cut_id": "C02", "start_us": 1_000_000, "end_us": 2_000_000},
@@ -880,11 +708,13 @@ def test_source_keyframe_sheet_extracts_one_real_frame_for_each_source_cut(monke
     )
 
     assert [item["cut_id"] for item in result["source_keyframes"]] == ["C01", "C02"]
-    assert len(calls) == 2
+    assert len(calls) == 1
+    assert "select=" in calls[0][calls[0].index("-vf") + 1]
+    assert calls[0][calls[0].index("-vsync") + 1] == "0"
     assert result["path"].is_file()
 
 
-def test_seedance_audit_uploads_only_the_layout_validated_execution_carrier(monkeypatch, tmp_path: Path) -> None:
+def test_seedance_audit_uploads_only_the_approved_storyboard_artifact(monkeypatch, tmp_path: Path) -> None:
     from server.packaged_stages import SeedanceAuditStage
     import server.packaged_stages as stages
 
@@ -897,8 +727,8 @@ def test_seedance_audit_uploads_only_the_layout_validated_execution_carrier(monk
     uploader = _Uploader()
     stage = SeedanceAuditStage(provider=object(), media_uploader=uploader)
     storyboard_url = stage._upload_storyboard(context, segment_id="S01")
-    assert uploader.paths == [context.carrier]
-    assert storyboard_url == "https://media.example.test/seedance-visual-carrier.png"
+    assert uploader.paths == [board]
+    assert storyboard_url == "https://media.example.test/board.png"
 
 
 def test_seedance_audit_uploads_only_the_matching_source_segment_with_a_verified_binding(monkeypatch, tmp_path: Path) -> None:
@@ -921,7 +751,7 @@ def test_seedance_audit_uploads_only_the_matching_source_segment_with_a_verified
         "segments": [{
             "segment_id": "S01", "segment_plan_sha256": segment_plan_sha256,
             "compiled_prompt": {
-                "prompt": "@Image1 is the approved storyboard. @Image2 is the approved character reference.",
+                "prompt": "@Image1 is the approved character reference. @Image2 is the approved storyboard page.",
                 "compiler": {"output_sha256": "b" * 64},
                 "source_contract": {"segment": {"duration_ms": 4000}},
             },
@@ -940,7 +770,7 @@ def test_seedance_audit_uploads_only_the_matching_source_segment_with_a_verified
 
     row = result["seedance_request_audit"]["segments"][0]
     assert row["payload_template"]["imageUrls"] == [
-        "https://media.example.test/seedance-visual-carrier.png", "https://media.example.test/model.png"
+        "https://media.example.test/model.png", "https://media.example.test/board.png"
     ]
     assert row["payload_template"]["videoUrls"] == ["https://media.example.test/S01-source-reference.mp4"]
     assert row["video_reference_binding"] == {
@@ -953,7 +783,7 @@ def test_seedance_audit_uploads_only_the_matching_source_segment_with_a_verified
         "source_video_reference_artifact_id": f"artifact-source_video_reference-{_digest(b'\x00\x00\x00\x18ftypisomsource-segment')}",
         "start_ms": 0,
         "end_ms": 4000,
-            "storyboard_url": "https://media.example.test/seedance-visual-carrier.png",
+        "image_reference_binding_sha256": standard_contract.image_reference_binding_sha256(row["image_reference_binding"]),
         "target_changes": [{"kind": "new_model_image", "sha256": _digest(model.read_bytes())}],
     }
 
@@ -979,10 +809,10 @@ def test_seedance_prompt_reference_roles_follow_the_fixed_image_order() -> None:
     )
 
     assert SeedancePromptStage._reference_roles(context) == [
-        {"slot": 1, "tag": "@Image1", "role": "approved storyboard visual control"},
-        {"slot": 2, "tag": "@Image2", "role": "fixed new_model_image target truth"},
-        {"slot": 3, "tag": "@Image3", "role": "fixed new_product_image target truth"},
-        {"slot": 4, "tag": "@Image4", "role": "fixed new_product_image target truth"},
+        {"slot": 1, "tag": "@Image1", "role": "fixed new_model_image target truth"},
+        {"slot": 2, "tag": "@Image2", "role": "fixed new_product_image target truth"},
+        {"slot": 3, "tag": "@Image3", "role": "approved storyboard visual control page 1"},
+        {"slot": 4, "tag": "@Image4", "role": "additional verified new_product_image detail"},
     ]
 
 
@@ -1018,13 +848,6 @@ def test_route_regions_rebuilds_ui_from_explicit_target_evidence() -> None:
         "target": "en",
         "mode": "preserve_source",
     }
-    assert {item["tool"] for item in result["tool_promotion_receipts"]} == {
-        "source_ocr",
-        "target_ui_ocr",
-        "ui_rebuild",
-        "storyboard",
-        "seedance_video",
-    }
 
 
 def test_route_regions_can_opt_in_to_automatic_ui_rebuild_for_product_change() -> None:
@@ -1037,7 +860,6 @@ def test_route_regions_can_opt_in_to_automatic_ui_rebuild_for_product_change() -
 
     ui_region = result["timeline_regions"]["regions"][0]
     assert ui_region["region_type"] == "generated_ui_demo"
-    assert "ui_rebuild" in {item["tool"] for item in result["tool_promotion_receipts"]}
 
 
 def test_route_regions_keeps_source_ui_when_only_output_language_is_requested() -> None:
@@ -1102,7 +924,7 @@ def test_provider_request_carries_the_video_reference_binding_outside_the_standa
     payload = {
         "prompt": "@Image1 follow the approved source performance.",
         "resolution": "720p", "duration": "4",
-        "imageUrls": ["https://media.example.test/seedance-visual-carrier.png", "https://media.example.test/model.png"],
+        "imageUrls": ["https://media.example.test/board.png", "https://media.example.test/model.png"],
         "videoUrls": ["https://media.example.test/source-segment.mp4"],
         "audioUrls": [], "generateAudio": True, "ratio": "9:16",
         "realPersonMode": True, "conversionSlots": ["all"], "returnLastFrame": False, "seed": -1,
@@ -1112,7 +934,7 @@ def test_provider_request_carries_the_video_reference_binding_outside_the_standa
         "source_video_sha256": "a" * 64, "source_slice_sha256": "b" * 64,
         "segment_id": "S01", "segment_plan_sha256": "d" * 64,
         "source_video_reference_artifact_id": "source-s01-artifact", "start_ms": 0, "end_ms": 4000,
-        "storyboard_url": payload["imageUrls"][0],
+        "image_reference_binding_sha256": "e" * 64,
         "target_changes": [{"kind": "new_model_image", "sha256": "c" * 64}],
     }
     lineage = {
@@ -1125,13 +947,8 @@ def test_provider_request_carries_the_video_reference_binding_outside_the_standa
             "storyboard_manifest_sha256": "f" * 64, "url": payload["imageUrls"][0],
             "source_video_sha256": "a" * 64, "source_keyframe_sheet_sha256": "0" * 64,
             "replacement_control_keyframe_sheet_sha256": "1" * 64,
-                "replacement_control_keyframe_receipt_sha256": "2" * 64,
-                "replacement_target_sha256s": ["c" * 64], "approved_visible_text_locks_sha256": "3" * 64,
-                "execution_carrier_artifact_id": "carrier-artifact",
-                "execution_carrier_object_key": "temporary/job/seedance-visual-carrier.png",
-                "execution_carrier_sha256": "4" * 64,
-                "storyboard_layout_receipt_sha256": "5" * 64,
-                "execution_carrier_source_roi_sha256": "4" * 64,
+            "replacement_control_keyframe_receipt_sha256": "2" * 64,
+            "replacement_target_sha256s": ["c" * 64], "approved_visible_text_locks_sha256": "3" * 64,
         },
         "source_reference": {
             "artifact_id": "source-s01-artifact", "object_key": "temporary/job/source-s01.mp4",
@@ -1140,10 +957,7 @@ def test_provider_request_carries_the_video_reference_binding_outside_the_standa
             "start_ms": 0, "end_ms": 4000, "url": payload["videoUrls"][0],
         },
         "allowed_target_changes": [{"kind": "new_model_image", "sha256": "c" * 64, "image_slot": 2, "url": payload["imageUrls"][1]}],
-        "forbidden_artifact_kinds": [
-            "source_keyframe_sheet", "replacement_control_keyframe_sheet", "replacement_control_keyframe_receipt",
-            "storyboard_image", "storyboard_layout_receipt",
-        ],
+        "forbidden_artifact_kinds": ["source_keyframe_sheet", "replacement_control_keyframe_sheet", "replacement_control_keyframe_receipt"],
     }
 
     request = SubmitProviderVideoStage._provider_request(
@@ -1175,7 +989,7 @@ def test_provider_request_rejects_a_source_video_without_the_private_final_refer
         "segment_id": "S01", "segment_plan_sha256": "c" * 64,
         "source_video_reference_artifact_id": "source-s01-artifact",
         "start_ms": 0, "end_ms": 4000,
-        "storyboard_url": payload["imageUrls"][0],
+        "image_reference_binding_sha256": "e" * 64,
         "target_changes": [{"kind": "new_model_image", "sha256": "d" * 64}],
     }
 
@@ -1288,7 +1102,7 @@ def test_seedance_audit_uses_only_a_duration_bound_uploaded_music_fragment(monke
     ).run(context=context, input_artifacts=[])
 
     row = result["seedance_request_audit"]["segments"][0]
-    assert row["payload_template"]["imageUrls"] == ["https://media.example.test/seedance-visual-carrier.png"]
+    assert row["payload_template"]["imageUrls"] == ["https://media.example.test/board.png"]
     assert row["payload_template"]["videoUrls"] == ["https://media.example.test/S01-source-reference.mp4"]
     assert row["payload_template"]["audioUrls"] == ["https://media.example.test/S01-audio-reference.wav"]
     assert "song.mp3" not in row["payload_template"]["audioUrls"][0]
@@ -1526,13 +1340,13 @@ def _verified_uploaded_song_prompt_context(tmp_path: Path):
             "kind": "song",
             "confidence": 0.97,
             "classification_evidence_sha256": "1" * 64,
-            "lyrics": [{"start_ms": 90000, "end_ms": 94000, "text": "I will meet you by the lake"}],
+            "lyrics": [{"start_ms": 0, "end_ms": 4000, "text": "I will meet you by the lake"}],
         },
     }
     return Context(), values, performance_line
 
 
-def test_seedance_prompt_keeps_verified_uploaded_song_lyrics_out_of_the_seedance_compiler(monkeypatch, tmp_path: Path) -> None:
+def test_seedance_prompt_passes_verified_uploaded_song_lyrics_and_confirmed_performer_to_compiler(monkeypatch, tmp_path: Path) -> None:
     from server.packaged_stages import SeedancePromptStage
     import server.packaged_stages as stages
 
@@ -1543,7 +1357,8 @@ def test_seedance_prompt_keeps_verified_uploaded_song_lyrics_out_of_the_seedance
         @staticmethod
         def compile_prompt(**kwargs):
             captured.update(kwargs)
-            return {"prompt": "Generated-person visual only; no dialogue."}
+            line = kwargs["performance_lines"][0]
+            return {"prompt": f'Use @Audio1. {line["speaker_assignment"]["speaker_id"]} sings exactly, "{line["exact_sung_text"]}".'}
 
     monkeypatch.setattr(stages, "_read_json_artifact", lambda _context, *, kind, **_kwargs: artifacts[kind])
     monkeypatch.setattr(stages, "_load_module", lambda *_args, **_kwargs: Compiler)
@@ -1560,61 +1375,13 @@ def test_seedance_prompt_keeps_verified_uploaded_song_lyrics_out_of_the_seedance
     ).run(context=context, input_artifacts=[])
 
     assert transcriptions == []
-    assert captured["line_contracts"] == []
-    assert captured["performance_lines"] == []
-    assert "@Audio1" not in result["seedance_input_contract"]["segments"][0]["compiled_prompt"]["prompt"]
-    assert "sings exactly" not in result["seedance_input_contract"]["segments"][0]["compiled_prompt"]["prompt"]
-    assert captured["segment"]["shots"][0]["audio"] == "no dialogue"
-    post_contract = result["seedance_input_contract"]["segments"][0]["song_lip_sync_contract"]
-    assert post_contract["performance_lines"][0]["uploaded_song_time"] == {"start_ms": 90000, "end_ms": 94000}
-    assert post_contract["song_start"] == "1:30"
-    assert post_contract["song_end"] == "1:34"
-
-
-def test_seedance_prompt_binds_exact_paper_text_to_the_physical_carrier_without_changing_song_routing(monkeypatch, tmp_path: Path) -> None:
-    from server.packaged_stages import SeedancePromptStage
-    import server.packaged_stages as stages
-
-    context, artifacts, _performance_line = _verified_uploaded_song_prompt_context(tmp_path)
-    artifacts["script_revision"]["visible_text_locks"] = [{
-        "text_id": "paper-words",
-        "cut_ids": ["C01"],
-        "start_ms": 0,
-        "end_ms": 4000,
-        "kind": "paper_text",
-        "source_evidence_sha256": "9" * 64,
-        "approved_text": "Free chat nahi?",
-        "disposition": "keep",
-        "placement": {
-            "carrier_id": "white-paper-1",
-            "surface_relation": "centered on the front face of the white paper",
-            "motion_behavior": "moves, bends, folds, occludes, and tears with the paper",
-        },
-    }]
-    captured: dict[str, object] = {}
-
-    class Compiler:
-        @staticmethod
-        def compile_prompt(**kwargs):
-            captured.update(kwargs)
-            return {"prompt": kwargs["segment"]["shots"][0]["action"]}
-
-    monkeypatch.setattr(stages, "_read_json_artifact", lambda _context, *, kind, **_kwargs: artifacts[kind])
-    monkeypatch.setattr(stages, "_load_module", lambda *_args, **_kwargs: Compiler)
-    adapter = SimpleNamespace(prompt_skill_files={"seedance-20": tmp_path / "seedance.md"})
-
-    result = SeedancePromptStage(
-        invocation_adapter=adapter,
-        uploaded_song_transcriber=lambda *_args, **_kwargs: [],
-    ).run(context=context, input_artifacts=[])
-
-    shot = captured["segment"]["shots"][0]
-    assert "Free chat nahi?" in shot["action"]
-    assert "white-paper-1" in shot["action"]
-    assert "bending" in shot["action"] and "tearing" in shot["action"]
-    assert captured["line_contracts"] == []
-    assert captured["performance_lines"] == []
-    assert result["seedance_input_contract"]["segments"][0]["song_lip_sync_contract"]["song_start"] == "1:30"
+    assert captured["performance_lines"] == [performance_line]
+    prompt = result["seedance_input_contract"]["segments"][0]["compiled_prompt"]["prompt"]
+    assert "@Audio1" in prompt
+    assert "CHARACTER_A sings exactly" in prompt
+    assert '"I will meet you by the lake"' in prompt
+    assert "0-4000ms" in captured["segment"]["shots"][0]["audio"]
+    assert "silent outside" in captured["segment"]["shots"][0]["audio"]
 
 
 def test_seedance_prompt_uses_confirmed_source_lyrics_without_an_uploaded_song(monkeypatch, tmp_path: Path) -> None:
@@ -1646,7 +1413,7 @@ def test_seedance_prompt_uses_confirmed_source_lyrics_without_an_uploaded_song(m
     assert '"I will meet you by the lake"' in prompt
 
 
-def test_seedance_prompt_carries_replacement_song_lyrics_only_in_the_post_process_contract(monkeypatch, tmp_path: Path) -> None:
+def test_seedance_prompt_binds_approved_replacement_song_lyrics_to_the_confirmed_source_singer(monkeypatch, tmp_path: Path) -> None:
     from server.packaged_stages import SeedancePromptStage
     import server.packaged_stages as stages
 
@@ -1665,23 +1432,21 @@ def test_seedance_prompt_carries_replacement_song_lyrics_only_in_the_post_proces
         @staticmethod
         def compile_prompt(**kwargs):
             captured.update(kwargs)
-            return {"prompt": "Generated-person visual only; no dialogue."}
+            return {"prompt": "@Audio1 CHARACTER_A sings exactly."}
 
     monkeypatch.setattr(stages, "_read_json_artifact", lambda _context, *, kind, **_kwargs: artifacts[kind])
     monkeypatch.setattr(stages, "_load_module", lambda *_args, **_kwargs: Compiler)
     adapter = SimpleNamespace(prompt_skill_files={"seedance-20": tmp_path / "seedance.md"})
 
-    result = SeedancePromptStage(
+    SeedancePromptStage(
         invocation_adapter=adapter,
         uploaded_song_transcriber=lambda *_args, **_kwargs: [
             {"start": 0.0, "end": 4.0, "text": replacement_lyric}
         ],
     ).run(context=context, input_artifacts=[])
 
-    assert captured["performance_lines"] == []
-    post_line = result["seedance_input_contract"]["segments"][0]["song_lip_sync_contract"]["performance_lines"][0]
-    assert post_line["speaker_assignment"]["speaker_id"] == "CHARACTER_A"
-    assert post_line["exact_sung_text"] == replacement_lyric
+    assert captured["performance_lines"][0]["speaker_assignment"]["speaker_id"] == "CHARACTER_A"
+    assert captured["performance_lines"][0]["exact_sung_text"] == replacement_lyric
 
 
 def test_seedance_prompt_uses_an_uploaded_non_song_as_window_bound_replacement_without_singing(monkeypatch, tmp_path: Path) -> None:

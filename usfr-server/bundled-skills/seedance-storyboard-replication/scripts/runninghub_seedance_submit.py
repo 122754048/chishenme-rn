@@ -27,7 +27,9 @@ from config import DEFAULT_ENV_FILE, build_redacted_provider_preflight, load_set
 from server.runninghub_standard_contract import (
     RUNNINGHUB_STANDARD_SEEDANCE_FIELDS as RUNNINGHUB_STANDARD_PAYLOAD_FIELDS,
     RunningHubStandardPayloadError,
+    image_reference_binding_sha256,
     validate_public_https_url,
+    validate_image_reference_binding,
     validate_runninghub_standard_payload_contract,
     validate_video_reference_binding,
 )
@@ -325,9 +327,11 @@ def poll_runninghub_task(
     task_id: str,
     *,
     timeout: float | None = None,
-    poll_interval: float = 20,
+    poll_interval: float = 3,
 ) -> str:
     deadline = None if timeout is None else client.clock() + timeout
+    poll_index = 0
+    schedule = (3.0, 5.0, 8.0, 12.0, 15.0)
     while True:
         response = client.get_status(task_id)
         status = str(response.get("status") or "").upper()
@@ -348,7 +352,12 @@ def poll_runninghub_task(
             raise RunningHubSeedanceError(f"unknown RunningHub task status: {status or '<empty>'}")
         if deadline is not None and client.clock() >= deadline:
             raise PollTimeoutError(f"RunningHub task {task_id} timed out")
-        client.sleep(poll_interval)
+        if poll_interval == 3:
+            delay = schedule[min(poll_index, len(schedule) - 1)]
+        else:
+            delay = min(15.0, max(0.1, poll_interval) * (1.5 ** poll_index))
+        client.sleep(delay)
+        poll_index += 1
 
 
 def _write_json(path: Path, value: Mapping[str, object]) -> None:
@@ -469,6 +478,10 @@ def _prepare_source_video_reference(args: argparse.Namespace) -> None:
     args.source_slice_sha256 = reference.source_slice_sha256
     args.segment_start_ms = reference.start_ms
     args.segment_end_ms = reference.end_ms
+    args.segment_plan_sha256 = hashlib.sha256(
+        json.dumps(segment_plan, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    args.source_video_reference_artifact_id = f"source-reference:{reference.source_slice_sha256}"
 
 
 def _load_approved_payload(output_dir: Path, approved_sha256: str) -> dict[str, object]:
@@ -528,16 +541,74 @@ def _parse_target_changes(values: list[str]) -> list[dict[str, str]]:
     return changes
 
 
+_IMAGE_ROLE_MANIFEST_FIELDS = frozenset({"schema_version", "approval_set_sha256", "images"})
+_IMAGE_ROLE_ROW_FIELDS = frozenset(
+    {"role", "artifact_name", "sha256", "cut_ids", "page", "approval_set_sha256", "purpose"}
+)
+
+
+def _build_image_reference_binding(
+    *,
+    payload: Mapping[str, object],
+    image_urls: list[str],
+    image_files: list[Path],
+    direct_url_count: int,
+    manifest_path: Path | None,
+) -> dict[str, object]:
+    """Compile the pre-upload role manifest into exact provider URL bindings."""
+
+    if manifest_path is None:
+        raise PayloadError("Seedance images require --image-role-manifest")
+    manifest = _read_json_object(
+        manifest_path,
+        error_message="the --image-role-manifest is unavailable or invalid",
+    )
+    if set(manifest) != _IMAGE_ROLE_MANIFEST_FIELDS or manifest.get("schema_version") != "usfr-image-role-manifest/v1":
+        raise PayloadError("--image-role-manifest must use the complete usfr-image-role-manifest/v1 schema")
+    rows = manifest.get("images")
+    if not isinstance(rows, list) or len(rows) != len(image_urls) or not 1 <= len(rows) <= 9:
+        raise PayloadError("--image-role-manifest must describe every one-to-nine image exactly once")
+    if direct_url_count < 0 or direct_url_count + len(image_files) != len(image_urls):
+        raise PayloadError("image role manifest order differs from direct/uploaded image order")
+    bindings: list[dict[str, object]] = []
+    for index, (row, url) in enumerate(zip(rows, image_urls, strict=True), start=1):
+        if not isinstance(row, Mapping) or set(row) != _IMAGE_ROLE_ROW_FIELDS:
+            raise PayloadError("--image-role-manifest contains an incomplete image descriptor")
+        descriptor = dict(row)
+        declared_sha = str(descriptor.get("sha256") or "").lower()
+        if index > direct_url_count:
+            path = image_files[index - direct_url_count - 1]
+            if descriptor.get("artifact_name") != path.name or declared_sha != _file_sha256(path):
+                raise PayloadError("uploaded image bytes or artifact name differ from --image-role-manifest")
+        descriptor.update({"image_index": index, "tag": f"@Image{index}", "url": url})
+        bindings.append(descriptor)
+    binding = {
+        "schema_version": "usfr-multimodal-reference-binding/v2",
+        "ordered_image_urls": list(image_urls),
+        "approval_set_sha256": manifest.get("approval_set_sha256"),
+        "image_bindings": bindings,
+        "slot_policy": "continuous-present-role-order/v1",
+        "forbidden_artifact_names": ["seedance_execution_carrier.png"],
+    }
+    try:
+        validate_image_reference_binding(payload, binding)
+    except RunningHubStandardPayloadError as error:
+        raise PayloadError(str(error)) from error
+    return binding
+
+
 def _build_video_reference_binding(
     *,
     video_urls: list[str],
     video_files: list[Path],
-    image_urls: list[str],
+    image_reference_binding: Mapping[str, object] | None,
     source_video_sha256: str | None,
     source_slice_sha256: str | None,
     segment_id: str | None,
     segment_start_ms: int | None,
     segment_end_ms: int | None,
+    segment_plan_sha256: str | None,
+    source_video_reference_artifact_id: str | None,
     target_change_values: list[str],
 ) -> dict[str, object] | None:
     metadata = (
@@ -546,6 +617,8 @@ def _build_video_reference_binding(
         segment_id,
         segment_start_ms,
         segment_end_ms,
+        segment_plan_sha256,
+        source_video_reference_artifact_id,
         target_change_values,
     )
     if not video_urls:
@@ -554,8 +627,8 @@ def _build_video_reference_binding(
         return None
     if len(video_urls) != 1 or len(video_files) > 1:
         raise PayloadError("USFR accepts exactly one source segment video reference")
-    if not image_urls:
-        raise PayloadError("a source video reference requires the approved storyboard at @Image1")
+    if image_reference_binding is None:
+        raise PayloadError("a source video reference requires the complete multimodal image binding")
     if not source_video_sha256 or not segment_id or segment_start_ms is None or segment_end_ms is None:
         raise PayloadError(
             "a source video reference requires --source-video-sha256, --segment-id, --segment-start-ms, and --segment-end-ms"
@@ -565,15 +638,19 @@ def _build_video_reference_binding(
         raise PayloadError("--source-slice-sha256 differs from the supplied --video-file")
     if not actual_slice_sha256:
         raise PayloadError("a --video-url requires --source-slice-sha256")
+    if not segment_plan_sha256 or not source_video_reference_artifact_id:
+        raise PayloadError("a source video reference requires frozen segment-plan and source-slice artifact bindings")
     return {
         "schema_version": "usfr-video-reference/v1",
         "url": video_urls[0],
         "source_video_sha256": source_video_sha256,
         "source_slice_sha256": actual_slice_sha256,
         "segment_id": segment_id,
+        "segment_plan_sha256": segment_plan_sha256,
+        "source_video_reference_artifact_id": source_video_reference_artifact_id,
         "start_ms": segment_start_ms,
         "end_ms": segment_end_ms,
-        "storyboard_url": image_urls[0],
+        "image_reference_binding_sha256": image_reference_binding_sha256(image_reference_binding),
         "target_changes": _parse_target_changes(target_change_values),
     }
 
@@ -588,6 +665,7 @@ def _validate_approved_payload_matches_submission(
     real_person_mode: bool,
     image_files: list[Path],
     image_urls: list[str],
+    image_role_manifest: Path | None,
     audio_files: list[Path],
     audio_urls: list[str],
     video_files: list[Path],
@@ -597,6 +675,8 @@ def _validate_approved_payload_matches_submission(
     segment_id: str | None,
     segment_start_ms: int | None,
     segment_end_ms: int | None,
+    segment_plan_sha256: str | None,
+    source_video_reference_artifact_id: str | None,
     target_change_values: list[str],
 ) -> None:
     expected = {
@@ -608,7 +688,7 @@ def _validate_approved_payload_matches_submission(
     }
     if any(payload.get(key) != value for key, value in expected.items()):
         raise PayloadError("submission parameters do not match the audited dry run")
-    if image_files or audio_files or video_files or video_urls:
+    if image_files or image_urls or image_role_manifest or audio_files or video_files or video_urls:
         asset_bindings = _read_json_object(
             output_dir / "asset_bindings.json",
             error_message="audited dry-run asset bindings are unavailable",
@@ -628,15 +708,27 @@ def _validate_approved_payload_matches_submission(
             asset_bindings=asset_bindings,
         )
         stored_video_reference = asset_bindings.get("video_reference")
+        stored_image_reference = asset_bindings.get("image_reference_binding")
+        expected_image_reference = _build_image_reference_binding(
+            payload=payload,
+            image_urls=list(payload.get("imageUrls") or []),
+            image_files=image_files,
+            direct_url_count=len(image_urls),
+            manifest_path=image_role_manifest,
+        )
+        if stored_image_reference != expected_image_reference:
+            raise PayloadError("submitted image reference binding differs from the audited dry run")
         expected_video_reference = _build_video_reference_binding(
             video_urls=list(payload.get("videoUrls") or []),
             video_files=video_files,
-            image_urls=list(payload.get("imageUrls") or []),
+            image_reference_binding=expected_image_reference,
             source_video_sha256=source_video_sha256,
             source_slice_sha256=source_slice_sha256,
             segment_id=segment_id,
             segment_start_ms=segment_start_ms,
             segment_end_ms=segment_end_ms,
+            segment_plan_sha256=segment_plan_sha256,
+            source_video_reference_artifact_id=source_video_reference_artifact_id,
             target_change_values=target_change_values,
         )
         if stored_video_reference != expected_video_reference:
@@ -665,6 +757,7 @@ def main() -> int:
     parser.add_argument("--scope-receipt", type=Path)
     parser.add_argument("--image-url", action="append", default=[])
     parser.add_argument("--image-file", action="append", type=Path, default=[])
+    parser.add_argument("--image-role-manifest", type=Path)
     parser.add_argument("--audio-url", action="append", default=[])
     parser.add_argument("--audio-file", action="append", type=Path, default=[])
     parser.add_argument("--video-url", action="append", default=[])
@@ -688,14 +781,14 @@ def main() -> int:
     parser.add_argument("--poll", action="store_true")
     parser.add_argument("--resume-task-id")
     parser.add_argument("--timeout", type=float, default=None)
-    parser.add_argument("--poll-interval", type=float, default=20)
+    parser.add_argument("--poll-interval", type=float, default=3)
     args = parser.parse_args()
     if (args.audio_url or args.audio_file) and args.source_video_file is None:
         parser.error("audio references require an orchestrated --source-video-file segment")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     settings = load_settings(args.env_file)
     if args.preflight:
-        if any((args.prompt_file, args.scope_receipt, args.image_url, args.image_file, args.audio_url, args.audio_file, args.video_url, args.video_file, args.source_video_file, args.segment_plan_file, args.source_video_sha256, args.source_slice_sha256, args.segment_id, args.segment_start_ms, args.segment_end_ms, args.target_change, args.duration, args.dry_run, args.poll, args.resume_task_id, args.approved_request_sha256)):
+        if any((args.prompt_file, args.scope_receipt, args.image_url, args.image_file, args.image_role_manifest, args.audio_url, args.audio_file, args.video_url, args.video_file, args.source_video_file, args.segment_plan_file, args.source_video_sha256, args.source_slice_sha256, args.segment_id, args.segment_start_ms, args.segment_end_ms, args.target_change, args.duration, args.dry_run, args.poll, args.resume_task_id, args.approved_request_sha256)):
             raise PayloadError("--preflight cannot be combined with a Seedance task option")
         _write_json(args.output_dir / "provider_preflight.json", build_redacted_provider_preflight(args.env_file))
         return 0
@@ -707,7 +800,7 @@ def main() -> int:
         upload_url=settings.runninghub_seedance_upload_url,
     )
     if args.resume_task_id:
-        if args.dry_run or args.approved_request_sha256 or args.audio_url or args.audio_file or args.video_url or args.video_file or args.source_video_file or args.segment_plan_file or args.source_video_sha256 or args.source_slice_sha256 or args.segment_id or args.segment_start_ms is not None or args.segment_end_ms is not None or args.target_change:
+        if args.dry_run or args.approved_request_sha256 or args.image_role_manifest or args.audio_url or args.audio_file or args.video_url or args.video_file or args.source_video_file or args.segment_plan_file or args.source_video_sha256 or args.source_slice_sha256 or args.segment_id or args.segment_start_ms is not None or args.segment_end_ms is not None or args.target_change:
             raise PayloadError("resume-task-id cannot be combined with a new request option")
         task_id = args.resume_task_id
     else:
@@ -732,18 +825,28 @@ def main() -> int:
                 video_urls=video_urls,
                 real_person_mode=args.real_person_mode,
             )
+            image_reference = _build_image_reference_binding(
+                payload=payload,
+                image_urls=image_urls,
+                image_files=args.image_file,
+                direct_url_count=len(args.image_url),
+                manifest_path=args.image_role_manifest,
+            )
             video_reference = _build_video_reference_binding(
                 video_urls=video_urls,
                 video_files=args.video_file,
-                image_urls=image_urls,
+                image_reference_binding=image_reference,
                 source_video_sha256=args.source_video_sha256,
                 source_slice_sha256=args.source_slice_sha256,
                 segment_id=args.segment_id,
                 segment_start_ms=args.segment_start_ms,
                 segment_end_ms=args.segment_end_ms,
+                segment_plan_sha256=args.segment_plan_sha256,
+                source_video_reference_artifact_id=args.source_video_reference_artifact_id,
                 target_change_values=args.target_change,
             )
             try:
+                validate_image_reference_binding(payload, image_reference)
                 validate_video_reference_binding(payload, video_reference)
             except RunningHubStandardPayloadError as error:
                 raise PayloadError(str(error)) from error
@@ -755,6 +858,7 @@ def main() -> int:
                 {
                     "schema_version": "runninghub-standard-seedance-asset-bindings/v1",
                     "image_file_bindings": _file_bindings(args.image_file, uploaded_image_urls),
+                    "image_reference_binding": image_reference,
                     "audio_file_bindings": _file_bindings(args.audio_file, uploaded_audio_urls),
                     "video_file_bindings": _file_bindings(args.video_file, uploaded_video_urls),
                     "video_reference": video_reference,
@@ -774,6 +878,7 @@ def main() -> int:
             real_person_mode=args.real_person_mode,
             image_files=args.image_file,
             image_urls=args.image_url,
+            image_role_manifest=args.image_role_manifest,
             audio_files=args.audio_file,
             audio_urls=args.audio_url,
             video_files=args.video_file,
@@ -783,6 +888,8 @@ def main() -> int:
             segment_id=args.segment_id,
             segment_start_ms=args.segment_start_ms,
             segment_end_ms=args.segment_end_ms,
+            segment_plan_sha256=args.segment_plan_sha256,
+            source_video_reference_artifact_id=args.source_video_reference_artifact_id,
             target_change_values=args.target_change,
         )
         try:
@@ -794,7 +901,21 @@ def main() -> int:
         _write_json(args.output_dir / "create_response.json", client.last_response)
     (args.output_dir / "task_id.txt").write_text(str(task_id), encoding="utf-8")
     if args.poll:
-        video_url = poll_runninghub_task(client, str(task_id), timeout=args.timeout, poll_interval=args.poll_interval)
+        try:
+            video_url = poll_runninghub_task(
+                client, str(task_id), timeout=args.timeout, poll_interval=args.poll_interval
+            )
+        except TaskFailedError as error:
+            _write_json(
+                args.output_dir / "failure.json",
+                {
+                    "task_id": str(task_id),
+                    "status": "failed",
+                    "error_message": str(error),
+                    "provider_status": _redact_provider_response(client.last_status_response),
+                },
+            )
+            raise
         _write_json(args.output_dir / "status.json", client.last_status_response)
         client.download_video(video_url, args.output_dir / "result.mp4")
     else:

@@ -237,18 +237,19 @@ RUNNINGHUB_SEEDANCE_UPLOAD_URL=https://www.runninghub.cn/openapi/v2/media/upload
 
 The video request must be the direct documented Standard Model body. Every
 source-fidelity generated segment uploads the exact current 2-15 second matching
-original source segment at `videoUrls[0]`, the approved director board at
-`imageUrls[0]` / `@Image1`, then only fixed-slot target references; it may also
+original source segment at `videoUrls[0]` and the complete one-to-nine-image
+`usfr-multimodal-reference-binding/v2` array; it may also
 carry one eligible current-segment audio fragment. Source Cut/keyframe sheets
 and replacement-control sheets must never be sent to Seedance, and the full
 source video must never be uploaded. Opaque UI video and tail video remain
 forbidden. The Seedance key is separate so an ordinary RunningHub workflow key
 is never sent to the enterprise-only standard-model API.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved
-director board at `imageUrls[0]` / `@Image1`; then only fixed-slot target
-references. Source Cut/keyframe sheets and replacement-control sheets must never
-be sent to Seedance.
+Use `continuous-present-role-order/v1`: model identity, product/App truth,
+every original approved storyboard PNG page, then explicitly scoped additional
+references. Enforce `uploaded_tags == binding_tags == prompt_tags`; never create
+or upload `seedance_execution_carrier.png` and never accept a single
+`storyboard_url` binding. @Video1 and @Audio1 are independent namespaces.
 
 If the HTTP request times out after a paid create call may have reached the
 provider, return an ambiguous state and let `/provider/reconcile` use

@@ -15,6 +15,41 @@ the top-level skill. It owns intake, dependency routing, run directories,
 approval gates, timing, assembly, QC, and delivery. Its bundled skills remain
 single-purpose implementation modules.
 
+## User-facing artifact contract
+
+A fixed-slot source-fidelity run is constrained replication execution, not
+open-ended creative design. Do not invoke `brainstorming`, write a design spec,
+offer multiple production approaches, or introduce a design/plan review loop.
+The frozen Source Fidelity Contract and the user's populated slots already
+define the design boundary.
+
+For every generated-media run, the user layer has exactly two ordered editable
+artifact gates:
+
+1. The first user pause is the downloadable `user_script_markdown` file
+   (`text/markdown; charset=utf-8`). Save it as
+   `analysis/reverse_storyboard_script.md` and present the file link. Pasting the script inline in
+   chat is not a valid script-approval artifact. Lyrics, singer assignment,
+   visible text, duration/split decisions, replacement scope, and any
+   unresolved-but-editable choice belong inside this same document gate.
+2. The second user pause is the actual `image/png` director storyboard. Present
+   `storyboards/segment_XX_vN.png` or the complete PNG set together. A text-only storyboard
+   description is not a valid storyboard-approval artifact. Two Segment boards
+   form one set-wide revision and receive one confirmation together.
+
+The replacement-control sheet is internal-only and must never be presented, linked, previewed, or bundled in the user approval response. The user-facing second gate contains only the ordered director-board PNG set. The approval set supports at most two director-board PNG pages, and a page may contain at most four Cut cards. When a generated Segment contains more than four Cuts, paginate it into exactly two pages before Image2. All pages for the current storyboard revision form one ordered approval set and receive one confirmation together. Pagination is a visual publication decision only: it does not create another user gate, change approved Cut timing, or create additional Seedance Segments/tasks.
+
+A director-board page may contain at most four Cut cards.
+
+No scope, approach, design, plan, duration, split, reference-allocation, prompt, generation, or QC confirmation is permitted. Intake binding, source
+analysis, fidelity-level selection, control-frame creation, product-board
+assembly, Segment planning, prompt compilation, provider submission, assembly,
+and QC continue automatically. Progress commentary may be sent only as a
+non-blocking update that requests no reply and does not end the workflow turn.
+If safe execution is impossible, report a typed blocker; a blocker is not a
+new approval gate. Script or storyboard revisions return to their existing
+artifact gate and never create another approval type.
+
 For server execution, the temporary Redis job is authoritative. Use `server/`
 with `references/server-api-contract.md`, `run-state-machine.md`,
 `ephemeral-job-lifecycle.md`, `idempotency-and-provider-reconciliation.md`,
@@ -211,15 +246,14 @@ into script, storyboard, Seedance input, timeline assembly, and QC.
 
 ### Mandatory visual and text handoff
 
-The replacement-control route is fixed: **one complete source Cut contact sheet → one RunningHub Image2 call → one complete replacement-control sheet**. Per-Cut replacement generation and per-Cut source-frame validation are forbidden during this stage. Local face swap, ComfyUI, InsightFace, desktop image editors, and any non-Image2 generator are forbidden. A fixed-slot target image is target truth only and must never be accepted as the replacement-control sheet. The director-board Image2 request must use the replacement-control sheet as reference image 1.
-
-The user-facing director board is not a free-form provider output. Every storyboard generation must first load and compile `bundled-skills/seedance-storyboard-replication/references/daohuo_storyboard_prompt.md`; this file is the sole director-board prompt and layout authority. Its exact byte SHA-256 must be bound into the provider prompt, layout receipt, storyboard metadata, and approval artifact. Missing bytes, a changed or incomplete template, an unresolved placeholder, or a receipt without the exact template SHA fails closed before Image2 or publication. No embedded fallback prompt, generic renderer, remembered layout, or alternate Markdown file may substitute for it.
-
-RunningHub Image2 must generate the complete `usfr-cinematic-director-production-board/v1` defined by that template: shared creative header; character reference; face/hair detail; wardrobe/style detail; ordered storyboard Cut cards; target evidence or `none`; top-down camera/movement diagram; and the six bottom departments lighting, camera, palette, audio/tone, mood, and cinematography notes. The returned Image2 PNG is preserved as the approval artifact; deterministic code may validate it, bind receipts, extract a separate execution carrier, or add approved typography, but must not replace it with a remembered layout. Cut-card count and order must exactly match the approved Segment. A layout receipt binds the template path/SHA, every required region, Cut card, approval-board SHA, and execution-carrier SHA. Missing region, generic grid, wrong Cut count, missing receipt, stale SHA, or the former five-region information-board layout fails with `STORYBOARD_LAYOUT_QC_FAILED`; the image cannot be shown, approved, or submitted.
-
-The gate records the `daohuo_storyboard_prompt.md` template SHA, creative header, character reference, face/hair, wardrobe/style, ordered storyboard Cut cards in `storyboard_grid`, target evidence, camera/movement diagram, lighting, camera, palette, audio/tone, mood, the distinct `seedance_visual_carrier`, and the layout receipt.
-
-The approval artifact and Seedance reference are separate immutable files. `director_board_approval.png` is the only user-facing storyboard confirmation. `seedance_visual_carrier.png` is a labels-free image derived from the approved board's `storyboard_grid` visual layer. It must carry the approval-board SHA, layout-receipt SHA, exact ROI, Cut IDs, and its own SHA. The approval board itself, its headers, notes, control sheet, and layout receipt are forbidden in the paid Seedance payload.
+Every director-board generation and revision must load and compile the exact
+bytes of `bundled-skills/seedance-storyboard-replication/references/daohuo_storyboard_prompt.md`.
+That file is the sole director-board prompt and layout authority. Bind its
+SHA-256 into the Image2 request, layout receipt, storyboard metadata, and
+approval artifact. Missing bytes, incomplete fixed-layout anchors, unresolved
+placeholders, a mismatched SHA, an embedded fallback prompt, or any alternate
+template fails closed before Image2 or publication. The obsolete five-region
+information board and generic contact-sheet layouts are not approvable.
 
 For every source-fidelity generated region, the visual provenance chain is
 mandatory and ordered: **source Cut frames → replacement-control sheet →
@@ -231,9 +265,46 @@ from that control sheet plus the user-provided fixed-slot targets. The control
 sheet is internal evidence, never a user-facing board and never a final
 Seedance reference.
 
-User-confirmed visible text is routed by physical carrier. **Scene-surface text** printed, written, painted, embroidered, displayed, or attached to a prop must be present in the replacement-control Image2 output and director-board Cut art. Freeze its exact wording, Cut/time window, carrier ID, surface relation, placement, style, and motion behavior. The same exact wording and carrier relation must be written explicitly into the Seedance Cut prompt. It moves, bends, folds, rotates, occludes, and tears with its carrier and must never become a screen-fixed post layer.
+The replacement-control route is fixed: **one complete source Cut contact sheet → one RunningHub Image2 call → one complete replacement-control sheet**. Per-Cut replacement generation and per-Cut source-frame validation are forbidden during this control-sheet stage; the ordered source frames are assembled once, submitted once, and replaced once as a complete sheet. Local face swap, ComfyUI, InsightFace, desktop image editors, and any non-Image2 generator are forbidden. A fixed-slot target image is target truth only and must never be accepted as the replacement-control sheet. The control receipt must prove a distinct Image2 output SHA, a single-sheet generation mode, and exactly one Image2 call.
 
-**Deterministic overlay text** such as subtitles, captions, CTA, headline, lower-third, or sticker is rendered on the approval board and final output by the deterministic compositor. Image2 and Seedance must not generate, read, or transcribe those glyphs. UI text stays in the deterministic UI/source-pixel/opaque UI lane. A normal `no unapproved text` negative suppresses invented text without suppressing approved scene-surface or overlay text. The editable user Markdown
+The replacement-control sheet remains private internal provenance even when the user asks to see intermediate work. Only director-board PNG pages are approval artifacts. Before director-board Image2, partition each Segment's ordered Cuts into at most two pages of at most four Cuts each, keeping contiguous Cut order. Seven portrait Cuts require two pages partitioned 3+4. On a four-Cut 9:16 page, every Cut scene image uses proportional fit-contain scaling inside its allocated card; empty margins are allowed, but crop-to-fill, horizontal compression, vertical stretching, and changed body proportions are forbidden. Every Cut card must retain the complete source composition and recognizable character/body/action state; detected crowding, cropped required body/prop evidence, source-aspect distortion, or identity deformation fails closed and requires page regeneration before publication.
+
+The Image2 control prompt must declare every reference role from the fixed-slot
+manifest. Reference image 1 is the complete source contact sheet and is the
+sole authority for panel count/order, pose, action, gesture, expression, gaze,
+mouth state, head/body angle, camera, crop, subject scale/position, background,
+lighting, hands, props, occlusion, product interaction, and continuity. Later
+references authorize only their populated replacement layers: model identity,
+physical product/App-product evidence, or another explicitly routed target.
+Every non-authorized source property is an immutable KEEP layer. The
+director-board Image2 request must use the replacement-control sheet as
+reference image 1; later target references provide identity/product truth only
+and cannot override its visual state.
+
+User-confirmed visible text is a source-fidelity lock, but its render route is
+chosen by its physical carrier. Classify every text observation before control-
+frame creation: **scene-surface text** is physically printed, written, painted,
+embroidered, displayed, or attached to a prop or other scene object;
+**deterministic overlay text** is a subtitle, caption, CTA, headline,
+lower-third, sticker, or other screen-space layer; UI text follows the
+deterministic UI/source-pixel/opaque UI lane. Inspect parallax, perspective,
+occlusion, deformation, object contact, and camera-relative motion to resolve
+ambiguity.
+
+Scene-surface text must be present in the replacement-control Image2 output and
+the director board as part of the physical carrier. Freeze its exact wording,
+Cut/time window, carrier ID, surface relation, placement, style, and motion
+behavior. It moves, bends, folds, rotates, occludes, and tears with its carrier.
+The same exact wording, location, carrier relation, and deformation behavior
+must be written explicitly into the Seedance Cut prompt. It must never be
+flattened into a screen-fixed post layer.
+
+Deterministic overlay text is materialized on the approved director board and
+final output with its approved wording, Cut/time window, geometry, keyframes,
+opacity, and z-order. Image2 and Seedance must not generate, read, or transcribe
+overlay glyphs. A normal `no unapproved text` negative suppresses invented text
+without suppressing approved scene-surface text or deterministic overlay text.
+The editable user Markdown
 document contains exactly these two top-level sections and no explanatory
 preface, QA prose, or provider prompt:
 
@@ -241,16 +312,30 @@ preface, QA prose, or provider prompt:
 
 ## 逐镜反解
 
-Every source-fidelity Seedance request is fixed: use the matching original
-source segment at `videoUrls[0]`; use the approved-board-bound `seedance_visual_carrier` at
-`imageUrls[0]` / `@Image1`; then include only fixed-slot target references in
-the remaining image positions. Source Cut/keyframe sheets and
-replacement-control sheets must never be sent to Seedance. A route with zero
-generated regions creates no Seedance request. The exact current 2-15 second
-matching original source segment is mandatory at `videoUrls[0]`; the full
-source video must never be uploaded to Seedance.
+Every source-fidelity Seedance request uses the matching original source
+segment at `videoUrls[0]` and at most nine images. Image order follows
+`continuous-present-role-order/v1`: `@Image1 is the new model identity when a
+model replacement is populated`; product or App truth follows the model
+identity when populated; approved director storyboard PNG pages follow the
+populated target-truth images; and additional verified references follow only
+when their Cut scope and purpose are explicit. Absent logical roles do not use
+placeholder images: later present roles compact left, and the machine binding
+records the actual index/tag so the shift is never silent.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets, replacement-control sheets, user-facing director boards, and layout receipts must never be sent to Seedance.
+Every approved storyboard page is uploaded as its original confirmed PNG. The
+workflow must not generate, merge, crop, or substitute an execution carrier.
+`seedance_execution_carrier.png` is forbidden as an artifact, upload, binding,
+or Prompt reference. A single `storyboard_url` is invalid; the request must
+carry `usfr-multimodal-reference-binding/v2` with one ordered descriptor per
+image, including URL, SHA-256, `@ImageN`, role, artifact name, Cut scope,
+purpose, and storyboard page/approval-set fields where applicable. Enforce
+`uploaded_tags == binding_tags == prompt_tags` before dry-run and again before
+paid submission. @Video1 is a video-slot reference and never consumes an image
+index. @Audio1 is an audio-slot reference and never consumes an image index.
+Source Cut/keyframe sheets and replacement-control sheets must never be sent to
+Seedance. A route with zero generated regions creates no Seedance request. The
+exact current 2-15 second matching original source segment is mandatory at
+`videoUrls[0]`; the full source video must never be uploaded to Seedance.
 
 ## Fixed Input Slot Contract
 
@@ -382,7 +467,9 @@ only from its existing approved script plus storyboard artifact; the board image
 cannot replace or override approved text, timing, claims, or audio. Those are
 internal run artifacts, not public input slots. Otherwise reverse-write the
 replacement script and stop for
-**确认反解分镜脚本**.
+**确认反解分镜脚本** only after
+`analysis/reverse_storyboard_script.md` exists as the downloadable
+`user_script_markdown` artifact.
 
 Source-video semantic analysis still locates App/UI/tail intervals from frames,
 interaction, and audio. It does not classify uploaded file roles. Bind the
@@ -400,6 +487,16 @@ Read the timeline contract before routing any App region.
 
 The **Opaque slice branch** is the route for supplied opaque UI or tail-card
 media; it never changes semantic generation rules for other intervals.
+
+`USFR_UI_REBUILD_ENABLED` is the automatic UI-rebuild switch and defaults to
+`false`. With no explicit UI target evidence, a detected source UI interval is
+kept as `source_ui_keep` even when the run changes the product, character, or
+language; OCR, App Store parsing, and UI rendering are skipped for that lane.
+Supplying `ui_screenshot` or an official Apple App Store/Google Play URL is an
+explicit target-evidence override and always enables `generated_ui_demo`, while
+preserving the source UI operation timing and interaction contract. Supplying
+`ui_operation_video` still wins and always uses `opaque_ui_demo`, regardless of
+the switch. Invalid switch values fail closed before a run is admitted.
 
 ## End-To-End Workflow
 
@@ -608,9 +705,10 @@ two Provider tasks for deployment audits.
       user supplies `ui_operation_video`, retain the opaque route above and do
       not classify, redraw, OCR, or reinterpret its body. When no UI operation
       video is supplied, a source UI Cut may use `generated_ui_demo` for a
-      populated `ui_screenshot` or `app_store_url`, or for an eligible
-      `new_product_image`/`new_model_image` replacement or `output_language`
-      localization. The generated UI region preserves the exact source
+      populated `ui_screenshot` or `app_store_url` (always enabled), or for an
+      eligible `new_product_image`/`new_model_image` replacement or
+      `output_language` localization only when
+      `USFR_UI_REBUILD_ENABLED=true`. The generated UI region preserves the exact source
       transition shell at both entry and exit.
     - Each rebuilt UI Cut carries one immutable
       `source-ui-interaction/v1` contract. It freezes the source time and
@@ -717,7 +815,9 @@ two Provider tasks for deployment audits.
      request from the already validated analysis artifact and fixed-slot
      digests. A caller-supplied request remains authoritative only when it
      already satisfies the same strict signature and factor coverage.
-   - Route 2 stops for **确认反解分镜脚本**.
+   - Route 2 stops for **确认反解分镜脚本** only with the downloadable
+     `analysis/reverse_storyboard_script.md` file; inline chat text is not the
+     approval artifact.
 
  7. **Plan generated regions**
     - Apply the bundled duration planner only to contiguous generated regions;
@@ -742,16 +842,18 @@ two Provider tasks for deployment audits.
       independent asset and segment work may run concurrently.
 
  8. **Generate and approve storyboards**
-    - Load and compile the exact bundled `references/daohuo_storyboard_prompt.md` bytes before every storyboard generation. Bind its SHA-256 into the prompt, layout receipt, storyboard metadata, and approval artifact; no fallback prompt or renderer-authored replacement is permitted. Then use RunningHub image2
+    - Load and compile the exact bundled `references/daohuo_storyboard_prompt.md` bytes, bind its SHA-256 to the request and approval receipts, then use RunningHub image2
       client. Keep the required `16:9`, `2k`, `medium` settings and real model-
       generated Cut scenes.
-    - Image2 produces only the ordered Cut visual sheet from the replacement-control sheet. The server then renders the fixed five-region professional approval board deterministically; generated Cut scenes remain real Image2 pixels.
-    - Publish both `director_board_approval.png` and `seedance_visual_carrier.png` plus the validated layout receipt. They must have distinct SHA-256 values and mutual lineage.
-    - Reject generic grids, the obsolete five-region information board, missing template SHA, missing required cinematic-production regions, wrong Cut-card count/order, missing layout receipt, or an execution carrier not bound to the approved `storyboard_grid` visual layer.
-    - Derived source contact sheets or boundary frames may carry only structure,
-      timing, camera, or environment evidence. Source identity, brand, UI, or text
+    - Save real PNG artifacts and provenance; never substitute a deterministic
+      collage for generated Cut scenes.
+    - Derived source contact sheets or boundary frames may carry structure,
+      timing, camera, environment, and approved scene-surface text evidence.
+      Source identity, unauthorized brand/UI, and deterministic overlay text
       must not leak into an authorized replacement board or fixed-B asset map.
-   - Stop for **确认故事板** after every new or revised board. This storyboard
+   - Stop for **确认故事板** after every new or revised actual
+     `storyboards/segment_XX_vN.png` board image set. A text-only board plan is
+     invalid. This storyboard
      approval triggers autonomous Seedance compilation, submission, provider
      waiting, assembly, and QC.
 
@@ -760,12 +862,13 @@ two Provider tasks for deployment audits.
       Recompile the final prompt through `seedance-20`, then build exactly one
       unauthorised pre-submit dry-run payload for that prompt version. Do not
       pass `--approved-request-sha256` on the dry run.
-    - Upload the layout-validated `seedance_visual_carrier` and populated target reference images from
+    - Upload the approved director storyboard and populated target reference images from
       the fixed slot manifest with RunningHub Standard Model binary upload. Every
       source-fidelity generated run also uploads exactly the matching current
       2-15 second original source segment as `videoUrls[0]`, bound by
       `usfr-video-reference/v1` to source/slice SHA-256 values, the frozen
-      segment window, the approved-board-bound execution carrier at `@Image1`, and at least one target change.
+      segment window, the complete `usfr-multimodal-reference-binding/v2`
+      digest, and at least one target change.
       Source keyframe sheets and replacement-control sheets are never uploaded to
       Seedance; they are used only upstream to generate the director board. Opaque UI media
       and tail media remain forbidden. For a local source file, provide the
@@ -891,6 +994,11 @@ two Provider tasks for deployment audits.
 12. **Final QC and delivery**
     - Verify MP4 video/audio streams, dimensions, fps, duration, Cut order,
       character/product consistency, audio presence, and timeline placement.
+    - QC visible text by route. Scene-surface text must match exact spelling and
+      carrier placement in the intact state, remain perspective/occlusion bound,
+      and move, bend, fold, rotate, occlude, and tear with its carrier; floating,
+      screen-fixed, regenerated gibberish, or detached glyphs are hard failures.
+      Deterministic overlay text must match its geometry/timing receipts.
     - Run boundary-aware black QC over every splice/transition window; one full
       black frame at a splice boundary, or any longer splice-boundary black
       interval, blocks delivery even when it is internal rather than leading or
@@ -946,11 +1054,19 @@ two Provider tasks for deployment audits.
 
 ## Approval Gates
 
-Only these two approval types are permitted:
+Only these two user approval artifacts are permitted for generated-media runs,
+in this order:
 
-- Route 2 only: **确认反解分镜脚本**.
-- Route 1: **确认故事板** only.
-- Route 2: **确认反解分镜脚本**, then **确认故事板**.
+- **确认反解分镜脚本**: the published `user_script_markdown` file; an inline
+  chat transcription or a scope/方案 question is not the artifact.
+- **确认故事板**: the actual generated `image/png` director-board image set;
+  a written plan, storyboard description, contact sheet, or control sheet is
+  not the artifact.
+
+Historical Route 1 markers are normalized to this same two-artifact review
+surface. Local-only/opaque-only and supported language-only automation routes
+retain zero approval gates because they create neither artifact. No route may
+insert an intermediate confirmation.
 
 The contract phrase `storyboard approval triggers autonomous Seedance` means
 storyboard approval triggers autonomous Seedance compilation, submission, provider
@@ -975,15 +1091,21 @@ and run one dry-run per version; perform local deterministic parity checks
 afterward. The RunningHub Standard Model route is fixed to
 `seedance-2.0-fast-token`, `720p`, `9:16`, and no legacy `reference_audios`
 field. Every source-fidelity generated fixed-B request uses only the matching
-original source segment at `videoUrls[0]` under `usfr-video-reference/v1`, the
-approved-board-bound `seedance_visual_carrier` at `imageUrls[0]` / `@Image1`,
-and only fixed-slot target references afterward. The approved director board,
-source/control sheets, and layout receipt are forbidden Provider inputs. It has
-a non-empty authorized target change. One
+original source segment at `videoUrls[0]` under `usfr-video-reference/v1` and
+the ordered, SHA-bound image set authorized by
+`usfr-multimodal-reference-binding/v2`. It has a non-empty authorized target change. One
 duration-bounded `audioUrls` item is
 permitted only for the approved `background_music` extension, which must render
 as `@Audio1` and remain bound to its music execution contract. Resume known task
 IDs and never create duplicate paid tasks.
+
+FFmpeg video encoding defaults to `libx264`. A deployment may set
+`USFR_FFMPEG_ENCODER=h264_nvenc` only on a verified NVIDIA-capable worker; the
+accepted values are exactly `libx264` and `h264_nvenc`. Optionally set
+`USFR_FFMPEG_THREADS` to an integer from 1 through 64. These settings change
+only the encoder implementation and worker thread count; they do not relax
+frame timing, SHA-256 lineage, receipt validation, approval gates, QC, or
+Provider idempotency.
 
 `probe_source` is the deterministic probe cache boundary. Its verified output
 must carry the source SHA-256, duration, dimensions, and frame-rate fields;
@@ -1088,7 +1210,7 @@ or segment binding fails before prompt compilation or a paid request.
 Inside existing Stages 5–6, Seedance-20 **Invocation A** is a non-provider
 executability/compiler pass. It uses the same packaged skill snapshot as B and
 writes `analysis/seedance20_prescript_v1.json`, allocating one primary fidelity
-spend per generated region, no more than two regions/four image roles, exact
+spend per generated region, no more than two regions/nine ordered image roles, exact
 speaker/locale/line timing, proof/Foley/silence windows, and action endpoints.
 Route 1 is read-only; Route 2 can receive only evidence-bounded copy proposals
 before the existing script approval. Local-only and opaque-only runs record A/B
@@ -1200,7 +1322,7 @@ The prompt projection remains inside the existing stages:
 1. **Invocation A (pre-script):** run the root `seedance-20` skill plus the
    selected specialists as a non-provider executability pass. Allocate one
    primary fidelity spend per candidate region, one visible action and
-   completed endpoint per shot/phase, at most four image roles, exact line and
+   completed endpoint per shot/phase, at most nine ordered image roles, exact line and
    audio windows, and a 5000-character feasibility budget. Route 2 may receive
    evidence-bounded copy proposals before script approval; Route 1 is
    read-only. A never draws readable UI/long text or inspects opaque media.

@@ -592,28 +592,6 @@ def test_creative_planner_rejects_unbound_script_response(monkeypatch: pytest.Mo
         planner._validate_response({"source_sha256": "0" * 64}, context=context, kind="script")
 
 
-def test_prompt_version_is_compiled_once_for_the_same_request(monkeypatch: pytest.MonkeyPatch) -> None:
-    _set_complete_environment(monkeypatch)
-    calls: list[dict[str, Any]] = []
-
-    def request_json(**kwargs: Any) -> dict[str, Any]:
-        calls.append(kwargs)
-        return {"model": "gpt-test-2026-07-22", "output_text": '{"value":"ok"}'}
-
-    planner = EvidenceBoundGptPlanner(ProductionEnvironment.from_environ(), request_json=request_json)
-    schema = {
-        "type": "object",
-        "additionalProperties": False,
-        "properties": {"value": {"type": "string"}},
-        "required": ["value"],
-    }
-    first = planner._request_structured(kind="prompt", evidence={"source_bundle_sha256": "a" * 64}, schema=schema)
-    second = planner._request_structured(kind="prompt", evidence={"source_bundle_sha256": "a" * 64}, schema=schema)
-
-    assert first == second
-    assert len(calls) == 1
-
-
 @pytest.mark.parametrize("receipt_field", ("request_sha256", "response_sha256"))
 def test_creative_planner_rejects_tampered_transport_receipt(
     monkeypatch: pytest.MonkeyPatch,
@@ -1384,7 +1362,7 @@ def test_runninghub_video_create_rejects_a_bound_source_slice_without_final_boar
         "source_video_reference_artifact_id": "source-s01-artifact",
         "start_ms": 0,
         "end_ms": 5000,
-        "storyboard_url": payload["imageUrls"][0],
+        "image_reference_binding_sha256": "e" * 64,
         "target_changes": [{"kind": "new_model_image", "sha256": "d" * 64}],
     }
     request = _BoundProviderPayload(

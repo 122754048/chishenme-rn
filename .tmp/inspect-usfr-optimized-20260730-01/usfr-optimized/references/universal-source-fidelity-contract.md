@@ -223,31 +223,43 @@ The contract freezes before script, storyboard, and Seedance input. Opaque
 media is never sent to a generation provider. Every source-fidelity generated
 segment sends exactly one matching original 2-15 second source segment at
 `videoUrls[0]`, bound by `usfr-video-reference/v1` to the source and slice
-SHA-256 values and frozen segment window; it sends the approved director board
-at `imageUrls[0]` / `@Image1`; and it sends only fixed-slot target references
-afterward. The required upstream chain is source Cut frames →
+SHA-256 values and frozen segment window; it sends one-to-nine images under
+`continuous-present-role-order/v1` and
+`usfr-multimodal-reference-binding/v2`: model identity, product/App truth,
+every original approved director-board PNG page, then explicitly scoped
+additional references. The required upstream chain is source Cut frames →
 replacement-control sheet → approved director board. Source Cut/keyframe sheets
 and replacement-control sheets must never be sent to Seedance. Generated regions inherit exact global
 Cut numbers, source timecodes, continuity handoff, voiceover/audio events,
 selling-point evidence, and negative constraints. A route change invalidates the
 downstream contract and returns to the relevant existing approval gate.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved director board at `imageUrls[0]` / `@Image1`; then only fixed-slot target references. Source Cut/keyframe sheets and replacement-control sheets must never be sent to Seedance. The full source video must never be uploaded to Seedance.
+Every approved storyboard page is uploaded as its original confirmed PNG.
+`seedance_execution_carrier.png` and a single `storyboard_url` are forbidden.
+Enforce `uploaded_tags == binding_tags == prompt_tags`. @Video1 and @Audio1 are
+independent namespaces and never consume image indices. Source Cut/keyframe
+sheets and replacement-control sheets must never be sent to Seedance. The full
+source video must never be uploaded to Seedance.
 
-Confirmed visible text is a deterministic approved-text layer on the approved
-director board or a deterministic overlay; Seedance must not generate, read, or
-transcribe its glyphs. A normal `no screen text` negative applies only to
-model-generated scene text and does not suppress the deterministic approved-text
-layer.
+Confirmed visible text is routed by carrier. Scene-surface text is part of a
+physical prop/material and must be present in the replacement-control sheet and
+approved director board with exact wording, carrier ID, surface relation, and
+placement. It moves, bends, folds, rotates, occludes, and tears with its carrier,
+and this behavior must be written explicitly into the Seedance Cut prompt.
+Deterministic overlay text is a screen-space subtitle/caption/CTA/headline layer
+rendered by the overlay compositor; Seedance must not generate, read, or
+transcribe overlay glyphs. UI text stays in the deterministic UI/source-pixel/
+opaque route. Never flatten scene-surface text into a screen-fixed post layer.
 
 If routing produces zero generated regions, the existing local-only branch is
 mandatory: no reverse script, no storyboard, no Image Gen request, no
 Seedance-20 Invocation A or B, no CreateAsset, no CreateVideo, and no creative
 approval. Region-boundary planning, deterministic source/opaque assembly,
 transition rendering, and technical QC still run. Derived source contact sheets
-or boundary frames may carry only structure, timing, camera, or environment
-evidence; source identity, brand, UI, or text must not leak into a replacement
-storyboard or fixed-B provider asset map.
+or boundary frames may carry structure, timing, camera, environment, and
+approved scene-surface text evidence; source identity, unauthorized brand/UI,
+and deterministic overlay text must not leak into a replacement storyboard or
+fixed-B provider asset map.
 
 The final QC report checks structural timing and continuity, visual identity and
 product truth, speech/delivery and audio onset, overlay placement, selling-point

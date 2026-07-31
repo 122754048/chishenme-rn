@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import hashlib
 import sys
 from pathlib import Path
 
@@ -12,6 +14,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
 import server.runninghub_standard_contract as standard_contract
+import runninghub_seedance_submit as submit
 
 from config import build_redacted_provider_preflight, load_settings  # noqa: E402
 from server.runninghub_standard_contract import (  # noqa: E402
@@ -52,6 +55,69 @@ def test_shared_standard_contract_rejects_audio_without_a_visual_reference() -> 
         raise AssertionError("an audio reference without an approved visual reference must be rejected")
 
 
+def test_submitter_builds_ordered_image_binding_from_role_manifest(tmp_path: Path) -> None:
+    model = tmp_path / "model.png"
+    board1 = tmp_path / "segment_01_v1_page_1.png"
+    board2 = tmp_path / "segment_01_v1_page_2.png"
+    model.write_bytes(b"model")
+    board1.write_bytes(b"board-one")
+    board2.write_bytes(b"board-two")
+    paths = [model, board1, board2]
+    approval = hashlib.sha256(b"approval").hexdigest()
+    manifest = {
+        "schema_version": "usfr-image-role-manifest/v1",
+        "approval_set_sha256": approval,
+        "images": [
+            {
+                "role": "new_model_identity",
+                "artifact_name": model.name,
+                "sha256": hashlib.sha256(model.read_bytes()).hexdigest(),
+                "cut_ids": ["C01", "C02", "C03"],
+                "page": None,
+                "approval_set_sha256": None,
+                "purpose": "replace model identity only",
+            },
+            {
+                "role": "director_storyboard",
+                "artifact_name": board1.name,
+                "sha256": hashlib.sha256(board1.read_bytes()).hexdigest(),
+                "cut_ids": ["C01", "C02"],
+                "page": 1,
+                "approval_set_sha256": approval,
+                "purpose": "approved director storyboard page 1",
+            },
+            {
+                "role": "director_storyboard",
+                "artifact_name": board2.name,
+                "sha256": hashlib.sha256(board2.read_bytes()).hexdigest(),
+                "cut_ids": ["C03"],
+                "page": 2,
+                "approval_set_sha256": approval,
+                "purpose": "approved director storyboard page 2",
+            },
+        ],
+    }
+    path = tmp_path / "image-role-manifest.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    urls = [f"https://media.example/{item.name}" for item in paths]
+    payload = {
+        "prompt": "@Image1 model. @Image2 board page one. @Image3 board page two. @Video1 motion.",
+        "imageUrls": urls,
+    }
+
+    binding = submit._build_image_reference_binding(
+        payload=payload,
+        image_urls=urls,
+        image_files=paths,
+        direct_url_count=0,
+        manifest_path=path,
+    )
+
+    assert binding["schema_version"] == "usfr-multimodal-reference-binding/v2"
+    assert [row["tag"] for row in binding["image_bindings"]] == ["@Image1", "@Image2", "@Image3"]
+    assert [row["page"] for row in binding["image_bindings"]] == [None, 1, 2]
+
+
 def test_cli_rejects_direct_audio_inputs_without_an_orchestrated_segment_receipt(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -71,6 +137,63 @@ def test_cli_rejects_direct_audio_inputs_without_an_orchestrated_segment_receipt
         main()
 
     assert error.value.code == 2
+
+
+def test_cli_persists_provider_failure_evidence_when_a_known_task_fails(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A failed known task remains auditable and is never silently discarded."""
+
+    class Settings:
+        runninghub_seedance_api_key = "test-key"
+        runninghub_seedance_create_url = "https://provider.example/create"
+        runninghub_seedance_query_url = "https://provider.example/query"
+        runninghub_seedance_upload_url = "https://provider.example/upload"
+
+        def require_seedance(self) -> None:
+            return None
+
+    class FailedClient:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            self.last_status_response: dict[str, object] = {}
+
+        def get_status(self, _task_id: str) -> dict[str, object]:
+            self.last_status_response = {
+                "taskId": "task-failed",
+                "status": "FAILED",
+                "errorCode": "SY_ERR:10",
+                "errorMessage": "provider moderation rejection",
+            }
+            return self.last_status_response
+
+        def clock(self) -> float:
+            return 0.0
+
+        def sleep(self, _seconds: float) -> None:
+            raise AssertionError("a failed task must not sleep or retry")
+
+    monkeypatch.setattr(submit, "load_settings", lambda _path: Settings())
+    monkeypatch.setattr(submit, "RunningHubStandardSeedanceClient", FailedClient)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "runninghub_seedance_submit.py",
+            "--resume-task-id",
+            "task-failed",
+            "--output-dir",
+            str(tmp_path),
+            "--poll",
+        ],
+    )
+
+    with pytest.raises(submit.TaskFailedError, match="provider moderation rejection"):
+        submit.main()
+
+    evidence = json.loads((tmp_path / "failure.json").read_text(encoding="utf-8"))
+    assert evidence["task_id"] == "task-failed"
+    assert evidence["provider_status"]["status"] == "FAILED"
+    assert evidence["provider_status"]["errorCode"] == "SY_ERR:10"
 
 
 def test_standard_payload_accepts_one_bound_source_video_reference() -> None:
@@ -94,7 +217,7 @@ def test_standard_payload_accepts_one_bound_source_video_reference() -> None:
         "source_video_reference_artifact_id": "source-reference-artifact",
         "start_ms": 0,
         "end_ms": 11_042,
-        "storyboard_url": "https://media.example/board.png",
+        "image_reference_binding_sha256": "e" * 64,
         "target_changes": [
             {"kind": "new_model_image", "sha256": "c" * 64},
         ],
@@ -116,7 +239,7 @@ def test_final_reference_lineage_rejects_an_internal_control_asset_or_wrong_sour
         "@Image1 fixes the approved director board while @Image2 fixes the model identity.",
         4,
         "9:16",
-        ["https://media.example/seedance-visual-carrier.png", "https://media.example/model.png"],
+        ["https://media.example/board.png", "https://media.example/model.png"],
         [],
         video_urls=["https://media.example/source-s01.mp4"],
         real_person_mode=True,
@@ -142,11 +265,6 @@ def test_final_reference_lineage_rejects_an_internal_control_asset_or_wrong_sour
             "replacement_control_keyframe_receipt_sha256": "0" * 64,
             "replacement_target_sha256s": ["1" * 64],
             "approved_visible_text_locks_sha256": "2" * 64,
-            "execution_carrier_artifact_id": "carrier-artifact",
-            "execution_carrier_object_key": "temporary/job/seedance-visual-carrier.png",
-            "execution_carrier_sha256": "4" * 64,
-            "storyboard_layout_receipt_sha256": "5" * 64,
-            "execution_carrier_source_roi_sha256": "4" * 64,
         },
         "source_reference": {
             "artifact_id": "source-reference-artifact",
@@ -172,20 +290,12 @@ def test_final_reference_lineage_rejects_an_internal_control_asset_or_wrong_sour
             "source_keyframe_sheet",
             "replacement_control_keyframe_sheet",
             "replacement_control_keyframe_receipt",
-            "storyboard_image",
-            "storyboard_layout_receipt",
         ],
     }
 
     validator = getattr(standard_contract, "validate_final_reference_lineage", None)
     assert callable(validator)
     validator(payload, lineage)
-
-    missing_carrier_binding = dict(lineage)
-    missing_carrier_binding["approved_board"] = dict(lineage["approved_board"])
-    missing_carrier_binding["approved_board"].pop("execution_carrier_sha256")
-    with pytest.raises(RunningHubStandardPayloadError, match="execution carrier"):
-        validator(payload, missing_carrier_binding)
 
     forged = {
         **lineage,

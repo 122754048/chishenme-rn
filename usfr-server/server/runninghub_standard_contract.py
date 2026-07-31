@@ -90,6 +90,38 @@ _ROUTE_LEAKAGE_EXACT_KEYS = {
 }
 _PLACEHOLDER_RE = re.compile(r"\{\{.*?\}\}|\[\[.*?\]\]", re.DOTALL)
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+_IMAGE_TAG_RE = re.compile(r"@Image([1-9])(?!\d)")
+_IMAGE_REFERENCE_BINDING_FIELDS = frozenset(
+    {
+        "schema_version",
+        "ordered_image_urls",
+        "approval_set_sha256",
+        "image_bindings",
+        "slot_policy",
+        "forbidden_artifact_names",
+    }
+)
+_IMAGE_BINDING_FIELDS = frozenset(
+    {
+        "image_index",
+        "tag",
+        "role",
+        "artifact_name",
+        "sha256",
+        "url",
+        "cut_ids",
+        "page",
+        "approval_set_sha256",
+        "purpose",
+    }
+)
+_IMAGE_ROLE_RANK = {
+    "new_model_identity": 0,
+    "product_or_app_truth": 1,
+    "director_storyboard": 2,
+    "additional_reference": 3,
+}
+_FORBIDDEN_IMAGE_ARTIFACT_NAMES = ("seedance_execution_carrier.png",)
 _VIDEO_REFERENCE_FIELDS = frozenset(
     {
         "schema_version",
@@ -101,7 +133,7 @@ _VIDEO_REFERENCE_FIELDS = frozenset(
         "source_video_reference_artifact_id",
         "start_ms",
         "end_ms",
-        "storyboard_url",
+        "image_reference_binding_sha256",
         "target_changes",
     }
 )
@@ -134,11 +166,6 @@ _FINAL_REFERENCE_BOARD_FIELDS = frozenset(
         "replacement_control_keyframe_receipt_sha256",
         "replacement_target_sha256s",
         "approved_visible_text_locks_sha256",
-        "execution_carrier_artifact_id",
-        "execution_carrier_object_key",
-        "execution_carrier_sha256",
-        "storyboard_layout_receipt_sha256",
-        "execution_carrier_source_roi_sha256",
     }
 )
 _FINAL_REFERENCE_SOURCE_FIELDS = frozenset(
@@ -160,8 +187,6 @@ _FORBIDDEN_FINAL_ARTIFACT_KINDS = (
     "source_keyframe_sheet",
     "replacement_control_keyframe_sheet",
     "replacement_control_keyframe_receipt",
-    "storyboard_image",
-    "storyboard_layout_receipt",
 )
 _AUDIO_REFERENCE_FIELDS = frozenset(
     {
@@ -199,6 +224,139 @@ _AUDIT_PROOF_SCHEMA_VERSION = "usfr-provider-audit-proof/v1"
 
 class RunningHubStandardPayloadError(ValueError):
     """Raised when a request cannot safely reach the paid standard API."""
+
+
+def image_reference_binding_sha256(binding: Mapping[str, object]) -> str:
+    """Return the canonical digest for the ordered multimodal image sidecar."""
+
+    return hashlib.sha256(
+        json.dumps(binding, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def _image_binding_error(message: str) -> None:
+    raise RunningHubStandardPayloadError(f"image reference binding {message}")
+
+
+def validate_image_reference_binding(
+    payload: Mapping[str, object], binding: Mapping[str, object] | None
+) -> None:
+    """Validate exact @ImageN order, provenance, role, scope, and Prompt closure.
+
+    ``@Video1`` and ``@Audio1`` are separate provider namespaces.  They are
+    intentionally ignored by this image-only validator and never consume an
+    image index.
+    """
+
+    if not isinstance(binding, Mapping) or set(binding) != _IMAGE_REFERENCE_BINDING_FIELDS:
+        _image_binding_error("must use the complete usfr-multimodal-reference-binding/v2 schema")
+    if binding.get("schema_version") != "usfr-multimodal-reference-binding/v2":
+        _image_binding_error("has an unsupported schema version")
+    if binding.get("slot_policy") != "continuous-present-role-order/v1":
+        _image_binding_error("must declare the deterministic continuous present-role slot policy")
+    if binding.get("forbidden_artifact_names") != list(_FORBIDDEN_IMAGE_ARTIFACT_NAMES):
+        _image_binding_error("must forbid the Seedance execution carrier")
+
+    image_urls = payload.get("imageUrls")
+    ordered_urls = binding.get("ordered_image_urls")
+    rows = binding.get("image_bindings")
+    if (
+        not isinstance(image_urls, list)
+        or not 1 <= len(image_urls) <= 9
+        or not all(isinstance(url, str) and url for url in image_urls)
+    ):
+        _image_binding_error("requires between one and nine uploaded image URLs")
+    if not isinstance(ordered_urls, list) or ordered_urls != image_urls:
+        _image_binding_error("URL order must exactly match imageUrls")
+    if not isinstance(rows, list) or len(rows) != len(image_urls):
+        _image_binding_error("must bind every uploaded image exactly once")
+
+    prompt = payload.get("prompt")
+    if not isinstance(prompt, str) or not prompt.strip():
+        _image_binding_error("requires a non-empty prompt")
+    prompt_tags = {f"@Image{match}" for match in _IMAGE_TAG_RE.findall(prompt)}
+    expected_tags = {f"@Image{index}" for index in range(1, len(image_urls) + 1)}
+    if prompt_tags != expected_tags:
+        missing = sorted(expected_tags - prompt_tags)
+        extra = sorted(prompt_tags - expected_tags)
+        _image_binding_error(f"prompt tags must equal uploaded tags; missing={missing}, extra={extra}")
+
+    roles: list[str] = []
+    seen_urls: set[str] = set()
+    seen_sha256s: set[str] = set()
+    storyboards: list[Mapping[str, object]] = []
+    model_count = 0
+    product_count = 0
+    for expected_index, row in enumerate(rows, start=1):
+        if not isinstance(row, Mapping) or set(row) != _IMAGE_BINDING_FIELDS:
+            _image_binding_error("contains an incomplete image descriptor")
+        if row.get("image_index") != expected_index or row.get("tag") != f"@Image{expected_index}":
+            _image_binding_error("index/tag order is not contiguous or differs from imageUrls")
+        if row.get("url") != image_urls[expected_index - 1]:
+            _image_binding_error("descriptor URL order differs from imageUrls")
+        role = row.get("role")
+        if role not in _IMAGE_ROLE_RANK:
+            _image_binding_error("contains an unsupported image role")
+        roles.append(str(role))
+        if role == "new_model_identity":
+            model_count += 1
+        elif role == "product_or_app_truth":
+            product_count += 1
+        elif role == "director_storyboard":
+            storyboards.append(row)
+
+        artifact_name = row.get("artifact_name")
+        if not isinstance(artifact_name, str) or not artifact_name.strip():
+            _image_binding_error("requires an artifact name for every image")
+        if artifact_name.casefold() in {name.casefold() for name in _FORBIDDEN_IMAGE_ARTIFACT_NAMES}:
+            _image_binding_error("forbids seedance execution carrier images")
+        sha256 = row.get("sha256")
+        if not isinstance(sha256, str) or _SHA256_RE.fullmatch(sha256) is None:
+            _image_binding_error("requires a SHA-256 for every image")
+        if str(row["url"]) in seen_urls or sha256 in seen_sha256s:
+            _image_binding_error("forbids duplicate image URLs or SHA-256 values")
+        seen_urls.add(str(row["url"]))
+        seen_sha256s.add(sha256)
+        cut_ids = row.get("cut_ids")
+        if (
+            not isinstance(cut_ids, list)
+            or not cut_ids
+            or len(cut_ids) != len(set(cut_ids))
+            or not all(isinstance(cut_id, str) and cut_id.strip() for cut_id in cut_ids)
+        ):
+            _image_binding_error("requires a non-empty unique Cut scope for every image")
+        if not isinstance(row.get("purpose"), str) or not str(row["purpose"]).strip():
+            _image_binding_error("requires an explicit purpose for every image")
+
+    ranks = [_IMAGE_ROLE_RANK[role] for role in roles]
+    if ranks != sorted(ranks) or model_count > 1 or product_count > 1:
+        _image_binding_error("role order must be model, product/App, storyboard pages, then additional references")
+    if model_count and roles[0] != "new_model_identity":
+        _image_binding_error("role order must place the new model at @Image1")
+    product_index = roles.index("product_or_app_truth") if product_count else None
+    if product_index is not None and product_index != model_count:
+        _image_binding_error("role order must place product/App truth immediately after the present model role")
+
+    approval_set_sha256 = binding.get("approval_set_sha256")
+    if not storyboards:
+        if approval_set_sha256 is not None:
+            _image_binding_error("storyboard approval set must be null when no storyboard image is uploaded")
+        return
+    if len(storyboards) > 2:
+        _image_binding_error("storyboard upload supports at most two approved pages")
+    if not isinstance(approval_set_sha256, str) or _SHA256_RE.fullmatch(approval_set_sha256) is None:
+        _image_binding_error("storyboard pages require one SHA-bound approval set")
+    pages = [row.get("page") for row in storyboards]
+    if pages != list(range(1, len(storyboards) + 1)):
+        _image_binding_error("storyboard pages must be complete, unique, and ordered")
+    storyboard_cuts: set[str] = set()
+    for row in storyboards:
+        if row.get("approval_set_sha256") != approval_set_sha256:
+            _image_binding_error("storyboard pages must bind the same approved set")
+        cuts = set(str(cut_id) for cut_id in row["cut_ids"])
+        if storyboard_cuts.intersection(cuts):
+            _image_binding_error("storyboard page Cut scopes must not overlap")
+        storyboard_cuts.update(cuts)
 
 
 def _route_tokens(value: str) -> list[str]:
@@ -327,9 +485,13 @@ def validate_video_reference_binding(
         or end_ms - start_ms not in range(2_000, 15_001)
     ):
         raise RunningHubStandardPayloadError("source video reference binding requires a 2-15 second frozen segment window")
-    image_urls = payload.get("imageUrls")
-    if not isinstance(image_urls, list) or not image_urls or binding.get("storyboard_url") != image_urls[0]:
-        raise RunningHubStandardPayloadError("a source video reference requires the approved storyboard at @Image1")
+    if (
+        not isinstance(binding.get("image_reference_binding_sha256"), str)
+        or _SHA256_RE.fullmatch(str(binding["image_reference_binding_sha256"])) is None
+    ):
+        raise RunningHubStandardPayloadError(
+            "a source video reference requires the complete multimodal image binding digest"
+        )
     target_changes = binding.get("target_changes")
     if not isinstance(target_changes, list) or not target_changes:
         raise RunningHubStandardPayloadError("a source video reference requires an authorized target change")
@@ -370,11 +532,63 @@ def validate_final_reference_lineage(
     """Validate the private binding for every source-fidelity Seedance request.
 
     The public RunningHub payload deliberately remains unchanged.  This sidecar
-    proves its fixed media order: approved-board-bound execution carrier at
-    ``@Image1``, only fixed user model/product targets after it, and the matching
-    source slice at ``videoUrls[0]``.  The user-facing board and internal
-    source/control/layout artifacts are never admissible.
+    proves its fixed media order: approved director board at ``@Image1``, only
+    fixed user model/product targets after it, and the matching source slice at
+    ``videoUrls[0]``.  Internal source/control sheets are never admissible.
     """
+
+    if isinstance(lineage, Mapping) and lineage.get("schema_version") == "seedance-final-reference-lineage/v2":
+        expected = {
+            "schema_version",
+            "segment_id",
+            "segment_plan_sha256",
+            "ordered_image_urls",
+            "ordered_video_urls",
+            "image_reference_binding",
+            "source_reference",
+            "forbidden_artifact_kinds",
+        }
+        if set(lineage) != expected:
+            _final_reference_lineage_error("must use the complete seedance-final-reference-lineage/v2 schema")
+        segment_id = _final_reference_text(lineage.get("segment_id"), "a segment ID")
+        plan_sha256 = _final_reference_sha256(lineage.get("segment_plan_sha256"), "segment plan")
+        if lineage.get("ordered_image_urls") != payload.get("imageUrls") or lineage.get("ordered_video_urls") != payload.get("videoUrls"):
+            _final_reference_lineage_error("ordered provider URLs do not exactly match the payload")
+        image_binding = lineage.get("image_reference_binding")
+        validate_image_reference_binding(payload, image_binding if isinstance(image_binding, Mapping) else None)
+        source = lineage.get("source_reference")
+        if not isinstance(source, Mapping) or set(source) != _FINAL_REFERENCE_SOURCE_FIELDS:
+            _final_reference_lineage_error("source reference descriptor is incomplete")
+        if source.get("kind") != "source_video_reference":
+            _final_reference_lineage_error("source reference must be a source_video_reference artifact")
+        _final_reference_text(source.get("artifact_id"), "source slice artifact identity")
+        _final_reference_text(source.get("object_key"), "source slice object identity")
+        source_slice_sha256 = _final_reference_sha256(source.get("sha256"), "source slice")
+        source_video_sha256 = _final_reference_sha256(source.get("source_video_sha256"), "source video")
+        if source_slice_sha256 == source_video_sha256:
+            _final_reference_lineage_error("source slice must be a distinct bounded artifact, never the complete source")
+        video_urls = payload.get("videoUrls")
+        if (
+            not isinstance(video_urls, list)
+            or len(video_urls) != 1
+            or source.get("url") != video_urls[0]
+            or source.get("segment_id") != segment_id
+            or source.get("segment_plan_sha256") != plan_sha256
+        ):
+            _final_reference_lineage_error("source slice does not match the frozen segment plan or videoUrls[0]")
+        start_ms, end_ms = source.get("start_ms"), source.get("end_ms")
+        if (
+            isinstance(start_ms, bool)
+            or isinstance(end_ms, bool)
+            or not isinstance(start_ms, int)
+            or not isinstance(end_ms, int)
+            or start_ms < 0
+            or end_ms - start_ms not in range(2_000, 15_001)
+        ):
+            _final_reference_lineage_error("source slice requires a frozen 2-15 second window")
+        if lineage.get("forbidden_artifact_kinds") != list(_FORBIDDEN_FINAL_ARTIFACT_KINDS):
+            _final_reference_lineage_error("must forbid every internal keyframe/control artifact kind")
+        return
 
     if not isinstance(lineage, Mapping) or set(lineage) != _FINAL_REFERENCE_LINEAGE_FIELDS:
         _final_reference_lineage_error("must use the complete seedance-final-reference-lineage/v1 schema")
@@ -397,22 +611,13 @@ def validate_final_reference_lineage(
     ):
         _final_reference_lineage_error("ordered provider URLs do not exactly match the payload")
     if not image_urls or not all(isinstance(url, str) and url for url in image_urls):
-        _final_reference_lineage_error("requires the approved-board-bound Seedance execution carrier at imageUrls[0]")
+        _final_reference_lineage_error("requires the approved director board at imageUrls[0]")
     if len(video_urls) != 1 or not isinstance(video_urls[0], str) or not video_urls[0]:
         _final_reference_lineage_error("requires exactly one matching source segment at videoUrls[0]")
     if lineage.get("forbidden_artifact_kinds") != list(_FORBIDDEN_FINAL_ARTIFACT_KINDS):
         _final_reference_lineage_error("must forbid every internal keyframe/control artifact kind")
 
     board = lineage.get("approved_board")
-    carrier_fields = {
-        "execution_carrier_artifact_id",
-        "execution_carrier_object_key",
-        "execution_carrier_sha256",
-        "storyboard_layout_receipt_sha256",
-        "execution_carrier_source_roi_sha256",
-    }
-    if isinstance(board, Mapping) and not carrier_fields.issubset(set(board)):
-        _final_reference_lineage_error("approved board execution carrier binding is incomplete")
     if not isinstance(board, Mapping) or set(board) != _FINAL_REFERENCE_BOARD_FIELDS:
         _final_reference_lineage_error("approved board descriptor is incomplete")
     if board.get("kind") != "storyboard_image":
@@ -420,15 +625,6 @@ def validate_final_reference_lineage(
     _final_reference_text(board.get("artifact_id"), "approved board artifact identity")
     _final_reference_text(board.get("object_key"), "approved board object identity")
     board_sha256 = _final_reference_sha256(board.get("sha256"), "approved board")
-    _final_reference_text(board.get("execution_carrier_artifact_id"), "Seedance execution carrier artifact identity")
-    _final_reference_text(board.get("execution_carrier_object_key"), "Seedance execution carrier object identity")
-    carrier_sha256 = _final_reference_sha256(board.get("execution_carrier_sha256"), "Seedance execution carrier")
-    _final_reference_sha256(board.get("storyboard_layout_receipt_sha256"), "storyboard layout receipt")
-    roi_sha256 = _final_reference_sha256(board.get("execution_carrier_source_roi_sha256"), "Seedance execution carrier source ROI")
-    if carrier_sha256 == board_sha256:
-        _final_reference_lineage_error("execution carrier must be distinct from the user-facing approved board")
-    if carrier_sha256 != roi_sha256:
-        _final_reference_lineage_error("execution carrier is not bound to the approved storyboard ROI")
     if board.get("segment_id") != segment_id or board.get("url") != image_urls[0]:
         _final_reference_lineage_error("approved board does not occupy imageUrls[0] for this segment")
     revision = board.get("storyboard_revision")
@@ -450,7 +646,6 @@ def validate_final_reference_lineage(
         _final_reference_lineage_error("approved board replacement target SHA list is invalid")
     internal_board_hashes = {
         board_sha256,
-        carrier_sha256,
         str(board["source_keyframe_sheet_sha256"]),
         str(board["replacement_control_keyframe_sheet_sha256"]),
         str(board["replacement_control_keyframe_receipt_sha256"]),
@@ -779,10 +974,12 @@ __all__ = [
     "RUNNINGHUB_STANDARD_SEEDANCE_FIELDS",
     "RunningHubStandardPayloadError",
     "build_provider_audit_proof",
+    "image_reference_binding_sha256",
     "validate_public_https_url",
     "validate_audio_reference_binding",
     "validate_audio_reference_artifact_receipt",
     "validate_final_reference_lineage",
+    "validate_image_reference_binding",
     "validate_provider_audit_proof",
     "validate_runninghub_standard_payload_contract",
     "validate_video_reference_binding",

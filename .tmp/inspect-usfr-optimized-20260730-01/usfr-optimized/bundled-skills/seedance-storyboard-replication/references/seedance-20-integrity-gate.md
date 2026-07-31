@@ -47,8 +47,10 @@ default or top-level `reference_audios`, model `seedance-2.0-fast-token`,
 `720p`, `9:16`, an allowed 4–15 second video duration, and the absence of opaque
 UI or tail-card media. Every source-fidelity generated segment must carry
 exactly one current 2-15 second matching original source segment at
-`videoUrls[0]` under `usfr-video-reference/v1`, the approved director board at
-`imageUrls[0]` / `@Image1`, then only fixed-slot target references. Source
+`videoUrls[0]` under `usfr-video-reference/v1` and a complete one-to-nine-image
+`usfr-multimodal-reference-binding/v2` sidecar. Image order is model identity,
+product/App truth, every original approved storyboard PNG page, then explicitly
+scoped additional references. Source
 Cut/keyframe sheets and replacement-control sheets must never be sent to
 Seedance, and the full source video must never be uploaded. The audit also
 requires `realPersonMode=true` and a non-empty authorized target-change receipt.
@@ -115,17 +117,18 @@ Fixed-B uses `seedance-2.0-fast-token`, `720p`, `9:16`,
 `@Audio1`; that audio requires at least one approved visual image. A
 source-fidelity generated run requires exactly one current 2-15 second matching
 original source segment at `videoUrls[0]` under
-`usfr-video-reference/v1`, the approved director board at `imageUrls[0]` /
-`@Image1`, and only fixed-slot target references afterward. Source Cut/keyframe
+`usfr-video-reference/v1` and the complete ordered one-to-nine-image binding.
+Source Cut/keyframe
 sheets and replacement-control sheets must never be sent to Seedance; the full
 source video must never be uploaded. Opaque UI media and tail video are never
 uploaded or referenced. Unknown fields, private URLs, unresolved placeholders,
 and forbidden route markers block before a paid call.
 
-Reference order: matching original source segment at `videoUrls[0]`; approved
-director board at `imageUrls[0]` / `@Image1`; then only fixed-slot target
-references. Source Cut/keyframe sheets and replacement-control sheets must never
-be sent to Seedance.
+Every approved storyboard page is uploaded as its original confirmed PNG under
+`continuous-present-role-order/v1`. `seedance_execution_carrier.png` and single
+`storyboard_url` bindings are forbidden. Enforce
+`uploaded_tags == binding_tags == prompt_tags`; @Video1 and @Audio1 never
+consume image indices.
 
 ## Submission and resume
 
