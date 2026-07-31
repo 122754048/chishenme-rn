@@ -18,6 +18,7 @@ expo-start.log
 replication-runs/
 validation_runs/
 video_replication_runs/
+runs/
 outputs/
 exports/
 *.log
