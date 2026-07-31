@@ -19,6 +19,7 @@ import runninghub_seedance_submit as submit
 from config import build_redacted_provider_preflight, load_settings  # noqa: E402
 from server.runninghub_standard_contract import (  # noqa: E402
     RunningHubStandardPayloadError,
+    SOURCE_VIDEO_PROMPT_CONTRACT,
     validate_runninghub_standard_payload_contract,
     validate_video_reference_binding,
 )
@@ -198,7 +199,7 @@ def test_cli_persists_provider_failure_evidence_when_a_known_task_fails(
 
 def test_standard_payload_accepts_one_bound_source_video_reference() -> None:
     payload = build_runninghub_standard_payload(
-        "Keep the approved performance and framing.",
+        f"Keep the approved performance and framing. {SOURCE_VIDEO_PROMPT_CONTRACT}",
         13,
         "9:16",
         ["https://media.example/board.png", "https://media.example/model.jpg"],
@@ -230,6 +231,34 @@ def test_standard_payload_accepts_one_bound_source_video_reference() -> None:
         validate_video_reference_binding(
             payload, {**binding, "source_slice_sha256": binding["source_video_sha256"]}
         )
+
+
+def test_video_reference_binding_rejects_prompt_without_source_transfer_boundaries() -> None:
+    payload = build_runninghub_standard_payload(
+        "@Video1 follows the source performance.",
+        4,
+        "9:16",
+        ["https://media.example/board.png"],
+        [],
+        video_urls=["https://media.example/source-s01.mp4"],
+        real_person_mode=True,
+    )
+    binding = {
+        "schema_version": "usfr-video-reference/v1",
+        "url": payload["videoUrls"][0],
+        "source_video_sha256": "a" * 64,
+        "source_slice_sha256": "b" * 64,
+        "segment_id": "S01",
+        "segment_plan_sha256": "c" * 64,
+        "source_video_reference_artifact_id": "source-reference-artifact",
+        "start_ms": 0,
+        "end_ms": 4000,
+        "image_reference_binding_sha256": "d" * 64,
+        "target_changes": [{"kind": "new_model_image", "sha256": "e" * 64}],
+    }
+
+    with pytest.raises(RunningHubStandardPayloadError, match="source reference video prompt contract"):
+        validate_video_reference_binding(payload, binding)
 
 
 def test_final_reference_lineage_rejects_an_internal_control_asset_or_wrong_source_slice() -> None:
@@ -316,7 +345,7 @@ def test_final_reference_lineage_rejects_an_internal_control_asset_or_wrong_sour
 
 def test_video_reference_binding_requires_the_frozen_plan_and_source_reference_artifact() -> None:
     payload = build_runninghub_standard_payload(
-        "@Image1 preserves the approved director board.",
+        f"@Image1 preserves the approved director board. {SOURCE_VIDEO_PROMPT_CONTRACT}",
         4,
         "9:16",
         ["https://media.example/board.png", "https://media.example/model.png"],

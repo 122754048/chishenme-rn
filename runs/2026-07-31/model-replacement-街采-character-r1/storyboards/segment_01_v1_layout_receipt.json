@@ -1,0 +1,151 @@
+{
+  "schema_version": "usfr-storyboard-layout-receipt/v1",
+  "status": "passed",
+  "layout_id": "daohuo-professional-director-board/v1",
+  "segment_id": "S01",
+  "board_width": 2736,
+  "board_height": 1536,
+  "aspect_ratio": "16:9",
+  "daohuo_storyboard_prompt_path": "C:\\Users\\zhaocx04\\.codex\\skills\\universal-source-fidelity-replication\\bundled-skills\\seedance-storyboard-replication\\references\\daohuo_storyboard_prompt.md",
+  "daohuo_storyboard_prompt_sha256": "1c5e2e58fea0f97d8638429fa0cfea1ee9be294ad0149f7b9cbaceb3dd3d5041",
+  "compiled_prompt_sha256": "825f5eba81f5d3105caea6b6c2a07452089e6acb01422e9174ab418244634a48",
+  "required_regions": [
+    "shared_creative_header",
+    "character_identity_and_detail_column",
+    "ordered_storyboard_cut_cards",
+    "target_evidence_or_none",
+    "top_down_camera_movement_plan",
+    "lighting_footer",
+    "camera_footer",
+    "palette_footer",
+    "audio_tone_footer",
+    "mood_footer",
+    "cinematography_notes_footer"
+  ],
+  "cut_count": 7,
+  "cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "cut_image_boxes_normalized": [
+    [
+      0.285,
+      0.159,
+      0.538,
+      0.258
+    ],
+    [
+      0.285,
+      0.266,
+      0.538,
+      0.364
+    ],
+    [
+      0.285,
+      0.371,
+      0.538,
+      0.469
+    ],
+    [
+      0.285,
+      0.476,
+      0.538,
+      0.573
+    ],
+    [
+      0.285,
+      0.58,
+      0.538,
+      0.678
+    ],
+    [
+      0.285,
+      0.685,
+      0.538,
+      0.782
+    ],
+    [
+      0.285,
+      0.789,
+      0.538,
+      0.863
+    ]
+  ],
+  "visual_provenance": {
+    "source_cut_contact_sheet_sha256": "69a7379fdb8dc7ff47950a1c68f445dd337322e8ce87f6b180a38b50c2cb9d2f",
+    "replacement_control_sheet_sha256": "94ae1a5a60de1cbf2c4945cf361160ddb292342414f1946ff9fd8ed0f7480de9",
+    "raw_director_board_sha256": "c0d863f0f5ef9d0e5344dd64a0272b1fd1df19a0c1a3caed800afbddf5fde612",
+    "approval_board_sha256": "0617c250c587b999304c727704b36abc6de68f4c0be5ec8912885cbc6dc5923b",
+    "execution_carrier_sha256": "2f1f43bc9435ac2dc3c6dde2cc6b5482a9d3289ea35005031ba5518183c78d0a"
+  },
+  "deterministic_overlay_board_receipt": {
+    "schema_version": "usfr-board-overlay-render/v1",
+    "status": "passed",
+    "route": "deterministic_overlay",
+    "overlays_by_cut": [
+      {
+        "cut_id": "C01",
+        "window_ms": [
+          0,
+          1600
+        ],
+        "exact_text": "今話題の『SUGO』知ってる？",
+        "graphic": "SUGO pink-blue speech bubbles"
+      },
+      {
+        "cut_id": "C02",
+        "window_ms": [
+          1800,
+          2400
+        ],
+        "exact_text": "🤭もちろん！"
+      },
+      {
+        "cut_id": "C03",
+        "window_ms": [
+          2400,
+          4270
+        ],
+        "exact_text": "😭私もう沼ってるよ！"
+      },
+      {
+        "cut_id": "C04",
+        "window_ms": [
+          4470,
+          5600
+        ],
+        "exact_text": "🤔ぶっちゃけ..."
+      },
+      {
+        "cut_id": "C05",
+        "window_ms": [
+          6300,
+          8600
+        ],
+        "exact_text": "🔥毎日刺激的すぎ！"
+      },
+      {
+        "cut_id": "C06",
+        "window_ms": [
+          8600,
+          9740
+        ],
+        "exact_text": "🤣正直ヤバいwww"
+      },
+      {
+        "cut_id": "C07",
+        "window_ms": [
+          9740,
+          10400
+        ],
+        "exact_text": "🤣正直ヤバいwww"
+      }
+    ],
+    "output_sha256": "0617c250c587b999304c727704b36abc6de68f4c0be5ec8912885cbc6dc5923b"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "schema_version": "usfr-final-qc/v1",
+  "passed": true,
+  "final_sha256": "54ee0ab7c6125599c416f8aaebb2842c3ce2ca58ebdd954bdb18b64e2b3a61c0",
+  "provider_video_sha256": "67a8b7343b761fd6008533348112fcbf2cbea25f017626a2997725cd3611bca8",
+  "source_video_sha256": "e71610ea664679660f60e2b5f69714790e39a96df2dd7b21ee247b37f3882aca",
+  "streams": {
+    "video": {
+      "codec": "h264",
+      "width": 720,
+      "height": 1280,
+      "fps": 30,
+      "duration_seconds": 8.266667,
+      "frame_count": 248,
+      "start_seconds": 0.0
+    },
+    "audio": {
+      "codec": "aac",
+      "sample_rate": 44100,
+      "channels": 2,
+      "duration_seconds": 8.266009,
+      "start_seconds": 0.0,
+      "source_audio_decoded_correlation": 0.999973332275027
+    }
+  },
+  "checks": {
+    "video_stream_present": true,
+    "audio_stream_present": true,
+    "duration_matches_source_video_endpoint": true,
+    "audio_video_duration_drift_seconds": 0.000658,
+    "audio_video_start_offset_seconds": 0.0,
+    "black_boundary_frames_detected": false,
+    "introduced_freeze_over_0_5_seconds_detected": false,
+    "character_identity_matches_target_reference": true,
+    "deep_brown_curly_hair_stable": true,
+    "source_light_blue_top_dark_skirt_and_jewelry_preserved": true,
+    "source_doorway_scene_and_locked_camera_preserved": true,
+    "source_low_waist_action_order_preserved": true,
+    "closing_gentle_smile_present": true,
+    "original_hindi_audio_restored": true,
+    "visible_mouth_motion_tracks_source_phrase_windows": true,
+    "new_subtitles_logos_music_or_scene_changes_detected": false
+  },
+  "visible_text_qc": [
+    {
+      "text_id": "overlay_location_distance",
+      "expected": "500M",
+      "observed": "500M",
+      "window_ms": [0, 8267],
+      "geometry": "upper-left below location pin",
+      "passed": true
+    },
+    {
+      "text_id": "overlay_cta",
+      "expected": "दूरियां मिटाएं",
+      "observed": "दूरियां मिटाएं",
+      "window_ms": [0, 8267],
+      "geometry": "lower-center yellow text inside purple rounded capsule",
+      "passed": true
+    },
+    {
+      "text_id": "overlay_directional_arrow",
+      "expected": "large yellow upward arrow",
+      "observed": "large yellow upward arrow",
+      "window_ms": [0, 8267],
+      "geometry": "bottom-center below CTA",
+      "passed": true
+    }
+  ],
+  "overlay_render_receipt": {
+    "overlay_shapes_sha256": "ee9753b4e948e3998381bab4d2d32ec564a5e16e83ace67e4d91b4c587d53a15",
+    "overlay_text_ass_sha256": "cf2a0ae7777ac26654fa6bfe15cf374cd1493f13b5f1e85cc0c482b3e2f7fd94",
+    "frame_window": [0, 247],
+    "final_output_sha256": "54ee0ab7c6125599c416f8aaebb2842c3ce2ca58ebdd954bdb18b64e2b3a61c0"
+  },
+  "high_fidelity_score": {
+    "total": 94,
+    "identity": 95,
+    "performance_and_action": 92,
+    "scene_camera_wardrobe": 96,
+    "audio_and_lip_sync": 93,
+    "route_and_timeline": 100,
+    "visible_text": 100,
+    "hard_failures": []
+  }
+}

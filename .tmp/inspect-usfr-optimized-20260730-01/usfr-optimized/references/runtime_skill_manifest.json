@@ -5,13 +5,13 @@
       "name": "seedance-20",
       "package_path": "runtime-skills/seedance-20/SKILL.md",
       "version": "6.6.0",
-      "sha256": "14a618871c5ddf099b8891889a4d0c04b0d93fb5d388957d882125ed3dcd80c3"
+      "sha256": "287600947fac6f6b4d1e7f81e55c246082efda6d5b1b0206de32d1341fae8038"
     },
     {
       "name": "seedance-prompt",
       "package_path": "runtime-skills/seedance-20/skills/seedance-prompt/SKILL.md",
       "version": "6.6.0",
-      "sha256": "ce558207516a6408de3425956c911dac4dbaa5da0d024d29ef03a01186d964a6"
+      "sha256": "74028a2a9d377aa208cc604b6dfdaa7800b5f476372405cd286eea81bdcc4d47"
     },
     {
       "name": "seedance-antislop",

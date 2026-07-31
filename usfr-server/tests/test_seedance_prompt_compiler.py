@@ -49,6 +49,7 @@ def _skill_files(tmp_path):
         "seedance-prompt": "---\nname: seedance-prompt\nmetadata:\n  version: \"6.6.0\"\n---\n",
         "seedance-antislop": "---\nname: seedance-antislop\nmetadata:\n  version: \"6.6.0\"\n---\n",
         "seedance-camera": "---\nname: seedance-camera\nmetadata:\n  version: \"6.6.0\"\n---\n",
+        "seedance-motion": "---\nname: seedance-motion\nmetadata:\n  version: \"6.6.0\"\n---\n",
         "seedance-characters": "---\nname: seedance-characters\nmetadata:\n  version: \"6.6.0\"\n---\n",
         "seedance-audio": "---\nname: seedance-audio\nmetadata:\n  version: \"6.6.0\"\n---\n",
     }
@@ -203,6 +204,26 @@ def test_compiler_renders_verified_spoken_performance_as_speech_not_singing(tmp_
 
     assert 'speaks exactly, "Open it slowly."' in artifact["prompt"]
     assert 'sings exactly, "Open it slowly."' not in artifact["prompt"]
+
+
+def test_compiler_emits_the_complete_source_video_transfer_boundary(tmp_path):
+    artifact = module.compile_prompt(
+        segment=_segment(),
+        line_contracts=[_line()],
+        factors={"camera": True, "motion": True, "audio": True},
+        skill_files=_skill_files(tmp_path),
+        compiler_checks={name: True for name in module.COMPILER_CHECKS},
+    )
+
+    prompt = artifact["prompt"]
+    assert "@Video1 is the source reference video" in prompt
+    assert "Do not copy or output any person or identity" in prompt
+    assert "product/App or merchandise" in prompt
+    assert "visible text" in prompt
+    assert "original voice" in prompt
+    assert "original narration" in prompt
+    assert "original dialogue" in prompt
+    assert "Generate only the approved" in prompt
 
 
 def test_compiler_names_the_confirmed_performer_for_verified_singing(tmp_path):

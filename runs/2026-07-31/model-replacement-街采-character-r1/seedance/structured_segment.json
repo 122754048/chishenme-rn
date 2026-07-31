@@ -1,0 +1,142 @@
+{
+  "segment_id": "S01",
+  "start_ms": 0,
+  "output_global_start_ms": 0,
+  "duration_ms": 10867,
+  "cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "opening_state": "Night street interview: CHARACTER_A center-right; silver microphone enters lower left.",
+  "reference_roles": [
+    {
+      "slot": 1,
+      "tag": "@Image1",
+      "role": "approved C01-C03 visuals; ignore captions/graphics"
+    },
+    {
+      "slot": 2,
+      "tag": "@Image2",
+      "role": "approved C04-C07 visuals; ignore captions/graphics"
+    },
+    {
+      "slot": 3,
+      "tag": "@Image3",
+      "role": "target fair East Asian face, dark eyes, low dark-brown ponytail and wispy bangs only; exclude uniform/room"
+    }
+  ],
+  "shots": [
+    {
+      "shot_id": "C01-C07",
+      "start_ms": 0,
+      "end_ms": 10867,
+      "shot_scale": "one continuous vertical 9:16 handheld medium-full smartphone interview shot with mild wide-angle perspective",
+      "scene": "@Image1/@Image2 night alley, vending-machine panel left, warm street lamps; subject center-right",
+      "camera": "@Video1 timing, wide composition, microphone path and slight handheld sway; no cut/reframe",
+      "lighting": "stable cool left fill and warm street practicals",
+      "performance": "C01 listen; C02 bright smile; C03 speak and light laugh; C04 amused listen/head tilt; C05 conversational micro-motion; C06 playful emphasis; C07 laugh and bring hands together low",
+      "action": "C01-C07 in order with source gaze, blinks, restrained motion, exact Japanese mouth timing and lower-left microphone",
+      "endpoint": "10.867s: warm broad smile, both hands low near each other, microphone left, natural active final frame",
+      "product_or_ui_truth": "no product/UI; @Image3 face/hair only; keep white mock-neck top, black knee-length skirt, earrings",
+      "commercial_proof": "stable target identity through the exact source performance",
+      "transition": "one uninterrupted take to the natural endpoint; no edit, fade, freeze, loop or filler",
+      "continuity": "same face, ponytail, bangs, wardrobe, hands, gaze, microphone, alley and light",
+      "audio": "exact original Japanese speakers, timing, pauses, laugh and night-street ambience from @Video1; no music, extra words or replacement voice",
+      "factor_ids": [
+        "HFH.C01.SCENE.TOPOLOGY",
+        "HFH.C01.CAMERA.HANDHELD",
+        "HFH.C01.LIGHTING.MATCH",
+        "HFH.C01.IDENTITY.TARGET",
+        "HFH.C01.WARDROBE.KEEP",
+        "HFH.C01.PERFORMANCE.STATE",
+        "HFH.C01.ACTION.ENDPOINT",
+        "HFH.C01.CONTINUITY",
+        "HFH.C01.AUDIO.LIPSYNC",
+        "HFH.C02.SCENE.TOPOLOGY",
+        "HFH.C02.CAMERA.HANDHELD",
+        "HFH.C02.LIGHTING.MATCH",
+        "HFH.C02.IDENTITY.TARGET",
+        "HFH.C02.WARDROBE.KEEP",
+        "HFH.C02.PERFORMANCE.STATE",
+        "HFH.C02.ACTION.ENDPOINT",
+        "HFH.C02.CONTINUITY",
+        "HFH.C02.AUDIO.LIPSYNC",
+        "HFH.C03.SCENE.TOPOLOGY",
+        "HFH.C03.CAMERA.HANDHELD",
+        "HFH.C03.LIGHTING.MATCH",
+        "HFH.C03.IDENTITY.TARGET",
+        "HFH.C03.WARDROBE.KEEP",
+        "HFH.C03.PERFORMANCE.STATE",
+        "HFH.C03.ACTION.ENDPOINT",
+        "HFH.C03.CONTINUITY",
+        "HFH.C03.AUDIO.LIPSYNC",
+        "HFH.C04.SCENE.TOPOLOGY",
+        "HFH.C04.CAMERA.HANDHELD",
+        "HFH.C04.LIGHTING.MATCH",
+        "HFH.C04.IDENTITY.TARGET",
+        "HFH.C04.WARDROBE.KEEP",
+        "HFH.C04.PERFORMANCE.STATE",
+        "HFH.C04.ACTION.ENDPOINT",
+        "HFH.C04.CONTINUITY",
+        "HFH.C04.AUDIO.LIPSYNC",
+        "HFH.C05.SCENE.TOPOLOGY",
+        "HFH.C05.CAMERA.HANDHELD",
+        "HFH.C05.LIGHTING.MATCH",
+        "HFH.C05.IDENTITY.TARGET",
+        "HFH.C05.WARDROBE.KEEP",
+        "HFH.C05.PERFORMANCE.STATE",
+        "HFH.C05.ACTION.ENDPOINT",
+        "HFH.C05.CONTINUITY",
+        "HFH.C05.AUDIO.LIPSYNC",
+        "HFH.C06.SCENE.TOPOLOGY",
+        "HFH.C06.CAMERA.HANDHELD",
+        "HFH.C06.LIGHTING.MATCH",
+        "HFH.C06.IDENTITY.TARGET",
+        "HFH.C06.WARDROBE.KEEP",
+        "HFH.C06.PERFORMANCE.STATE",
+        "HFH.C06.ACTION.ENDPOINT",
+        "HFH.C06.CONTINUITY",
+        "HFH.C06.AUDIO.LIPSYNC",
+        "HFH.C07.SCENE.TOPOLOGY",
+        "HFH.C07.CAMERA.HANDHELD",
+        "HFH.C07.LIGHTING.MATCH",
+        "HFH.C07.IDENTITY.TARGET",
+        "HFH.C07.WARDROBE.KEEP",
+        "HFH.C07.PERFORMANCE.STATE",
+        "HFH.C07.ACTION.ENDPOINT",
+        "HFH.C07.CONTINUITY",
+        "HFH.C07.AUDIO.LIPSYNC"
+      ]
+    }
+  ],
+  "locks": [
+    "@Video1 controls motion/timing/camera/microphone/environment, never identity; @Image3 controls face/hair only",
+    "@Image1/@Image2 carry ordered C01-C07 visuals; captions/SUGO are post-only and model areas stay glyph-free",
+    "one 10.867s take; keep white top, black skirt, earrings, lower-left microphone and alley"
+  ],
+  "negative_constraints": [
+    "no generated text, caption, emoji, SUGO, logo or watermark",
+    "no source face, drift, uniform, tie, vest, deformation or bad hands",
+    "no new person, interviewer face, microphone change, cut, zoom, scene change, freeze, black frame or music"
+  ],
+  "no_speech_contracts": [
+    {
+      "cut_id": "C07",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "source laugh",
+        "night-street ambience"
+      ],
+      "forbidden_audio": [
+        "new dialogue",
+        "voiceover",
+        "background music"
+      ]
+    }
+  ]
+}

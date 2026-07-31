@@ -16,6 +16,10 @@ sys.path.insert(0, str(ROOT))
 import server.runninghub_standard_contract as standard_contract
 
 
+def _source_video_prompt(text: str) -> str:
+    return f"{text} {standard_contract.SOURCE_VIDEO_PROMPT_CONTRACT}"
+
+
 def _digest(value: bytes) -> str:
     return sha256(value).hexdigest()
 
@@ -751,7 +755,7 @@ def test_seedance_audit_uploads_only_the_matching_source_segment_with_a_verified
         "segments": [{
             "segment_id": "S01", "segment_plan_sha256": segment_plan_sha256,
             "compiled_prompt": {
-                "prompt": "@Image1 is the approved character reference. @Image2 is the approved storyboard page.",
+                "prompt": _source_video_prompt("@Image1 is the approved character reference. @Image2 is the approved storyboard page."),
                 "compiler": {"output_sha256": "b" * 64},
                 "source_contract": {"segment": {"duration_ms": 4000}},
             },
@@ -922,7 +926,7 @@ def test_provider_request_carries_the_video_reference_binding_outside_the_standa
     from server.packaged_stages import SubmitProviderVideoStage
 
     payload = {
-        "prompt": "@Image1 follow the approved source performance.",
+        "prompt": _source_video_prompt("@Image1 follow the approved source performance."),
         "resolution": "720p", "duration": "4",
         "imageUrls": ["https://media.example.test/board.png", "https://media.example.test/model.png"],
         "videoUrls": ["https://media.example.test/source-segment.mp4"],
@@ -976,7 +980,7 @@ def test_provider_request_rejects_a_source_video_without_the_private_final_refer
     from server.errors import ReplicationError
 
     payload = {
-        "prompt": "@Image1 follows the approved director board and @Image2 fixes the model identity.",
+        "prompt": _source_video_prompt("@Image1 follows the approved director board and @Image2 fixes the model identity."),
         "resolution": "720p", "duration": "4",
         "imageUrls": ["https://media.example.test/board.png", "https://media.example.test/model.png"],
         "videoUrls": ["https://media.example.test/source-s01.mp4"],
@@ -1003,7 +1007,7 @@ def test_provider_request_carries_the_audio_reference_binding_outside_the_standa
     from server.packaged_stages import SubmitProviderVideoStage
 
     payload = {
-        "prompt": "@Image1 keep the approved action. Use @Audio1 only for this song window.",
+        "prompt": _source_video_prompt("@Image1 keep the approved action. Use @Audio1 only for this song window."),
         "resolution": "720p", "duration": "4",
         "imageUrls": ["https://media.example.test/board.png"],
         "videoUrls": [], "audioUrls": ["https://media.example.test/song-s01.wav"],
@@ -1067,7 +1071,7 @@ def test_seedance_audit_uses_only_a_duration_bound_uploaded_music_fragment(monke
     contract = {
         "segment_plan": segment_plan, "segment_plan_sha256": segment_plan_sha256,
         "segments": [{"segment_id": "S01", "segment_plan_sha256": segment_plan_sha256, "compiled_prompt": {
-            "prompt": "@Image1 is the approved storyboard. Use @Audio1 as the approved song fragment.",
+            "prompt": _source_video_prompt("@Image1 is the approved storyboard. Use @Audio1 as the approved song fragment."),
             "compiler": {"output_sha256": "b" * 64}, "source_contract": {"segment": {"duration_ms": 4000}},
         }}],
     }
@@ -1149,7 +1153,7 @@ def test_seedance_audit_pads_uploaded_audio_to_exact_source_music_windows(monkey
     contract = {
         "segment_plan": segment_plan, "segment_plan_sha256": segment_plan_sha256,
         "segments": [{"segment_id": "S01", "segment_plan_sha256": segment_plan_sha256, "compiled_prompt": {
-            "prompt": "@Image1 approved storyboard. @Audio1 is silent outside the approved source music windows.",
+                "prompt": _source_video_prompt("@Image1 approved storyboard. @Audio1 is silent outside the approved source music windows."),
             "compiler": {"output_sha256": "b" * 64}, "source_contract": {"segment": {"duration_ms": 4000}},
         }}],
     }

@@ -1,0 +1,96 @@
+{
+  "contract": "high-fidelity-evidence-plan",
+  "contract_version": 1,
+  "profile": "high_fidelity_hybrid_v1",
+  "analysis_pass_count": 1,
+  "source": {
+    "sha256": "e71610ea664679660f60e2b5f69714790e39a96df2dd7b21ee247b37f3882aca",
+    "duration_us": 8266667,
+    "width": 1080,
+    "height": 1920,
+    "fps_num": 30,
+    "fps_den": 1
+  },
+  "coverage": {
+    "start_us": 0,
+    "end_us": 8266667,
+    "complete_timeline_required": true
+  },
+  "candidate_policy": "hints_only",
+  "cached_evidence_required": true,
+  "evidence": {
+    "complete_timeline": {
+      "start_us": 0,
+      "end_us": 8266667,
+      "method": "complete_timeline_contact_sheet",
+      "required": true
+    },
+    "boundary_neighborhoods": [
+      {
+        "boundary_id": "B001",
+        "time_us": 0,
+        "window_start_us": 0,
+        "window_end_us": 250000,
+        "method": "decoder_boundary_frames",
+        "reason": "edit/action/camera/audio/overlay phase candidate; reconcile in the single semantic pass"
+      },
+      {
+        "boundary_id": "B002",
+        "time_us": 4133333,
+        "window_start_us": 3883333,
+        "window_end_us": 4383333,
+        "method": "decoder_boundary_frames",
+        "reason": "edit/action/camera/audio/overlay phase candidate; reconcile in the single semantic pass"
+      },
+      {
+        "boundary_id": "B003",
+        "time_us": 8266667,
+        "window_start_us": 8016667,
+        "window_end_us": 8266667,
+        "method": "decoder_boundary_frames",
+        "reason": "edit/action/camera/audio/overlay phase candidate; reconcile in the single semantic pass"
+      }
+    ],
+    "adaptive_keyframes": [
+      {
+        "keyframe_id": "K001",
+        "time_us": 0,
+        "reason": "adaptive motion/action/camera/hold verification",
+        "decoder_anchor": true
+      },
+      {
+        "keyframe_id": "K002",
+        "time_us": 4133333,
+        "reason": "adaptive motion/action/camera/hold verification",
+        "decoder_anchor": true
+      },
+      {
+        "keyframe_id": "K003",
+        "time_us": 8266667,
+        "reason": "adaptive motion/action/camera/hold verification",
+        "decoder_anchor": true
+      }
+    ],
+    "detail_crops": {
+      "required_when": [
+        "product",
+        "hand",
+        "face",
+        "UI",
+        "subtitle",
+        "overlay",
+        "small_text"
+      ],
+      "method": "full_resolution_frame_or_crop",
+      "source_only": true
+    },
+    "audio": {
+      "required": true,
+      "transcription_required": true,
+      "method": "separate_audio_transcription_and_waveform",
+      "reconcile_with_visual": true
+    }
+  },
+  "opaque_intervals": [],
+  "plan_sha256": "a481724f51cdaa00bf6047a9464502d37784b6c95c3cd3235d03b5d53102182d"
+}

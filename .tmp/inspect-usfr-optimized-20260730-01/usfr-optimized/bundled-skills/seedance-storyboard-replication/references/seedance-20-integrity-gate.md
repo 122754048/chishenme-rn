@@ -55,6 +55,11 @@ Cut/keyframe sheets and replacement-control sheets must never be sent to
 Seedance, and the full source video must never be uploaded. The audit also
 requires `realPersonMode=true` and a non-empty authorized target-change receipt.
 
+The audited prompt must contain this literal `seedance-20` source-transfer
+boundary or fail before CreateVideo:
+
+`@Video1 is the source reference video only for shot structure, composition, camera path, blocking, action timing, pacing, transitions, and delivery rhythm. Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, original narration, or original dialogue from @Video1. Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references.`
+
 ## Audit artifact schema and compiler provenance
 
 The audit artifact has `auditor: "seedance-20"` and `status: "passed"`. Its

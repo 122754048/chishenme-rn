@@ -241,6 +241,10 @@ independent namespaces and never consume image indices. Source Cut/keyframe
 sheets and replacement-control sheets must never be sent to Seedance. The full
 source video must never be uploaded to Seedance.
 
+The final prompt is compiled through `seedance-20` and must contain this
+literal source-transfer boundary:
+`@Video1 is the source reference video only for shot structure, composition, camera path, blocking, action timing, pacing, transitions, and delivery rhythm. Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, original narration, or original dialogue from @Video1. Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references.`
+
 Confirmed visible text is routed by carrier. Scene-surface text is part of a
 physical prop/material and must be present in the replacement-control sheet and
 approved director board with exact wording, carrier ID, surface relation, and

@@ -80,7 +80,7 @@ def _case(*, storyboard_pages: int = 2, extra_images: int = 0) -> tuple[dict[str
             )
         )
     prompt = " ".join(f"{row['tag']} {row['purpose']}." for row in bindings)
-    prompt += " @Video1 controls source motion. @Audio1 controls the approved audio window."
+    prompt += f" {contract.SOURCE_VIDEO_PROMPT_CONTRACT} @Audio1 controls the approved audio window."
     payload = {
         "prompt": prompt,
         "imageUrls": [str(row["url"]) for row in bindings],

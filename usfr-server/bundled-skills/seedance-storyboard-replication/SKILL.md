@@ -72,6 +72,11 @@ invalid. The exact invariant is
 reference and never consumes an image index. @Audio1 is an audio-slot reference
 and never consumes an image index.
 
+Every prompt with `videoUrls[0]` must be compiled through `seedance-20` and
+contain this literal source-transfer boundary:
+
+`@Video1 is the source reference video only for shot structure, composition, camera path, blocking, action timing, pacing, transitions, and delivery rhythm. Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, original narration, or original dialogue from @Video1. Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references.`
+
 Both routes use the **固定 B 方案**. For every source-fidelity generated region,
 the mandatory visual chain is **source Cut frames → replacement-control sheet →
 approved director board**. The source frames establish the original scene,

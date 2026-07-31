@@ -220,6 +220,14 @@ _AUDIO_ARTIFACT_RECEIPT_FIELDS = frozenset(
 )
 _AUDIT_PROOF_FIELDS = frozenset({"schema_version", "hmac_sha256"})
 _AUDIT_PROOF_SCHEMA_VERSION = "usfr-provider-audit-proof/v1"
+SOURCE_VIDEO_PROMPT_CONTRACT = (
+    "@Video1 is the source reference video only for shot structure, composition, camera path, blocking, "
+    "action timing, pacing, transitions, and delivery rhythm. "
+    "Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, "
+    "original narration, or original dialogue from @Video1. "
+    "Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, "
+    "dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references."
+)
 
 
 class RunningHubStandardPayloadError(ValueError):
@@ -458,6 +466,12 @@ def validate_video_reference_binding(
         raise RunningHubStandardPayloadError("a source video reference requires a complete usfr-video-reference/v1 binding")
     if binding.get("schema_version") != "usfr-video-reference/v1":
         raise RunningHubStandardPayloadError("source video reference binding has an unsupported schema version")
+    prompt = payload.get("prompt")
+    if not isinstance(prompt, str) or SOURCE_VIDEO_PROMPT_CONTRACT not in prompt:
+        raise RunningHubStandardPayloadError(
+            "source reference video prompt contract must name @Video1 as reference-only, forbid transfer of source "
+            "people, products/Apps, visible text, voice, narration, and dialogue, and bind output to approved prompt content"
+        )
     if binding.get("url") != video_urls[0]:
         raise RunningHubStandardPayloadError("source video reference binding URL differs from videoUrls[0]")
     if not all(
@@ -972,6 +986,7 @@ def validate_runninghub_standard_payload_contract(payload: Mapping[str, object])
 
 __all__ = [
     "RUNNINGHUB_STANDARD_SEEDANCE_FIELDS",
+    "SOURCE_VIDEO_PROMPT_CONTRACT",
     "RunningHubStandardPayloadError",
     "build_provider_audit_proof",
     "image_reference_binding_sha256",

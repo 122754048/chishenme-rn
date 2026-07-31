@@ -250,6 +250,9 @@ every original approved storyboard PNG page, then explicitly scoped additional
 references. Enforce `uploaded_tags == binding_tags == prompt_tags`; never create
 or upload `seedance_execution_carrier.png` and never accept a single
 `storyboard_url` binding. @Video1 and @Audio1 are independent namespaces.
+The deployed `seedance-20` compiler and paid-call validator require this
+literal block whenever `videoUrls[0]` is populated:
+`@Video1 is the source reference video only for shot structure, composition, camera path, blocking, action timing, pacing, transitions, and delivery rhythm. Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, original narration, or original dialogue from @Video1. Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references.`
 
 If the HTTP request times out after a paid create call may have reached the
 provider, return an ambiguous state and let `/provider/reconcile` use

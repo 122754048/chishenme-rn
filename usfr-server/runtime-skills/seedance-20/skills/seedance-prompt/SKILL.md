@@ -48,6 +48,11 @@ Use `Subject + Action + Scene + Camera + Lighting/Style + Audio + Constraints`. 
 
 Choose the mode before drafting. **T2V** needs subject, action, scene, camera, light, style, and constraints because nothing is visible yet. **I2V** starts from `@Image1` and adds only motion, time, camera, lighting transition, audio, and preservation. **V2V** should map `@Video1` to source clip, camera move, action rhythm, blocking, edit target, or extension anchor rather than accidentally transferring identity. **R2V** must list every reference role and state what must not transfer. **FLF2V** uses `@Image1` as first frame and `@Image2` as last frame, then describes only the continuous transition.
 
+For a source-fidelity V2V/R2V request, compile this literal boundary into the
+final seedance-20 prompt:
+
+`@Video1 is the source reference video only for shot structure, composition, camera path, blocking, action timing, pacing, transitions, and delivery rhythm. Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, original narration, or original dialogue from @Video1. Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references.`
+
 | Mode | Drafting priority | Common mistake | Repair |
 |---|---|---|---|
 | T2V | Build the whole shot in compact layers. | Too many events in one clip. | Keep one visible beat and one endpoint. |

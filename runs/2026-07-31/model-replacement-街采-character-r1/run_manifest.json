@@ -1,0 +1,42 @@
+{
+  "schema_version": "usfr-run-manifest/v1",
+  "run_id": "model-replacement-街采-character-r1",
+  "created_date": "2026-07-31",
+  "source_video": {
+    "path": "inputs/source_video.mp4",
+    "sha256": "a35c78ce8c3754d1a58e02d04aef5ebdd29a6a055e29cf6f618eb962207c9f3b"
+  },
+  "new_model_image": {
+    "path": "inputs/new_model_image.png",
+    "sha256": "b24f1cc7d6096e6aacb04a57871da2560f9ced875f079de6cab06c8a4dd7debb"
+  },
+  "replacement_scope": "replace only the on-camera interviewed woman's identity",
+  "approval_gate_count": 2,
+  "current_gate": "identity_qc_failed",
+  "script_approval": {
+    "status": "confirmed",
+    "sha256": "0822b6fa1f035a0a6ce76f898fa4ccd197146f472ffefacf2352a3ad01a2dd5c"
+  },
+  "storyboard_approval": {
+    "status": "confirmed",
+    "artifact_set": [
+      "storyboards/segment_01_page_01_v4.png",
+      "storyboards/segment_01_page_02_v4.png"
+    ],
+    "page_count": 2,
+    "internal_replacement_control_visible": false
+  },
+  "seedance": {
+    "task_id": "2083092791604695042",
+    "status": "succeeded",
+    "audited_request_sha256": "1f0ff2d9b26cbbdab8ab97b078286cac0d1062a9f571e1e32bde1ab3bcbd91fe"
+  },
+  "final_output": {
+    "path": "final/result.mp4",
+    "sha256": "662b97b2871219f95271c3c8d2d68bb7c76e5c2af6c48187981cb3bf0337bcff",
+    "qc_status": "failed",
+    "qc_report": "final/qc_report.json",
+    "hard_failure": "IDENTITY_NOT_REPLACED",
+    "delivery_authorized": false
+  }
+}

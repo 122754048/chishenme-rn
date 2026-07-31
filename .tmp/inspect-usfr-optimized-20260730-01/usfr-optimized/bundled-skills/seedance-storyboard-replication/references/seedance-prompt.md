@@ -41,6 +41,11 @@ invalid. Enforce `uploaded_tags == binding_tags == prompt_tags`. @Video1 is a
 video-slot reference and never consumes an image index. @Audio1 is an
 audio-slot reference and never consumes an image index.
 
+The `seedance-20` compiler must append this literal block to every prompt that
+binds `videoUrls[0]`:
+
+`@Video1 is the source reference video only for shot structure, composition, camera path, blocking, action timing, pacing, transitions, and delivery rhythm. Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, original narration, or original dialogue from @Video1. Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references.`
+
 1. Actual image-number mapping. Upload only approved target truth, original
    approved storyboard pages, and explicitly scoped additional references.
    Bind each returned public HTTPS URL to immutable SHA-256 evidence. Compile

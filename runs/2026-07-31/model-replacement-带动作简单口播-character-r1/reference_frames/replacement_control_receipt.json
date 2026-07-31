@@ -1,0 +1,27 @@
+{
+  "schema_version": "usfr-control-keyframes-validation/v1",
+  "status": "passed",
+  "source_cut_ids": [
+    "C01",
+    "C02",
+    "C03"
+  ],
+  "panel_count": 3,
+  "manifest_sha256": "dff1056c19d9f89f59925ff7b0c6aab2ef62c90d06f22236351ea9202f5826bc",
+  "source_video_sha256": "e71610ea664679660f60e2b5f69714790e39a96df2dd7b21ee247b37f3882aca",
+  "source_keyframe_sheet_sha256": "a2ea74e1108c7d8c5b38a2fe0cc153580919bba0e1251ac32908cf248ef9a795",
+  "replacement_control_sheet_sha256": "adc5ac63ab778000fabbd06b9a76b1ae358d237813be4f7e19bb89c83cd060e3",
+  "replacement_target_sha256s": [
+    "49a5d3b7125985d9af60f739c6897559f8e3ab944158b87343c844719b6a66fc"
+  ],
+  "required_director_board_reference_sha256": "adc5ac63ab778000fabbd06b9a76b1ae358d237813be4f7e19bb89c83cd060e3",
+  "required_seedance_video_reference_sha256": "e71610ea664679660f60e2b5f69714790e39a96df2dd7b21ee247b37f3882aca",
+  "final_seedance_reference_contract": {
+    "source_video_required": true,
+    "director_board_required_at_image_slot": 1,
+    "internal_artifacts_forbidden": [
+      "source_keyframe_sheet",
+      "replacement_control_sheet"
+    ]
+  }
+}

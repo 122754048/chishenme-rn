@@ -65,6 +65,8 @@ Every approved storyboard page is uploaded as its original confirmed PNG;
 `seedance_execution_carrier.png` and single `storyboard_url` bindings are
 forbidden. Enforce `uploaded_tags == binding_tags == prompt_tags`. @Video1 and
 @Audio1 use independent namespaces and never consume image indices.
+Every request with `videoUrls[0]` is compiled through `seedance-20` and must
+contain: `@Video1 is the source reference video only for shot structure, composition, camera path, blocking, action timing, pacing, transitions, and delivery rhythm. Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, original narration, or original dialogue from @Video1. Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references.`
 Top-level `reference_audios` remains forbidden.
 
 Store evidence is parsed once per run in a server Worker and persisted as a

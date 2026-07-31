@@ -1,0 +1,57 @@
+{
+  "schema_version": "fixed-input-slots/v1",
+  "slot_order": [
+    "source_video",
+    "new_product_image",
+    "new_model_image",
+    "ui_screenshot",
+    "app_store_url",
+    "ui_operation_video",
+    "tail_video"
+  ],
+  "admission": {
+    "source_required": true,
+    "source_present": true,
+    "minimum_optional_slots": 1,
+    "optional_present_count": 1,
+    "can_proceed": true,
+    "language_only": false,
+    "change_input_present": true,
+    "enabled_extension_present": false,
+    "blocker_code": null
+  },
+  "slots": {
+    "source_video": {
+      "slot_id": "source_video",
+      "role": "source_video",
+      "kind": "video",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": ["inputs/source_video.mp4"],
+      "sha256": ["a35c78ce8c3754d1a58e02d04aef5ebdd29a6a055e29cf6f618eb962207c9f3b"]
+    },
+    "new_product_image": {"slot_id": "new_product_image", "role": "target_product_truth", "kind": "image", "present": false, "valid": true, "source": "absent", "values": [], "sha256": []},
+    "new_model_image": {
+      "slot_id": "new_model_image",
+      "role": "target_character_truth",
+      "kind": "image",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": ["inputs/new_model_image.png"],
+      "sha256": ["b24f1cc7d6096e6aacb04a57871da2560f9ced875f079de6cab06c8a4dd7debb"]
+    },
+    "ui_screenshot": {"slot_id": "ui_screenshot", "role": "target_ui_truth", "kind": "image", "present": false, "valid": true, "source": "absent", "values": [], "sha256": []},
+    "app_store_url": {"slot_id": "app_store_url", "role": "app_store_evidence", "kind": "url", "present": false, "valid": true, "source": "absent", "values": [], "sha256": []},
+    "ui_operation_video": {"slot_id": "ui_operation_video", "role": "opaque_ui_demo", "kind": "video", "present": false, "valid": true, "source": "absent", "values": [], "sha256": []},
+    "tail_video": {"slot_id": "tail_video", "role": "opaque_app_tail_card", "kind": "video", "present": false, "valid": true, "source": "absent", "values": [], "sha256": []}
+  },
+  "routes": {
+    "product": "source_preserve",
+    "character": "replace_on_camera_interviewee_only",
+    "ui": "not_applicable_no_ui_cut",
+    "tail": "not_applicable_no_source_end_card",
+    "background_music": "none"
+  }
+}

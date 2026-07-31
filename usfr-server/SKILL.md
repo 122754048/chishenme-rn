@@ -332,6 +332,11 @@ purpose, and storyboard page/approval-set fields where applicable. Enforce
 `uploaded_tags == binding_tags == prompt_tags` before dry-run and again before
 paid submission. @Video1 is a video-slot reference and never consumes an image
 index. @Audio1 is an audio-slot reference and never consumes an image index.
+The final request must be compiled through `seedance-20` and contain this
+literal source-transfer boundary:
+
+`@Video1 is the source reference video only for shot structure, composition, camera path, blocking, action timing, pacing, transitions, and delivery rhythm. Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, original narration, or original dialogue from @Video1. Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references.`
+
 Source Cut/keyframe sheets and replacement-control sheets must never be sent to
 Seedance. A route with zero generated regions creates no Seedance request. The
 exact current 2-15 second matching original source segment is mandatory at

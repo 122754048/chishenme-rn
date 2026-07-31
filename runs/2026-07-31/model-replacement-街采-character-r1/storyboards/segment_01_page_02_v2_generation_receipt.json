@@ -1,0 +1,25 @@
+{
+  "schema_version": "usfr-director-board-page-generation/v1",
+  "status": "passed",
+  "task_id": "2083074466238132226",
+  "segment_id": "S01",
+  "page_index": 2,
+  "page_count": 2,
+  "cut_ids": [
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "page_cut_range": "C05-C07",
+  "daohuo_storyboard_prompt_path": "C:\\Users\\zhaocx04\\.codex\\skills\\universal-source-fidelity-replication\\bundled-skills\\seedance-storyboard-replication\\references\\daohuo_storyboard_prompt.md",
+  "daohuo_storyboard_prompt_sha256": "760aa82e7fbdd08b2c9cec45ac28ecef2212c0fb28767e1e5c6a91c1122e52e6",
+  "compiled_prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-31\\model-replacement-街采-character-r1\\storyboards\\segment_01_page_02_v2_prompt.txt",
+  "compiled_prompt_sha256": "83a676bc9c2505794f948e0a042eeff384457a8c342afcb3e41e4d4c50c40fa6",
+  "reference_1_role": "internal_replacement_control_sheet",
+  "reference_1_sha256": "94ae1a5a60de1cbf2c4945cf361160ddb292342414f1946ff9fd8ed0f7480de9",
+  "reference_2_role": "target_character_identity_only",
+  "reference_2_sha256": "b24f1cc7d6096e6aacb04a57871da2560f9ced875f079de6cab06c8a4dd7debb",
+  "raw_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-31\\model-replacement-街采-character-r1\\storyboards\\segment_01_page_02_v2_raw.png",
+  "raw_sha256": "49d2af6210f814b474c191827948131472634b7548b9dafd28b4f6e46b1b8294",
+  "user_visible": false
+}

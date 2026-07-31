@@ -18,6 +18,14 @@ from typing import Any, Mapping, Sequence
 
 
 MAX_PROMPT_CHARS = 5000
+SOURCE_VIDEO_PROMPT_CONTRACT = (
+    "@Video1 is the source reference video only for shot structure, composition, camera path, blocking, "
+    "action timing, pacing, transitions, and delivery rhythm. "
+    "Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, "
+    "original narration, or original dialogue from @Video1. "
+    "Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, "
+    "dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references."
+)
 RULE_ENGINE_VERSION = "seedance20-rules/v2"
 ROUTE_LEAKAGE_TERMS = (
     "reference_videos",
@@ -908,6 +916,32 @@ def _render_performance_line(line: Mapping[str, Any]) -> str:
     )
 
 
+def _reject_verified_singing_conflicts(
+    prompt: str,
+    performance_lines: Sequence[Mapping[str, Any]],
+) -> None:
+    """Reject instructions that negate a confirmed lyric lip-sync contract."""
+
+    has_verified_singing = any(
+        line.get("lyric_status") == "verified"
+        and line.get("performance_mode") in {"sung", "singing"}
+        for line in performance_lines
+    )
+    if not has_verified_singing:
+        return
+    normalized = " ".join(prompt.casefold().split())
+    conflicts = (
+        "no lyrics",
+        "no singing",
+        "no lip-sync",
+        "no lip sync",
+        "@audio1 controls tempo only",
+        "@audio1 controls timing only",
+    )
+    if any(conflict in normalized for conflict in conflicts):
+        raise ValueError("verified singing conflicts with a no-lyrics, no-lip-sync, or tempo-only instruction")
+
+
 def _validate_approval_binding(
     value: Any,
     *,
@@ -1027,7 +1061,9 @@ def compile_prompt(
     for line in canonical_performance_lines:
         prompt_lines.append(_render_performance_line(line))
     prompt_lines.extend(no_speech_renderings)
+    prompt_lines.append(SOURCE_VIDEO_PROMPT_CONTRACT)
     prompt = " ".join(part.strip() for part in prompt_lines if part and part.strip()).strip()
+    _reject_verified_singing_conflicts(prompt, canonical_performance_lines)
     if len(prompt) > MAX_PROMPT_CHARS:
         raise ValueError("compiled prompt exceeds 5000 characters")
     _reject_route_leakage(prompt)
@@ -1155,6 +1191,8 @@ def validate_compiled_prompt(
     prompt = artifact.get("prompt")
     if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > MAX_PROMPT_CHARS:
         raise ValueError("compiled prompt length is invalid")
+    if SOURCE_VIDEO_PROMPT_CONTRACT not in prompt:
+        raise ValueError("compiled prompt is missing the mandatory @Video1 source reference boundary")
     _reject_route_leakage(prompt)
     _render, canonical_line = _load_line_contract_module()
     canonical_lines = [canonical_line(line) for line in line_contracts]

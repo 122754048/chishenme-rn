@@ -1,0 +1,16 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 720
+PlayResY: 1280
+ScaledBorderAndShadow: yes
+WrapStyle: 2
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Distance,Arial,50,&H000000FF,&H000000FF,&H000000FF,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,7,21,0,143,1
+Style: CTA,Nirmala UI,50,&H0000D7FF,&H0000D7FF,&H0000D7FF,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,5,0,0,280,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:08.27,Distance,,0,0,0,,500M
+Dialogue: 0,0:00:00.00,0:00:08.27,CTA,,0,0,0,,{\pos(389,999)}दूरियां मिटाएं

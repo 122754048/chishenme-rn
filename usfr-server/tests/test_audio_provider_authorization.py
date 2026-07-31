@@ -124,9 +124,11 @@ class _Store:
 
 def _visual_payload_and_lineage(job_id: str):
     from server.job_models import ArtifactRef
+    from server.runninghub_standard_contract import SOURCE_VIDEO_PROMPT_CONTRACT
 
     payload = _payload()
     payload.update({
+        "prompt": f"{payload['prompt']} {SOURCE_VIDEO_PROMPT_CONTRACT}",
         "imageUrls": ["https://media.example/board.png", "https://media.example/model.png"],
         "videoUrls": ["https://media.example/source.mp4"], "audioUrls": [],
         "realPersonMode": True, "conversionSlots": ["all"],

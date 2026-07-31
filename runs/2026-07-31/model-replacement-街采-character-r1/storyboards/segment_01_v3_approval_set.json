@@ -1,0 +1,67 @@
+{
+  "schema_version": "usfr-director-storyboard-approval-set/v1",
+  "status": "awaiting_confirmation",
+  "revision": 3,
+  "segment_id": "S01",
+  "page_count": 3,
+  "user_visible_artifact_kinds": [
+    "director_storyboard_png"
+  ],
+  "internal_artifacts_excluded": [
+    "replacement_control_sheet"
+  ],
+  "daohuo_storyboard_prompt_path": "C:\\Users\\zhaocx04\\.codex\\skills\\universal-source-fidelity-replication\\bundled-skills\\seedance-storyboard-replication\\references\\daohuo_storyboard_prompt.md",
+  "daohuo_storyboard_prompt_sha256": "4a86f270ab75cdba2244ebad32d2ffb488ca6b97e575e4d0b654c35bc4621149",
+  "pagination_policy": "portrait_9_16_max_3_cuts_per_page",
+  "pages": [
+    {
+      "page_index": 1,
+      "page_count": 3,
+      "cut_ids": [
+        "C01",
+        "C02",
+        "C03"
+      ],
+      "path": "storyboards/segment_01_page_01_v3.png",
+      "sha256": "283df3d49a1a76ba2ef89c30612fe8f6f4ec3d6a9d44e54ba9da7efa70be2bba",
+      "raw_path": "storyboards/segment_01_page_01_v3_raw.png",
+      "raw_sha256": "eb22e2c0382b36de6aec07f9eab25ce7fc25965c349541ce2c8631f11c8525cd",
+      "reference_1_sha256": "94ae1a5a60de1cbf2c4945cf361160ddb292342414f1946ff9fd8ed0f7480de9",
+      "daohuo_storyboard_prompt_sha256": "4a86f270ab75cdba2244ebad32d2ffb488ca6b97e575e4d0b654c35bc4621149",
+      "width": 2720,
+      "height": 1530
+    },
+    {
+      "page_index": 2,
+      "page_count": 3,
+      "cut_ids": [
+        "C04",
+        "C05"
+      ],
+      "path": "storyboards/segment_01_page_02_v3.png",
+      "sha256": "21b2be4b03bcf70cb8fe895fb2bc3e87f006490bb8e25d52a8385c8482a560b4",
+      "raw_path": "storyboards/segment_01_page_02_v3_raw.png",
+      "raw_sha256": "da5bc81078cd6008b1e7c6ea221dd0f94a1c9438b5bff617b55cff6a9e38bd20",
+      "reference_1_sha256": "94ae1a5a60de1cbf2c4945cf361160ddb292342414f1946ff9fd8ed0f7480de9",
+      "daohuo_storyboard_prompt_sha256": "4a86f270ab75cdba2244ebad32d2ffb488ca6b97e575e4d0b654c35bc4621149",
+      "width": 2720,
+      "height": 1530
+    },
+    {
+      "page_index": 3,
+      "page_count": 3,
+      "cut_ids": [
+        "C06",
+        "C07"
+      ],
+      "path": "storyboards/segment_01_page_03_v3.png",
+      "sha256": "4dc36cd3d4a8bbd46ea6fa4e60f74cd36993353c32b19b144ae6b7d462dea42e",
+      "raw_path": "storyboards/segment_01_page_03_v3_raw.png",
+      "raw_sha256": "fcb04bc0862dbd6b8073bb3d5a45b1dfc8935d0cd84fdbeccebe3d3225e1c5e5",
+      "reference_1_sha256": "94ae1a5a60de1cbf2c4945cf361160ddb292342414f1946ff9fd8ed0f7480de9",
+      "daohuo_storyboard_prompt_sha256": "4a86f270ab75cdba2244ebad32d2ffb488ca6b97e575e4d0b654c35bc4621149",
+      "width": 2720,
+      "height": 1530
+    }
+  ]
+}

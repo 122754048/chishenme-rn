@@ -18,6 +18,14 @@ from typing import Any, Mapping, Sequence
 
 
 MAX_PROMPT_CHARS = 5000
+SOURCE_VIDEO_PROMPT_CONTRACT = (
+    "@Video1 is the source reference video only for shot structure, composition, camera path, blocking, "
+    "action timing, pacing, transitions, and delivery rhythm. "
+    "Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, "
+    "original narration, or original dialogue from @Video1. "
+    "Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, "
+    "dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references."
+)
 RULE_ENGINE_VERSION = "seedance20-rules/v2"
 ROUTE_LEAKAGE_TERMS = (
     "reference_videos",
@@ -1053,6 +1061,7 @@ def compile_prompt(
     for line in canonical_performance_lines:
         prompt_lines.append(_render_performance_line(line))
     prompt_lines.extend(no_speech_renderings)
+    prompt_lines.append(SOURCE_VIDEO_PROMPT_CONTRACT)
     prompt = " ".join(part.strip() for part in prompt_lines if part and part.strip()).strip()
     _reject_verified_singing_conflicts(prompt, canonical_performance_lines)
     if len(prompt) > MAX_PROMPT_CHARS:
@@ -1182,6 +1191,8 @@ def validate_compiled_prompt(
     prompt = artifact.get("prompt")
     if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > MAX_PROMPT_CHARS:
         raise ValueError("compiled prompt length is invalid")
+    if SOURCE_VIDEO_PROMPT_CONTRACT not in prompt:
+        raise ValueError("compiled prompt is missing the mandatory @Video1 source reference boundary")
     _reject_route_leakage(prompt)
     _render, canonical_line = _load_line_contract_module()
     canonical_lines = [canonical_line(line) for line in line_contracts]

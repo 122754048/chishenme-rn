@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import server.production_ports as production_ports
+from server.runninghub_standard_contract import SOURCE_VIDEO_PROMPT_CONTRACT
 from server.production_ports import (
     EvidenceBoundGptPlanner,
     ProductionEnvironment,
@@ -1344,7 +1345,9 @@ def test_runninghub_video_create_rejects_a_bound_source_slice_without_final_boar
         ProductionEnvironment.from_environ(),
         request_json=lambda **kwargs: calls.append(kwargs) or {"taskId": "unexpected"},
     )
-    payload = _standard_video_payload("@Image1 preserves the approved director board.")
+    payload = _standard_video_payload(
+        f"@Image1 preserves the approved director board. {SOURCE_VIDEO_PROMPT_CONTRACT}"
+    )
     payload.update(
         {
             "videoUrls": ["https://media.example/source-s01.mp4"],

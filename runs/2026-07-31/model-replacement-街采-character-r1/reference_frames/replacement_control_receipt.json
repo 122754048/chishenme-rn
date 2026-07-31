@@ -1,0 +1,37 @@
+{
+  "schema_version": "usfr-replacement-control-receipt/v1",
+  "status": "passed",
+  "generation_mode": "single_sheet_image_to_image",
+  "image2_call_count": 1,
+  "task_id": "2083066801306202114",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "source_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "panel_count": 7,
+  "reference_roles": [
+    {
+      "slot": 1,
+      "role": "complete_source_cut_contact_sheet",
+      "sha256": "69a7379fdb8dc7ff47950a1c68f445dd337322e8ce87f6b180a38b50c2cb9d2f"
+    },
+    {
+      "slot": 2,
+      "role": "target_character_identity_only",
+      "sha256": "b24f1cc7d6096e6aacb04a57871da2560f9ced875f079de6cab06c8a4dd7debb"
+    }
+  ],
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-31\\model-replacement-街采-character-r1\\reference_frames\\replacement_control_prompt.txt",
+  "prompt_sha256": "12432dca4831c349004c46e3ae2b395336316517e6b0f5d7cc34a0ef0e3b3cd7",
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-31\\model-replacement-街采-character-r1\\reference_frames\\replacement_control_sheet.png",
+  "replacement_control_sheet_sha256": "94ae1a5a60de1cbf2c4945cf361160ddb292342414f1946ff9fd8ed0f7480de9",
+  "required_director_board_reference_sha256": "94ae1a5a60de1cbf2c4945cf361160ddb292342414f1946ff9fd8ed0f7480de9",
+  "forbidden_as_final_seedance_reference": true
+}

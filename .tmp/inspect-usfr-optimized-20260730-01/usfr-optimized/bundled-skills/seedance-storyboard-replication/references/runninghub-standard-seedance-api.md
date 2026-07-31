@@ -46,6 +46,11 @@ localized language, or uploaded background music. Set `realPersonMode=true` and
 `conversionSlots=["all"]`. Opaque UI-operation media and tail video remain
 forbidden in `videoUrls`. The full source video must never be uploaded to
 Seedance.
+Before dry-run or paid submission, compile the prompt through `seedance-20`
+and require this literal source-transfer boundary:
+
+`@Video1 is the source reference video only for shot structure, composition, camera path, blocking, action timing, pacing, transitions, and delivery rhythm. Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, original narration, or original dialogue from @Video1. Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references.`
+
 The selected background-music or singing segment may provide one
 duration-bounded `audioUrls` item, and its compiled prompt must name it
 `@Audio1`.

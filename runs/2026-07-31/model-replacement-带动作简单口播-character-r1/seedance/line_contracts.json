@@ -1,0 +1,251 @@
+[
+  {
+    "line_id": "VO-C01",
+    "cut_id": "C01",
+    "source_content_timeline_sha256": "cbdc09c20a57f4bff0cff3314ed0fce1c158430f5408accb7668791549b2f0af",
+    "content_type": "spoken",
+    "speaker_assignment": {
+      "status": "CONFIRMED",
+      "speaker_id": "CHARACTER_A",
+      "role": "on-camera speaker",
+      "visibility": "on_camera",
+      "confidence": 0.95,
+      "evidence_sha256": "9e2ea179ff3b5ebfcecac6b4ed8b543f82ed66e85f1e06b8447bd94faccfe100"
+    },
+    "speaker": {
+      "id": "CHARACTER_A",
+      "role": "on-camera speaker",
+      "visibility": "on_camera",
+      "voice_policy": "preserve the exact original source audio in final postproduction"
+    },
+    "language": {
+      "bcp47": "hi-IN",
+      "script": "Deva"
+    },
+    "time": {
+      "time_base": "output_global_ms",
+      "start_ms": 0,
+      "end_ms": 2000,
+      "duration_ms": 2000,
+      "duration_is_derived": true,
+      "cut_ids": [
+        "C01"
+      ],
+      "cross_cut_reason": null,
+      "planned_safe_margin_ms": 0
+    },
+    "text": {
+      "exact": "अकेलापन से थके हूँ",
+      "normalized": "अकेलापन से थके हूँ",
+      "pronunciation_notes": [
+        "Match @Video1 mouth rhythm and the original Hindi source audio exactly."
+      ]
+    },
+    "delivery": {
+      "tone": "natural direct-to-camera conversational delivery",
+      "pace": "match the source phrase timing exactly",
+      "emphasis": [],
+      "volume": "natural",
+      "breath": "match source breath grouping",
+      "mic_distance": "source-matched room recording",
+      "accent_or_locale": "natural hi-IN"
+    },
+    "lip_sync": {
+      "priority": "high",
+      "face_visibility": "clear frontal mouth",
+      "occlusion": "none",
+      "head_motion_limit": "small source-matched micro-motion",
+      "articulation": "match source mouth shapes and phrase endpoint",
+      "allowed_tolerance_ms": 100,
+      "speaker_face_ref": "CHARACTER_A"
+    },
+    "proof_events": [],
+    "foley_events": [],
+    "silence_windows": [],
+    "music_policy": {
+      "mode": "none",
+      "windows": []
+    },
+    "claim_ids": [],
+    "qc_contract": {
+      "asr_profile": "hi-IN-source-preserve-v1",
+      "speaker_check": "role+visible-face",
+      "language_check": "BCP-47 hi-IN",
+      "line_tolerance_ms": 100,
+      "proof_sync_tolerance_ms": 100,
+      "foley_sync_tolerance_ms": 100,
+      "hard_fail_flags": [
+        "word_change",
+        "wrong_speaker",
+        "lip_sync_drift"
+      ]
+    },
+    "criticality": "H"
+  },
+  {
+    "line_id": "VO-C02",
+    "cut_id": "C02",
+    "source_content_timeline_sha256": "cbdc09c20a57f4bff0cff3314ed0fce1c158430f5408accb7668791549b2f0af",
+    "content_type": "spoken",
+    "speaker_assignment": {
+      "status": "CONFIRMED",
+      "speaker_id": "CHARACTER_A",
+      "role": "on-camera speaker",
+      "visibility": "on_camera",
+      "confidence": 0.95,
+      "evidence_sha256": "9e2ea179ff3b5ebfcecac6b4ed8b543f82ed66e85f1e06b8447bd94faccfe100"
+    },
+    "speaker": {
+      "id": "CHARACTER_A",
+      "role": "on-camera speaker",
+      "visibility": "on_camera",
+      "voice_policy": "preserve the exact original source audio in final postproduction"
+    },
+    "language": {
+      "bcp47": "hi-IN",
+      "script": "Deva"
+    },
+    "time": {
+      "time_base": "output_global_ms",
+      "start_ms": 2000,
+      "end_ms": 5000,
+      "duration_ms": 3000,
+      "duration_is_derived": true,
+      "cut_ids": [
+        "C02"
+      ],
+      "cross_cut_reason": null,
+      "planned_safe_margin_ms": 0
+    },
+    "text": {
+      "exact": "देखो, हम कितनी पास है",
+      "normalized": "देखो हम कितनी पास है",
+      "pronunciation_notes": [
+        "Match @Video1 mouth rhythm and the original Hindi source audio exactly."
+      ]
+    },
+    "delivery": {
+      "tone": "natural direct-to-camera conversational delivery",
+      "pace": "match the source phrase timing exactly",
+      "emphasis": [],
+      "volume": "natural",
+      "breath": "match source breath grouping",
+      "mic_distance": "source-matched room recording",
+      "accent_or_locale": "natural hi-IN"
+    },
+    "lip_sync": {
+      "priority": "high",
+      "face_visibility": "clear frontal mouth",
+      "occlusion": "none",
+      "head_motion_limit": "small source-matched micro-motion",
+      "articulation": "match source mouth shapes and phrase endpoint",
+      "allowed_tolerance_ms": 100,
+      "speaker_face_ref": "CHARACTER_A"
+    },
+    "proof_events": [],
+    "foley_events": [],
+    "silence_windows": [],
+    "music_policy": {
+      "mode": "none",
+      "windows": []
+    },
+    "claim_ids": [],
+    "qc_contract": {
+      "asr_profile": "hi-IN-source-preserve-v1",
+      "speaker_check": "role+visible-face",
+      "language_check": "BCP-47 hi-IN",
+      "line_tolerance_ms": 100,
+      "proof_sync_tolerance_ms": 100,
+      "foley_sync_tolerance_ms": 100,
+      "hard_fail_flags": [
+        "word_change",
+        "wrong_speaker",
+        "lip_sync_drift"
+      ]
+    },
+    "criticality": "H"
+  },
+  {
+    "line_id": "VO-C03",
+    "cut_id": "C03",
+    "source_content_timeline_sha256": "cbdc09c20a57f4bff0cff3314ed0fce1c158430f5408accb7668791549b2f0af",
+    "content_type": "spoken",
+    "speaker_assignment": {
+      "status": "CONFIRMED",
+      "speaker_id": "CHARACTER_A",
+      "role": "on-camera speaker",
+      "visibility": "on_camera",
+      "confidence": 0.95,
+      "evidence_sha256": "9e2ea179ff3b5ebfcecac6b4ed8b543f82ed66e85f1e06b8447bd94faccfe100"
+    },
+    "speaker": {
+      "id": "CHARACTER_A",
+      "role": "on-camera speaker",
+      "visibility": "on_camera",
+      "voice_policy": "preserve the exact original source audio in final postproduction"
+    },
+    "language": {
+      "bcp47": "hi-IN",
+      "script": "Deva"
+    },
+    "time": {
+      "time_base": "output_global_ms",
+      "start_ms": 5000,
+      "end_ms": 8267,
+      "duration_ms": 3267,
+      "duration_is_derived": true,
+      "cut_ids": [
+        "C03"
+      ],
+      "cross_cut_reason": null,
+      "planned_safe_margin_ms": 0
+    },
+    "text": {
+      "exact": "क्या आज रात इन दूरियों को मिटा दें?",
+      "normalized": "क्या आज रात इन दूरियों को मिटा दें",
+      "pronunciation_notes": [
+        "Match @Video1 mouth rhythm and the original Hindi source audio exactly."
+      ]
+    },
+    "delivery": {
+      "tone": "natural direct-to-camera conversational delivery",
+      "pace": "match the source phrase timing exactly",
+      "emphasis": [],
+      "volume": "natural",
+      "breath": "match source breath grouping",
+      "mic_distance": "source-matched room recording",
+      "accent_or_locale": "natural hi-IN"
+    },
+    "lip_sync": {
+      "priority": "high",
+      "face_visibility": "clear frontal mouth",
+      "occlusion": "none",
+      "head_motion_limit": "small source-matched micro-motion",
+      "articulation": "match source mouth shapes and phrase endpoint",
+      "allowed_tolerance_ms": 100,
+      "speaker_face_ref": "CHARACTER_A"
+    },
+    "proof_events": [],
+    "foley_events": [],
+    "silence_windows": [],
+    "music_policy": {
+      "mode": "none",
+      "windows": []
+    },
+    "claim_ids": [],
+    "qc_contract": {
+      "asr_profile": "hi-IN-source-preserve-v1",
+      "speaker_check": "role+visible-face",
+      "language_check": "BCP-47 hi-IN",
+      "line_tolerance_ms": 100,
+      "proof_sync_tolerance_ms": 100,
+      "foley_sync_tolerance_ms": 100,
+      "hard_fail_flags": [
+        "word_change",
+        "wrong_speaker",
+        "lip_sync_drift"
+      ]
+    },
+    "criticality": "H"
+  }
+]
