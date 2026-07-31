@@ -1,0 +1,24 @@
+{
+  "song": {
+    "code": 0,
+    "msg": "success",
+    "errorMessages": null,
+    "data": {
+      "type": "audio",
+      "download_url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/527f644aaa4b83801cca440aa43d54ea40799d3c2beebb352cf727a6b249e3f5.mp3",
+      "fileName": "openapi/527f644aaa4b83801cca440aa43d54ea40799d3c2beebb352cf727a6b249e3f5.mp3",
+      "size": "4593153"
+    }
+  },
+  "video": {
+    "code": 0,
+    "msg": "success",
+    "errorMessages": null,
+    "data": {
+      "type": "video",
+      "download_url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/bdd8f696c04c622c65738b65824136456a25dc5cbb75d08fc02c22bb4d6dcbe0.mp4",
+      "fileName": "openapi/bdd8f696c04c622c65738b65824136456a25dc5cbb75d08fc02c22bb4d6dcbe0.mp4",
+      "size": "2491300"
+    }
+  }
+}

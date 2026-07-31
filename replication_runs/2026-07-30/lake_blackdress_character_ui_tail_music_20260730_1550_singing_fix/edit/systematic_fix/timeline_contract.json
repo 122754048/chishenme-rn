@@ -1,0 +1,62 @@
+{
+  "source_duration": 19.4,
+  "target": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "regions": [
+    {
+      "region_id": "S01",
+      "region_type": "generated",
+      "source_start": 0.0,
+      "source_end": 5.0,
+      "media_path": "C:/Users/zhaocx04/Documents/New project/replication_runs/2026-07-30/lake_blackdress_character_ui_tail_music_20260730_1550_singing_fix/edit/clips_graded/01-S01.mp4",
+      "media_origin": "generated_media",
+      "transition_shell": {
+        "entry": {"type": "hard_cut"},
+        "exit": {"type": "hard_cut"},
+        "audio": {"policy": "anti_pop_fade", "fade_seconds": 0.03}
+      }
+    },
+    {
+      "region_id": "UI01",
+      "region_type": "opaque_ui_demo",
+      "source_start": 5.0,
+      "source_end": 10.0,
+      "media_path": "C:/Users/zhaocx04/Downloads/7月16日(1).mp4",
+      "media_origin": "user_upload",
+      "transition_shell": {
+        "entry": {"type": "hard_cut"},
+        "exit": {"type": "hard_cut"},
+        "audio": {"policy": "anti_pop_fade", "fade_seconds": 0.03}
+      }
+    },
+    {
+      "region_id": "S02",
+      "region_type": "generated",
+      "source_start": 10.0,
+      "source_end": 15.0,
+      "media_path": "C:/Users/zhaocx04/Documents/New project/replication_runs/2026-07-30/lake_blackdress_character_ui_tail_music_20260730_1550_singing_fix/edit/clips_graded/03-S02.mp4",
+      "media_origin": "generated_media",
+      "transition_shell": {
+        "entry": {"type": "hard_cut"},
+        "exit": {"type": "hard_cut"},
+        "audio": {"policy": "anti_pop_fade", "fade_seconds": 0.03}
+      }
+    },
+    {
+      "region_id": "TAIL01",
+      "region_type": "excluded_app_end_card",
+      "source_start": 15.0,
+      "source_end": 19.4,
+      "media_path": "C:/Users/zhaocx04/Downloads/7月16日.mp4",
+      "media_origin": "user_upload",
+      "transition_shell": {
+        "entry": {"type": "hard_cut"},
+        "exit": {"type": "hard_cut"},
+        "audio": {"policy": "anti_pop_fade", "fade_seconds": 0.03}
+      }
+    }
+  ]
+}

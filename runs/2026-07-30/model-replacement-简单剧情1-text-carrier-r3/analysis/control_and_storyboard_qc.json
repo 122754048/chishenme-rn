@@ -1,0 +1,26 @@
+{
+  "status": "failed",
+  "replacement_control_sheet": {
+    "panel_count": 7,
+    "identity_replaced": true,
+    "intact_paper_text": {
+      "C01": "Free chat nahi?",
+      "C03": "Recharge karna parega?",
+      "C05": "Ek bhi ladki An install?"
+    },
+    "tear_carrier_binding_visible": ["C02", "C04", "C06"],
+    "timecodes_or_board_labels_present": false
+  },
+  "director_storyboard": {
+    "panel_count": 7,
+    "intact_paper_text_spelling_passed": true,
+    "paper_text_bound_to_torn_fragments": true,
+    "timecodes_or_extra_scene_text_present": false,
+    "post_overlay_policy": "yellow uninstall subtitle remains excluded from generation and will be restored deterministically after Seedance",
+    "fixed_layout_passed": false,
+    "failure_code": "STORYBOARD_LAYOUT_QC_FAILED",
+    "failure_reason": "The image is a plain seven-panel visual carrier and omits the mandatory professional director-board header, character/detail areas, target-evidence area, environment/camera diagram, lighting/style/audio notes, and cinematography footer."
+  },
+  "next_gate": "blocked_before_storyboard_approval",
+  "seedance_upload_allowed": false
+}

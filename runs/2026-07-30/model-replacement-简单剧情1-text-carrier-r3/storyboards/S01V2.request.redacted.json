@@ -1,0 +1,30 @@
+{
+  "prompt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\storyboards\\segment_01_v2_prompt.txt",
+    "characters": 4027
+  },
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/e014d8ec5ef8aa17375f920e0e175e8fbf67c6bd25fbd14d1c24736147132c83.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/097b640f0def480e6921ebc1c606768f604f5e5ef0561df833fa9bcbd8397e70.jpeg"
+  ],
+  "aspectRatio": "16:9",
+  "resolution": "2k",
+  "quality": "medium",
+  "timeline_scope_receipt": {
+    "path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\analysis\\timeline_scope_receipt_v2.json",
+    "scope_sha256": "aead64f8e3502dda7bade6e528f65d9976b01a4431c4416f024e8331554ce62e"
+  },
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "reference_images": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\reference_frames\\replacement_control_sheet.png",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\reference_frames\\new_model_image.jpeg"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082773714097537026",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\reference_frames\\replacement_control_prompt.txt",
+  "timeline_scope_receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\analysis\\timeline_scope_receipt.json",
+  "timeline_scope_receipt_sha256": "bd22e1264128f08b153d66cd885f991c9f844377f842e4b8b751fa63665d3e83",
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\reference_frames\\source_cut_contact_sheet.png",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\reference_frames\\new_model_image.jpeg"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\reference_frames\\replacement_control_sheet.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 78.313,
+  "revision_reason": "Retry in a new run: enforce one-to-one seven-panel Cut coverage and a distinct C06 third-tear panel.",
+  "revision_number": 1,
+  "artifact_stem": "replacement_control_sheet",
+  "cut_id": "CONTROL",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

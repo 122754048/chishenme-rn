@@ -1,0 +1,36 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2082778695672397825",
+  "prompt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\storyboards\\segment_01_v2_prompt.txt",
+  "timeline_scope_receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\analysis\\timeline_scope_receipt_v2.json",
+  "timeline_scope_receipt_sha256": "aead64f8e3502dda7bade6e528f65d9976b01a4431c4416f024e8331554ce62e",
+  "covered_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "reference_inputs": [
+    "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\reference_frames\\replacement_control_sheet.png",
+    "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\reference_frames\\new_model_image.jpeg"
+  ],
+  "output_path": "C:\\Users\\zhaocx04\\Documents\\New project\\runs\\2026-07-30\\model-replacement-简单剧情1-text-carrier-r3\\storyboards\\segment_01_v2.png",
+  "output_dimensions": [
+    2736,
+    1536
+  ],
+  "generation_duration_seconds": 124.578,
+  "revision_reason": "Regenerate from the replacement-control sheet into the mandatory professional director-board layout; reject plain contact-sheet output.",
+  "revision_number": 2,
+  "artifact_stem": "segment_01_v2",
+  "cut_id": "S01V2",
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

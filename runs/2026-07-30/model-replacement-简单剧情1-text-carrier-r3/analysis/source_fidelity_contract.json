@@ -1,0 +1,24 @@
+{
+  "contract": "source-fidelity-contract",
+  "fidelity_level": 1,
+  "source_truth": {
+    "status": "observed",
+    "camera": "locked vertical medium close-up with hard edits at paper resets",
+    "scene": "bedroom with wooden headboard, patterned bedspread, and left curtain",
+    "performance": "smiling direct-to-camera presentation of three written paper signs followed by three paper tears",
+    "audio": "preserve original source audio"
+  },
+  "target_truth": {
+    "status": "observed",
+    "model_identity": "supplied adult woman with short dark curly hair, pearl stud earrings, warm light complexion, expressive brows, and friendly smile"
+  },
+  "migration_plan": {
+    "model_identity": {"route": "REPLACE", "criticality": "high"},
+    "scene_wardrobe_camera": {"route": "KEEP", "criticality": "high"},
+    "paper_text": {"route": "REPLACE", "carrier_route": "generation_surface", "criticality": "high", "authority": "analysis/visible_text_routes.json"},
+    "yellow_uninstall_subtitle": {"route": "COMPOSITE", "carrier_route": "deterministic_overlay", "criticality": "high"},
+    "original_audio": {"route": "KEEP", "criticality": "high"}
+  },
+  "continuity": "The same target identity, purple top, bedroom, camera, paper dimensions, hand ownership, exact paper wording, and paper-tear endpoints persist across all seven Cuts.",
+  "text_qc": "Each intact paper must show the exact approved wording. During tearing, the writing must remain physically attached to the corresponding paper fragments. Screen-fixed or floating paper text, timecodes, gibberish, and detached glyphs fail QC."
+}

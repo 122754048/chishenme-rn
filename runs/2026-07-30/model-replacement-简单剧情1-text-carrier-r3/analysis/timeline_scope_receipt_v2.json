@@ -1,0 +1,38 @@
+{
+  "schema_version": "usfr-timeline-scope-receipt/v1",
+  "status": "passed",
+  "route": "omit_source_end_card",
+  "source_end_ms": 15067,
+  "final_output_end_ms": 15000,
+  "allowed_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "excluded_cut_ids": [
+    "C08"
+  ],
+  "source_pixel_cut_ids": [],
+  "image_model_allowed_cut_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07"
+  ],
+  "opaque_ui_cut_ids": [],
+  "input_slots_sha256": "1f55cb0272fb3e0b4e90f9364e312e940ebc52d4c6b11bb5d46e1c0342e04f23",
+  "timeline_regions_sha256": "9f28defdb4a788b7b056750c233ba42178eefefdab13c205d56f4592076c5582",
+  "segment_plan_sha256": "db4a055e32c3dd15fba9efba8dd15946b549696bc10c877d973b316b0746a798",
+  "text_artifact_sha256": {
+    "replacement_control_prompt.txt": "541ff509b3830fc4fda983ccfd4199257511d38b502994e57606b0545b785f7a",
+    "segment_01_v2_prompt.txt": "b8dbd6fce5e03e51552e6ef38dcaa4608a59f54e5c02380b6faea3a329e6d890"
+  },
+  "scope_sha256": "aead64f8e3502dda7bade6e528f65d9976b01a4431c4416f024e8331554ce62e"
+}
