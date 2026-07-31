@@ -1,0 +1,31 @@
+{
+  "generator_kind": "image_model",
+  "tool": "RunningHub OpenAPI v2",
+  "model": "gpt-image-2/image-to-image-official-stable",
+  "model_api_id": "2046514150500524035",
+  "task_id": "2083137060760154113",
+  "revision_number": 1,
+  "board_page_index": 1,
+  "board_page_count": 2,
+  "segment_id": "S01",
+  "cut_ids": ["C01", "C02", "C03", "C04"],
+  "prompt_path": "storyboards/segment_01_page_01_prompt.md",
+  "prompt_sha256": "e84c58d1b443a0659ca30345b3482228bdc3c5859db441dc2a57ef5c0a1d87c3",
+  "template_path": "bundled-skills/seedance-storyboard-replication/references/daohuo_storyboard_prompt.md",
+  "template_sha256": "cf0586d20f9440ce98ce759724e14171eda4c67434d47e89a14c2e56168c68c3",
+  "reference_inputs": [
+    "reference_frames/control_keyframes.png",
+    "inputs/new_model_image.jpg"
+  ],
+  "required_control_sheet_sha256": "58b53fa044e10039e30def81de32083a70e7e43b18ce35b7dad6193198533c1a",
+  "output_path": "storyboards/segment_01_v1.png",
+  "output_sha256": "440f6627908dd5df90d0e7082bfb4b12ccc9e04e9c8c78b00c9b62208bf50b26",
+  "output_dimensions": [2736, 1536],
+  "generation_duration_seconds": 98.016,
+  "aspect_ratio": "16:9",
+  "resolution": "2k",
+  "quality": "medium",
+  "layout_qa": "passed",
+  "visual_qa": "passed",
+  "revision_reason": "Initial template-bound director storyboard page 1/2"
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": "usfr-image-role-manifest/v1",
+  "approval_set_sha256": "09ccf9c4169658e65811edc0e2260a077effb0025b91f0ab4e3e206436dad819",
+  "images": [
+    {
+      "role": "new_model_identity",
+      "artifact_name": "new_model_image.jpg",
+      "sha256": "062bbad5bb388fa16040e5254cb755ccd7584a38cf7d489944982fc50dec3e25",
+      "cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08"],
+      "page": null,
+      "approval_set_sha256": null,
+      "purpose": "authorized target woman identity only; face, skin tone, platinum-blonde high ponytail and makeup"
+    },
+    {
+      "role": "director_storyboard",
+      "artifact_name": "segment_01_v1.png",
+      "sha256": "440f6627908dd5df90d0e7082bfb4b12ccc9e04e9c8c78b00c9b62208bf50b26",
+      "cut_ids": ["C01", "C02", "C03", "C04"],
+      "page": 1,
+      "approval_set_sha256": "09ccf9c4169658e65811edc0e2260a077effb0025b91f0ab4e3e206436dad819",
+      "purpose": "approved director storyboard page 1 for C01-C04 composition, action and continuity"
+    },
+    {
+      "role": "director_storyboard",
+      "artifact_name": "segment_01_page_02_v1.png",
+      "sha256": "8fcbe1d8ba97e8adae815a0596a605284650c217aa4752c270abbe0199115927",
+      "cut_ids": ["C05", "C06", "C07", "C08"],
+      "page": 2,
+      "approval_set_sha256": "09ccf9c4169658e65811edc0e2260a077effb0025b91f0ab4e3e206436dad819",
+      "purpose": "approved director storyboard page 2 for C05-C08 composition, action and continuity"
+    }
+  ]
+}

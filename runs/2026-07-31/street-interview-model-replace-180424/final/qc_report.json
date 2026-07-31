@@ -1,0 +1,53 @@
+{
+  "schema_version": "usfr-final-qc/v1",
+  "status": "passed",
+  "final_artifact": {
+    "path": "final/result.mp4",
+    "sha256": "7be03d0c9c359712a66582bab6404f288dd44fc6b0d36aedd405d3c7901a8f31",
+    "container": "mp4",
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "width": 720,
+    "height": 1280,
+    "frame_rate": "30/1",
+    "frame_count": 326,
+    "duration_seconds": 10.867007
+  },
+  "provider": {
+    "task_id": "2083145760249360385",
+    "status": "SUCCESS",
+    "single_paid_create": true
+  },
+  "checks": {
+    "video_stream_present": true,
+    "audio_stream_present": true,
+    "portrait_720x1280": true,
+    "frame_rate_30fps": true,
+    "duration_matches_source": true,
+    "replacement_identity_visible": true,
+    "source_identity_not_visible": true,
+    "white_top_black_skirt_preserved": true,
+    "night_street_and_microphone_preserved": true,
+    "approved_overlay_strings_visible": true,
+    "overlay_timing_and_screen_position_visually_verified": true,
+    "source_audio_bitstream_preserved": true,
+    "black_frames_detected": false,
+    "freeze_events_over_0_5s_detected": false,
+    "av_drift_observed": false
+  },
+  "audio_evidence": {
+    "source_aac_md5": "a7ec9a77bab8107fcdcbf8aa7e3055ae",
+    "final_aac_md5": "a7ec9a77bab8107fcdcbf8aa7e3055ae",
+    "match": true
+  },
+  "text_evidence": [
+    "今話題の『SUGO』知ってる？",
+    "SUGO",
+    "もちろん！",
+    "私もう沼ってるよ！",
+    "ぶっちゃけ...",
+    "毎日刺激的すぎ！",
+    "正直ヤバいww"
+  ],
+  "visual_review": "Sampled the complete generated interval and the semantic Cut windows. The final carrier consistently shows the approved platinum-blonde high-ponytail woman rather than the source interviewee, with stable wardrobe, microphone relation, night-street topology, action progression and closing pose."
+}

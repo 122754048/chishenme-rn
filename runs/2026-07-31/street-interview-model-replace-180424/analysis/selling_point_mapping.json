@@ -1,0 +1,8 @@
+{
+  "schema_version": "usfr-selling-point-mapping/v1",
+  "content_type": "creator_story_no_product",
+  "claims": [],
+  "source_logic": "The clip is a short social street-interview reaction with no supplied target product or App evidence.",
+  "target_route": "Preserve the interview structure, exact approved Japanese dialogue and playful delivery; do not invent product features, proof, CTA, statistics or guarantees.",
+  "cut_scope": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08"]
+}

@@ -1,0 +1,868 @@
+{
+  "schema_version": "seedance20-prompt/v1",
+  "prompt": "Segment S01. Duration 10.87s. Opening state: Blonde woman center-right, gaze left; microphone lower left. Reference @Image1 (slot 1): authorized woman identity only. Reference @Image2 (slot 2): approved director board C01-C04. Reference @Image3 (slot 3): approved director board C05-C08. Shot C01-C05, 0.00-6.00s, 9:16 handheld medium portrait. Scene: night street; woman center-right; microphone lower left. Camera: 35mm handheld micro-drift. Lighting: cool left vending key; dark rear. Performance: C01 neutral listen; C02 small smile; C03 smile and nod; C04 playful tilt and sway; C05 amused listen. Action: hear DIA-001, say DIA-002 and DIA-003, then hear DIA-004. Endpoint: ready to answer the follow-up. Product/UI truth: no product; @Image1 face; white top; black skirt. Commercial proof: interview only; no claim. Transition: continuous phase. Continuity: same scale, gaze left and microphone relation. Audio: DIA-001 to DIA-004; street ambience; no music. Shot C06-C08, 6.00-10.87s, 9:16 handheld medium portrait. Scene: night street; woman center-right; microphone lower left. Camera: 35mm handheld micro-drift. Lighting: cool left vending key; dark rear. Performance: C06 animated smile and subtle lean; C07 playful laugh and chin dip; C08 warm smile, hands together. Action: say DIA-005 and DIA-006, then finish the closing gesture. Endpoint: stable smile, hands together. Product/UI truth: no product; @Image1 face; white top; black skirt. Commercial proof: interview only; no claim. Transition: continuous phase. Continuity: same scale, gaze left and microphone relation. Audio: DIA-005 and DIA-006, then laugh or breath tail; street ambience; no music. Lock: @Image1 fixes face and hair; @Image2 and @Image3 fix C01-C08 visual states.. Lock: Keep white top, black skirt, night street, left key and microphone; generate no visible text.. Constraint: no original face, identity drift, wardrobe or background change. Constraint: no extra person, hand or microphone defect, invented or reordered Cut, copied voice or improvised line. Dialogue 0.00-1.62s (ja-JP, off_camera): INTERVIEWER says exactly, \"今話題の『SUGO』知ってる？\". casual street-interview question; brisk; natural; one phrase; mic distance near microphone; locale ja-JP. Lip-sync low; face off camera; head motion n/a; articulation clear; tolerance 200ms. No music. Do not paraphrase, add, repeat, or assign the line to another speaker. Dialogue 1.62-2.55s (ja-JP, on_camera): CHARACTER_A says exactly, \"もちろん！\". bright confident reply; brisk; natural; one phrase; mic distance near microphone; locale ja-JP. Lip-sync high; face visible mouth; head motion small; articulation clear; tolerance 160ms. No music. Do not paraphrase, add, repeat, or assign the line to another speaker. Dialogue 2.55-4.50s (ja-JP, on_camera): CHARACTER_A says exactly, \"私、もう沼ってるよ！\". playful amused confession; natural; natural; one phrase; mic distance near microphone; locale ja-JP. Lip-sync high; face visible mouth; head motion small; articulation clear; tolerance 180ms. No music. Do not paraphrase, add, repeat, or assign the line to another speaker. Dialogue 4.50-6.00s (ja-JP, off_camera): INTERVIEWER says exactly, \"ぶっちゃけ、どう？\". casual teasing follow-up; brisk; natural; one phrase; mic distance near microphone; locale ja-JP. Lip-sync low; face off camera; head motion n/a; articulation clear; tolerance 200ms. No music. Do not paraphrase, add, repeat, or assign the line to another speaker. Dialogue 6.00-8.45s (ja-JP, on_camera): CHARACTER_A says exactly, \"毎日刺激的すぎて、\". animated playful answer; natural; natural; one phrase; mic distance near microphone; locale ja-JP. Lip-sync high; face visible mouth; head motion small; articulation clear; tolerance 180ms. No music. Do not paraphrase, add, repeat, or assign the line to another speaker. Dialogue 8.45-10.35s (ja-JP, on_camera): CHARACTER_A says exactly, \"正直やばい。\". playful embarrassed punchline; natural; natural; one phrase; mic distance near microphone; locale ja-JP. Lip-sync high; face visible mouth; head motion small; articulation clear; tolerance 180ms. No music. Do not paraphrase, add, repeat, or assign the line to another speaker. Cut C08: No dialogue. Allowed audio: laugh or breath tail, street ambience. Forbidden audio: new dialogue, background music. @Video1 is the source reference video only for shot structure, composition, camera path, blocking, action timing, pacing, transitions, and delivery rhythm. Do not copy or output any person or identity, product/App or merchandise, visible text, original voice, original narration, or original dialogue from @Video1. Generate only the approved characters, target product/App evidence, exact visible text, voices, narration, dialogue, actions, and audio explicitly specified by this prompt and its bound image and audio references.",
+  "compiler": {
+    "contract": "seedance20-prompt-compiler/v1",
+    "profile": "high_fidelity_hybrid_v1",
+    "skill": "seedance-20",
+    "version": "6.6.0",
+    "skill_sha256": "287600947fac6f6b4d1e7f81e55c246082efda6d5b1b0206de32d1341fae8038",
+    "loaded_modules": [
+      "seedance-20",
+      "seedance-prompt",
+      "seedance-antislop",
+      "seedance-camera",
+      "seedance-motion",
+      "seedance-lighting",
+      "seedance-characters",
+      "seedance-audio",
+      "seedance-sequence"
+    ],
+    "required_specialists": [
+      "seedance-camera",
+      "seedance-motion",
+      "seedance-lighting",
+      "seedance-characters",
+      "seedance-audio",
+      "seedance-sequence"
+    ],
+    "dependency_snapshot": {
+      "seedance-20": {
+        "name": "seedance-20",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "287600947fac6f6b4d1e7f81e55c246082efda6d5b1b0206de32d1341fae8038",
+        "package_path": "dependencies/seedance-20/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-prompt": {
+        "name": "seedance-prompt",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "74028a2a9d377aa208cc604b6dfdaa7800b5f476372405cd286eea81bdcc4d47",
+        "package_path": "dependencies/seedance-20/skills/seedance-prompt/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-antislop": {
+        "name": "seedance-antislop",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "3303e4ae1de3dc2fcf784e965c4df95b91c8d6522e04a11df9533440d9117eb1",
+        "package_path": "dependencies/seedance-20/skills/seedance-antislop/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-camera": {
+        "name": "seedance-camera",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "9785dee770590268ee98eab9fa7b2f7580cce8ad92764ee7b9c4a6613686b4bf",
+        "package_path": "dependencies/seedance-20/skills/seedance-camera/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-motion": {
+        "name": "seedance-motion",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "29dcb5b1718fe9742fea8498da3b468f47309d595ad56c9c62d65edccdbf52c7",
+        "package_path": "dependencies/seedance-20/skills/seedance-motion/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-lighting": {
+        "name": "seedance-lighting",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "8dd249bd1bc380801b624cb90cc37d46ac725ac20e7ec2b8efce02ac67cd21f7",
+        "package_path": "dependencies/seedance-20/skills/seedance-lighting/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-characters": {
+        "name": "seedance-characters",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "355500e3f0e00f789d736438e395501d7eac8136d40bac4b39b1b98a6e271148",
+        "package_path": "dependencies/seedance-20/skills/seedance-characters/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-audio": {
+        "name": "seedance-audio",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "3a5a906f9775222389520c9b4d426842d0fc3cb9d20621491a91e884d774e424",
+        "package_path": "dependencies/seedance-20/skills/seedance-audio/SKILL.md",
+        "digest_required": true
+      },
+      "seedance-sequence": {
+        "name": "seedance-sequence",
+        "source": "injected",
+        "version": "6.6.0",
+        "sha256": "cbaecde282c0efb73120366dc54628a3f9988919ae545237f6cdd1b2e40f5758",
+        "package_path": "dependencies/seedance-20/skills/seedance-sequence/SKILL.md",
+        "digest_required": true
+      }
+    },
+    "route_sha256": "b014d2c1e155b8a0ea7cb310db76ae2c8c7f8447c4fd239efcebee84ded60c67",
+    "checks": {
+      "professional_gate": true,
+      "capability_check": true,
+      "allocation_check": true,
+      "reference_role_check": true,
+      "directing_coherence_check": true,
+      "anti_slop_check": true,
+      "route_exclusion_check": true,
+      "line_parity_check": true
+    },
+    "rule_audit": {
+      "engine": "seedance-20",
+      "version": "seedance20-rules/v2",
+      "skill_sha256": "287600947fac6f6b4d1e7f81e55c246082efda6d5b1b0206de32d1341fae8038",
+      "checks_sha256": "b3b46181a642414bfd4a657d96f0724cf67c7b1033fda62b7d7b297ccc6bbda1",
+      "source": "immutable_skill_bytes_and_compiler_rules"
+    },
+    "review_bindings": {
+      "output_language": null,
+      "approved_script_sha256": "68823aa563f2fd63359fc9545a252992e50dc253f4f5754a118d7a564fd5d1f1",
+      "approved_storyboard_manifest_sha256": "09ccf9c4169658e65811edc0e2260a077effb0025b91f0ab4e3e206436dad819",
+      "approved_storyboard_cut_sha256s": [
+        "440f6627908dd5df90d0e7082bfb4b12ccc9e04e9c8c78b00c9b62208bf50b26",
+        "440f6627908dd5df90d0e7082bfb4b12ccc9e04e9c8c78b00c9b62208bf50b26",
+        "440f6627908dd5df90d0e7082bfb4b12ccc9e04e9c8c78b00c9b62208bf50b26",
+        "440f6627908dd5df90d0e7082bfb4b12ccc9e04e9c8c78b00c9b62208bf50b26",
+        "8fcbe1d8ba97e8adae815a0596a605284650c217aa4752c270abbe0199115927",
+        "8fcbe1d8ba97e8adae815a0596a605284650c217aa4752c270abbe0199115927",
+        "8fcbe1d8ba97e8adae815a0596a605284650c217aa4752c270abbe0199115927",
+        "8fcbe1d8ba97e8adae815a0596a605284650c217aa4752c270abbe0199115927"
+      ],
+      "segment_plan_sha256": "b8211a93512d6218b9683f7f90fbac87e62bdf8da17fc1c96318472752a6cd5a"
+    },
+    "professional_gate": true,
+    "capability_check": true,
+    "allocation_check": true,
+    "reference_role_check": true,
+    "directing_coherence_check": true,
+    "anti_slop_check": true,
+    "route_exclusion_check": true,
+    "line_parity_check": true,
+    "output_sha256": "048ca6028aaf11c6f0c736733336fa4dc1d0318191e339926ef8e50e0f0ec135"
+  },
+  "line_contracts": [
+    {
+      "line_id": "DIA-001",
+      "cut_id": "C01",
+      "source_content_timeline_sha256": "7ae251a9ea25e27680f9caa8cdf612c0ff7611adc5f73f9bb1ccdadd7d1b97f2",
+      "content_type": "spoken",
+      "speaker_assignment": {
+        "status": "CONFIRMED",
+        "speaker_id": "INTERVIEWER",
+        "role": "interviewer",
+        "visibility": "off_camera",
+        "confidence": 0.99,
+        "evidence_sha256": "b1d67debce29bc015dfa3a14472db4529e73681fa71b9bf1c7fb79577d5b122f"
+      },
+      "speaker": {
+        "id": "INTERVIEWER",
+        "role": "interviewer",
+        "visibility": "off_camera",
+        "voice_policy": "generic rights-cleared Japanese voice"
+      },
+      "language": {
+        "bcp47": "ja-JP",
+        "script": "Jpan"
+      },
+      "time": {
+        "time_base": "output_global_ms",
+        "start_ms": 0,
+        "end_ms": 1620,
+        "duration_ms": 1620,
+        "duration_is_derived": true,
+        "cut_ids": [
+          "C01",
+          "C02"
+        ],
+        "cross_cut_reason": "one continuous off-camera question spans the first two performance phases",
+        "planned_safe_margin_ms": 100
+      },
+      "text": {
+        "exact": "今話題の『SUGO』知ってる？",
+        "normalized": "今話題のsugo知ってる",
+        "pronunciation_notes": [
+          "SUGO is pronounced スゴ"
+        ]
+      },
+      "delivery": {
+        "tone": "casual street-interview question",
+        "pace": "brisk",
+        "emphasis": [
+          "SUGO"
+        ],
+        "volume": "natural",
+        "breath": "one phrase",
+        "mic_distance": "near microphone",
+        "accent_or_locale": "ja-JP"
+      },
+      "lip_sync": {
+        "priority": "low",
+        "face_visibility": "off camera",
+        "occlusion": "n/a",
+        "head_motion_limit": "n/a",
+        "articulation": "clear",
+        "allowed_tolerance_ms": 200,
+        "speaker_face_ref": "INTERVIEWER_OFF_CAMERA"
+      },
+      "proof_events": [],
+      "foley_events": [],
+      "silence_windows": [],
+      "music_policy": {
+        "mode": "none",
+        "windows": []
+      },
+      "claim_ids": [],
+      "qc_contract": {
+        "asr_profile": "ja-JP-canonical-v1",
+        "speaker_check": "off-camera interviewer",
+        "language_check": "BCP-47 ja-JP",
+        "line_tolerance_ms": 250,
+        "proof_sync_tolerance_ms": 250,
+        "foley_sync_tolerance_ms": 250,
+        "hard_fail_flags": [
+          "word_change",
+          "wrong_speaker",
+          "copied_source_voice"
+        ]
+      },
+      "criticality": "H"
+    },
+    {
+      "line_id": "DIA-002",
+      "cut_id": "C03",
+      "source_content_timeline_sha256": "7ae251a9ea25e27680f9caa8cdf612c0ff7611adc5f73f9bb1ccdadd7d1b97f2",
+      "content_type": "spoken",
+      "speaker_assignment": {
+        "status": "CONFIRMED",
+        "speaker_id": "CHARACTER_A",
+        "role": "interviewee",
+        "visibility": "on_camera",
+        "confidence": 0.99,
+        "evidence_sha256": "062bbad5bb388fa16040e5254cb755ccd7584a38cf7d489944982fc50dec3e25"
+      },
+      "speaker": {
+        "id": "CHARACTER_A",
+        "role": "interviewee",
+        "visibility": "on_camera",
+        "voice_policy": "generic rights-cleared Japanese voice"
+      },
+      "language": {
+        "bcp47": "ja-JP",
+        "script": "Jpan"
+      },
+      "time": {
+        "time_base": "output_global_ms",
+        "start_ms": 1620,
+        "end_ms": 2550,
+        "duration_ms": 930,
+        "duration_is_derived": true,
+        "cut_ids": [
+          "C03"
+        ],
+        "cross_cut_reason": null,
+        "planned_safe_margin_ms": 100
+      },
+      "text": {
+        "exact": "もちろん！",
+        "normalized": "もちろん",
+        "pronunciation_notes": []
+      },
+      "delivery": {
+        "tone": "bright confident reply",
+        "pace": "brisk",
+        "emphasis": [
+          "もちろん"
+        ],
+        "volume": "natural",
+        "breath": "one phrase",
+        "mic_distance": "near microphone",
+        "accent_or_locale": "ja-JP"
+      },
+      "lip_sync": {
+        "priority": "high",
+        "face_visibility": "visible mouth",
+        "occlusion": "none",
+        "head_motion_limit": "small",
+        "articulation": "clear",
+        "allowed_tolerance_ms": 160,
+        "speaker_face_ref": "@Image1"
+      },
+      "proof_events": [],
+      "foley_events": [],
+      "silence_windows": [],
+      "music_policy": {
+        "mode": "none",
+        "windows": []
+      },
+      "claim_ids": [],
+      "qc_contract": {
+        "asr_profile": "ja-JP-canonical-v1",
+        "speaker_check": "CHARACTER_A visible face",
+        "language_check": "BCP-47 ja-JP",
+        "line_tolerance_ms": 250,
+        "proof_sync_tolerance_ms": 250,
+        "foley_sync_tolerance_ms": 250,
+        "hard_fail_flags": [
+          "word_change",
+          "wrong_speaker",
+          "mouth_desync"
+        ]
+      },
+      "criticality": "H"
+    },
+    {
+      "line_id": "DIA-003",
+      "cut_id": "C04",
+      "source_content_timeline_sha256": "7ae251a9ea25e27680f9caa8cdf612c0ff7611adc5f73f9bb1ccdadd7d1b97f2",
+      "content_type": "spoken",
+      "speaker_assignment": {
+        "status": "CONFIRMED",
+        "speaker_id": "CHARACTER_A",
+        "role": "interviewee",
+        "visibility": "on_camera",
+        "confidence": 0.99,
+        "evidence_sha256": "062bbad5bb388fa16040e5254cb755ccd7584a38cf7d489944982fc50dec3e25"
+      },
+      "speaker": {
+        "id": "CHARACTER_A",
+        "role": "interviewee",
+        "visibility": "on_camera",
+        "voice_policy": "generic rights-cleared Japanese voice"
+      },
+      "language": {
+        "bcp47": "ja-JP",
+        "script": "Jpan"
+      },
+      "time": {
+        "time_base": "output_global_ms",
+        "start_ms": 2550,
+        "end_ms": 4500,
+        "duration_ms": 1950,
+        "duration_is_derived": true,
+        "cut_ids": [
+          "C04"
+        ],
+        "cross_cut_reason": null,
+        "planned_safe_margin_ms": 100
+      },
+      "text": {
+        "exact": "私、もう沼ってるよ！",
+        "normalized": "私もう沼ってるよ",
+        "pronunciation_notes": []
+      },
+      "delivery": {
+        "tone": "playful amused confession",
+        "pace": "natural",
+        "emphasis": [
+          "沼ってる"
+        ],
+        "volume": "natural",
+        "breath": "one phrase",
+        "mic_distance": "near microphone",
+        "accent_or_locale": "ja-JP"
+      },
+      "lip_sync": {
+        "priority": "high",
+        "face_visibility": "visible mouth",
+        "occlusion": "none",
+        "head_motion_limit": "small",
+        "articulation": "clear",
+        "allowed_tolerance_ms": 180,
+        "speaker_face_ref": "@Image1"
+      },
+      "proof_events": [],
+      "foley_events": [],
+      "silence_windows": [],
+      "music_policy": {
+        "mode": "none",
+        "windows": []
+      },
+      "claim_ids": [],
+      "qc_contract": {
+        "asr_profile": "ja-JP-canonical-v1",
+        "speaker_check": "CHARACTER_A visible face",
+        "language_check": "BCP-47 ja-JP",
+        "line_tolerance_ms": 250,
+        "proof_sync_tolerance_ms": 250,
+        "foley_sync_tolerance_ms": 250,
+        "hard_fail_flags": [
+          "word_change",
+          "wrong_speaker",
+          "mouth_desync"
+        ]
+      },
+      "criticality": "H"
+    },
+    {
+      "line_id": "DIA-004",
+      "cut_id": "C05",
+      "source_content_timeline_sha256": "7ae251a9ea25e27680f9caa8cdf612c0ff7611adc5f73f9bb1ccdadd7d1b97f2",
+      "content_type": "spoken",
+      "speaker_assignment": {
+        "status": "CONFIRMED",
+        "speaker_id": "INTERVIEWER",
+        "role": "interviewer",
+        "visibility": "off_camera",
+        "confidence": 0.99,
+        "evidence_sha256": "b1d67debce29bc015dfa3a14472db4529e73681fa71b9bf1c7fb79577d5b122f"
+      },
+      "speaker": {
+        "id": "INTERVIEWER",
+        "role": "interviewer",
+        "visibility": "off_camera",
+        "voice_policy": "generic rights-cleared Japanese voice"
+      },
+      "language": {
+        "bcp47": "ja-JP",
+        "script": "Jpan"
+      },
+      "time": {
+        "time_base": "output_global_ms",
+        "start_ms": 4500,
+        "end_ms": 6000,
+        "duration_ms": 1500,
+        "duration_is_derived": true,
+        "cut_ids": [
+          "C05"
+        ],
+        "cross_cut_reason": null,
+        "planned_safe_margin_ms": 100
+      },
+      "text": {
+        "exact": "ぶっちゃけ、どう？",
+        "normalized": "ぶっちゃけどう",
+        "pronunciation_notes": []
+      },
+      "delivery": {
+        "tone": "casual teasing follow-up",
+        "pace": "brisk",
+        "emphasis": [
+          "どう"
+        ],
+        "volume": "natural",
+        "breath": "one phrase",
+        "mic_distance": "near microphone",
+        "accent_or_locale": "ja-JP"
+      },
+      "lip_sync": {
+        "priority": "low",
+        "face_visibility": "off camera",
+        "occlusion": "n/a",
+        "head_motion_limit": "n/a",
+        "articulation": "clear",
+        "allowed_tolerance_ms": 200,
+        "speaker_face_ref": "INTERVIEWER_OFF_CAMERA"
+      },
+      "proof_events": [],
+      "foley_events": [],
+      "silence_windows": [],
+      "music_policy": {
+        "mode": "none",
+        "windows": []
+      },
+      "claim_ids": [],
+      "qc_contract": {
+        "asr_profile": "ja-JP-canonical-v1",
+        "speaker_check": "off-camera interviewer",
+        "language_check": "BCP-47 ja-JP",
+        "line_tolerance_ms": 250,
+        "proof_sync_tolerance_ms": 250,
+        "foley_sync_tolerance_ms": 250,
+        "hard_fail_flags": [
+          "word_change",
+          "wrong_speaker",
+          "copied_source_voice"
+        ]
+      },
+      "criticality": "H"
+    },
+    {
+      "line_id": "DIA-005",
+      "cut_id": "C06",
+      "source_content_timeline_sha256": "7ae251a9ea25e27680f9caa8cdf612c0ff7611adc5f73f9bb1ccdadd7d1b97f2",
+      "content_type": "spoken",
+      "speaker_assignment": {
+        "status": "CONFIRMED",
+        "speaker_id": "CHARACTER_A",
+        "role": "interviewee",
+        "visibility": "on_camera",
+        "confidence": 0.99,
+        "evidence_sha256": "062bbad5bb388fa16040e5254cb755ccd7584a38cf7d489944982fc50dec3e25"
+      },
+      "speaker": {
+        "id": "CHARACTER_A",
+        "role": "interviewee",
+        "visibility": "on_camera",
+        "voice_policy": "generic rights-cleared Japanese voice"
+      },
+      "language": {
+        "bcp47": "ja-JP",
+        "script": "Jpan"
+      },
+      "time": {
+        "time_base": "output_global_ms",
+        "start_ms": 6000,
+        "end_ms": 8450,
+        "duration_ms": 2450,
+        "duration_is_derived": true,
+        "cut_ids": [
+          "C06"
+        ],
+        "cross_cut_reason": null,
+        "planned_safe_margin_ms": 100
+      },
+      "text": {
+        "exact": "毎日刺激的すぎて、",
+        "normalized": "毎日刺激的すぎて",
+        "pronunciation_notes": []
+      },
+      "delivery": {
+        "tone": "animated playful answer",
+        "pace": "natural",
+        "emphasis": [
+          "刺激的"
+        ],
+        "volume": "natural",
+        "breath": "one phrase",
+        "mic_distance": "near microphone",
+        "accent_or_locale": "ja-JP"
+      },
+      "lip_sync": {
+        "priority": "high",
+        "face_visibility": "visible mouth",
+        "occlusion": "none",
+        "head_motion_limit": "small",
+        "articulation": "clear",
+        "allowed_tolerance_ms": 180,
+        "speaker_face_ref": "@Image1"
+      },
+      "proof_events": [],
+      "foley_events": [],
+      "silence_windows": [],
+      "music_policy": {
+        "mode": "none",
+        "windows": []
+      },
+      "claim_ids": [],
+      "qc_contract": {
+        "asr_profile": "ja-JP-canonical-v1",
+        "speaker_check": "CHARACTER_A visible face",
+        "language_check": "BCP-47 ja-JP",
+        "line_tolerance_ms": 250,
+        "proof_sync_tolerance_ms": 250,
+        "foley_sync_tolerance_ms": 250,
+        "hard_fail_flags": [
+          "word_change",
+          "wrong_speaker",
+          "mouth_desync"
+        ]
+      },
+      "criticality": "H"
+    },
+    {
+      "line_id": "DIA-006",
+      "cut_id": "C07",
+      "source_content_timeline_sha256": "7ae251a9ea25e27680f9caa8cdf612c0ff7611adc5f73f9bb1ccdadd7d1b97f2",
+      "content_type": "spoken",
+      "speaker_assignment": {
+        "status": "CONFIRMED",
+        "speaker_id": "CHARACTER_A",
+        "role": "interviewee",
+        "visibility": "on_camera",
+        "confidence": 0.99,
+        "evidence_sha256": "062bbad5bb388fa16040e5254cb755ccd7584a38cf7d489944982fc50dec3e25"
+      },
+      "speaker": {
+        "id": "CHARACTER_A",
+        "role": "interviewee",
+        "visibility": "on_camera",
+        "voice_policy": "generic rights-cleared Japanese voice"
+      },
+      "language": {
+        "bcp47": "ja-JP",
+        "script": "Jpan"
+      },
+      "time": {
+        "time_base": "output_global_ms",
+        "start_ms": 8450,
+        "end_ms": 10350,
+        "duration_ms": 1900,
+        "duration_is_derived": true,
+        "cut_ids": [
+          "C07"
+        ],
+        "cross_cut_reason": null,
+        "planned_safe_margin_ms": 100
+      },
+      "text": {
+        "exact": "正直やばい。",
+        "normalized": "正直やばい",
+        "pronunciation_notes": []
+      },
+      "delivery": {
+        "tone": "playful embarrassed punchline",
+        "pace": "natural",
+        "emphasis": [
+          "やばい"
+        ],
+        "volume": "natural",
+        "breath": "one phrase",
+        "mic_distance": "near microphone",
+        "accent_or_locale": "ja-JP"
+      },
+      "lip_sync": {
+        "priority": "high",
+        "face_visibility": "visible mouth",
+        "occlusion": "none",
+        "head_motion_limit": "small",
+        "articulation": "clear",
+        "allowed_tolerance_ms": 180,
+        "speaker_face_ref": "@Image1"
+      },
+      "proof_events": [],
+      "foley_events": [],
+      "silence_windows": [],
+      "music_policy": {
+        "mode": "none",
+        "windows": []
+      },
+      "claim_ids": [],
+      "qc_contract": {
+        "asr_profile": "ja-JP-canonical-v1",
+        "speaker_check": "CHARACTER_A visible face",
+        "language_check": "BCP-47 ja-JP",
+        "line_tolerance_ms": 250,
+        "proof_sync_tolerance_ms": 250,
+        "foley_sync_tolerance_ms": 250,
+        "hard_fail_flags": [
+          "word_change",
+          "wrong_speaker",
+          "mouth_desync"
+        ]
+      },
+      "criticality": "H"
+    }
+  ],
+  "line_contract_sha256": "554f7ebb0ad2f16e16118ee9bbd9d81e21370d116e8fcdd5b2c82c9ea3a7102f",
+  "performance_line_contracts": [],
+  "performance_line_contract_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "no_speech_contracts": [
+    {
+      "cut_id": "C08",
+      "speech_mode": "none",
+      "allowed_audio": [
+        "laugh or breath tail",
+        "street ambience"
+      ],
+      "forbidden_audio": [
+        "new dialogue",
+        "background music"
+      ]
+    }
+  ],
+  "no_speech_contract_sha256": "653908fba3f8b7eb31a4c5839aa13a479d9f2e12f2f124de9965ef9ccf798e52",
+  "required_factor_ids": [
+    "S01.C01C05.VISUAL",
+    "S01.C01C05.ACTION",
+    "S01.C01C05.AUDIO",
+    "S01.C06C08.VISUAL",
+    "S01.C06C08.ACTION",
+    "S01.C06C08.AUDIO"
+  ],
+  "required_factor_ids_sha256": "294b5c33c9e1dfa4131e2af2a5e852ee1399b73b0c9380a9093289d9356d21e3",
+  "prompt_factor_coverage": [
+    {
+      "factor_id": "S01.C01C05.VISUAL",
+      "source_pointer": "/segment/shots/0/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01-C05",
+      "prompt_span": {
+        "start": 288,
+        "end": 964
+      }
+    },
+    {
+      "factor_id": "S01.C01C05.ACTION",
+      "source_pointer": "/segment/shots/0/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01-C05",
+      "prompt_span": {
+        "start": 288,
+        "end": 964
+      }
+    },
+    {
+      "factor_id": "S01.C01C05.AUDIO",
+      "source_pointer": "/segment/shots/0/factor_ids/2",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C01-C05",
+      "prompt_span": {
+        "start": 288,
+        "end": 964
+      }
+    },
+    {
+      "factor_id": "S01.C06C08.VISUAL",
+      "source_pointer": "/segment/shots/1/factor_ids/0",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C06-C08",
+      "prompt_span": {
+        "start": 965,
+        "end": 1667
+      }
+    },
+    {
+      "factor_id": "S01.C06C08.ACTION",
+      "source_pointer": "/segment/shots/1/factor_ids/1",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C06-C08",
+      "prompt_span": {
+        "start": 965,
+        "end": 1667
+      }
+    },
+    {
+      "factor_id": "S01.C06C08.AUDIO",
+      "source_pointer": "/segment/shots/1/factor_ids/2",
+      "carrier": "prompt_carried",
+      "status": "passed",
+      "shot_id": "C06-C08",
+      "prompt_span": {
+        "start": 965,
+        "end": 1667
+      }
+    }
+  ],
+  "prompt_factor_coverage_sha256": "cba06958354fa22ff7ff737c4d17c5a420cff19e8a708500592e23f941a7838f",
+  "source_contract": {
+    "segment": {
+      "segment_id": "S01",
+      "cut_ids": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C05",
+        "C06",
+        "C07",
+        "C08"
+      ],
+      "duration_ms": 10867,
+      "output_global_start_ms": 0,
+      "opening_state": "Blonde woman center-right, gaze left; microphone lower left.",
+      "reference_roles": [
+        {
+          "slot": 1,
+          "tag": "@Image1",
+          "role": "authorized woman identity only"
+        },
+        {
+          "slot": 2,
+          "tag": "@Image2",
+          "role": "approved director board C01-C04"
+        },
+        {
+          "slot": 3,
+          "tag": "@Image3",
+          "role": "approved director board C05-C08"
+        }
+      ],
+      "shots": [
+        {
+          "shot_id": "C01-C05",
+          "start_ms": 0,
+          "end_ms": 6000,
+          "shot_scale": "9:16 handheld medium portrait",
+          "scene": "night street; woman center-right; microphone lower left",
+          "camera": "35mm handheld micro-drift",
+          "lighting": "cool left vending key; dark rear",
+          "performance": "C01 neutral listen; C02 small smile; C03 smile and nod; C04 playful tilt and sway; C05 amused listen",
+          "action": "hear DIA-001, say DIA-002 and DIA-003, then hear DIA-004",
+          "endpoint": "ready to answer the follow-up",
+          "product_or_ui_truth": "no product; @Image1 face; white top; black skirt",
+          "commercial_proof": "interview only; no claim",
+          "transition": "continuous phase",
+          "continuity": "same scale, gaze left and microphone relation",
+          "audio": "DIA-001 to DIA-004; street ambience; no music",
+          "factor_ids": [
+            "S01.C01C05.VISUAL",
+            "S01.C01C05.ACTION",
+            "S01.C01C05.AUDIO"
+          ]
+        },
+        {
+          "shot_id": "C06-C08",
+          "start_ms": 6000,
+          "end_ms": 10867,
+          "shot_scale": "9:16 handheld medium portrait",
+          "scene": "night street; woman center-right; microphone lower left",
+          "camera": "35mm handheld micro-drift",
+          "lighting": "cool left vending key; dark rear",
+          "performance": "C06 animated smile and subtle lean; C07 playful laugh and chin dip; C08 warm smile, hands together",
+          "action": "say DIA-005 and DIA-006, then finish the closing gesture",
+          "endpoint": "stable smile, hands together",
+          "product_or_ui_truth": "no product; @Image1 face; white top; black skirt",
+          "commercial_proof": "interview only; no claim",
+          "transition": "continuous phase",
+          "continuity": "same scale, gaze left and microphone relation",
+          "audio": "DIA-005 and DIA-006, then laugh or breath tail; street ambience; no music",
+          "factor_ids": [
+            "S01.C06C08.VISUAL",
+            "S01.C06C08.ACTION",
+            "S01.C06C08.AUDIO"
+          ]
+        }
+      ],
+      "no_speech_contracts": [
+        {
+          "cut_id": "C08",
+          "speech_mode": "none",
+          "allowed_audio": [
+            "laugh or breath tail",
+            "street ambience"
+          ],
+          "forbidden_audio": [
+            "new dialogue",
+            "background music"
+          ]
+        }
+      ],
+      "locks": [
+        "@Image1 fixes face and hair; @Image2 and @Image3 fix C01-C08 visual states.",
+        "Keep white top, black skirt, night street, left key and microphone; generate no visible text."
+      ],
+      "negative_constraints": [
+        "no original face, identity drift, wardrobe or background change",
+        "no extra person, hand or microphone defect, invented or reordered Cut, copied voice or improvised line"
+      ]
+    },
+    "factors": {
+      "camera": true,
+      "motion": true,
+      "lighting": true,
+      "performance": true,
+      "audio": true,
+      "continuity": true
+    },
+    "compiler_checks": {
+      "professional_gate": true,
+      "capability_check": true,
+      "allocation_check": true,
+      "reference_role_check": true,
+      "directing_coherence_check": true,
+      "anti_slop_check": true,
+      "route_exclusion_check": true,
+      "line_parity_check": true
+    },
+    "performance_lines": []
+  }
+}

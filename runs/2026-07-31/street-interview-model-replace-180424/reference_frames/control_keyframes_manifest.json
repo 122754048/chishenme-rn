@@ -1,0 +1,40 @@
+{
+  "schema_version": "usfr-control-keyframes/v2",
+  "source_cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08"],
+  "panel_count": 8,
+  "fixed_panel_count": null,
+  "panels": [
+    {"panel_index": 1, "cut_id": "C01"},
+    {"panel_index": 2, "cut_id": "C02"},
+    {"panel_index": 3, "cut_id": "C03"},
+    {"panel_index": 4, "cut_id": "C04"},
+    {"panel_index": 5, "cut_id": "C05"},
+    {"panel_index": 6, "cut_id": "C06"},
+    {"panel_index": 7, "cut_id": "C07"},
+    {"panel_index": 8, "cut_id": "C08"}
+  ],
+  "source_keyframe_lineage": {
+    "source_video_sha256": "a35c78ce8c3754d1a58e02d04aef5ebdd29a6a055e29cf6f618eb962207c9f3b",
+    "source_keyframes": [
+      {"cut_id": "C01", "timestamp_us": 200000, "sha256": "328ca0fd160a7114d8984d0268124d201521b81fda97178fa228e282428d15d7"},
+      {"cut_id": "C02", "timestamp_us": 1000000, "sha256": "d1c0e07ba636e519ec5491a04a0a2578770cf7c8ff5b713079655aaa3ecf8ab4"},
+      {"cut_id": "C03", "timestamp_us": 2100000, "sha256": "f6e8644818c9663ceee8721042bd3c4414f1e1301133d2b96c45aa9c9f7beb1e"},
+      {"cut_id": "C04", "timestamp_us": 3500000, "sha256": "bcfb396a4d76173aff61f7bf1ddfc0be7d3e3af9dacb73c121a414d4ebc358cb"},
+      {"cut_id": "C05", "timestamp_us": 5200000, "sha256": "613bb2cc1b3de99bca3b23f2ed6801b7e6e8efab2f319613bff17e18c2276564"},
+      {"cut_id": "C06", "timestamp_us": 7200000, "sha256": "3039003c01bfc77170f830001703812e738923ab4fd7a7b9ffb5dce0b423992b"},
+      {"cut_id": "C07", "timestamp_us": 9300000, "sha256": "f7973fb7136d234c21d190e1edf1e6c9187e9c98d1e4df949227394f0e656a0e"},
+      {"cut_id": "C08", "timestamp_us": 10600000, "sha256": "d4c9b577c40e458feaa593b85abb161508f584b2b3841b07a8ce0a64453f7ef0"}
+    ],
+    "source_keyframe_sheet_sha256": "f38006a9a94b82ad3c4e8c7c7ef0d4cc66474e126df79b948e2707b675f9dce4",
+    "replacement_control_sheet_sha256": "58b53fa044e10039e30def81de32083a70e7e43b18ce35b7dad6193198533c1a",
+    "replacement_target_sha256s": ["062bbad5bb388fa16040e5254cb755ccd7584a38cf7d489944982fc50dec3e25"],
+    "control_generation": {
+      "provider": "runninghub_image2",
+      "mode": "single_sheet_image_to_image",
+      "source_sheet_count": 1,
+      "output_sheet_count": 1,
+      "image2_call_count": 1
+    },
+    "seedance_video_reference_required": true
+  }
+}

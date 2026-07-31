@@ -1,0 +1,9 @@
+{
+  "schema_version": "usfr-timeline-scope-receipt/v1",
+  "status": "not_applicable",
+  "reason": "The dynamics analysis confirms that the source has no terminal end-card interval; C01-C08 are one ordinary generated region through the exact decoded end.",
+  "image_model_allowed_cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08"],
+  "source_pixel_cut_ids": [],
+  "opaque_ui_cut_ids": [],
+  "generated_ui_cut_ids": []
+}

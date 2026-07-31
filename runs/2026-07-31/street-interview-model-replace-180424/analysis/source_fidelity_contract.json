@@ -1,0 +1,45 @@
+{
+  "schema_version": "source-fidelity-contract/v1",
+  "fidelity_level": "Level 1 structure/performance fidelity",
+  "source_video_sha256": "a35c78ce8c3754d1a58e02d04aef5ebdd29a6a055e29cf6f618eb962207c9f3b",
+  "target_truth": {
+    "new_model_image_sha256": "062bbad5bb388fa16040e5254cb755ccd7584a38cf7d489944982fc50dec3e25",
+    "authorized_change": "Replace only the on-camera interviewee identity with the adult blonde woman from the supplied reference image.",
+    "identity_observations": "Adult woman with warm tan complexion, long straight platinum-blonde high ponytail with darker roots, defined brows, strong eye makeup, pink lips and polished glamour styling.",
+    "wardrobe_policy": "KEEP source wardrobe: fitted white high-neck cap-sleeve top and black high-waisted skirt. The reference image authorizes identity/hair/face only, not its off-shoulder clothing or jewelry."
+  },
+  "immutable_keep_layers": [
+    "Night street location and dark background topology",
+    "Bright frame-left vending-machine/storefront illumination",
+    "Vertical 9:16 handheld framing and subject scale",
+    "Off-camera interviewer hand and silver microphone at lower left",
+    "All Cut timing, action phases, gaze, expression progression and end pose",
+    "Source Japanese dialogue timing and original source audio as the final post-production audio carrier",
+    "All approved Japanese overlays and SUGO sticker timing, recreated deterministically in post"
+  ],
+  "removed_from_seedance_reference_transfer": [
+    "Source interviewee identity and appearance",
+    "Source App/logo pixels and all source overlay glyphs",
+    "Source voice, narration and dialogue audio as a generation reference"
+  ],
+  "seedance_video_role": "@Video1 supplies shot structure, composition, camera path, blocking, action timing, pacing, transitions and delivery rhythm only. Exact characters, text, dialogue and audio are governed by the approved script and bound target references.",
+  "audio_route": {
+    "generation": "Seedance receives exact approved Japanese dialogue timing for visual lip-sync but may not copy the voice from @Video1.",
+    "final_carrier": "Preserve the verified original source audio track in deterministic post-production because no replacement-audio slot was supplied."
+  },
+  "text_routes": {
+    "scene_surface_text": [],
+    "deterministic_overlays": [
+      "今話題の『SUGO』知ってる？",
+      "SUGO",
+      "もちろん！",
+      "私もう沼ってるよ！",
+      "ぶっちゃけ...",
+      "毎日刺激的すぎ！",
+      "正直ヤバいww"
+    ]
+  },
+  "segment_plan_draft": [
+    {"segment_id": "S01", "start_ms": 0, "end_ms": 10867, "duration_ms": 10867, "cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08"]}
+  ]
+}
