@@ -1,9 +1,0 @@
-{
-  "primary_intent": "Use a confident, fully clothed adult creator walking toward camera as the attention hook, then show source-preserved social/live-room UI before the terminal CTA.",
-  "audience_and_platform": "Arabic-language vertical short-video audience; social/live-room app promotion structure.",
-  "evidence": [{"time_range": "0.00-6.80s", "observation": "Adult creator walk, turn and direct smile in corridor", "supports": ["attention_hook", "character_or_creator_appeal"]}, {"time_range": "6.80-11.07s", "observation": "Live-room grid, discovery page and room UI", "supports": ["product_proof", "commercial_goal"]}, {"time_range": "11.07-13.20s", "observation": "Terminal branding and store badges", "supports": ["cta_conversion"]}],
-  "weights": {"commercial_goal": 20, "attention_hook": 26, "character_or_creator_appeal": 22, "product_proof": 14, "emotional_promise": 4, "social_or_trust_signal": 3, "cta_conversion": 4, "pacing_and_format": 4, "platform_compliance": 3},
-  "cut_allocation": [{"cut": "C01-C04", "intent": "attention_hook + character_or_creator_appeal", "weight": 48, "script_instruction": "Keep the adult woman fully clothed, confident and non-explicit; replace only identity."}, {"cut": "C05-C08", "intent": "product_proof + commercial_goal", "weight": 34, "script_instruction": "Preserve source UI pixels without generated claims."}, {"cut": "C09-C10", "intent": "cta_conversion", "weight": 4, "script_instruction": "Tail is omitted because no tail video is supplied."}],
-  "compliance_boundary": ["adult subject", "fully clothed source wardrobe", "non-explicit walk/turn", "no intimate-area focus", "no sexual content", "no unsupported target claims"],
-  "uncertainties": ["Arabic ASR transcript has low confidence; source audio is preserved rather than rewritten."]
-}

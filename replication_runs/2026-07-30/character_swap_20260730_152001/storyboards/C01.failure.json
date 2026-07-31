@@ -1,6 +1,0 @@
-{
-  "task_id": "2082731490361688066",
-  "error_type": "RunningHubTaskFailed",
-  "error_message": "Content security audit did not pass | 内容安全审查未通过",
-  "automatic_paid_retry": false
-}

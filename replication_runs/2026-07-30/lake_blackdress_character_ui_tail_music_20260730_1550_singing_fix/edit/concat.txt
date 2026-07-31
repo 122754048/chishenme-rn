@@ -1,4 +1,0 @@
-file 'clips_graded/01-S01.mp4'
-file 'clips_graded/02-UI.mp4'
-file 'clips_graded/03-S02.mp4'
-file 'clips_graded/04-tail.mp4'

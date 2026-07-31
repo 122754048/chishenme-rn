@@ -1,9 +1,0 @@
-{
-  "schema_version": "usfr-source-video-reference/v1",
-  "source_video_sha256": "ddea35ca4945b5a28ca149bb7f7a0e70fc0bd935f964078c764f805083f6209b",
-  "source_slice_sha256": "582c3b53b8aa87978477a1ea8ec7542373e26f4b733c78a8396e89a8c550eb39",
-  "segment_id": "S01",
-  "start_ms": 0,
-  "end_ms": 4000,
-  "reused_source": false
-}

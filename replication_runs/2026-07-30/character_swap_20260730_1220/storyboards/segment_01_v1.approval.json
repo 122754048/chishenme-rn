@@ -1,8 +1,0 @@
-{
-  "schema_version": "usfr-storyboard-approval/v1",
-  "artifact": "storyboards/segment_01_v1.png",
-  "artifact_sha256": "091e89c70fc64a95b86e120f7f9354351ed5d57dafa74d4b54e9460cb5e253de",
-  "status": "approved",
-  "approval_signal": "继续",
-  "approved_at": "2026-07-30T13:15:00+08:00"
-}

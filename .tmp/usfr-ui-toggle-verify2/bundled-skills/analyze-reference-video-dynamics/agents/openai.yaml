@@ -1,4 +1,0 @@
-interface:
-  display_name: "原视频动态解析"
-  short_description: "逐时间码解析任意参考视频的动作、运镜、声音与状态变化"
-  default_prompt: "Use $analyze-reference-video-dynamics to produce a frame-accurate dynamics analysis for this reference video."

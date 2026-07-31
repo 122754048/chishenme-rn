@@ -1,8 +1,0 @@
-{
-  "resume_task_id": "2082738761636147202",
-  "prompt_file": "replication_runs\\2026-07-30\\lake_blackdress_character_ui_tail_music_20260730_1550\\analysis\\director_board_image2_prompt.txt",
-  "reference_images": [
-    "replication_runs\\2026-07-30\\lake_blackdress_character_ui_tail_music_20260730_1550\\reference_frames\\replacement_control_sheet.png",
-    "replication_runs\\2026-07-30\\lake_blackdress_character_ui_tail_music_20260730_1550\\inputs\\new_model_image.png"
-  ]
-}

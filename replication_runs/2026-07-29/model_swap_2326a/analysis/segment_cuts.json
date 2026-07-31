@@ -1,8 +1,0 @@
-{
-  "schema_version": "usfr-output-cut-boundaries/v1",
-  "cuts": [
-    {"cut_id": "C01", "start_ms": 0, "end_ms": 267}, {"cut_id": "C02", "start_ms": 267, "end_ms": 733}, {"cut_id": "C03", "start_ms": 733, "end_ms": 1000}, {"cut_id": "C04", "start_ms": 1000, "end_ms": 1467}, {"cut_id": "C05", "start_ms": 1467, "end_ms": 2533}, {"cut_id": "C06", "start_ms": 2533, "end_ms": 2667}, {"cut_id": "C07", "start_ms": 2667, "end_ms": 3600}, {"cut_id": "C08", "start_ms": 3600, "end_ms": 4000},
-    {"cut_id": "C09", "start_ms": 4000, "end_ms": 4567}, {"cut_id": "C10", "start_ms": 4567, "end_ms": 6433}, {"cut_id": "C11", "start_ms": 6433, "end_ms": 8033}, {"cut_id": "C12", "start_ms": 8033, "end_ms": 8533}, {"cut_id": "C13", "start_ms": 8533, "end_ms": 8800}, {"cut_id": "C14", "start_ms": 8800, "end_ms": 10000}, {"cut_id": "C15", "start_ms": 10000, "end_ms": 11800}, {"cut_id": "C16", "start_ms": 11800, "end_ms": 13600}, {"cut_id": "C17", "start_ms": 13600, "end_ms": 14967}, {"cut_id": "C18", "start_ms": 14967, "end_ms": 15000},
-    {"cut_id": "C19", "start_ms": 15000, "end_ms": 15600}, {"cut_id": "C20", "start_ms": 15600, "end_ms": 18267}
-  ]
-}

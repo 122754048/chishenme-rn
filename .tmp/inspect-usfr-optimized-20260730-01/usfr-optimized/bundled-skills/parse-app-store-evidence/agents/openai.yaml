@@ -1,4 +1,0 @@
-interface:
-  display_name: "App Store Evidence Parser"
-  short_description: "Parse official Apple App Store and Google Play pages into verified app evidence."
-  default_prompt: "Use $parse-app-store-evidence to parse this official Apple App Store or Google Play URL into a validated evidence bundle."

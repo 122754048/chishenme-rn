@@ -1,6 +1,0 @@
-{
-  "mappings": [
-    {"source_claim": "Source structure shows social/live-room interaction UI after the adult creator hook.", "status": "reinterpreted", "feature": null, "mechanism": null, "benefit": "No new benefit claim is introduced because no target App or product evidence was supplied.", "proof": [{"kind": "source_ui_keep", "time_range": "06.80-11.07s", "ref": "timeline_regions:R02_source_ui_keep"}], "cta": null, "route": "KEEP", "confidence": 0.99},
-    {"source_claim": "Terminal download card.", "status": "unsupported", "feature": null, "mechanism": null, "benefit": null, "proof": [], "cta": null, "route": "REMOVE", "confidence": 0.99}
-  ]
-}

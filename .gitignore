@@ -1,5 +1,6 @@
 node_modules/
 .expo/
+.tmp/
 dist/
 *.tsbuildinfo
 .env
@@ -16,9 +17,11 @@ expo-start.log
 
 # USFR generated media, jobs, reports, and local operator state
 replication-runs/
+replication_runs/
 validation_runs/
 video_replication_runs/
 runs/
+final/
 outputs/
 exports/
 *.log

@@ -1,3 +1,0 @@
-file 'C:/Users/zhaocx04/Documents/New project/replication_runs/2026-07-29/model_swap_2326a/final/S01_120f.mp4'
-file 'C:/Users/zhaocx04/Documents/New project/replication_runs/2026-07-29/model_swap_2326a/final/UI_136f.mp4'
-file 'C:/Users/zhaocx04/Documents/New project/replication_runs/2026-07-29/model_swap_2326a/final/S02_194f.mp4'

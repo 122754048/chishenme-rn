@@ -1,6 +1,0 @@
-{
-  "schema_version": "usfr-timeline-scope-receipt/v1",
-  "status": "not_applicable",
-  "reason": "missing-tail omission route is not active",
-  "image_model_allowed_cut_ids": ["C01"]
-}
