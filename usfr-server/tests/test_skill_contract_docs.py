@@ -53,12 +53,17 @@ class SourceFidelityDocumentationContractTest(unittest.TestCase):
             "storyboard prompt template": BUNDLED / "references" / "daohuo_storyboard_prompt.md",
         }
         required = (
-            "usfr-professional-director-board/v1",
-            "direction_header",
-            "character_target_column",
+            "usfr-cinematic-director-production-board/v1",
+            "daohuo_storyboard_prompt.md",
+            "template SHA",
+            "creative header",
+            "character reference",
+            "face/hair",
+            "wardrobe/style",
             "storyboard_grid",
-            "camera_column",
-            "continuity_footer",
+            "target evidence",
+            "camera/movement diagram",
+            "lighting, camera, palette, audio/tone, mood",
             "seedance_visual_carrier",
             "layout receipt",
         )

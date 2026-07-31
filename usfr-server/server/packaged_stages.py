@@ -48,6 +48,8 @@ from .review_models import RevisionManifest, StoryboardCutRef
 from .source_evidence_bundle import build_source_evidence_bundle
 from .storyboard_layout_contract import (
     StoryboardLayoutError,
+    TEMPLATE_PATH as STORYBOARD_TEMPLATE_PATH,
+    compile_daohuo_storyboard_prompt,
     render_director_board,
     validate_storyboard_layout_receipt,
 )
@@ -1149,6 +1151,9 @@ class StoryboardStage:
         segment: Mapping[str, Any],
         cuts: Mapping[str, Mapping[str, Any]],
         visible_text_locks: Sequence[Mapping[str, Any]],
+        template_bytes: bytes,
+        character_reference_role: str,
+        product_reference_role: str,
     ) -> str:
         cut_ids = segment.get("cut_ids")
         selected = [cuts[str(cut_id)] for cut_id in cut_ids if str(cut_id) in cuts] if isinstance(cut_ids, list) else []
@@ -1158,12 +1163,21 @@ class StoryboardStage:
             routed_text = split_visible_text_locks_by_render_route(visible_text_locks)
         except VisibleTextContractError as exc:
             raise _replication_error("CONTRACT_INVALID", "storyboard visible text routing is invalid") from exc
-        beats = []
-        for cut in selected:
+        beats: list[str] = []
+        labels: list[str] = []
+        for index, cut in enumerate(selected, start=1):
+            cut_id = str(cut.get("cut_id") or f"C{index:02d}")
+            start_ms = int(cut.get("start_ms") or 0)
+            end_ms = int(cut.get("end_ms") or 0)
+            action = str(cut.get("action") or "approved source action").strip()
+            scene = str(cut.get("scene") or "approved source scene").strip()
+            camera = str(cut.get("camera") or "approved source camera").strip()
+            action_tag = re.sub(r"[^A-Za-z0-9 ]+", " ", action).strip().upper()[:28] or "SOURCE ACTION"
+            label = f"{cut_id} {start_ms / 1000:.2f}-{end_ms / 1000:.2f} {action_tag} • KEEP SOURCE STATE"
+            labels.append(label)
             beats.append(
-                "scene=" + str(cut.get("scene") or "approved source scene")
-                + "; action=" + str(cut.get("action") or "approved action")
-                + "; camera=" + str(cut.get("camera") or "approved source camera")
+                f"{index}. Cut {cut_id}, {start_ms / 1000:.2f}-{end_ms / 1000:.2f}s: "
+                f"scene={scene}; action={action}; camera={camera}. Label: {label}."
             )
         surface_instruction = (
             "The following exact scene-surface text is part of its physical carrier and must already be visible in the generated Cut art: "
@@ -1185,14 +1199,39 @@ class StoryboardStage:
             if routed_text["deterministic_overlay"]
             else "There is no deterministic overlay text in this segment."
         )
-        return (
-            "Create one clean landscape 16:9 visual Cut sheet for deterministic professional director-board assembly. "
-            "Reference image 1 is the replacement-control sheet and remains the non-negotiable visual base. Preserve source background, composition, "
-            "image quality, camera language, lighting, action order, and continuity; replace only fixed target identity/product layers. "
-            "Return only the Cut visual content in the exact approved Cut order; do not draw headers, sidebars, notes, metadata panels, generic grids, UI, logos or end cards. "
-            + surface_instruction + " " + overlay_instruction
-            + " Approved segment beats: " + " | ".join(beats)
-        )
+        start_ms = int(segment.get("start_ms") or selected[0].get("start_ms") or 0)
+        end_ms = int(segment.get("end_ms") or selected[-1].get("end_ms") or 0)
+        duration_ms = int(segment.get("duration_ms") or (end_ms - start_ms))
+        values = {
+            "CONTENT_TYPE": "source-fidelity creator performance",
+            "PRODUCT_OR_SERVICE_TYPE": "none",
+            "VIDEO_TITLE": "SOURCE-FIDELITY CHARACTER REPLACEMENT",
+            "DURATION": f"{duration_ms / 1000:.3f}s",
+            "SEGMENT_INDEX": str(segment.get("segment_id") or "1/1"),
+            "SEGMENT_DURATION": f"{duration_ms / 1000:.3f}s",
+            "GLOBAL_CUT_RANGE": f"{selected[0].get('cut_id')}–{selected[-1].get('cut_id')}",
+            "SHOT_COUNT": str(len(selected)),
+            "TARGET_VIDEO_RATIO": "9:16",
+            "CHARACTER_REFERENCE_ROLE": character_reference_role,
+            "PRODUCT_REFERENCE_ROLE": product_reference_role,
+            "REFERENCE_VIDEO_ROLE": "Reference image 1 is the upstream replacement-control sheet; it alone locks Cut order and all non-replaced source attributes.",
+            "VISUAL_STYLE": "Realistic source-matched smartphone footage; preserve the observed lighting, texture and camera language.",
+            "COLOR_PALETTE": "Observed source palette only; preserve wardrobe, environment and approved deterministic overlay colors.",
+            "ENVIRONMENT_PLAN": "Preserve the approved source environment, subject position, screen direction and continuous action path.",
+            "CONTINUITY_MANIFEST": "Same authorized identity, source wardrobe, hands, props, environment, lighting, camera and action handoff across every Cut.",
+            "INCOMING_CONTINUITY": "Begin from the approved source opening state.",
+            "OUTGOING_CONTINUITY": "End at the approved source endpoint without freeze, extension or invented transition.",
+            "ADJACENT_BOARD_ROLE": "none",
+            "SHOT_CARDS": "\n".join(beats),
+            "EXACT_LABELS": "; ".join(labels),
+            "AUDIO_NOTE": "Preserve original dialogue, ambience and timing; no new music.",
+            "TRADEMARK_SAFETY_NOTE": "Do not invent or copy branding; preserve only authorized target evidence.",
+            "TASK_NEGATIVES": surface_instruction + " " + overlay_instruction,
+        }
+        try:
+            return compile_daohuo_storyboard_prompt(template_bytes=template_bytes, values=values)["prompt"]
+        except StoryboardLayoutError as exc:
+            raise _replication_error("STORYBOARD_TEMPLATE_INVALID", "mandatory daohuo storyboard template could not compile", category="artifact") from exc
 
     def run(self, *, context: Any, input_artifacts: Sequence[Mapping[str, Any]]) -> Mapping[str, Any]:
         script_cuts = self._script_cuts(context)
@@ -1231,6 +1270,16 @@ class StoryboardStage:
         published_images: list[dict[str, Any]] = []
         cut_images: list[StoryboardCutRef] = []
         upstream_artifacts: list[dict[str, Any]] = []
+        template_path = Path(__file__).resolve().parents[1] / STORYBOARD_TEMPLATE_PATH
+        try:
+            storyboard_template_bytes = template_path.read_bytes()
+        except OSError as exc:
+            raise _replication_error(
+                "STORYBOARD_TEMPLATE_REQUIRED",
+                "mandatory daohuo_storyboard_prompt.md is unavailable",
+                category="artifact",
+            ) from exc
+        storyboard_template_sha256 = hashlib.sha256(storyboard_template_bytes).hexdigest()
         with self._target_reference_images(context) as target_references:
             # Every semantic generated region uses the exact same visual
             # provenance chain, including source-preserve/language-only work:
@@ -1263,6 +1312,17 @@ class StoryboardStage:
                             segment=segment,
                             cuts=script_by_id,
                             visible_text_locks=segment_text_locks,
+                            template_bytes=storyboard_template_bytes,
+                            character_reference_role=(
+                                "The populated new_model_image slot authorizes identity, face and hair only."
+                                if _present(context, "new_model_image")
+                                else "none; preserve the source character"
+                            ),
+                            product_reference_role=(
+                                "Use only the populated target product/App/service evidence."
+                                if any(_present(context, slot_id) for slot_id in ("new_product_image", "ui_screenshot"))
+                                else "none; preserve source target truth"
+                            ),
                         ),
                         reference_images=references,
                         aspect_ratio="16:9",
@@ -1280,6 +1340,7 @@ class StoryboardStage:
                     selected_cuts = [script_by_id[str(cut_id)] for cut_id in cut_ids]
                     rendered = render_director_board(
                         visual_sheet_bytes=raw_visual_bytes,
+                        template_bytes=storyboard_template_bytes,
                         segment_id=segment_id,
                         cuts=selected_cuts,
                         direction_text="Preserve the approved source composition, performance and Cut order.",
@@ -1342,6 +1403,8 @@ class StoryboardStage:
                     "visible_text_lock_ids": [str(lock["text_id"]) for lock in segment_text_locks],
                     "storyboard_layout_id": layout_receipt["layout_id"],
                     "storyboard_layout_receipt_sha256": str(layout_artifact.get("sha256") or "").lower(),
+                    "storyboard_template_path": STORYBOARD_TEMPLATE_PATH,
+                    "storyboard_template_sha256": storyboard_template_sha256,
                     "execution_carrier_artifact_id": str(carrier_artifact.get("artifact_id") or ""),
                     "execution_carrier_object_key": str(carrier_artifact.get("object_key") or ""),
                     "execution_carrier_sha256": carrier_digest,

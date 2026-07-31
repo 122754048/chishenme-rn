@@ -724,6 +724,10 @@ def test_storyboard_stage_publishes_a_real_image2_board_and_binds_it_to_the_revi
     assert board_call["reference_images"][1:] == [reference]
     assert board_call["reference_images"][0].name == "replacement-control-keyframes.png"
     assert "source-keyframes.png" not in {path.name for path in board_call["reference_images"]}
+    assert "Asset type: 16:9 cinematic pre-production storyboard" in board_call["prompt"]
+    assert "- Left: CHARACTER section" in board_call["prompt"]
+    assert "- Right: TARGET EVIDENCE section" in board_call["prompt"]
+    assert "{{" not in board_call["prompt"]
     manifest = result["storyboard_revision"]
     assert manifest.grid_object_key and manifest.grid_sha256
     assert [(cut.cut_id, cut.object_key, cut.sha256) for cut in manifest.cut_images] == [
@@ -745,7 +749,9 @@ def test_storyboard_stage_publishes_a_real_image2_board_and_binds_it_to_the_revi
     assert board["metadata"]["approved_visible_text_locks_sha256"] == visible_text_locks_sha256([])
     assert len(board["metadata"]["replacement_control_keyframe_sheet_sha256"]) == 64
     assert len(board["metadata"]["replacement_control_keyframe_receipt_sha256"]) == 64
-    assert board["metadata"]["storyboard_layout_id"] == "usfr-professional-director-board/v1"
+    assert board["metadata"]["storyboard_layout_id"] == "usfr-cinematic-director-production-board/v1"
+    assert len(board["metadata"]["storyboard_template_sha256"]) == 64
+    assert board["metadata"]["storyboard_template_path"].endswith("daohuo_storyboard_prompt.md")
     assert len(board["metadata"]["storyboard_layout_receipt_sha256"]) == 64
     carrier = next(item for item in context.published if item["kind"] == "seedance_visual_carrier")
     layout_receipt = next(item for item in context.published if item["kind"] == "storyboard_layout_receipt")

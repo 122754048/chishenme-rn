@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
 from typing import Any, Mapping
+
+from server.storyboard_layout_contract import (
+    LAYOUT_ID,
+    REQUIRED_TEMPLATE_ANCHORS,
+    TEMPLATE_PATH,
+)
 
 
 class UserDirectorStoryboardError(ValueError):
@@ -14,7 +21,7 @@ class UserDirectorStoryboardError(ValueError):
 REQUIRED_ANCHORS = (
     "Use case: infographic-diagram",
     "Primary request:",
-    "Layout contract: usfr-professional-director-board/v1",
+    "Layout contract: usfr-cinematic-director-production-board/v1",
     "Fixed layout:",
     "Storyboard cards:",
     "Exact allowed text:",
@@ -22,11 +29,19 @@ REQUIRED_ANCHORS = (
     "Avoid:",
 )
 REQUIRED_LAYOUT_REGIONS = (
-    "direction_header:",
-    "character_target_column:",
+    "creative_header:",
+    "character_reference:",
+    "face_hair_reference:",
+    "wardrobe_style:",
     "storyboard_grid:",
-    "camera_column:",
-    "continuity_footer:",
+    "target_evidence:",
+    "camera_movement_diagram:",
+    "lighting:",
+    "camera:",
+    "palette:",
+    "audio_tone:",
+    "mood:",
+    "cinematography_notes:",
 )
 FORBIDDEN_GENERIC_LAYOUTS = (
     "generic seven-panel grid",
@@ -38,8 +53,17 @@ CUT_ID_PATTERN = re.compile(r"\bC\d{2}\b")
 
 
 def validate_user_director_storyboard(
-    prompt: str, scope_receipt: Mapping[str, Any]
+    prompt: str, scope_receipt: Mapping[str, Any], template_bytes: bytes | None
 ) -> dict[str, Any]:
+    if not isinstance(template_bytes, bytes) or not template_bytes:
+        raise UserDirectorStoryboardError("daohuo_storyboard_prompt.md is required before storyboard publication")
+    try:
+        template_text = template_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise UserDirectorStoryboardError("daohuo_storyboard_prompt.md must be UTF-8") from exc
+    missing_template = [anchor for anchor in REQUIRED_TEMPLATE_ANCHORS if anchor not in template_text]
+    if missing_template:
+        raise UserDirectorStoryboardError("daohuo storyboard template contract is incomplete")
     if scope_receipt.get("status") != "passed":
         raise UserDirectorStoryboardError("director storyboard requires a passed timeline scope receipt")
 
@@ -79,7 +103,9 @@ def validate_user_director_storyboard(
         "approval_cut_ids": card_ids,
         "layout_anchors": list(REQUIRED_ANCHORS),
         "layout_regions": list(REQUIRED_LAYOUT_REGIONS),
-        "layout_id": "usfr-professional-director-board/v1",
+        "layout_id": LAYOUT_ID,
+        "template_path": TEMPLATE_PATH,
+        "template_sha256": hashlib.sha256(template_bytes).hexdigest(),
     }
 
 
@@ -89,12 +115,13 @@ def main() -> int:
     )
     parser.add_argument("--prompt-file", type=Path, required=True)
     parser.add_argument("--scope-receipt", type=Path, required=True)
+    parser.add_argument("--template-file", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
     prompt = args.prompt_file.read_text(encoding="utf-8-sig")
     scope_receipt = json.loads(args.scope_receipt.read_text(encoding="utf-8-sig"))
-    receipt = validate_user_director_storyboard(prompt, scope_receipt)
+    receipt = validate_user_director_storyboard(prompt, scope_receipt, args.template_file.read_bytes())
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(receipt, ensure_ascii=False, indent=2), encoding="utf-8")
     return 0

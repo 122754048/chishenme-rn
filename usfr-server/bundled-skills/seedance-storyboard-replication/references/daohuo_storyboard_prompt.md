@@ -169,13 +169,17 @@ garbled text, pseudo-writing, dense paragraphs, subtitles inside scene images, w
 - 故事板图片比例为 16:9，成片目标比例单独写明。
 - 目标证据 fidelity 优先于视觉新奇，人物一致性仅在人物适用时优先于姿势变化。
 - 默认只规划口播、环境声、动作声、Foley 和转场声，不默认添加背景音乐。
-## Hard execution contract
+## Mandatory runtime contract
 
-This template is content input only. The provider must not decide the approval layout. The server renders `usfr-professional-director-board/v1` with exactly these fixed regions: `direction_header`, `character_target_column`, `storyboard_grid`, `camera_column`, and `continuity_footer`.
+Every storyboard generation and revision must load and compile this exact file. Its byte SHA-256 is mandatory evidence in the Image2 request, layout receipt, storyboard metadata, and approval artifact. Missing bytes, an incomplete template, an unresolved placeholder, a mismatched SHA, an embedded fallback prompt, or any alternate template fails closed before Image2 or publication.
 
-The route is exactly: **one complete source Cut contact sheet → one RunningHub Image2 call → one complete replacement-control sheet**. Per-Cut replacement generation and per-Cut source-frame validation are forbidden. Local face swap, ComfyUI, InsightFace, desktop image editors, and any non-Image2 generator are forbidden. A fixed-slot target image is target truth only and must never be accepted as the replacement-control sheet. The director-board Image2 request must use the replacement-control sheet as reference image 1. Later target references authorize only replacement layers; every other visual attribute from the replacement-control sheet must remain unchanged. Do not alter the source pose, action, gesture, expression, gaze, mouth state, camera, crop, background, lighting, hands, props, occlusion, or continuity.
+The gate records the `daohuo_storyboard_prompt.md` template SHA, creative header, character reference, face/hair, wardrobe/style, ordered storyboard Cut cards in `storyboard_grid`, target evidence, camera/movement diagram, lighting, camera, palette, audio/tone, mood, the distinct `seedance_visual_carrier`, and the layout receipt under `usfr-cinematic-director-production-board/v1`.
 
-The user approves `director_board_approval.png`. Seedance receives only the distinct labels-free `seedance_visual_carrier.png` derived from the approved `storyboard_grid` ROI. A layout receipt must bind fixed regions, exact Cut-card count/order, approval-board SHA, carrier SHA, and ROI SHA. A generic grid, missing region, wrong Cut count, missing receipt, or reused approval/control image is invalid and must not be shown or submitted.
+The approved PNG must implement the complete fixed layout above: shared creative header; character/style evidence and applicable face/hair/hand/wardrobe details; every ordered Cut card; target evidence or `none`; environment and top-down camera/movement planning; and bottom lighting, camera, palette, audio/tone, mood, and cinematography notes. The former five-region information board, a generic contact sheet, or a plain grid is not this template and cannot be shown for approval.
+
+The route is exactly: **one complete source Cut contact sheet → one RunningHub Image2 call → one complete replacement-control sheet → this template-bound director board**. The approval board, replacement-control sheet, and labels-free Seedance execution carrier must have distinct SHA-256 values. The layout receipt binds the template SHA, all required regions, exact Cut-card count/order, approval-board SHA, execution-carrier SHA, and visual-layer binding.
+
+Per-Cut replacement generation and per-Cut source-frame validation are forbidden. Local face swap, ComfyUI, InsightFace, desktop image editors, and any non-Image2 generator are forbidden. A fixed-slot target image is target truth only and must never be accepted as the replacement-control sheet. The director-board Image2 request must use the replacement-control sheet as reference image 1.
 
 ## Revision-scoped Cut outputs
 
