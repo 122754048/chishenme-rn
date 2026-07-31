@@ -1,5 +1,0 @@
-{
-  "schema_version": "usfr-timeline-scope-receipt/v1",
-  "status": "not_applicable",
-  "reason": "the analyzed source contains no terminal end-card interval; the single generated region covers C01-C03 through the decoded endpoint"
-}

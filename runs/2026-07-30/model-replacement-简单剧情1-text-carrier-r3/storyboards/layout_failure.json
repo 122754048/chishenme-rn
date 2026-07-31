@@ -1,9 +1,0 @@
-{
-  "status": "rejected",
-  "failure_code": "STORYBOARD_LAYOUT_QC_FAILED",
-  "artifact": "segment_01_v1.png",
-  "user_approval_allowed": false,
-  "seedance_upload_allowed": false,
-  "reason": "Plain seven-panel grid does not satisfy the frozen professional director-board layout contract.",
-  "required_action": "Render a new formal director board through the deterministic fixed-layout template, then derive a separate label-free Seedance visual carrier from its approved Cut ROIs."
-}

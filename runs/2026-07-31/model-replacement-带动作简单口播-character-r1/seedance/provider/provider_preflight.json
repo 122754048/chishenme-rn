@@ -1,7 +1,0 @@
-{
-  "env_file": "explicit",
-  "runninghub_api_key": "present",
-  "runninghub_seedance_api_key": "present",
-  "runninghub_base_url": "present",
-  "seedance_api_provider": "runninghub_standard"
-}
