@@ -1,0 +1,30 @@
+{
+  "taskId": "2087467449531699202",
+  "status": "FAILED",
+  "errorCode": "1501",
+  "errorMessage": "Input material may contain sensitive content: videoUrls[0]. Please replace the material and try again | 用户输入的素材可能包含敏感内容：videoUrls[0]，请更换素材后重试",
+  "results": null,
+  "clientId": "",
+  "promptTips": "",
+  "failedReason": {},
+  "usage": {
+    "consumeMoney": null,
+    "consumeCoins": null,
+    "taskCostTime": "0",
+    "thirdPartyConsumeMoney": null
+  },
+  "parentTaskId": null,
+  "taskUsageList": [
+    {
+      "taskId": "2087467449531699202",
+      "parentTaskId": null,
+      "taskStatus": "FAILED",
+      "usage": {
+        "consumeMoney": null,
+        "consumeCoins": null,
+        "taskCostTime": "0",
+        "thirdPartyConsumeMoney": null
+      }
+    }
+  ]
+}

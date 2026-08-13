@@ -1,0 +1,49 @@
+{
+  "schema_version": "usfr-model-identity-v3/v1",
+  "assets": [
+    {
+      "slot": 1,
+      "reference": "@Image1",
+      "asset_tag": "TARGET_MAN",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\b844d4a9-7eba-4828-a612-271437623587.jpeg",
+      "identity_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\reinbow_person_replace\\identity_v3\\01_TARGET_MAN.png",
+      "sha256": "d071ff8dbcb1c7048bcfc898a6e4c40673f0cdfa7075ffebcab587920d766627",
+      "width": 1024,
+      "height": 1024,
+      "template_version": "model-identity-v3-local-crop"
+    },
+    {
+      "slot": 2,
+      "reference": "@Image2",
+      "asset_tag": "TARGET_BLONDE",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\ComfyUI_00001_bitce_1754378835.png",
+      "identity_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\reinbow_person_replace\\identity_v3\\02_TARGET_BLONDE.png",
+      "sha256": "6aee4b6638f11414d3637ee3bbdef7fa6c5ed8d01dc04533a96eb9ffeaad0ddc",
+      "width": 1024,
+      "height": 1024,
+      "template_version": "model-identity-v3-local-crop"
+    },
+    {
+      "slot": 3,
+      "reference": "@Image3",
+      "asset_tag": "TARGET_DARK",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\未命名项目-图层 4.png",
+      "identity_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\reinbow_person_replace\\identity_v3\\03_TARGET_DARK.png",
+      "sha256": "60a34560a2941cbd46ff7608c34bcd4b18d9f53dfc9c13ef3f74403beadafb40",
+      "width": 1024,
+      "height": 1024,
+      "template_version": "model-identity-v3-local-crop"
+    },
+    {
+      "slot": 4,
+      "reference": "@Image4",
+      "asset_tag": "TARGET_CAT",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\jimeng-2025-08-12-5640-布偶猫蜷在藤编篮中，肉垫轻搭篮边，自然光透过百叶窗形成条纹光影，浅景深背景虚化，....png",
+      "identity_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\reinbow_person_replace\\identity_v3\\04_TARGET_CAT.png",
+      "sha256": "fa3f6c252c8d37260790d1ad2b7ee94b4fab214587b2aa24cff8624d70f27066",
+      "width": 1024,
+      "height": 1024,
+      "template_version": "model-identity-v3-local-crop"
+    }
+  ]
+}

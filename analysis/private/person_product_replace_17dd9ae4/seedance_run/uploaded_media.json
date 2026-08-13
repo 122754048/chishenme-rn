@@ -1,0 +1,18 @@
+{
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/2a3d8a0a011d3079b50c927ccf527bdb136d74eb1e3abc46fc9b6660789584b5.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/1313e2a8af00b435b1736ab806c18c109f750c30c9298bd3fd370df45ea5ad04.png"
+  ],
+  "videoUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/11e0ebcd31a00379030223bfe63b462779237ff541d6a0dfc6c6fed4b99aff97.mp4"
+  ],
+  "image_tags": [
+    "@Image1",
+    "@Image2"
+  ],
+  "image_sha256": [
+    "2a3d8a0a011d3079b50c927ccf527bdb136d74eb1e3abc46fc9b6660789584b5",
+    "1313e2a8af00b435b1736ab806c18c109f750c30c9298bd3fd370df45ea5ad04"
+  ],
+  "video_sha256": "11e0ebcd31a00379030223bfe63b462779237ff541d6a0dfc6c6fed4b99aff97"
+}

@@ -1,0 +1,67 @@
+<h2>部署、失败处理与 MVP 验收</h2>
+<p class="subtitle">现有 ZIP 是 USFR 执行基础包；上线还需远程 MCP、域名 HTTPS 和缺失 Provider 能力。</p>
+
+<div class="mockup">
+  <div class="mockup-header">单台 Linux 云服务器部署</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>Caddy / Nginx</h3><p>域名、HTTPS、请求体限制和反向代理。</p></div></div>
+      <div class="card"><div class="card-body"><h3>MCP + Admin</h3><p>/mcp、基础账号、额度、批量编排和管理接口。</p></div></div>
+      <div class="card"><div class="card-body"><h3>USFR Containers</h3><p>FastAPI、Worker、Redis、MinIO、Sweeper。</p></div></div>
+      <div class="card"><div class="card-body"><h3>OSS + Providers</h3><p>原片和永久产物；OpenAI、RunningHub 与相关模型服务。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>现有 ZIP 已具备</h4>
+    <ul>
+      <li>Linux Docker / Compose</li>
+      <li>Jobs API、Worker、Redis、MinIO</li>
+      <li>OSS、OpenAI、RunningHub 配置入口</li>
+      <li>脚本/故事板审批、幂等、合成与 QC 基础</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>新工程必须补充</h4>
+    <ul>
+      <li>MCP Streamable HTTP 端点</li>
+      <li>账号、Source Library、批量状态机、预算</li>
+      <li>域名、HTTPS 和反向代理</li>
+      <li>音乐分类服务；当前 ZIP 对应环境变量为空</li>
+    </ul>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">失败处理</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>输入或意图不明确</h3><p>停在预检；不创建正式任务、不产生费用。</p></div></div>
+      <div class="card"><div class="card-body"><h3>分析/故事板失败</h3><p>保留已有检查点；重试当前阶段，不重复分析有效缓存。</p></div></div>
+      <div class="card"><div class="card-body"><h3>Provider 明确失败</h3><p>标记失败；允许安全重试，成功行不受影响。</p></div></div>
+      <div class="card"><div class="card-body"><h3>Provider 状态不明</h3><p>进入待对账；找到 Task ID 后恢复，绝不盲目重提。</p></div></div>
+      <div class="card"><div class="card-body"><h3>QC 失败</h3><p>阻止交付；保存诊断信息，按允许的恢复策略重跑。</p></div></div>
+      <div class="card"><div class="card-body"><h3>服务器重启</h3><p>Redis 检查点和对象存储恢复任务；已提交 Provider 任务不重复。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">MVP 验收测试</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>单条路线</h3><p>八槽位、语言、脚本/故事板审批、最终 MP4。</p></div></div>
+      <div class="card"><div class="card-body"><h3>批量路线</h3><p>换人、换歌、换语言、明确一一对应，且绝不排列组合。</p></div></div>
+      <div class="card"><div class="card-body"><h3>样片授权</h3><p>样片未确认时后续 Provider 调用必须为 0。</p></div></div>
+      <div class="card"><div class="card-body"><h3>并发与恢复</h3><p>默认并发 5、部分成功、只重试失败行、重启恢复。</p></div></div>
+      <div class="card"><div class="card-body"><h3>缓存与权限</h3><p>同员工命中；跨员工隔离；管理员转移后权限切换。</p></div></div>
+      <div class="card"><div class="card-body"><h3>费用与安全</h3><p>50 条、¥10,000 熔断、Key 不出服务端、日志无秘密。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div style="padding:16px;border:1px solid var(--border);border-radius:12px;margin-top:18px">
+  <strong>上线门槛：</strong>先在 Shadow 环境完成真实单任务、真实批量样片、5 并发、失败恢复和费用统计验证，再开放给 20 名员工。
+</div>

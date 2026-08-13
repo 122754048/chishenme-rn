@@ -1,0 +1,46 @@
+{
+  "contract": "usfr-object-level-qc/v1",
+  "status": "ACCEPTED_WITH_DOCUMENTED_TIMING_DEVIATION",
+  "accepted_task_id": "2087152192485527553",
+  "accepted_request_sha256": "47ca6bcc77b5c8e2403b2573f2c06f05348762ce9619dcb2e0d16595f847e959",
+  "accepted_output_sha256": "3e1e1aab4109d1749671fcd58808bcf19253b28d157cd8b2e678a29316a5902a",
+  "provider_only": true,
+  "local_final_video_processing": false,
+  "objects": [
+    {
+      "source_object_id": "SRC_PRESENTER",
+      "target_reference": "@Image1",
+      "result": "PASS",
+      "evidence": "The same target female identity, curly red-brown hair, colorful patterned blouse, dangling earrings, and layered necklaces remain visually consistent from opening through CTA."
+    },
+    {
+      "source_object_id": "SRC_GREEN_CONFECTION_FAMILY",
+      "target_reference": "@Image2",
+      "result": "PASS",
+      "evidence": "All main product appearances use the same SUNNY POP orange-juice bottle family with transparent bottle, orange liquid, pink cap, front/back label views, matching table bottles, stable hand contact, and warm dark-reveal presentation."
+    }
+  ],
+  "interaction_checks": {
+    "cap_opening": "PASS",
+    "single_sip": "PASS",
+    "front_label_display": "PASS",
+    "back_label_display": "PASS",
+    "close_lens_display": "PASS",
+    "dark_reveal_without_glowing_tongue": "PASS",
+    "cta_product_hold": "PASS"
+  },
+  "audio_checks": {
+    "expected_text": "Sunny Pop, fresh orange juice. Cold pressed, no added sugar. Fresh sunshine in every sip. Try Sunny Pop.",
+    "whisper_text": "sunny pop fresh orange juice cold pressed no added sugar fresh sunshine in every sip try sunny pop",
+    "word_content": "PASS",
+    "timing": "ACCEPTED_DEVIATION",
+    "timing_note": "Generated speech preserves every approved word but the first line ends about 0.36s late, the second starts about 0.42s late, and the third begins about 0.66s early."
+  },
+  "rejected_take": {
+    "task_id": "2087149627312066561",
+    "request_sha256": "109b9e2248da9347d76c58e778dbab6636552dda9da8e7a7a4571bc252af406d",
+    "verdict": "REJECTED",
+    "reason": "Bottle action order drifted and the dark phase retained an orange glowing-tongue effect."
+  },
+  "retry_change": "Only the generic product-action clause was replaced by explicit positive time-window action binding; all assets, image order, source video, dialogue text, aspect ratio, and other bindings remained unchanged."
+}

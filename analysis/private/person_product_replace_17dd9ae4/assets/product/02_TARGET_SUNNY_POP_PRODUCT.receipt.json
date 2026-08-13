@@ -1,0 +1,19 @@
+{
+  "schema_version": "runninghub-asset-board/v2",
+  "asset_type": "product",
+  "template_version": "product-v2",
+  "source_asset_sha256": "7d6db8a0abd2572c3569ac29292947f129a250fc3aa3d744148750accb1b8085",
+  "request_sha256": "b6e3ee8bcc5349b54468736f05a73c1a22b512963f081fb070671e0440232c2b",
+  "response_sha256": "18bc8c45ffb0bcb50d015fa15868a385f1163cb1281ad42014d39becb3fb2993",
+  "task_id": "2087147653724098562",
+  "board_sha256": "1313e2a8af00b435b1736ab806c18c109f750c30c9298bd3fd370df45ea5ad04",
+  "provider_asset_board_contract_sha256": "208db8e8363db49380d79363fa9c3b882df066a7385f24d24c610a65d0ecc4dc",
+  "provider_receipt": {
+    "schema_version": "runninghub-image2-asset-board/v2",
+    "request_sha256": "b6e3ee8bcc5349b54468736f05a73c1a22b512963f081fb070671e0440232c2b",
+    "response_sha256": "18bc8c45ffb0bcb50d015fa15868a385f1163cb1281ad42014d39becb3fb2993",
+    "task_id": "2087147653724098562",
+    "template": "product",
+    "template_version": "product-v2"
+  }
+}

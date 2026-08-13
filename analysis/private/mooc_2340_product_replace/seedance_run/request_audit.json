@@ -1,0 +1,27 @@
+{
+  "schema_version": "usfr-product-provider-only/v1",
+  "request_sha256": "04edd6bd8f53dbe0e07d1b6b5155144037b13aff03384c37d03cfade144501f3",
+  "source_video_sha256": "1007e36cdeb2ea1d83657e3cb8166501fbc0e40661574deb151069240d0a9fe5",
+  "approved_script_sha256": "dd38f6ab234f656d086c30d75d7c6de631e1b366eb3a6226d77f9568bf0847b7",
+  "source_dynamics_sha256": "59e5f484017680322edad788f3023f68a508ec0380c4cf5465f3fc82112bc322",
+  "matcher_receipt_sha256": "2d380599c17b0031d8d07b856f7fb26c89a1b62583d262cf52345b923ba395fc",
+  "segment_plan_sha256": "c61c4d83bc971893cfee231a573a39cd32c0dfb909cd56aee69c8f2bf71ff239",
+  "binding_contract_sha256": "74e1460ede407b92897e9458fcf8a39df60535b0668c51f0455f3a338c29f3f7",
+  "prompt_sha256": "1e68cc89a0c1790145325eb622fa8c4fb8e17ad7430d7eaa64128ae25445b150",
+  "image_tag_order": [
+    "@Image1"
+  ],
+  "source_object_order": [
+    "SRC_LAPTOP_FAMILY"
+  ],
+  "image_sha256_order": [
+    "190a021d5b63b9dfd1c09423b0c9f36cccffec945fc8a14fed75557960e8c097"
+  ],
+  "provider_create_calls_allowed": 1,
+  "provider_only": true,
+  "local_final_video_processing": false,
+  "prompt_chars": 1264,
+  "ratio": "adaptive",
+  "duration": "5",
+  "primary_change_variable": "approved_phone_action_adaptation"
+}

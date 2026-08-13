@@ -1,0 +1,34 @@
+{
+  "status": "FAILED_MANUAL_REVIEW_REQUIRED",
+  "approved_dialogue": [
+    "Möchtest du auch neue Leute kennenlernen?",
+    "Du kannst Chaträumen beitreten und ganz einfach neue Freundschaften schließen.",
+    "Schreib Nachrichten und chatte mit Menschen in deiner Nähe.",
+    "Lade dir jetzt SUGO herunter."
+  ],
+  "attempts": [
+    {
+      "task_id": "2087417227946369025",
+      "request_sha256": "6e666bde5b42c0de8dabd7ceb3821b5d59323a1fb7036932ecbd8023c723cccb",
+      "provider_status": "SUCCESS",
+      "visual_qc": "source people, wardrobe, setting and camera substantially preserved",
+      "dialogue_qc": "failed: approved four-line German dialogue was not reproduced",
+      "subtitle_qc": "failed: visible German text contains spelling errors and an unrelated garbled line"
+    },
+    {
+      "task_id": "2087420255730536449",
+      "request_sha256": "c4cbc3535bcffd595b7bacd9bba47b86f764c65df9230bc26f7641fb8515dbb4",
+      "provider_status": "SUCCESS",
+      "visual_qc": "source people, wardrobe, setting and camera substantially preserved; no generated subtitles",
+      "dialogue_qc": "failed: German speech differs materially from every approved line",
+      "whisper_small_de": "Wir sind hier in Al-Qaeda, wo wir sind. Profitur sein, wir kommen zurück. Jetzt haben wir mal hier in Al-Qaeda gespielt. Wir denken, wir sollen hier selber an den Kassagen und chatten mit Menschen in deiner Rehe. Leute, jetzt zu gut herrschaut.",
+      "subtitle_route": "not applied because picture/dialogue must pass before deterministic subtitle overlay"
+    }
+  ],
+  "retry_policy": "one changed QC retry consumed; no unchanged repetition and no third speculative paid request",
+  "prohibited_fallbacks": [
+    "local TTS for language-only edit",
+    "external non-song lip-sync",
+    "delivery of Provider SUCCESS without dialogue QC acceptance"
+  ]
+}

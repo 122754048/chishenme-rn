@@ -1,0 +1,21 @@
+{
+  "prompt": "编辑视频： Multi-subject replacement based on @Video1. @Video1 supplies the full motion, camera, blocking, timing, occlusion, lighting, background, props, contacts, and audio. Subject 1: the only woman in the opening seaside convertible, beginning in right-facing profile and turning forward becomes @Image1 with exact @Image1 identity and wardrobe: long straight brown hair, exact female face, white fitted long-sleeve top, gray lower outfit, necklace and visible rings. Object 2 (product): the cosmetic product in the authorized adult commercial macro shot and both product components in the final warm-beige packshot becomes @Image2 with the target geometry, color, markings, and packaging from @Image2; preserve the source macro-shot timing, warm luxury lighting, hand contact, product prominence, perspective, shadows, occlusion, final packshot framing and hold. Each mapped Subject or Object remains the same continuing physical track through movement, occlusion, interaction, and crossing. All mapped tracks follow their source motion, contact, perspective, lighting, and timing. 00:01.700-00:04.567: This is an authorized standard retail commercial edit featuring one adult presenter and a consumer beverage product; 00:01.70-00:02.60 two hands hold @Image2 securely and one hand twists open its orange screw cap; 00:02.60-00:03.45 gently tilt @Image2 to show the orange liquid, curved bottle and front SUNQUICK Oren Orange label; 00:03.45-00:04.57 place one upright @Image2 bottle in the final warm-beige hero packshot with its front label facing camera; upper advertising text becomes exactly 这一刻，橙意正好, SUNQUICK, and Oren Orange; the complete audio state remains silence. All unlisted content remains unchanged and frame-aligned. preserve_unmodified_lip_sync",
+  "resolution": "720p",
+  "duration": "5",
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/a957d1c36deffbe6d6c3cba5942d51b0b5a19cb56c54b282450e174cf9c71bf5.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/519267cf2f892890a25ff287b35bc313a71b2390d099f6baae3c52ebf4606bbb.png"
+  ],
+  "videoUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/b520b8a32ced296ecb2b4e3066350e1ee75150a991073fbe7092063345d4ea3d.mp4"
+  ],
+  "audioUrls": [],
+  "generateAudio": true,
+  "ratio": "adaptive",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

@@ -51,7 +51,7 @@ Each person binding selects exactly one mode:
 1. `identity_and_wardrobe_from_reference`
    - The reference image controls identity, hair, visible clothing, and visible accessories supported by the image.
    - Source clothing may appear only inside the source locator.
-2. `head_identity_preserve_source_wardrobe`
+2. `identity_from_reference_preserve_source_wardrobe`
    - The reference controls the declared face/head/hair identity scope.
    - The named source body and garment remain.
 
@@ -128,7 +128,7 @@ The canonical prompt prefix and all generated text must round-trip as UTF-8. Rep
 Use TDD and verify the regression before changing production code.
 
 1. Add failing tests reproducing the observed bypass:
-   - three human bindings using complete target appearance plus `preserve_source` wardrobe;
+   - three human bindings using complete target identity and visible wardrobe from their references;
    - missing `preserve_scope` or `binding_confidence` accepted by the low-level helper;
    - a self-declared `provider_only` audit accepted without a canonical receipt;
    - an audit claiming a slice not represented by the uploaded source/request;

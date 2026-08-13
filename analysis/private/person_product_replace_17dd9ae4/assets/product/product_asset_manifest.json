@@ -1,0 +1,13 @@
+{
+  "contract": "asset-board-manifest/v1",
+  "image_index": 2,
+  "image_tag": "@Image2",
+  "target_tag": "TARGET_SUNNY_POP_PRODUCT",
+  "asset_type": "product",
+  "source_asset_sha256": "7d6db8a0abd2572c3569ac29292947f129a250fc3aa3d744148750accb1b8085",
+  "board_sha256": "1313e2a8af00b435b1736ab806c18c109f750c30c9298bd3fd370df45ea5ad04",
+  "board_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/bd19912d-12e5-429b-b151-09a5e73668f1.png",
+  "task_id": "2087147653724098562",
+  "local_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\person_product_replace_17dd9ae4\\assets\\product\\02_TARGET_SUNNY_POP_PRODUCT.png",
+  "receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\person_product_replace_17dd9ae4\\assets\\product\\02_TARGET_SUNNY_POP_PRODUCT.receipt.json"
+}

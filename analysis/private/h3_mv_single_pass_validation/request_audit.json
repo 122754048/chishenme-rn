@@ -1,0 +1,70 @@
+{
+  "contract": "runninghub-hailuo-h3-single-pass-mv-validation/v1",
+  "task_id": "2087500501861543937",
+  "status": "SUCCESS",
+  "endpoint": "https://www.runninghub.ai/openapi/v2/minimax/hailuo-h3/multimodal-to-video",
+  "payload_without_temporary_urls": {
+    "prompt": "基于视频1进行一次完整MV编辑。将视频1中唯一的金发女性完整替换为图片1中的男性，全程保持图片1的脸、发型、男性身份和黑色服装。保持视频1的镜头、海边背景、身体动作、构图、节奏和转场。人物演唱音频1中的指定歌曲，嘴唇发音、呼吸和演唱表情与音频1精确同步。输出一条连续自然的竖屏MV。",
+    "imageUrls": [
+      "uploaded-person-asset"
+    ],
+    "videoUrls": [
+      "uploaded-source-15s"
+    ],
+    "audioUrls": [
+      "uploaded-song-90-105s"
+    ],
+    "resolution": "768P",
+    "duration": "15",
+    "ratio": "adaptive"
+  },
+  "inputs": {
+    "person_asset_sha256": "38D57C53E5C6CBB06ED9659E20795AE4C6700AC83FB8DC2D3269BBB90489946C",
+    "source_video_sha256": "AB7491BB6C2E7FE839CC028F5DE1907DC03218B7BC41F06745A3F323F34D6614",
+    "song_audio_sha256": "6026AA74BE2CB6C7955F9DBA6B8B0FFBC812059CE2133A837106A98E491192F2"
+  },
+  "provider_response": {
+    "taskId": "2087500501861543937",
+    "status": "SUCCESS",
+    "errorCode": "",
+    "errorMessage": "",
+    "results": [
+      {
+        "url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/27516fba-3651-44d6-b513-7b7463e0d4b5.mp4",
+        "outputType": "mp4",
+        "text": null
+      }
+    ],
+    "clientId": "",
+    "promptTips": "",
+    "failedReason": {},
+    "usage": {
+      "consumeMoney": null,
+      "consumeCoins": null,
+      "total_seconds": "30",
+      "input_image_count": "1",
+      "taskCostTime": "0",
+      "thirdPartyConsumeMoney": "2.31",
+      "output_seconds": "15",
+      "input_seconds": "15"
+    },
+    "parentTaskId": null,
+    "taskUsageList": [
+      {
+        "taskId": "2087500501861543937",
+        "parentTaskId": null,
+        "taskStatus": "SUCCESS",
+        "usage": {
+          "consumeMoney": null,
+          "consumeCoins": null,
+          "total_seconds": "30",
+          "input_image_count": "1",
+          "taskCostTime": "0",
+          "thirdPartyConsumeMoney": "2.31",
+          "output_seconds": "15",
+          "input_seconds": "15"
+        }
+      }
+    ]
+  }
+}

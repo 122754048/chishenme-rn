@@ -1,0 +1,10 @@
+{
+  "prompt": "Create one clean full-body studio model reference. Use the woman identity and long dark-brown hair from the first reference. Use the complete white long-sleeve cropped top and gray high-waisted leggings from the second reference. One person, standing front-facing and visible head to toe, with neutral lighting and a plain light-gray background.",
+  "imageUrls": [
+    "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/7bb18f3c-ceb5-4a0f-b55f-87ab13771bec.png",
+    "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/d9996f4f-8014-438d-a0a2-611e641f413a.png"
+  ],
+  "aspectRatio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

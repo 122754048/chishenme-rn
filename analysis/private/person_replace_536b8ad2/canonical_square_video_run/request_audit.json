@@ -1,0 +1,27 @@
+{
+  "schema_version": "usfr-provider-only-request-audit/v1",
+  "request_sha256": "95d072f5aa3e0c355044d8f80984703849c529435a59d58f2da54fa7cbc23fe6",
+  "provider_only": true,
+  "provider_create_calls_allowed": 1,
+  "primary_change_variable": "canonical_1024_square_person_assets",
+  "image_tag_order": [
+    "@Image1",
+    "@Image2"
+  ],
+  "source_object_order": [
+    "SRC_WOMAN",
+    "SRC_MAN"
+  ],
+  "person_asset_profile": "model-identity-v3-local-crop",
+  "image_sha256_order": [
+    "13d88ba0f8116e4123e265f4c540fc0e12c70d853358a0f9f74ce1f3d7a748e1",
+    "32dfb799fbd42ceb5954dafb47c7a2a58e40434c3203233c59fc4bcc7a933819"
+  ],
+  "image_url_count": 2,
+  "video_url_count": 1,
+  "binding_board_uploaded": false,
+  "local_final_video_processing": false,
+  "prompt_sha256": "d4cb1bfeb9d4b6ec316415e2551de10e34597d9efaf70f0c9d8218d0cfd3bbae",
+  "binding_contract_sha256": "6e48415a4b12fbffc53bf5af26b4177314c3a50b1adb4f56ca2d472b65b8ac6f",
+  "prompt_chars": 999
+}

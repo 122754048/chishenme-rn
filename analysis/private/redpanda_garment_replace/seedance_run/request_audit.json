@@ -1,0 +1,48 @@
+{
+  "schema_version": "usfr-garment-dialogue-provider-only/v1",
+  "request_sha256": "f76a329bd3920901d007fc172cb226ba7ddde197982d39c84307cd2b70a9267d",
+  "source_video_sha256": "e81745fad00d0eed91966a5d7d68a6536cdfa759b39c4a68d97f06873473fcc3",
+  "approved_script_sha256": "30abc2127679dc48882d3ad03bec78938b72cf4f2a9a551011a6f1d84bf94599",
+  "source_dynamics_sha256": "61585de6d3515c807971fffa356d3bbae787e162de5b90375fc2aac39d792b1b",
+  "binding_contract_sha256": "f66bda6d2d48d91a5ea46b038fbabff07588cf771307c02704ffb962347e115a",
+  "prompt_sha256": "bbde86fab6a91ea5d3109d2a76d1817552c9e7e1c4c263a52d6a49d858700226",
+  "image_tag_order": [
+    "@Image1"
+  ],
+  "source_object_order": [
+    "SRC_WHITE_CORSET_MINI_DRESS"
+  ],
+  "dialogue_windows": [
+    {
+      "window": "00:00.000-00:02.000",
+      "speaker": "SRC_WOMAN",
+      "text": "You guys, look what just came in."
+    },
+    {
+      "window": "00:02.000-00:04.240",
+      "speaker": "SRC_WOMAN",
+      "text": "I cannot get over this lace dress."
+    },
+    {
+      "window": "00:04.240-00:07.240",
+      "speaker": "SRC_WOMAN",
+      "text": "The V neckline and floral lace are so pretty."
+    },
+    {
+      "window": "00:07.240-00:09.640",
+      "speaker": "SRC_WOMAN",
+      "text": "I love these flared sleeves and fitted waist."
+    },
+    {
+      "window": "00:09.640-00:12.560",
+      "speaker": "SRC_WOMAN",
+      "text": "And look at those layered lace panels."
+    },
+    {
+      "window": "00:12.560-00:14.900",
+      "speaker": "SRC_WOMAN",
+      "text": "This is such a pretty party dress."
+    }
+  ],
+  "provider_create_calls_allowed": 1
+}

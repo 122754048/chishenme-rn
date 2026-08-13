@@ -1,0 +1,19 @@
+{
+  "schema_version": "reinbow-current-assets-s01/v1",
+  "request_sha256": "2835063fa4ae91f5d7958998ce54f53c778c25e9a636e0fb5f3c4025987b54bb",
+  "provider_only": true,
+  "source_segment": "0.00-10.48s",
+  "image_tag_order": [
+    "@Image1",
+    "@Image2",
+    "@Image3",
+    "@Image4"
+  ],
+  "source_object_order": [
+    "SRC_MAN",
+    "SRC_LEFT_WOMAN",
+    "SRC_RIGHT_WOMAN",
+    "SRC_ALIEN"
+  ],
+  "local_video_processing": false
+}

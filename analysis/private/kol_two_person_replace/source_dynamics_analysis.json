@@ -1,0 +1,91 @@
+{
+  "contract": "reference-video-dynamics",
+  "contract_version": 1,
+  "reference_duration_us": 11566667,
+  "source_width": 576,
+  "source_height": 1024,
+  "fps_num": 30,
+  "fps_den": 1,
+  "source_cut_count": 4,
+  "source_cuts": [
+    {
+      "cut": 1,
+      "start_us": 0,
+      "end_us": 3000000,
+      "subject_presence": "identifiable",
+      "content_roles": ["two-person vertical selfie performance", "opening identity anchor"],
+      "scene": "Two seated people framed chest-up in an indoor public venue; dark-haired person remains on opening-left and long reddish-haired person remains on opening-right.",
+      "action": "Both face the phone camera and begin alternating short mouth movements and restrained head expressions.",
+      "camera": "Fixed low-angle vertical phone framing with minor handheld movement.",
+      "transition": "Continuous take; action-phase boundary only.",
+      "end_state": "Both subjects remain seated in their original tracks and continue facing the camera.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 2,
+      "start_us": 3000000,
+      "end_us": 6000000,
+      "subject_presence": "identifiable",
+      "content_roles": ["alternating on-camera delivery", "facial reaction exchange"],
+      "scene": "Same indoor two-person selfie composition.",
+      "action": "The opening-right subject becomes more active in the delivery while the opening-left subject holds position and reacts with small eye, mouth, and head changes.",
+      "camera": "Continuous fixed selfie framing.",
+      "transition": "Continuous take; speaking emphasis shifts between subjects.",
+      "end_state": "Both identities remain fully visible without track crossing.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 3,
+      "start_us": 6000000,
+      "end_us": 9500000,
+      "subject_presence": "identifiable",
+      "content_roles": ["joint performance", "close facial expressions"],
+      "scene": "Same venue and framing; both subjects remain close to camera.",
+      "action": "Both continue synchronized or alternating mouth movements, gaze changes, and compact facial reactions while staying on their original physical tracks.",
+      "camera": "Continuous low-angle phone shot with slight natural shake.",
+      "transition": "Continuous take; no edit.",
+      "end_state": "Opening-right subject begins leaning closer toward the camera while opening-left stays centered on her track.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 4,
+      "start_us": 9500000,
+      "end_us": 11566667,
+      "subject_presence": "identifiable",
+      "content_roles": ["closing reaction", "partial frame exit"],
+      "scene": "Same indoor selfie composition.",
+      "action": "Opening-right subject leans toward the lens and then moves partially out through frame-right; opening-left subject remains visible and finishes the performance.",
+      "camera": "Continuous phone framing with no cut.",
+      "transition": "Natural end of the continuous recording.",
+      "end_state": "Opening-left subject remains visible; opening-right subject is partially cropped at frame-right.",
+      "certainty": "certain"
+    }
+  ],
+  "source_events": [
+    {
+      "event": 1,
+      "kind": "dialogue",
+      "start_us": 0,
+      "end_us": 11566667,
+      "source_cut_start": 1,
+      "source_cut_end": 4,
+      "text": "Continuous on-camera vocal performance; exact wording is not treated as replacement truth and is preserved from the source audio.",
+      "certainty": "uncertain"
+    },
+    {
+      "event": 2,
+      "kind": "ambience",
+      "start_us": 0,
+      "end_us": 11566667,
+      "source_cut_start": 1,
+      "source_cut_end": 4,
+      "text": "Low-level indoor background ambience under the voices.",
+      "certainty": "certain"
+    }
+  ],
+  "notes": [
+    "No hard edit or confirmed terminal logo/download tail was detected.",
+    "Two continuous source-person tracks are visible from the opening frame.",
+    "Target mapping remains user-editable at the single public script approval gate."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "assets": [
+    {
+      "asset_tag": "TARGET_WOMAN",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510.png",
+      "crop": [0.0, 0.0, 1.0, 0.82],
+      "vertical_center": 0.46,
+      "asset_composition": "upper_body_square"
+    },
+    {
+      "asset_tag": "TARGET_MAN",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\Batch_00004_myhhx_1768465153.png",
+      "crop": [0.0, 0.0, 1.0, 1.0],
+      "vertical_center": 0.45,
+      "asset_composition": "upper_body_square"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "contract": "asset-board-manifest/v1",
+  "image_index": 1,
+  "image_tag": "@Image1",
+  "target_tag": "TARGET_WHITE_LACE_DRESS",
+  "asset_type": "garment",
+  "source_asset_sha256": "f94d8a7ccead6523aaedd5f9f893f35fb613a65a7e1170d1a7d1afb6a57a0004",
+  "board_sha256": "c628d81267e2f3bac2829d656eed2e9426d30813423862d18112f8b0e58e4df3",
+  "board_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/626764f3-ef30-4997-b441-40e10b91d2e1.png",
+  "task_id": "2087393701298921473",
+  "local_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\redpanda_garment_replace\\assets\\garment\\01_TARGET_WHITE_LACE_DRESS.png",
+  "receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\redpanda_garment_replace\\assets\\garment\\01_TARGET_WHITE_LACE_DRESS.receipt.json"
+}

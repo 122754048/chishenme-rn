@@ -1,0 +1,35 @@
+{
+  "schema_version": "usfr-language-only-german/v1",
+  "request_sha256": "898ffd074cf1b4175d6a882f7f98386be4c13c72db99f2ccf50cd6ec42d401c4",
+  "source_video_sha256": "26ffe6b9c3ab665e15f96acc5804d3246cdb6005e05ed4a07e48588581f94685",
+  "approved_script_sha256": "c3240d9ef4b3341e3a8dc588a609b08be916b015563a0d4b2d6c84877eb049dd",
+  "source_dynamics_sha256": "418eb4af93c23c11e531ef0095cac1c230ef330b2d0f26b05374749b8d93923b",
+  "prompt_sha256": "2fb5f985b24ec77be576ab3d79e7251d2c0f195d6f95b4fa74a1e963718c0236",
+  "output_language": "de-DE",
+  "dialogue_windows": [
+    {
+      "window": "00:00.000-00:02.000",
+      "speaker": "SOURCE_DUO",
+      "text": "Möchtest du auch neue Leute kennenlernen?"
+    },
+    {
+      "window": "00:02.000-00:06.000",
+      "speaker": "SOURCE_DUO",
+      "text": "Du kannst Chaträumen beitreten und ganz einfach neue Freundschaften schließen."
+    },
+    {
+      "window": "00:06.000-00:09.000",
+      "speaker": "SOURCE_DUO",
+      "text": "Schreib Nachrichten und chatte mit Menschen in deiner Nähe."
+    },
+    {
+      "window": "00:09.000-00:11.000",
+      "speaker": "SOURCE_DUO",
+      "text": "Lade dir jetzt SUGO herunter."
+    }
+  ],
+  "image_reference_count": 0,
+  "provider_create_calls_allowed": 1,
+  "external_tts": false,
+  "external_lip_sync": false
+}

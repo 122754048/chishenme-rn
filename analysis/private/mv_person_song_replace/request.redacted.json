@@ -1,0 +1,20 @@
+{
+  "prompt": "编辑视频： Multi-subject replacement based on @Video1. @Video1 supplies the full motion, camera, blocking, timing, occlusion, lighting, background, props, contacts, and audio. Subject 1: the blonde woman in the opening beach performance, her upload-photo thumbnails in the App interface, and the same generated performer returning at 10 seconds becomes @Image1 with exact @Image1 identity and wardrobe: young man with swept black hair, defined dark brows, black layered long coat and knitwear, silver chains and dark accessories. Each mapped Subject or Object remains the same continuing physical track through movement, occlusion, interaction, and crossing. All mapped tracks follow their source motion, contact, perspective, lighting, and timing. All unlisted content remains unchanged and frame-aligned. preserve_unmodified_lip_sync Keep every source UI element, visible text, subtitle, logo and CTA unchanged.",
+  "resolution": "720p",
+  "duration": "15",
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/ecb9af7d5cbbb9c20062abf89dacf2c99a1ec792c1489c0ec18c37f60bf028eb.png"
+  ],
+  "videoUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/a5f21aee1f0740accd061d9742433ccc51f4380360b013f07d46df8cc281c6ef.mp4"
+  ],
+  "audioUrls": [],
+  "generateAudio": false,
+  "ratio": "9:16",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

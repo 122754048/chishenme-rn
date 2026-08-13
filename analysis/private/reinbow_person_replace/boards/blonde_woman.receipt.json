@@ -1,0 +1,14 @@
+{
+  "role": "blonde_woman",
+  "reference_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\reinbow_person_replace\\boards\\blonde_face_reference.png",
+  "result_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/839c459e-37a3-4e11-8c57-10775a1b76c3.png",
+  "task_id": "2086796885565509634",
+  "receipt": {
+    "schema_version": "runninghub-image2-asset-board/v2",
+    "request_sha256": "d189c45552098d33972c0d51ab95adf6d276cbbd453a842cf26a6f5d159201da",
+    "response_sha256": "016b57055fe6cf3b1232f057cb22c70204493132307d4ec4458e0c2ba18c7470",
+    "task_id": "2086796885565509634",
+    "template": "model",
+    "template_version": "model-v2"
+  }
+}

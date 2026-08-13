@@ -1,0 +1,53 @@
+{
+  "schema_version": "usfr-fixed-two-pass-edit/v1",
+  "full_complexity": {
+    "score": 3.0,
+    "threshold": 3.0,
+    "calibration_status": "calibration_pending",
+    "decision_basis": "configured_default",
+    "factor_ids": [
+      "model_replacement",
+      "scene_replacement",
+      "product_replacement",
+      "dialogue_change"
+    ],
+    "over_threshold": false,
+    "decision": "within_threshold",
+    "split_plan": []
+  },
+  "approved_script_sha256": "fd8ae180ad9d4eabb5acee6b56bfb26026619448eb0ba49ded4d8defda3c1a9a",
+  "source_dynamics_sha256": "a7a775dd6df81f6bb45e4f400e32a5d9930a286f3adf99d1f013505a7c345660",
+  "source_video_sha256": "166e4e8531609764c27d627419ceb1d8ff6b222047e9935d7ad8807fbaeb2e54",
+  "pass_order": [
+    "single_provider_request"
+  ],
+  "pass1_request_sha256": "0e36a723f8c5b3b73c07f42572a57fbb85f95dd61c9314cd4eb63b8ae9ea8c69",
+  "pass1_prompt_sha256": "bfb9881c8d48ff23fee07c571bf3ed805849787c3057de598dd215165ad480f1",
+  "pass1_image_tags": [
+    "@Image1",
+    "@Image2",
+    "@Image3"
+  ],
+  "provider_only_binding_receipt": {
+    "contract": "provider-only-multi-object-binding/v1",
+    "compiler_version": "provider-only-multi-object-binding/v1",
+    "binding_mode": "provider_only_multi_object_binding",
+    "binding_contract_sha256": "62529f9fe5712e783aed8701432de2a3e9784bb350c70afd2e94a0fd3edaab8d",
+    "prompt_sha256": "bfb9881c8d48ff23fee07c571bf3ed805849787c3057de598dd215165ad480f1",
+    "image_tags": [
+      "@Image1",
+      "@Image2",
+      "@Image3"
+    ],
+    "source_object_ids": [
+      "SRC_PRESENTER",
+      "SRC_GAME_DEVICE_FAMILY",
+      "SRC_ROOM_BACKGROUND"
+    ]
+  },
+  "asset_sha256_order": [
+    "ef4fd0ee050949c9c25ca2d7e2607a43daf68b316cdc6c2b16de2ed27e13c1d1",
+    "b3c05ce010eb1b1bce4536ecccbfec70fb96b0ac1ab3c46af98a219826288be0",
+    "fae25757e25d34a233bf4c5863f4e5d9ace7ebc91e6a8cf9d77e3273c0ee79e0"
+  ]
+}

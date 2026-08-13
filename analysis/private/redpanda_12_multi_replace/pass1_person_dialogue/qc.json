@@ -1,0 +1,56 @@
+{
+  "schema_version": "usfr-final-object-qc/v1",
+  "task_id": "2087411791696384002",
+  "provider_status": "SUCCESS",
+  "visual_manual_qc": {
+    "sample_rate_fps": 2,
+    "person": {
+      "result": "accepted",
+      "identity": "adult woman from approved V2 person asset",
+      "hair": "dark low ponytail retained",
+      "wardrobe": "pink ribbed mock-neck long-sleeve top retained",
+      "track_continuity": "accepted"
+    },
+    "product": {
+      "result": "accepted",
+      "identity": "Sunquick Orange bottle",
+      "front_label": "accepted",
+      "orange_cap_and_liquid": "accepted",
+      "actions": ["front display", "lift close", "twist cap open", "front-label close-up", "side rotation", "final centered hold"],
+      "incompatible_source_actions_removed": ["box unboxing", "protective-film removal", "button testing"]
+    },
+    "scene": {
+      "result": "accepted",
+      "identity": "approved open-plan office",
+      "features": ["office desks", "chairs", "exposed ceiling", "black pendant lights", "background depth"]
+    },
+    "subtitles": "accepted: seven approved English dialogue windows visible"
+  },
+  "audio_qc": {
+    "result": "7/7 approved lines detected",
+    "transcript": [
+      "All right, let's check out this Sunquick Orange.",
+      "That bright orange bottle really stands out.",
+      "The cap twists right open, and there it is.",
+      "Here is the front label up close.",
+      "You can see the bottle from every side.",
+      "The orange color looks so vivid.",
+      "If you want a full pour test, tell me."
+    ]
+  },
+  "technical_qc": {
+    "video_decode": "pass",
+    "audio_decode": "pass",
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "width": 834,
+    "height": 1112,
+    "duration_seconds": 15.069002,
+    "size_bytes": 5763384,
+    "sha256": "CD3E9D835FF6C04B7A43AB1F5B0A7846AAF476459701C30DEBD1802BD72F5598"
+  },
+  "notes": [
+    "One Seedance request simultaneously replaced person, product and background and generated the approved speech and subtitles.",
+    "No local face swap, video compositing, frame replacement, re-encoding, TTS, external lip-sync or audio replacement was applied."
+  ]
+}

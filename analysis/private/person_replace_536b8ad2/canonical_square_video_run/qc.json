@@ -1,0 +1,47 @@
+{
+  "contract": "usfr-provider-only-two-person-qc/v1",
+  "provider": "RunningHub Seedance 2.0",
+  "task_id": "2087137713525755906",
+  "request_sha256": "95d072f5aa3e0c355044d8f80984703849c529435a59d58f2da54fa7cbc23fe6",
+  "output_sha256": "fc44df624fa59df0743d31d78108091a3b920363563fa8e8320e2d7891a7e0ea",
+  "direct_provider_mp4": true,
+  "local_final_video_processing": false,
+  "person_asset_profile": "model-identity-v3-local-crop",
+  "video": {
+    "width": 720,
+    "height": 1280,
+    "fps": 24,
+    "duration_seconds": 15.092971,
+    "video_codec": "h264",
+    "audio_codec": "aac"
+  },
+  "review_frames_seconds": [0.5, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.5],
+  "objects": [
+    {
+      "source_object_id": "SRC_WOMAN",
+      "target_reference": "@Image1",
+      "identity_replaced": true,
+      "wardrobe_replaced": true,
+      "track_consistent": true,
+      "evidence": "The blue-gray-eyed brunette identity, long dark-brown hair, white long-sleeve cropped top, gray fitted leggings, necklace, and rings remain attached to the source woman track from opening through interaction and CTA ending."
+    },
+    {
+      "source_object_id": "SRC_MAN",
+      "target_reference": "@Image2",
+      "identity_replaced": true,
+      "wardrobe_replaced": true,
+      "track_consistent": true,
+      "evidence": "The Black male identity, spiked black hair with orange center patch, white wraparound sunglasses, diamond studs, thick silver chain, and oversized white T-shirt remain attached to the interviewer track; source light shorts remain visible through the ending."
+    }
+  ],
+  "preservation": {
+    "source_camera_and_blocking": true,
+    "source_phone_and_microphone_contacts": true,
+    "source_background_and_visible_text": true,
+    "source_cta_ending": true,
+    "audio_stream_present": true
+  },
+  "replacement_count": 2,
+  "replacement_total": 2,
+  "verdict": "accepted_2_of_2"
+}

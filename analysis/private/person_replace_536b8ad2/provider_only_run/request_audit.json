@@ -1,0 +1,25 @@
+{
+  "schema_version": "usfr-provider-only-request-audit/v1",
+  "request_sha256": "fb12e6f117834bdc733213a3e0f30454a7ed12ca14cac2083f4e9407e3b105f1",
+  "provider_only": true,
+  "provider_create_calls_allowed": 1,
+  "image_tag_order": [
+    "@Image1",
+    "@Image2"
+  ],
+  "source_object_order": [
+    "SRC_WOMAN",
+    "SRC_MAN"
+  ],
+  "image_sha256_order": [
+    "8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510",
+    "feaa0b922da12e8462fa17277d59978fc3e433cf08a954666b4da4223f5a738d"
+  ],
+  "image_url_count": 2,
+  "video_url_count": 1,
+  "binding_board_uploaded": false,
+  "local_final_video_processing": false,
+  "prompt_sha256": "d9072993fbf03aa9d285f6e2fd7979c1e335cfe6247b8f67329653f83bcbf9cd",
+  "binding_contract_sha256": "3f875222ad22c2985c79207aa59448d0769d9c9720f3bf7d470eb34280295fd0",
+  "prompt_chars": 626
+}

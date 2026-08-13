@@ -1,0 +1,12 @@
+{
+  "status": "FAILED_LANGUAGE_CHANGE",
+  "task_id": "2087447589279895554",
+  "request_sha256": "898ffd074cf1b4175d6a882f7f98386be4c13c72db99f2ccf50cd6ec42d401c4",
+  "exact_prompt": "@Video1 将这个视频改为德语。",
+  "provider_status": "SUCCESS",
+  "visual_qc": "source people, wardrobe, setting, framing and motion substantially preserved",
+  "detected_output_language": "tr",
+  "language_qc": "failed: output remained Turkish rather than German",
+  "output_sha256": "13C2DB3CDBB931573F6B987730F21F76F6FCC8EEBBF3FD91E766B1C2828853E4",
+  "conclusion": "The minimal instruction did not overcome source-video speech conditioning. Use the verified TTS plus spoken lip-sync fallback for deterministic target-language dialogue."
+}

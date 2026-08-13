@@ -1,0 +1,50 @@
+{
+  "schema_version": "usfr-final-object-qc/v1",
+  "task_id": "2087394534601678850",
+  "provider_status": "SUCCESS",
+  "visual_manual_qc": {
+    "sample_rate_fps": 2,
+    "garment_replacement": "accepted",
+    "target_features": {
+      "white_floral_lace": "accepted",
+      "v_neckline": "accepted",
+      "flared_elbow_sleeves": "accepted",
+      "fitted_waist": "accepted",
+      "layered_skirt_panels": "accepted"
+    },
+    "source_preservation": {
+      "person_identity": "accepted",
+      "hair_and_jewelry": "accepted",
+      "phone_and_hand_contact": "accepted",
+      "christmas_room_scene": "accepted",
+      "camera_and_action_structure": "accepted"
+    },
+    "english_subtitles": "accepted: generated from the six approved new dialogue lines"
+  },
+  "audio_qc": {
+    "result": "6/6 approved lines detected",
+    "transcript": [
+      "You guys, look what just came in.",
+      "I cannot get over this lace dress.",
+      "The V neckline and floral lace are so pretty.",
+      "I love these flared sleeves and fitted waist.",
+      "And look at those layered lace panels.",
+      "This is such a pretty party dress."
+    ]
+  },
+  "technical_qc": {
+    "video_decode": "pass",
+    "audio_decode": "pass",
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "width": 720,
+    "height": 1280,
+    "duration_seconds": 15.069002,
+    "size_bytes": 9089215,
+    "sha256": "3EE74819190F5296248F08C642CC703FDE4A13F1BAE0FFD635E17CD37F1539B9"
+  },
+  "notes": [
+    "One Seedance request performed the garment replacement and generated the adapted speech and subtitles.",
+    "No local video compositing, face swap, frame replacement, re-encoding, TTS, external lip-sync, or audio replacement was applied."
+  ]
+}

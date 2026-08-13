@@ -1,0 +1,9 @@
+{
+  "contract": "provider-only-multi-object-binding/v1",
+  "compiler_version": "provider-only-multi-object-binding/v1",
+  "binding_mode": "provider_only_multi_object_binding",
+  "binding_contract_sha256": "02a1a87542d79e7380a855654ecb1c5e286b4c1c4cc8fe1b588f443b12df8ea9",
+  "prompt_sha256": "2c469c0feffcee69148de2a362f3f32e7dceeb82783bc25659c38b40d5098653",
+  "image_tags": ["@Image1", "@Image2", "@Image3"],
+  "source_object_ids": ["SRC_WOMAN", "SRC_WOMAN_WARDROBE", "SRC_MAN"]
+}

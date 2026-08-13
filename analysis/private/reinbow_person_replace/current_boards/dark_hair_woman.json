@@ -1,0 +1,14 @@
+{
+  "role": "dark_hair_woman",
+  "reference_path": "C:\\Users\\zhaocx04\\Downloads\\generation-699a9d18-cc64-4c6c-ab2b-882697ad8c5d.png",
+  "result_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/a7573be2-8de1-41fa-9f0b-26779eaad2b1.png",
+  "task_id": "2087057679460995073",
+  "receipt": {
+    "schema_version": "runninghub-image2-asset-board/v2",
+    "request_sha256": "9900cfdc9558edb8ac14e393ce63d745239ec16ab84e42b39fb7bcb3286d6437",
+    "response_sha256": "1bbe7d46b4648ade834ed7193043e57516e538d164945de528ec0835f0c0781c",
+    "task_id": "2087057679460995073",
+    "template": "model",
+    "template_version": "model-identity-v3"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "contract": "reference-video-probe",
+  "contract_version": 1,
+  "file_name": "536b8ad2-1754-4f80-bf9e-4f8adb0cc4ae (1).mp4",
+  "duration_us": 15041667,
+  "source_width": 720,
+  "source_height": 1280,
+  "encoded_width": 720,
+  "encoded_height": 1280,
+  "rotation_deg": 0,
+  "fps_num": 24,
+  "fps_den": 1,
+  "frame_count": 361,
+  "video_codec": "h264",
+  "audio_streams": [
+    {
+      "codec": "aac",
+      "sample_rate": 44100,
+      "channels": 2
+    }
+  ],
+  "warnings": [],
+  "scene_cut_candidates_us": [
+    1291667,
+    3583333,
+    5833333,
+    6666667,
+    8458333,
+    10416667,
+    12541667
+  ],
+  "candidate_policy": "hints_only; inspect complete video and split on action/camera/audio/overlay phase changes"
+}

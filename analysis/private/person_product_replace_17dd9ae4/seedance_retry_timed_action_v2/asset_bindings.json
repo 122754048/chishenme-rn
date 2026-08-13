@@ -1,0 +1,35 @@
+[
+  {
+    "tag": "TARGET_WOMAN",
+    "reference": "@Image1",
+    "role": "model",
+    "asset_type": "model",
+    "replaces_tag": "SRC_PRESENTER",
+    "source_object_descriptor": "opening-center seated presenter in the pale sweater and green bandana, handling the green candy",
+    "target_identity_descriptor": "curly red-brown hair, exact female face, colorful patterned blouse, dangling silver earrings, layered silver necklaces",
+    "replacement_scope": "person identity, hair, visible wardrobe, and accessories",
+    "preserve_scope": "source body track, expressions, gaze, gestures, hand contacts, blocking, occlusion, and timing",
+    "binding_confidence": 0.99,
+    "identity_scope": "face_hair_skin",
+    "wardrobe_policy": "identity_and_wardrobe_from_reference",
+    "target_wardrobe_evidence": "visible",
+    "person_asset_profile": "model-identity-v3-local-crop",
+    "asset_mime_type": "image/png",
+    "asset_width": 1024,
+    "asset_height": 1024,
+    "identity_subject_count": 1,
+    "asset_layout": "identity_dominant",
+    "asset_composition": "upper_body_square"
+  },
+  {
+    "tag": "TARGET_SUNNY_POP_PRODUCT",
+    "reference": "@Image2",
+    "role": "product",
+    "asset_type": "product",
+    "replaces_tag": "SRC_GREEN_CONFECTION_FAMILY",
+    "source_object_descriptor": "opening green candy product track: handheld unwrapped piece, wrapped close-up, and table units",
+    "replacement_scope": "entire product family geometry, color, markings, packaging, and demonstration action",
+    "preserve_scope": "source camera, track, perspective, shadows, and occlusion; at 00:00.000-00:01.680 hold the front label, 00:01.680-00:03.250 open the cap and sip once, 00:03.900-00:06.917 rotate the label then move the bottle close, 00:06.917-00:09.500 hold the warm-orange bottle beside a relaxed closed-mouth smile, and 00:09.500-00:11.042 point while holding the front label; matching SUNNY POP bottles remain on the table",
+    "binding_confidence": 0.97
+  }
+]

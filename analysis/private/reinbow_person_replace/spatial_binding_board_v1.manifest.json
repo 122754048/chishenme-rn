@@ -1,0 +1,28 @@
+{
+  "schema_version": "reinbow-spatial-binding-board/v1",
+  "width": 1080,
+  "height": 1920,
+  "sha256": "05e666a80cb2082101a8a1c703ef2514ca92ad2b7e9a635e69ae814f481da3fc",
+  "bindings": [
+    {
+      "target_tag": "TARGET_BLONDE",
+      "source_object_id": "SRC_BLONDE",
+      "locator": "first-frame left"
+    },
+    {
+      "target_tag": "TARGET_MAN",
+      "source_object_id": "SRC_MAN",
+      "locator": "first-frame center"
+    },
+    {
+      "target_tag": "TARGET_DARK",
+      "source_object_id": "SRC_DARK",
+      "locator": "first-frame right"
+    },
+    {
+      "target_tag": "TARGET_CAT",
+      "source_object_id": "SRC_ALIEN",
+      "locator": "enters from left at 3.15s"
+    }
+  ]
+}

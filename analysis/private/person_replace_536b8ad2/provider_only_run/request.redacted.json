@@ -1,0 +1,21 @@
+{
+  "prompt": "编辑视频：Multi-subject replacement based on @Video1.\n- Source woman (opening center-right, long dark hair, gray sleeveless top): Replace with exact identity and visible wardrobe from @Image1.\n- Source man (opening frame-left, black hoodie, white shorts, holding the microphone): Replace with exact identity and visible wardrobe from @Image2.\nEach mapped subject stays on its own continuing physical track through movement and occlusion, inheriting its source motion, expression, gaze, interaction, and timing. @Video1 supplies camera, framing, lighting, background, props, subtitles, SUGO overlays, dialogue, ambience, and audio.\n",
+  "resolution": "720p",
+  "duration": "15",
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/feaa0b922da12e8462fa17277d59978fc3e433cf08a954666b4da4223f5a738d.png"
+  ],
+  "videoUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/096232caa5fdb33d7c12d5b5594560e153b482197e643ba25ad0423387e5eee0.mp4"
+  ],
+  "audioUrls": [],
+  "generateAudio": true,
+  "ratio": "9:16",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

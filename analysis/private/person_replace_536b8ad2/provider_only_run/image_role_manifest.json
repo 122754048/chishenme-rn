@@ -1,0 +1,24 @@
+{
+  "schema_version": "usfr-image-role-manifest/v1",
+  "approval_set_sha256": null,
+  "images": [
+    {
+      "role": "new_model_identity",
+      "artifact_name": "8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510.png",
+      "sha256": "8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510",
+      "cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08", "C09"],
+      "page": null,
+      "approval_set_sha256": null,
+      "purpose": "@Image1 exact identity and visible wardrobe for SRC_WOMAN"
+    },
+    {
+      "role": "new_model_identity",
+      "artifact_name": "Batch_00004_myhhx_1768465153.png",
+      "sha256": "feaa0b922da12e8462fa17277d59978fc3e433cf08a954666b4da4223f5a738d",
+      "cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08", "C09"],
+      "page": null,
+      "approval_set_sha256": null,
+      "purpose": "@Image2 exact identity and visible wardrobe for SRC_MAN"
+    }
+  ]
+}

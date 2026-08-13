@@ -1,0 +1,27 @@
+{
+  "contract": "video-edit-v2-segment-plan/v1",
+  "segments": [
+    {
+      "segment_id": "SEG01",
+      "start_ms": 0,
+      "end_ms": 5000,
+      "ratio": "adaptive"
+    }
+  ],
+  "cut_order_preserved": true,
+  "provider_passes": 1,
+  "complexity": {
+    "score": 0.5,
+    "threshold": 3.0,
+    "calibration_status": "calibration_pending",
+    "decision_basis": "configured_default",
+    "factor_ids": [
+      "product_replacement"
+    ],
+    "over_threshold": false,
+    "decision": "within_threshold",
+    "split_plan": []
+  },
+  "audio_policy": "preserve_unmodified_audio",
+  "lip_sync_policy": "preserve_unmodified_lip_sync"
+}

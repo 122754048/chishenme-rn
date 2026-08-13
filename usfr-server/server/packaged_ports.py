@@ -23,16 +23,25 @@ from .capability_ports import BoundRuntimeCapability, BoundStagePort, Capability
 from .ephemeral_driver import EXECUTABLE_STAGES
 from .errors import ReplicationError
 from .gpt_evidence_gateway import GptEvidenceGateway
+from .image_media import UnsupportedImageFormat, detect_image_content_type
 from .runninghub_workflows import RunningHubWorkflowClient
 from .packaged_stages import (
     BindInputsStage,
+    AssetBoardStage,
     ProbeSourceStage,
     RouteRegionsStage,
+    TargetEvidenceStage,
+    H3PromptStage,
+    H3AuditStage,
+    H3SubmitStage,
+    H3WaitStage,
     SeedanceAuditStage,
     SeedancePromptStage,
     SegmentPlanStage,
     StoryboardStage,
     SubmitProviderVideoStage,
+    VoiceoverTtsFallbackEvaluationStage,
+    VoiceoverTtsStage,
     WaitProviderVideoStage,
 )
 from .production_ports import (
@@ -478,7 +487,186 @@ def _wrapped_capability(*, capability: str, adapter: Any, config: ProductionEnvi
     )
 
 
-def build_ports() -> dict[str, Any]:
+class _GptTargetEvidenceClassifier:
+    """Use the existing evidence-bound GPT gateway for target-image classification."""
+
+    def __init__(self, gateway: GptEvidenceGateway) -> None:
+        self.gateway = gateway
+
+    def classify_image(
+        self,
+        *,
+        source_slot: str,
+        source_index: int,
+        source_asset_sha256: str,
+        image_path: Path,
+        image_bytes: bytes,
+        source_roster: Mapping[str, Any],
+    ) -> Mapping[str, Any]:
+        del image_path
+        try:
+            media_content_type = detect_image_content_type(image_bytes)
+        except UnsupportedImageFormat as exc:
+            raise ReplicationError(
+                "TARGET_EVIDENCE_IMAGE_INVALID",
+                "target classifier received unsupported image bytes",
+                category="artifact",
+            ) from exc
+        result = self.gateway.analyze(
+            media_bytes=image_bytes,
+            media_content_type=media_content_type,
+            evidence={
+                "purpose": "classify one frozen target image before script approval",
+                "source_slot": source_slot,
+                "source_index": source_index,
+                "source_asset_sha256": source_asset_sha256,
+                "source_roster": dict(source_roster),
+                "required_output": {
+                    "asset_type": "model|garment|scene|product",
+                    "asset_tag": "stable target tag",
+                    "replaces_tag": "one source roster tag",
+                    "observations": {
+                        "selling_points": "3-5 evidence-bound observations",
+                        "pain_points": "3-5 evidence-bound observations",
+                        "pain_point_mapping": "complete mapping for every pain point to a reported selling point",
+                        "display_method_library": "non-empty array of evidence-bound display methods",
+                        "display_operation_adaptation": "category-specific observed logic",
+                        "operation_logic": "explicit operation logic independent of display wording",
+                    },
+                },
+            },
+        )
+        if not isinstance(result, Mapping):
+            raise ReplicationError(
+                "TARGET_EVIDENCE_CLASSIFICATION_FAILED",
+                "target classifier returned no semantic result",
+                category="capability",
+                retryable=True,
+            )
+        receipt = result.get("receipt")
+        reported_input_shas = [result.get("input_sha256")]
+        if isinstance(receipt, Mapping):
+            reported_input_shas.append(receipt.get("input_sha256"))
+        expected_sha = str(source_asset_sha256).lower()
+        if not any(value is not None for value in reported_input_shas) or any(
+            str(value).lower() != expected_sha
+            for value in reported_input_shas
+            if value is not None
+        ):
+            raise ReplicationError(
+                "TARGET_EVIDENCE_INPUT_MISMATCH",
+                "target classifier input evidence does not match the frozen image",
+                category="artifact",
+            )
+        semantic = {
+            "asset_type": result.get("asset_type"),
+            "asset_tag": result.get("asset_tag"),
+            "replaces_tag": result.get("replaces_tag"),
+            "observations": result.get("observations"),
+        }
+        return {
+            **semantic,
+            "source_slot": source_slot,
+            "source_index": source_index,
+            "source_asset_sha256": expected_sha,
+        }
+
+
+class _GptAppSemanticAnalyzer:
+    """Use the shared GPT gateway for evidence-bound App image semantics."""
+
+    _SEMANTIC_FIELDS = (
+        "selling_points",
+        "pain_points",
+        "pain_point_mapping",
+        "display_method_library",
+        "display_operation_adaptation",
+        "operation_logic",
+    )
+
+    def __init__(self, gateway: GptEvidenceGateway) -> None:
+        self.gateway = gateway
+
+    def analyze_images(
+        self,
+        *,
+        frames: Sequence[Mapping[str, Any]],
+        evidence: Mapping[str, Any],
+    ) -> Mapping[str, Any]:
+        ordered_frames = [dict(frame) for frame in frames]
+        frame_sha256s = [str(frame.get("sha256") or "").lower() for frame in ordered_frames]
+        if not ordered_frames or any(not frame_sha for frame_sha in frame_sha256s):
+            raise ReplicationError(
+                "TARGET_EVIDENCE_APP_ANALYSIS_FAILED",
+                "App semantic analyzer received invalid frame evidence",
+                category="artifact",
+            )
+        bundle = evidence.get("app_evidence_bundle")
+        if not isinstance(bundle, Mapping) or not str(bundle.get("sha256") or ""):
+            raise ReplicationError(
+                "TARGET_EVIDENCE_APP_ANALYSIS_FAILED",
+                "App semantic analyzer requires the bound App evidence bundle",
+                category="artifact",
+            )
+        request_evidence = {
+            "contract": "app-evidence-bundle/v1",
+            "purpose": "semantic App marketing analysis from ordered verified screenshots",
+            "app_evidence_bundle": dict(bundle),
+            "bundle_sha256": str(bundle["sha256"]).lower(),
+            "frame_evidence": [
+                {
+                    "artifact_id": str(frame.get("artifact_id") or ""),
+                    "kind": str(frame.get("kind") or ""),
+                    "order": frame.get("order"),
+                    "sha256": frame_sha,
+                }
+                for frame, frame_sha in zip(ordered_frames, frame_sha256s)
+            ],
+            "frame_sha256s": frame_sha256s,
+            "required_output": {
+                "selling_points": "array of 3-5 evidence-bound strings",
+                "pain_points": "array of 3-5 evidence-bound strings",
+                "pain_point_mapping": "complete mapping for every pain point",
+                "display_method_library": "non-empty array of App-specific display methods",
+                "display_operation_adaptation": "explicit App display logic",
+                "operation_logic": "explicit ordered App operation logic",
+            },
+        }
+        result = self.gateway.analyze_images(frames=ordered_frames, evidence=request_evidence)
+        if not isinstance(result, Mapping):
+            raise ReplicationError(
+                "TARGET_EVIDENCE_APP_ANALYSIS_FAILED",
+                "App semantic analyzer returned no object",
+                category="capability",
+                retryable=True,
+            )
+        returned_frames = result.get("frame_sha256s")
+        if returned_frames != frame_sha256s:
+            raise ReplicationError(
+                "TARGET_EVIDENCE_APP_ANALYSIS_FAILED",
+                "App semantic analyzer frame evidence is out of order",
+                category="artifact",
+            )
+        receipt = result.get("receipt")
+        if not isinstance(receipt, Mapping):
+            raise ReplicationError(
+                "TARGET_EVIDENCE_APP_ANALYSIS_FAILED",
+                "App semantic analyzer receipt is missing",
+                category="capability",
+                retryable=True,
+            )
+        return {
+            **{field: result.get(field) for field in self._SEMANTIC_FIELDS},
+            "frame_sha256s": list(frame_sha256s),
+            "receipt": dict(receipt),
+        }
+
+
+def build_ports(
+    *,
+    target_evidence_classifier: Any | None = None,
+    app_semantic_analyzer: Any | None = None,
+) -> dict[str, Any]:
     """Return the complete package-relative StagePort/capability mapping.
 
     Construction validates all mandatory GPT, RunningHub, Whisper-workflow,
@@ -487,14 +675,14 @@ def build_ports() -> dict[str, Any]:
     """
 
     config = ProductionEnvironment.from_environ()
-    workflow_id = (os.getenv("RUNNINGHUB_WHISPER_WORKFLOW_ID", "") or "").strip()
-    input_node_id = (os.getenv("RUNNINGHUB_WHISPER_INPUT_NODE_ID", "") or "").strip()
+    workflow_id = (os.getenv("RUNNINGHUB_SPEECH_WHISPER_WORKFLOW_ID", "") or "").strip()
+    input_node_id = (os.getenv("RUNNINGHUB_SPEECH_WHISPER_INPUT_NODE_ID", "") or "").strip()
     if not workflow_id or not input_node_id:
         raise PackagedPortsError(
-            "RUNNINGHUB_WHISPER_WORKFLOW_ID and RUNNINGHUB_WHISPER_INPUT_NODE_ID are required"
+            "RUNNINGHUB_SPEECH_WHISPER_WORKFLOW_ID and RUNNINGHUB_SPEECH_WHISPER_INPUT_NODE_ID are required"
         )
     if not input_node_id.isdecimal():
-        raise PackagedPortsError("RUNNINGHUB_WHISPER_INPUT_NODE_ID must be a numeric workflow node ID")
+        raise PackagedPortsError("RUNNINGHUB_SPEECH_WHISPER_INPUT_NODE_ID must be a numeric workflow node ID")
 
     active = _active_profile()
     uploaded_audio_classifier = _uploaded_audio_classifier(production=active)
@@ -508,26 +696,58 @@ def build_ports() -> dict[str, Any]:
     )
     # A source ASR run must use the selected RunningHub workflow.  Do not
     # silently fall back to a downloaded local Whisper model in a deployment.
+    tts_mode = (os.getenv("RUNNINGHUB_TTS_MODE", "legacy_multi_input") or "legacy_multi_input").strip()
+    if tts_mode.casefold() == "voice_clone_two_input":
+        tts_config = {
+            "mode": tts_mode,
+            "workflow_id": os.getenv("RUNNINGHUB_TTS_WORKFLOW_ID", ""),
+            "reference_audio_node_id": os.getenv("RUNNINGHUB_TTS_REFERENCE_AUDIO_NODE_ID", ""),
+            "reference_audio_field": os.getenv("RUNNINGHUB_TTS_REFERENCE_AUDIO_FIELD", ""),
+            "text_node_id": os.getenv("RUNNINGHUB_TTS_TEXT_NODE_ID", ""),
+            "text_field": os.getenv("RUNNINGHUB_TTS_TEXT_FIELD", ""),
+        }
+    else:
+        tts_config = {
+            "mode": tts_mode,
+            "workflow_id": os.getenv("RUNNINGHUB_TTS_WORKFLOW_ID", ""),
+            "text_node_id": os.getenv("RUNNINGHUB_TTS_TEXT_NODE_ID", ""),
+            "text_field": os.getenv("RUNNINGHUB_TTS_TEXT_FIELD", ""),
+            "language_node_id": os.getenv("RUNNINGHUB_TTS_LANGUAGE_NODE_ID", ""),
+            "language_field": os.getenv("RUNNINGHUB_TTS_LANGUAGE_FIELD", ""),
+            "speaker_node_id": os.getenv("RUNNINGHUB_TTS_SPEAKER_NODE_ID", ""),
+            "speaker_field": os.getenv("RUNNINGHUB_TTS_SPEAKER_FIELD", ""),
+            "timing_node_id": os.getenv("RUNNINGHUB_TTS_TIMING_NODE_ID", ""),
+            "timing_field": os.getenv("RUNNINGHUB_TTS_TIMING_FIELD", ""),
+            "reference_audio_node_id": os.getenv("RUNNINGHUB_TTS_REFERENCE_AUDIO_NODE_ID", ""),
+            "reference_audio_field": os.getenv("RUNNINGHUB_TTS_REFERENCE_AUDIO_FIELD", ""),
+        }
+    try:
+        tts_timeout_seconds = float(os.getenv("RUNNINGHUB_TTS_TIMEOUT_SECONDS", "240") or "240")
+    except ValueError as exc:
+        raise PackagedPortsError("RUNNINGHUB_TTS_TIMEOUT_SECONDS must be numeric") from exc
     workflow_client = RunningHubWorkflowClient(
         api_key=os.getenv(config.runninghub_api_key_env, ""),
         base_url=config.runninghub_base_url,
+        tts_config=tts_config,
+        tts_timeout_seconds=tts_timeout_seconds,
     )
 
-    def runninghub_whisper_transcriber(audio_path: Path, *, language: str | None = None) -> Sequence[Mapping[str, Any]]:
+    def runninghub_speech_transcriber(video_path: Path, *, language: str | None = None) -> Sequence[Mapping[str, Any]]:
         # The configured workflow is the ASR authority.  ``language`` remains
         # a downstream source-language hint because RunningHub's generic
         # workflow API exposes only the user-configured audio node here.
         del language
-        result = workflow_client.run_whisper(
-            audio_path=audio_path,
+        result = workflow_client.run_speech_whisper(
+            video_path=video_path,
             workflow_id=workflow_id,
             input_node_id=input_node_id,
-            input_field=(os.getenv("RUNNINGHUB_WHISPER_INPUT_FIELD", "audio") or "audio").strip(),
+            input_field=(os.getenv("RUNNINGHUB_SPEECH_WHISPER_INPUT_FIELD", "video") or "video").strip(),
         )
         return [dict(item) for item in result["segments"] if isinstance(item, Mapping)]
 
     asr = WhisperAsrTranscriber(
-        transcriber=runninghub_whisper_transcriber,
+        transcriber=runninghub_speech_transcriber,
+        transcriber_media_kind="source_video",
         production=False,
         allow_model_download=False,
     )
@@ -559,18 +779,30 @@ def build_ports() -> dict[str, Any]:
         raise PackagedPortsError("packaged capability set does not match the canonical service contract")
 
     planner = EvidenceBoundGptPlanner(config)
+    target_classifier = target_evidence_classifier or _GptTargetEvidenceClassifier(gateway)
     direct_dynamics = CapabilityStagePort(
         "analyze_dynamics", capability_ports, production=False, profile_active=False
+    )
+    semantic_analyzer = (
+        app_semantic_analyzer
+        if app_semantic_analyzer is not None
+        else _GptAppSemanticAnalyzer(gateway)
     )
     stage_ports: dict[str, Any] = {
         "bind_inputs": BindInputsStage(uploaded_audio_classifier=uploaded_audio_classifier),
         "probe_source": ProbeSourceStage(),
+        "build_target_evidence": TargetEvidenceStage(
+            classifier=target_classifier,
+            app_semantic_analyzer=semantic_analyzer,
+        ),
         "route_regions": RouteRegionsStage(),
         "segment_plan": SegmentPlanStage(),
-        "compile_seedance20_prompt": SeedancePromptStage(
-            invocation_adapter=invocation_adapter,
-            uploaded_song_transcriber=runninghub_whisper_transcriber,
-        ),
+        "generate_asset_boards": AssetBoardStage(workflow_client=workflow_client),
+        "compile_h3_edit": H3PromptStage(),
+        "audit_h3_request": H3AuditStage(workflow_client=workflow_client),
+        "submit_h3_edit": H3SubmitStage(workflow_client=workflow_client),
+        "wait_h3_edit": H3WaitStage(workflow_client=workflow_client),
+        "compile_seedance20_prompt": SeedancePromptStage(invocation_adapter=invocation_adapter),
         "audit_seedance_request": SeedanceAuditStage(
             provider=provider,
             media_uploader=seedance_media_uploader,
@@ -580,10 +812,7 @@ def build_ports() -> dict[str, Any]:
             provider=provider,
             audit_secret=os.getenv(config.capability_secret_env, ""),
         ),
-        "wait_provider_video": WaitProviderVideoStage(
-            provider=provider,
-            song_lip_sync_client=workflow_client,
-        ),
+        "wait_provider_video": WaitProviderVideoStage(provider=provider),
     }
     stage_ports["analyze_dynamics"] = _DurableDynamicsEvidenceStage(direct_dynamics)
     stage_ports["parse_app_store_evidence"] = BundledAppStoreEvidenceParser()
@@ -591,6 +820,11 @@ def build_ports() -> dict[str, Any]:
         "resolve_ui_evidence", capability_ports, production=False, profile_active=False
     )
     stage_ports["build_script"] = BoundStagePort("build_script", _ScriptRevisionStage(planner))
+    stage_ports["evaluate_voiceover_fallback"] = VoiceoverTtsFallbackEvaluationStage(
+        qc_engine=qc,
+        speech_transcriber=runninghub_speech_transcriber,
+    )
+    stage_ports["replace_voiceover_audio"] = VoiceoverTtsStage(workflow_client=workflow_client)
     stage_ports["generate_storyboards"] = StoryboardStage(planner, image_client=workflow_client)
     stage_ports["compile_seedance20_prompt"] = BoundStagePort(
         "compile_seedance20_prompt", stage_ports["compile_seedance20_prompt"]
@@ -604,6 +838,11 @@ def build_ports() -> dict[str, Any]:
     stage_ports["run_qc"] = CapabilityStagePort(
         "run_qc", capability_ports, production=False, profile_active=False
     )
+    stage_ports["submit_provider_video_pass1"] = stage_ports["submit_provider_video"]
+    stage_ports["wait_provider_video_pass1"] = stage_ports["wait_provider_video"]
+    stage_ports["run_qc_pass1"] = stage_ports["run_qc"]
+    stage_ports["submit_provider_video_pass2"] = stage_ports["submit_provider_video"]
+    stage_ports["wait_provider_video_pass2"] = stage_ports["wait_provider_video"]
     if set(stage_ports) != set(EXECUTABLE_STAGES):
         raise PackagedPortsError("packaged stage set does not match the canonical service contract")
     return {

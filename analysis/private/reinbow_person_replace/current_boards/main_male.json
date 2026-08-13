@@ -1,0 +1,14 @@
+{
+  "role": "main_male",
+  "reference_path": "C:\\Users\\zhaocx04\\Downloads\\generation-c333f816-8e22-47d7-a52e-7398f9dd183d.png",
+  "result_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/9cc9e27c-daa0-4d1e-8b2c-d12d06571d5b.png",
+  "task_id": "2087057679125303297",
+  "receipt": {
+    "schema_version": "runninghub-image2-asset-board/v2",
+    "request_sha256": "18e253624df6568bf0d60c1e70cb31e09df461f1cb2e5e795a8ae3b7b3628540",
+    "response_sha256": "bc18c157744153dd989e6ae608246bceefd7956421da3996199cc151af87d923",
+    "task_id": "2087057679125303297",
+    "template": "model",
+    "template_version": "model-identity-v3"
+  }
+}

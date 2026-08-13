@@ -1,0 +1,186 @@
+{
+  "contract": "reference-video-dynamics",
+  "contract_version": 1,
+  "reference_duration_us": 15041667,
+  "source_width": 720,
+  "source_height": 1280,
+  "fps_num": 24,
+  "fps_den": 1,
+  "source_cut_count": 9,
+  "source_cuts": [
+    {
+      "cut": 1,
+      "start_us": 0,
+      "end_us": 1291667,
+      "subject_presence": "identifiable",
+      "content_roles": ["interviewee", "interviewer_partial"],
+      "scene": "night street interview under storefront lighting; woman is center-right and the male interviewer is partly visible at frame-left",
+      "action": "woman speaks and gestures while holding her phone; interviewer extends the microphone from frame-left",
+      "camera": "vertical handheld medium shot with mild sway",
+      "transition": "starts on the first decoded frame",
+      "end_state": "woman remains the primary visible subject and interviewer begins to enter farther into frame",
+      "certainty": "certain"
+    },
+    {
+      "cut": 2,
+      "start_us": 1291667,
+      "end_us": 3583333,
+      "subject_presence": "identifiable",
+      "content_roles": ["interviewee", "interviewer"],
+      "scene": "same nighttime street location with persistent SUGO logo at top-right and changing Chinese subtitles",
+      "action": "woman continues answering and gesturing; interviewer holds the microphone toward her and becomes increasingly visible",
+      "camera": "continuous handheld medium shot, slight reframing left",
+      "transition": "continuous-shot phase change",
+      "end_state": "both subjects are readable as separate continuing tracks",
+      "certainty": "certain"
+    },
+    {
+      "cut": 3,
+      "start_us": 3583333,
+      "end_us": 5833333,
+      "subject_presence": "identifiable",
+      "content_roles": ["interviewer", "interviewee"],
+      "scene": "same street-interview setup",
+      "action": "interviewer is fully in frame and speaks into the microphone; woman turns toward him and reacts",
+      "camera": "handheld two-shot with small lateral sway",
+      "transition": "continuous-shot blocking change",
+      "end_state": "man stands frame-left and woman frame-right in a stable two-shot",
+      "certainty": "certain"
+    },
+    {
+      "cut": 4,
+      "start_us": 5833333,
+      "end_us": 6666667,
+      "subject_presence": "identifiable",
+      "content_roles": ["interviewer", "interviewee"],
+      "scene": "same street-interview setup",
+      "action": "both lean and react during a brief conversational beat; microphone remains with the man",
+      "camera": "continuous handheld two-shot",
+      "transition": "short reaction phase",
+      "end_state": "woman turns back toward camera while man remains frame-left",
+      "certainty": "certain"
+    },
+    {
+      "cut": 5,
+      "start_us": 6666667,
+      "end_us": 8458333,
+      "subject_presence": "identifiable",
+      "content_roles": ["interviewee", "interviewer"],
+      "scene": "same street-interview setup",
+      "action": "woman speaks animatedly and gestures toward camera; interviewer listens and holds the microphone",
+      "camera": "handheld medium two-shot with the woman briefly emphasized",
+      "transition": "speaker-emphasis phase change",
+      "end_state": "both settle side by side",
+      "certainty": "certain"
+    },
+    {
+      "cut": 6,
+      "start_us": 8458333,
+      "end_us": 10416667,
+      "subject_presence": "identifiable",
+      "content_roles": ["interviewer", "interviewee"],
+      "scene": "same street-interview setup",
+      "action": "interviewer and woman alternate reactions; she keeps her phone and he keeps the microphone",
+      "camera": "continuous handheld medium two-shot",
+      "transition": "dialogue-turn phase change",
+      "end_state": "interviewer prepares to address the camera directly",
+      "certainty": "certain"
+    },
+    {
+      "cut": 7,
+      "start_us": 10416667,
+      "end_us": 12541667,
+      "subject_presence": "identifiable",
+      "content_roles": ["interviewer", "interviewee"],
+      "scene": "same street-interview setup with SUGO corner logo and Chinese subtitles",
+      "action": "interviewer explains to camera and points forward; woman watches from frame-right",
+      "camera": "handheld centered two-shot",
+      "transition": "direct-address phase change",
+      "end_state": "both face forward and the sales call-to-action begins",
+      "certainty": "certain"
+    },
+    {
+      "cut": 8,
+      "start_us": 12541667,
+      "end_us": 13000000,
+      "subject_presence": "identifiable",
+      "content_roles": ["interviewer", "interviewee", "call_to_action"],
+      "scene": "same street-interview setup immediately before the large download overlay",
+      "action": "interviewer continues pointing and speaking; woman remains beside him",
+      "camera": "continuous handheld two-shot",
+      "transition": "call-to-action lead-in",
+      "end_state": "large SUGO download overlay begins to appear over the lower center",
+      "certainty": "certain"
+    },
+    {
+      "cut": 9,
+      "start_us": 13000000,
+      "end_us": 15041667,
+      "subject_presence": "identifiable",
+      "content_roles": ["interviewer", "interviewee", "call_to_action", "app_overlay"],
+      "scene": "same live street footage with a large SUGO voice-chat-app title and app icon overlaid at lower center",
+      "action": "both people remain visible and active while the interviewer finishes the call-to-action",
+      "camera": "continuous handheld two-shot settling toward the end",
+      "transition": "overlay phase change, not a separate terminal card",
+      "end_state": "both subjects remain visible on the final decoded frame under the persistent CTA overlay",
+      "certainty": "certain"
+    }
+  ],
+  "source_events": [
+    {
+      "event": 1,
+      "kind": "dialogue",
+      "start_us": 0,
+      "end_us": 12541667,
+      "source_cut_start": 1,
+      "source_cut_end": 7,
+      "text": "Conversational street-interview dialogue between the woman and male interviewer; preserve the exact source recording and timing.",
+      "certainty": "certain"
+    },
+    {
+      "event": 2,
+      "kind": "dialogue",
+      "start_us": 12541667,
+      "end_us": 15041667,
+      "source_cut_start": 8,
+      "source_cut_end": 9,
+      "text": "Male call-to-action, including: 我現在教你如何更快速地破冰認識人；你只要下載 SUGO 語音聊天軟體。 Preserve exact source audio.",
+      "certainty": "uncertain"
+    },
+    {
+      "event": 3,
+      "kind": "subtitle",
+      "start_us": 0,
+      "end_us": 12541667,
+      "source_cut_start": 1,
+      "source_cut_end": 7,
+      "text": "Changing Traditional Chinese dialogue subtitles; preserve source pixels, wording, placement, and timing.",
+      "certainty": "certain"
+    },
+    {
+      "event": 4,
+      "kind": "subtitle",
+      "start_us": 12541667,
+      "end_us": 15041667,
+      "source_cut_start": 8,
+      "source_cut_end": 9,
+      "text": "CTA subtitles and large SUGO 語音聊天軟體 overlay with app icon; preserve source pixels and timing.",
+      "certainty": "certain"
+    },
+    {
+      "event": 5,
+      "kind": "ambience",
+      "start_us": 0,
+      "end_us": 15041667,
+      "source_cut_start": 1,
+      "source_cut_end": 9,
+      "text": "Night street ambience under the recorded dialogue.",
+      "certainty": "certain"
+    }
+  ],
+  "notes": [
+    "The source is one continuous handheld take; semantic cuts mark blocking, speaker, and overlay phase changes rather than hard edits.",
+    "The large SUGO overlay begins at about 13.0 seconds while both people remain active, so it is not a removable terminal-only tail.",
+    "The provider input must be bounded to 15,000,000 microseconds because the decoded picture exceeds the Seedance segment limit by approximately 41,667 microseconds; no retiming is authorized."
+  ]
+}

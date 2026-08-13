@@ -1,0 +1,14 @@
+{
+  "contract": "reference-video-probe",
+  "contract_version": 1,
+  "duration_us": 4566667,
+  "source_width": 480,
+  "source_height": 1040,
+  "fps_num": 30,
+  "fps_den": 1,
+  "video_codec": "hevc",
+  "audio_stream_present": true,
+  "audio_codec": "aac",
+  "audio_state": "digital_silence",
+  "source_sha256": "b520b8a32ced296ecb2b4e3066350e1ee75150a991073fbe7092063345d4ea3d"
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": "runninghub-image2-asset-board/v2",
+  "request_sha256": "a1be0876740bab33ea09345a8db37722f8ca5d3ad96c77faad1938473a1093eb",
+  "response_sha256": "6ab962d1ee5a1f11e5bbd848b73d90a28091b7f48f0bafdd429237b7a83b7836",
+  "task_id": "2087409326444470273",
+  "template": "model",
+  "template_version": "model-identity-v3"
+}

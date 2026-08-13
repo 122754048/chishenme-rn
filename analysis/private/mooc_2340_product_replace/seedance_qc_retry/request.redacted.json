@@ -1,0 +1,20 @@
+{
+  "prompt": "编辑视频： Multi-subject replacement based on @Video1. @Video1 supplies the full motion, camera, blocking, timing, occlusion, lighting, background, props, contacts, and audio. Object 1 (product): all closed laptop product tracks: the first left-to-right handoff, the second right-to-left handoff, and the final four-product stack becomes @Image1 with the target geometry, color, markings, and packaging from @Image1; preserve the source white background, locked camera, exact timing, hand tracks, entry and exit directions, contact, perspective, lighting, shadows, and occlusion. Each mapped Subject or Object remains the same continuing physical track through movement, occlusion, interaction, and crossing. All mapped tracks follow their source motion, contact, perspective, lighting, and timing. 00:00.000-00:05.000: 00:00.20-00:01.00 pass one pale-pink @Image1 phone left-to-right with realistic edge support; 00:01.40-00:02.40 pass one pale-pink @Image1 phone right-to-left; 00:02.80-00:04.20 place exactly four identical pale-pink @Image1 phones one by one into a thin stack, each unit retaining the same pale-pink body and diagonal dual cameras; 00:04.20-00:05.00 hold exactly four identical pale-pink phones; the complete upper typography area contains exactly three clean lines: 你好，iPhone 15。 / iPhone 15 / iPhone 15 · 粉色; the complete audio state is silence. All unlisted content remains unchanged and frame-aligned. preserve_unmodified_lip_sync",
+  "resolution": "720p",
+  "duration": "5",
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/190a021d5b63b9dfd1c09423b0c9f36cccffec945fc8a14fed75557960e8c097.png"
+  ],
+  "videoUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/1007e36cdeb2ea1d83657e3cb8166501fbc0e40661574deb151069240d0a9fe5.mp4"
+  ],
+  "audioUrls": [],
+  "generateAudio": true,
+  "ratio": "adaptive",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

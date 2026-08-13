@@ -1,0 +1,30 @@
+{
+  "schema_version": "reinbow-four-person-provider-only/v1",
+  "request_sha256": "d889b0e1c161bb9688d52bc9dd7e9af95caa387237ada11a963034a8852b38a7",
+  "provider_only": true,
+  "provider_create_calls": 1,
+  "primary_change_variable": "positive_state_binding_v3",
+  "image_tag_order": [
+    "@Image1",
+    "@Image2",
+    "@Image3",
+    "@Image4"
+  ],
+  "source_object_order": [
+    "SRC_MAN",
+    "SRC_BLONDE",
+    "SRC_DARK",
+    "SRC_ALIEN"
+  ],
+  "identity_image_sha256_order": [
+    "d071ff8dbcb1c7048bcfc898a6e4c40673f0cdfa7075ffebcab587920d766627",
+    "6aee4b6638f11414d3637ee3bbdef7fa6c5ed8d01dc04533a96eb9ffeaad0ddc",
+    "60a34560a2941cbd46ff7608c34bcd4b18d9f53dfc9c13ef3f74403beadafb40",
+    "fa3f6c252c8d37260790d1ad2b7ee94b4fab214587b2aa24cff8624d70f27066"
+  ],
+  "image_url_count": 4,
+  "video_url_count": 1,
+  "binding_board_uploaded": false,
+  "local_video_processing": false,
+  "prompt_chars": 1164
+}

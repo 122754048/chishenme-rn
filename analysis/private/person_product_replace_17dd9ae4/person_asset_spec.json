@@ -1,0 +1,11 @@
+{
+  "assets": [
+    {
+      "asset_tag": "TARGET_WOMAN",
+      "source_path": "C:/Users/zhaocx04/Downloads/033119203223580624 (1).webp",
+      "crop": [0.0, 0.0844594595, 1.0, 0.8141891892],
+      "vertical_center": 0.5,
+      "asset_composition": "upper_body_square"
+    }
+  ]
+}

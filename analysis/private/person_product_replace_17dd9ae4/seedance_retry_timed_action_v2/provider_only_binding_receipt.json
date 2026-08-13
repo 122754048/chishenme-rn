@@ -1,0 +1,15 @@
+{
+  "contract": "provider-only-multi-object-binding/v1",
+  "compiler_version": "provider-only-multi-object-binding/v1",
+  "binding_mode": "provider_only_multi_object_binding",
+  "binding_contract_sha256": "4946e12c608b4551e22ecd277afef3bc68dca6fac1bdfb6cb6c7da5994272ba4",
+  "prompt_sha256": "a291a0500d1828ce8559b27ab7f822ec60e2e211f4095bb658215d9bf6090d19",
+  "image_tags": [
+    "@Image1",
+    "@Image2"
+  ],
+  "source_object_ids": [
+    "SRC_PRESENTER",
+    "SRC_GREEN_CONFECTION_FAMILY"
+  ]
+}

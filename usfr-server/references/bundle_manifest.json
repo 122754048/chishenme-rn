@@ -1,9 +1,13 @@
 {
-  "snapshot_date": "2026-07-21",
+  "snapshot_date": "2026-08-11",
   "runtime_files": [
     {
       "path": "scripts/bind_input_slots.py",
-      "role": "fixed seven-slot intake binder and admission gate"
+      "role": "video-edit-v2 typed input binder and immutable admission evidence"
+    },
+    {
+      "path": "scripts/multi_track_face_completion.py",
+      "role": "local-development face-only multi-track completion with immutable source-object binding and full audio packet copy"
     },
     {
       "path": "scripts/high_fidelity_profile.py",
@@ -19,11 +23,11 @@
     },
     {
       "path": "scripts/seedance_prescript.py",
-      "role": "non-provider Seedance-20 Invocation A executability and fidelity-budget sidecar"
+      "role": "legacy compatibility / quarantined prescript sidecar; not video-edit-v2 authority"
     },
     {
       "path": "scripts/seedance_prompt_compiler.py",
-      "role": "Invocation B Seedance-20 prompt compiler, exact-line parity, and route-leakage validator"
+      "role": "active video-edit-v2 indexed multi-object binding and deterministic compact prompt compiler with product/App operational-action retention; legacy entrypoints remain compatibility-only"
     },
     {
       "path": "scripts/skill_router.py",
@@ -43,7 +47,7 @@
     },
     {
       "path": "scripts/production_timing.py",
-      "role": "durable active-time, provider-time, approval-wait, and Invocation A timing ledger"
+      "role": "durable active-time, provider-time, and approval-wait timing ledger"
     },
     {
       "path": "scripts/run_high_fidelity_shadow.py",
@@ -63,43 +67,59 @@
     },
     {
       "path": "references/fixed-input-slot-contract.md",
-      "role": "fixed input, default route, and source-preserve contract"
+      "role": "video-edit-v2 typed input, route authority, and source-preserve contract"
+    },
+    {
+      "path": "references/video-edit-v2-contract.md",
+      "role": "video-edit-v2 single approval, hidden Cut-plan, target-asset, provider, and QC authority"
+    },
+    {
+      "path": "references/provider-only-multi-subject-binding.md",
+      "role": "provider-only one-to-nine multi-object image-index, positive prompt, source-track, type-scope, product/App operational-action, direct-output, and object-QC contract"
+    },
+    {
+      "path": "references/dependency-map.md",
+      "role": "video-edit-v2 active authority-chain map"
+    },
+    {
+      "path": "references/local-multi-track-identity-completion.md",
+      "role": "face-only partial-identity recovery gate that preserves generic object routes and the existing stage graph"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/references/timeline-slice-contract.md",
-      "role": "App/UI region routing, opaque media assembly, and terminal tail duration contract"
+      "role": "legacy compatibility / quarantined historical App/UI route reference"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/references/fukeGem.md",
-      "role": "universal Route 2 reverse-storyboard contract and target migration rules"
+      "role": "legacy compatibility / quarantined reverse-storyboard reference"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/scripts/config.py",
-      "role": "worker-injected provider configuration loader"
+      "role": "legacy compatibility / quarantined worker configuration loader"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/scripts/concat_videos.py",
-      "role": "deterministic FFmpeg concatenation adapter"
+      "role": "legacy compatibility / quarantined deterministic FFmpeg concatenation adapter"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/scripts/media_quality.py",
-      "role": "media stream probe and quality validation dependency"
+      "role": "legacy compatibility / quarantined media probe dependency"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/scripts/segment_plan.py",
-      "role": "generated-region duration and segment boundary planner"
+      "role": "legacy compatibility / quarantined segment planner; video-edit-v2 uses server plan_segments"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/scripts/runninghub_image2.py",
-      "role": "RunningHub storyboard image adapter"
+      "role": "legacy compatibility / quarantined RunningHub storyboard image adapter"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/scripts/runninghub_seedance_submit.py",
-      "role": "RunningHub Standard Model Seedance video adapter"
+      "role": "legacy compatibility / quarantined Seedance video adapter"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/scripts/timeline_splice.py",
-      "role": "opaque/source/generated timeline splice, tail-duration authority, and final-output-bound transition receipts"
+      "role": "legacy compatibility / quarantined timeline splice adapter"
     },
     {
       "path": "bundled-skills/analyze-reference-video-dynamics/scripts/probe_video.py",
@@ -199,7 +219,7 @@
     },
     {
       "path": "server/seedance_invocations.py",
-      "role": "server-owned dual-stage Seedance-20 Invocation A/B adapter"
+      "role": "legacy compatibility / quarantined invocation adapter; not video-edit-v2 authority"
     },
     {
       "path": "server/bundle_resolver.py",
@@ -210,8 +230,12 @@
       "role": "provider and stage adapter protocols"
     },
     {
+      "path": "server/local_identity_completion.py",
+      "role": "fail-closed QC decision contract for one local multi-track face completion with zero new provider calls"
+    },
+    {
       "path": "server/production_ports.py",
-      "role": "strict deployment configuration plus GPT and RunningHub low-level production boundaries"
+      "role": "strict deployment configuration plus GPT product/App action-planning and RunningHub low-level production boundaries"
     },
     {
       "path": "server/runninghub_standard_contract.py",
@@ -223,15 +247,15 @@
     },
     {
       "path": "server/high_fidelity_ports.py",
-      "role": "existing-stage Invocation A/B adapter boundary without new job-state stages"
+      "role": "legacy compatibility / quarantined high-fidelity port adapter"
     },
     {
       "path": "server/high_fidelity_envelope.py",
-      "role": "canonical high-fidelity analysis envelope and immutable Invocation A/B projection digest bridge"
+      "role": "legacy compatibility / quarantined high-fidelity envelope"
     },
     {
       "path": "server/high_fidelity_projection.py",
-      "role": "validated evidence-to-contract projection for build_script and Invocation A without a new stage"
+      "role": "legacy compatibility / quarantined high-fidelity projection"
     },
     {
       "path": "server/telemetry.py",
@@ -266,20 +290,12 @@
       "role": "immutable source-audio performance, lyric/beat, timeline, and splice-policy contracts"
     },
     {
-      "path": "server/runninghub_final_lip_sync.py",
-      "role": "canonical pinned RunningHub request builder for final localized spoken lip sync"
+      "path": "server/h3_edit_contract.py",
+      "role": "single-model H3 ownership, compact prompt, language and media-index contract"
     },
     {
-      "path": "server/runninghub_song_lip_sync.py",
-      "role": "canonical pinned RunningHub AI App request builder for uploaded-song lip sync"
-    },
-    {
-      "path": "server/storyboard_layout_contract.py",
-      "role": "deterministic five-region director-board renderer, layout validator, and approved-board-bound Seedance execution carrier receipt"
-    },
-    {
-      "path": "server/visible_text_contract.py",
-      "role": "immutable visible-text lock validation and carrier-aware generation, overlay, and UI routing"
+      "path": "server/runninghub_h3.py",
+      "role": "one-attempt RunningHub H3 create, poll and result boundary"
     },
     {
       "path": "server/singing_audio_router.py",
@@ -287,11 +303,15 @@
     },
     {
       "path": "server/uploaded_audio_contract.py",
-      "role": "immutable song versus non-song upload classification and timestamped lyric contract"
+      "role": "immutable song versus non-song upload classification and exact ordered lyric contract"
     },
     {
       "path": "server/audio_route_guard.py",
       "role": "fail-closed source-speech versus opaque UI/tail routing guard with explicit bundled-mixer deferred receipt admission"
+    },
+    {
+      "path": "server/audio_lane_router.py",
+      "role": "video-edit-v2 audio lane identity for spoken, song lip-sync, and music-only routing"
     },
     {
       "path": "server/vision_backends.py",
@@ -319,11 +339,11 @@
     },
     {
       "path": "server/review_models.py",
-      "role": "script and storyboard revision records"
+      "role": "script revision records; storyboard fields retained only for legacy history"
     },
     {
       "path": "server/review_workflow.py",
-      "role": "two-gate revision validation and downstream invalidation rules"
+      "role": "video-edit-v2 single-script-gate validation and legacy revision quarantine"
     },
     {
       "path": "server/recovery_models.py",
@@ -351,11 +371,11 @@
     },
     {
       "path": "server/ui_sidecar_runtime.py",
-      "role": "CPU-only generated-UI Sidecar lazy process lifecycle and readiness boundary"
+      "role": "legacy compatibility / quarantined UI Sidecar lifecycle"
     },
     {
       "path": "server/ui_sidecar_retention.py",
-      "role": "final-video-bound 24-hour cleanup scheduling for local generated-UI Sidecar artifacts"
+      "role": "legacy compatibility / quarantined UI Sidecar retention"
     },
     {
       "path": "server/timeline_renderer.py",
@@ -399,11 +419,11 @@
     },
     {
       "path": "references/server-api-contract.md",
-      "role": "versioned HTTP command/query contract"
+      "role": "video-edit-v2 typed Jobs API, single script approval, and legacy endpoint quarantine"
     },
     {
       "path": "references/run-state-machine.md",
-      "role": "durable state and approval contract"
+      "role": "video-edit-v2 single-approval state, hidden plan_segments authority, and legacy state quarantine"
     },
     {
       "path": "references/idempotency-and-provider-reconciliation.md",
@@ -467,7 +487,7 @@
     },
     {
       "path": "schemas/storyboard_revision.schema.json",
-      "role": "machine-readable storyboard revision schema"
+      "role": "legacy compatibility / quarantined storyboard revision schema"
     },
     {
       "path": "schemas/recovery_checkpoint.schema.json",
@@ -511,15 +531,15 @@
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/references/seedance-20-prescript-contract.md",
-      "role": "Invocation A candidate-region and dependency snapshot contract"
+      "role": "legacy compatibility / quarantined prescript contract"
     },
     {
       "path": "bundled-skills/seedance-storyboard-replication/references/hybrid-compositor-contract.md",
-      "role": "layer compositor backend, opaque splice, and deployment contract"
+      "role": "legacy compatibility / quarantined layer compositor and splice contract"
     },
     {
       "path": "references/high-fidelity-hybrid-v1.md",
-      "role": "internal profile snapshot, dependency pinning, and legacy bypass contract"
+      "role": "legacy compatibility / quarantined high-fidelity profile contract"
     },
     {
       "path": "references/high-fidelity-evidence-matrix.md",
@@ -527,7 +547,7 @@
     },
     {
       "path": "references/seedance-20-prescript-contract.md",
-      "role": "canonical Invocation A sidecar and Route 1/Route 2 authority contract"
+      "role": "legacy compatibility / quarantined prescript authority contract"
     },
     {
       "path": "references/skill-routing-contract.md",
@@ -568,12 +588,17 @@
     {
       "name": "universal-source-fidelity-contract",
       "path": "references/universal-source-fidelity-contract.md",
-      "role": "authoritative source truth, fidelity levels, evidence, routing, and QC contract"
+      "role": "video-edit-v2 shared source truth, single approval, routing, and QC authority"
     },
     {
       "name": "seedance-20-integrity-gate",
       "path": "bundled-skills/seedance-storyboard-replication/references/seedance-20-integrity-gate.md",
-      "role": "post-storyboard prompt compilation, parity audit, and internal request authorization"
+      "role": "legacy compatibility / quarantined post-storyboard integrity reference"
+    },
+    {
+      "name": "video-edit-v2-contract",
+      "path": "references/video-edit-v2-contract.md",
+      "role": "canonical video-edit-v2 execution authority"
     }
   ],
   "modules": [
@@ -591,7 +616,8 @@
     },
     {
       "name": "seedance-storyboard-replication",
-      "bundled_path": "bundled-skills/seedance-storyboard-replication"
+      "bundled_path": "bundled-skills/seedance-storyboard-replication",
+      "role": "legacy compatibility / quarantined storyboard package; not a video-edit-v2 owner or fallback"
     }
   ]
 }

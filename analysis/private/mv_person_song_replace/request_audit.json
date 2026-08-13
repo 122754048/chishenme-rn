@@ -1,0 +1,46 @@
+{
+  "schema_version": "usfr-mv-person-song-request-audit/v1",
+  "request_sha256": "4dfd549e7456451aa2acfce80057b53326b14534b5526a93ae0dd1fc8bbe2a43",
+  "prompt_sha256": "9399ddc39ad18149f405f7d9f01741f0b2432d5e0b752ac2e24521e428ca44dd",
+  "image_tag_order": [
+    "@Image1"
+  ],
+  "source_object_order": [
+    "SRC_PERFORMER"
+  ],
+  "person_asset_sha256": "ecb9af7d5cbbb9c20062abf89dacf2c99a1ec792c1489c0ec18c37f60bf028eb",
+  "source_edit_sha256": "a5f21aee1f0740accd061d9742433ccc51f4380360b013f07d46df8cc281c6ef",
+  "song_window_sha256": "e13db1878c95cc430682055f4fc2653c2404c67a033631caa7e8350899f88505",
+  "song_windows": [
+    {
+      "video_start": 0,
+      "video_end": 4,
+      "song_start": "01:30",
+      "song_end": "01:34"
+    },
+    {
+      "video_start": 10,
+      "video_end": 15,
+      "song_start": "01:40",
+      "song_end": "01:45"
+    }
+  ],
+  "provider_only_binding_receipt": {
+    "contract": "provider-only-multi-object-binding/v1",
+    "compiler_version": "provider-only-multi-object-binding/v1",
+    "binding_mode": "provider_only_multi_object_binding",
+    "binding_contract_sha256": "a3781d86b3b1e0753c75168317e2689cbac9d1a10ddbdf3960b7f1b78a644048",
+    "prompt_sha256": "e991b72b2c5f7ca77e26dce6606ff6b721408699d8f1a92bd5b8e69107526c70",
+    "image_tags": [
+      "@Image1"
+    ],
+    "source_object_ids": [
+      "SRC_PERFORMER"
+    ]
+  },
+  "preserve_visible_text": true,
+  "create_calls_allowed": {
+    "seedance": 1,
+    "song_lip_sync_segments": 2
+  }
+}

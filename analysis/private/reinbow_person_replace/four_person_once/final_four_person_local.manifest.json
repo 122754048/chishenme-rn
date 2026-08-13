@@ -1,0 +1,22 @@
+{
+  "schema_version": "reinbow-local-multi-face-completion/v1",
+  "input_video": "analysis\\private\\reinbow_person_replace\\four_person_once\\result_e9182b194e8471c14d34e35cc775ba268ffbce27c58f58457f2344bafb65c254.mp4",
+  "output_video": "analysis\\private\\reinbow_person_replace\\four_person_once\\final_four_person_local.mp4",
+  "fps": 24.0,
+  "width": 720,
+  "height": 1280,
+  "frames_processed": 265,
+  "swap_counts": {
+    "SRC_BLONDE": 218,
+    "SRC_DARK": 78
+  },
+  "unassigned_frames": {
+    "SRC_BLONDE": 47,
+    "SRC_MAN": 55,
+    "SRC_DARK": 187
+  },
+  "protected_tracks": [
+    "SRC_MAN",
+    "SRC_ALIEN"
+  ]
+}

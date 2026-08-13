@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, Callable
 
 from .analysis_scope import build_analysis_scope
 from .errors import ReplicationError
@@ -28,6 +29,7 @@ _SEMANTIC_STAGE_IDS = {
     item["name"]: int(item["id"])
     for item in SEMANTIC_STAGE_DEFINITIONS
 }
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _OPERATIONAL_STAGE_SEMANTICS: dict[str, tuple[str, ...]] = {
     "bind_inputs": ("intake_bind",),
     "probe_source": ("intake_bind",),
@@ -47,6 +49,7 @@ _OPERATIONAL_STAGE_SEMANTICS: dict[str, tuple[str, ...]] = {
     "submit_provider_video": ("provider",),
     "wait_provider_video": ("provider",),
     "splice_timeline": ("assembly",),
+    "evaluate_voiceover_fallback": ("qc_delivery",),
     "run_qc": ("qc_delivery",),
 }
 _INTERNAL_STEP_SEMANTICS: dict[str, str] = {
@@ -763,13 +766,622 @@ def stage_dedupe_key(
     return hashlib.sha256(value).hexdigest()
 
 
+def _v2_edit_stage(
+    name: str,
+    *,
+    depends_on: Sequence[str] = (),
+    kind: str = "deterministic",
+    provider: bool = False,
+) -> dict[str, Any]:
+    runtime_stage = {
+        "bind_inputs": "bind_inputs",
+        "analyze_source": "analyze_dynamics",
+        "build_target_evidence": "build_target_evidence",
+        "build_edit_script": "build_script",
+        "await_script_approval": "await_script_approval",
+        "generate_asset_boards": "generate_asset_boards",
+        "plan_segments": "segment_plan",
+        "compile_edit_prompt": "compile_seedance20_prompt",
+        "audit_edit_request": "audit_seedance_request",
+        "submit_provider_edit": "submit_provider_video",
+        "wait_provider_edit": "wait_provider_video",
+        "assemble_edit_timeline": "splice_timeline",
+        "run_edit_qc": "run_qc",
+    }.get(name, name)
+    return {
+        "name": name,
+        "kind": kind,
+        "provider": provider,
+        "depends_on": list(depends_on),
+        "runtime_stage": runtime_stage,
+        "edit_contract": "video-edit-v2",
+        "status": "ready",
+        "contract_version": "video-edit-v2",
+    }
+
+
+def _fingerprint_projection(value: Any) -> Any:
+    """Make stage-plan inputs deterministic without serializing live Path objects."""
+
+    if isinstance(value, Mapping):
+        return {
+            str(key): _fingerprint_projection(child)
+            for key, child in sorted(value.items(), key=lambda item: str(item[0]))
+        }
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return [_fingerprint_projection(child) for child in value]
+    if isinstance(value, (bytes, bytearray)):
+        return bytes(value).hex()
+    if hasattr(value, "__fspath__"):
+        return str(value)
+    return value
+
+
+def _v2_stage_input_fingerprint(
+    stage: Mapping[str, Any], dependency_outputs: Sequence[str],
+) -> str:
+    return _canonical_sha256(
+        {
+            "stage": str(stage.get("name") or ""),
+            "static_inputs": _fingerprint_projection(stage.get("static_inputs") or {}),
+            "dependency_outputs": list(dependency_outputs),
+            "contract_version": str(stage.get("contract_version") or ""),
+        }
+    )
+
+
+def _v2_expected_output_fingerprint(stage_name: str) -> str:
+    """Planning token used only to calculate an expected input fingerprint."""
+
+    return hashlib.sha256(str(stage_name).encode("utf-8")).hexdigest()
+
+
+def _v2_approval_state(snapshot: Any) -> dict[str, Any]:
+    """Project only server-owned approval identity into the runtime plan."""
+
+    return {
+        "script_revision": getattr(snapshot, "current_script_revision", None),
+        "script_sha256": getattr(snapshot, "approved_script_sha256", None),
+    }
+
+
+def _v2_approval_output_fingerprint(
+    dependency: str, approval_state: Mapping[str, Any] | None,
+) -> str | None:
+    state = approval_state or {}
+    if dependency == "await_script_approval":
+        kind = "script"
+        revision = state.get("script_revision")
+        sha256 = state.get("script_sha256")
+    else:
+        return None
+    if isinstance(revision, bool) or not isinstance(revision, int) or revision < 1:
+        return None
+    if not isinstance(sha256, str) or _SHA256_RE.fullmatch(sha256.lower()) is None:
+        return None
+    return _canonical_sha256({"kind": kind, "revision": revision, "sha256": sha256.lower()})
+
+
+def _is_v2_deterministic_assembly_only(manifest: Mapping[str, Any]) -> bool:
+    """Identify v2 edits that can stay entirely in deterministic assembly."""
+
+    slots = manifest.get("slots")
+    if not isinstance(slots, Mapping):
+        return False
+    present_slots = {
+        str(slot_id)
+        for slot_id, value in slots.items()
+        if _slot_present(value)
+    }
+    allowed_slots = {"source_video", "ui_operation_video", "tail_video"}
+    if (
+        "source_video" not in present_slots
+        or not present_slots.intersection({"ui_operation_video", "tail_video"})
+        or not present_slots.issubset(allowed_slots)
+    ):
+        return False
+
+    routes = manifest.get("routes")
+    if not isinstance(routes, Mapping):
+        return False
+    expected_routes = {
+        "product": "preserve_source_product",
+        "character": "preserve_source_character",
+        "ui": (
+            "splice_ui_operation_video"
+            if "ui_operation_video" in present_slots
+            else "preserve_source_ui"
+        ),
+        "tail": (
+            "splice_tail_video"
+            if "tail_video" in present_slots
+            else "remove_source_tail_card"
+        ),
+        "background_music": "none",
+    }
+    if set(routes) != set(expected_routes) or any(
+        routes.get(key) != value for key, value in expected_routes.items()
+    ):
+        return False
+
+    extensions = manifest.get("extensions")
+    if not isinstance(extensions, Mapping):
+        return False
+    if set(extensions) - {"edit_contract", "edit_mode"}:
+        return False
+    if extensions.get("edit_contract") != "video-edit-v2":
+        return False
+    if "edit_mode" in extensions and extensions.get("edit_mode") != "v2":
+        return False
+
+    if manifest.get("output_language") not in (None, ""):
+        return False
+    admission = manifest.get("admission")
+    if isinstance(admission, Mapping) and admission.get("language_only") is True:
+        return False
+
+    # These fields are not part of the fixed-slot manifest produced by
+    # bind_input_slots, but rejecting a populated one prevents a semantic edit
+    # from silently taking the deterministic lane.
+    semantic_fields = {
+        "dialogue", "monologue", "lyrics", "language", "text", "text_layers",
+        "audio_plan", "background_music", "change_rows", "target_changes",
+        "semantic_changes", "script_changes", "scene_changes", "camera_changes",
+        "action_changes", "voiceover", "music",
+    }
+    if any(_slot_present(manifest.get(key)) for key in semantic_fields):
+        return False
+    return True
+
+
+def _is_v2_song_lip_sync(manifest: Mapping[str, Any]) -> bool:
+    extensions = manifest.get("extensions")
+    music = extensions.get("background_music") if isinstance(extensions, Mapping) else None
+    audio_plan = manifest.get("audio_plan")
+    if not isinstance(music, Mapping) or not isinstance(audio_plan, Mapping):
+        return False
+    kind = str(music.get("kind") or "").strip().casefold()
+    route = str(audio_plan.get("mv_lip_sync_route") or "").strip().casefold()
+    return kind in {"song", "mv"} and route == "song_lipsync"
+
+
+def _is_v2_h3_edit(manifest: Mapping[str, Any]) -> bool:
+    extensions = manifest.get("extensions")
+    change_language = bool(
+        isinstance(extensions, Mapping) and extensions.get("change_language") is True
+    )
+    admission = manifest.get("admission")
+    language_only = bool(
+        isinstance(admission, Mapping) and admission.get("language_only") is True
+    )
+    return change_language or language_only or _is_v2_song_lip_sync(manifest)
+
+
+def _finalize_v2_edit_stage_plan(
+    stages: list[dict[str, Any]],
+    *,
+    manifest: Mapping[str, Any],
+    routes: Mapping[str, Any],
+    workflow_version: str,
+    approval_state: Mapping[str, Any] | None,
+) -> list[dict[str, Any]]:
+    for stage in stages:
+        stage["workflow_version"] = workflow_version
+        stage["static_inputs"] = {
+            "manifest_sha256": _canonical_sha256(_fingerprint_projection(manifest)),
+            "workflow_version": workflow_version,
+            "route": stage.get("ui_route"),
+            "tail_route": stage.get("tail_route"),
+        }
+        if routes.get("ui") == "splice_ui_operation_video":
+            stage["ui_route"] = "ffmpeg_deterministic_splice"
+        elif routes.get("ui") == "app_asset_seedance_edit":
+            stage["ui_route"] = "app_asset_board_seedance_edit"
+        else:
+            stage["ui_route"] = "preserve_source_ui"
+        stage["tail_route"] = routes.get("tail", "remove_source_tail_card")
+        stage["static_inputs"]["ui_route"] = stage["ui_route"]
+        stage["static_inputs"]["tail_route"] = stage["tail_route"]
+        if stage.get("name") == "assemble_edit_timeline" and _is_v2_song_lip_sync(manifest):
+            stage["input_contract"] = "song-lip-sync-segment-manifest/v1"
+            stage["static_inputs"]["song_lip_sync_input_contract"] = "song-lip-sync-segment-manifest/v1"
+        if "await_script_approval" in (stage.get("depends_on") or ()):
+            stage["static_inputs"]["approved_script"] = {
+                "revision": (approval_state or {}).get("script_revision"),
+                "sha256": (approval_state or {}).get("script_sha256"),
+            }
+    by_name = {str(stage["name"]): stage for stage in stages}
+    for stage in stages:
+        expected_dependency_outputs = [
+            _v2_expected_output_fingerprint(str(by_name[dependency]["name"]))
+            for dependency in stage.get("depends_on") or ()
+        ]
+        stage["expected_input_fingerprint"] = _v2_stage_input_fingerprint(
+            stage, expected_dependency_outputs
+        )
+        stage["output_fingerprint"] = None
+    return stages
+
+
+def v2_stage_checkpoint_is_current(
+    plan: Sequence[Mapping[str, Any]],
+    stage_name: str,
+    *,
+    checkpoint_lookup: Callable[[str], Any],
+    approval_state: Mapping[str, Any] | None = None,
+    _seen: frozenset[str] = frozenset(),
+) -> bool:
+    """Validate one runtime checkpoint against actual upstream outputs.
+
+    Approval entries are semantic dependencies, not phantom queue stages.  Their
+    output fingerprint is derived from the server-owned approved SHA/revision;
+    all executable dependencies must have a successful, non-stale checkpoint.
+    """
+
+    by_name = {str(item.get("name") or ""): item for item in plan}
+    stage = by_name.get(stage_name)
+    if stage is None:
+        return False
+    if stage_name == "await_script_approval":
+        return _v2_approval_output_fingerprint(stage_name, approval_state) is not None
+    if stage_name in _seen:
+        return False
+    runtime_stage = str(stage.get("runtime_stage") or stage_name)
+    checkpoint = checkpoint_lookup(runtime_stage)
+    if checkpoint is None or checkpoint.status != "SUCCEEDED":
+        return False
+    if checkpoint.contract_version != stage.get("contract_version"):
+        return False
+    output = str(checkpoint.output_fingerprint or "").lower()
+    input_fingerprint = str(checkpoint.input_fingerprint or "").lower()
+    if _SHA256_RE.fullmatch(output) is None or _SHA256_RE.fullmatch(input_fingerprint) is None:
+        return False
+    dependency_outputs: list[str] = []
+    seen = _seen | {stage_name}
+    for dependency in stage.get("depends_on") or ():
+        dependency_name = str(dependency)
+        approval_output = _v2_approval_output_fingerprint(dependency_name, approval_state)
+        if approval_output is not None:
+            dependency_outputs.append(approval_output)
+            continue
+        if not v2_stage_checkpoint_is_current(
+            plan,
+            dependency_name,
+            checkpoint_lookup=checkpoint_lookup,
+            approval_state=approval_state,
+            _seen=seen,
+        ):
+            return False
+        dependency_stage = by_name[dependency_name]
+        dependency_checkpoint = checkpoint_lookup(
+            str(dependency_stage.get("runtime_stage") or dependency_name)
+        )
+        dependency_output = str(dependency_checkpoint.output_fingerprint or "").lower()
+        dependency_outputs.append(dependency_output)
+    expected = _v2_stage_input_fingerprint(stage, dependency_outputs)
+    return input_fingerprint == expected
+
+
+def v2_stage_expected_input_fingerprint(
+    plan: Sequence[Mapping[str, Any]],
+    stage_name: str,
+    *,
+    checkpoint_lookup: Callable[[str], Any],
+    approval_state: Mapping[str, Any] | None = None,
+    _seen: frozenset[str] = frozenset(),
+) -> str | None:
+    """Return the current input identity for a stage before it is claimed."""
+
+    by_name = {str(item.get("name") or ""): item for item in plan}
+    stage = by_name.get(stage_name)
+    if stage is None or stage_name == "await_script_approval":
+        return None
+    if stage_name in _seen:
+        return None
+    dependency_outputs: list[str] = []
+    seen = _seen | {stage_name}
+    for dependency in stage.get("depends_on") or ():
+        dependency_name = str(dependency)
+        approval_output = _v2_approval_output_fingerprint(dependency_name, approval_state)
+        if approval_output is not None:
+            dependency_outputs.append(approval_output)
+            continue
+        dependency_input = v2_stage_expected_input_fingerprint(
+            plan,
+            dependency_name,
+            checkpoint_lookup=checkpoint_lookup,
+            approval_state=approval_state,
+            _seen=seen,
+        )
+        if dependency_input is None:
+            return None
+        dependency_stage = by_name[dependency_name]
+        dependency_runtime = str(dependency_stage.get("runtime_stage") or dependency_name)
+        dependency_checkpoint = checkpoint_lookup(dependency_runtime)
+        if (
+            dependency_checkpoint is None
+            or dependency_checkpoint.status != "SUCCEEDED"
+            or dependency_checkpoint.contract_version != dependency_stage.get("contract_version")
+            or str(dependency_checkpoint.input_fingerprint or "").lower() != dependency_input
+        ):
+            return None
+        dependency_output = str(dependency_checkpoint.output_fingerprint or "").lower()
+        if _SHA256_RE.fullmatch(dependency_output) is None:
+            return None
+        dependency_outputs.append(dependency_output)
+    return _v2_stage_input_fingerprint(stage, dependency_outputs)
+
+
+def _build_v2_edit_stage_plan(
+    manifest: Mapping[str, Any],
+    *,
+    workflow_version: str,
+    approval_state: Mapping[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    routes = dict(manifest.get("routes") or {})
+    slots = dict(manifest.get("slots") or {})
+    stages = [
+        _v2_edit_stage("bind_inputs"),
+        _v2_edit_stage("probe_source", depends_on=("bind_inputs",), kind="deterministic"),
+        _v2_edit_stage("analyze_source", depends_on=("probe_source",), kind="analysis"),
+    ]
+    if _is_v2_deterministic_assembly_only(manifest):
+        stages.extend(
+            [
+                _v2_edit_stage(
+                    "build_edit_script",
+                    depends_on=("analyze_source",),
+                    kind="contract",
+                ),
+                _v2_edit_stage(
+                    "await_script_approval",
+                    depends_on=("build_edit_script",),
+                    kind="approval",
+                ),
+                _v2_edit_stage(
+                    "generate_asset_boards",
+                    depends_on=("await_script_approval",),
+                    kind="contract",
+                ),
+                _v2_edit_stage(
+                    "plan_segments",
+                    depends_on=(
+                        "analyze_source",
+                        "await_script_approval",
+                        "generate_asset_boards",
+                    ),
+                    kind="contract",
+                ),
+                _v2_edit_stage(
+                    "assemble_edit_timeline",
+                    depends_on=("plan_segments", "bind_inputs"),
+                    kind="assembly",
+                ),
+                _v2_edit_stage(
+                    "run_edit_qc",
+                    depends_on=("assemble_edit_timeline",),
+                    kind="qc",
+                ),
+            ]
+        )
+        return _finalize_v2_edit_stage_plan(
+            stages,
+            manifest=manifest,
+            routes=routes,
+            workflow_version=workflow_version,
+            approval_state=approval_state,
+        )
+    target_inputs = any(
+        _slot_present(slots.get(name))
+        for name in ("new_model_image", "new_product_image", "ui_screenshot", "app_store_url")
+    )
+    parser_dependency: str | None = None
+    if _slot_present(slots.get("app_store_url")):
+        stages.append(
+            _v2_edit_stage(
+                "parse_app_store_evidence",
+                depends_on=("analyze_source",),
+                kind="evidence",
+                provider=True,
+            )
+        )
+        parser_dependency = "parse_app_store_evidence"
+    script_dependency = "analyze_source"
+    if target_inputs:
+        target_dependencies = ["analyze_source"]
+        if parser_dependency is not None:
+            target_dependencies.append(parser_dependency)
+        stages.append(
+            _v2_edit_stage(
+                "build_target_evidence",
+                depends_on=tuple(target_dependencies),
+                kind="evidence",
+            )
+        )
+        script_dependency = "build_target_evidence"
+    stages.extend(
+        [
+            _v2_edit_stage("build_edit_script", depends_on=(script_dependency,), kind="contract"),
+            _v2_edit_stage("await_script_approval", depends_on=("build_edit_script",), kind="approval"),
+        ]
+    )
+    asset_inputs = any(
+        _slot_present(slots.get(name))
+        for name in ("new_model_image", "new_product_image", "ui_screenshot", "app_store_url")
+    )
+    stages.append(
+        _v2_edit_stage(
+            "generate_asset_boards",
+            depends_on=("await_script_approval",),
+            kind="image2" if asset_inputs else "contract",
+            provider=asset_inputs,
+        )
+    )
+    board_dependency = "generate_asset_boards"
+    compile_dependencies = tuple(
+        dict.fromkeys(
+            (
+                "build_edit_script",
+                board_dependency,
+                "plan_segments",
+                "await_script_approval",
+            )
+        )
+    )
+    stages.append(
+        _v2_edit_stage("plan_segments", depends_on=("analyze_source", "await_script_approval", board_dependency), kind="contract")
+    )
+    if _is_v2_h3_edit(manifest):
+        stages.extend([
+            _v2_edit_stage("compile_h3_edit", depends_on=compile_dependencies, kind="audit"),
+            _v2_edit_stage("audit_h3_request", depends_on=("compile_h3_edit",), kind="audit"),
+            _v2_edit_stage("submit_h3_edit", depends_on=("audit_h3_request",), kind="provider_create", provider=True),
+            _v2_edit_stage("wait_h3_edit", depends_on=("submit_h3_edit",), kind="provider_poll", provider=True),
+        ])
+        provider_dependency = "wait_h3_edit"
+    else:
+        stages.extend([
+            _v2_edit_stage("compile_edit_prompt", depends_on=compile_dependencies, kind="audit"),
+            _v2_edit_stage("audit_edit_request", depends_on=("compile_edit_prompt",), kind="audit"),
+            _v2_edit_stage("submit_provider_edit", depends_on=("audit_edit_request",), kind="provider_create", provider=True),
+            _v2_edit_stage("wait_provider_edit", depends_on=("submit_provider_edit",), kind="provider_poll", provider=True),
+        ])
+        provider_dependency = "wait_provider_edit"
+    stages.extend(
+        [
+            _v2_edit_stage(
+                "assemble_edit_timeline",
+                depends_on=(provider_dependency, "bind_inputs"),
+                kind="assembly",
+            ),
+            _v2_edit_stage("run_edit_qc", depends_on=("assemble_edit_timeline",), kind="qc"),
+        ]
+    )
+    return _finalize_v2_edit_stage_plan(
+        stages,
+        manifest=manifest,
+        routes=routes,
+        workflow_version=workflow_version,
+        approval_state=approval_state,
+    )
+
+
+def invalidate_stage_downstream(plan: list[dict[str, Any]], failed_stage: str) -> list[dict[str, Any]]:
+    """Mark every transitive dependent stage for forced recomputation."""
+
+    names = {str(stage.get("name")) for stage in plan}
+    if failed_stage not in names:
+        raise ValueError(f"unknown stage: {failed_stage}")
+    invalidated: list[dict[str, Any]] = []
+    pending = [failed_stage]
+    seen = {failed_stage}
+    while pending:
+        current = pending.pop(0)
+        for stage in plan:
+            name = str(stage.get("name"))
+            if name in seen:
+                continue
+            dependencies = {str(item) for item in stage.get("depends_on") or ()}
+            if current not in dependencies:
+                continue
+            stage["status"] = "needs_recompute"
+            stage["recompute_reason"] = f"upstream_failed:{failed_stage}"
+            invalidated.append(stage)
+            seen.add(name)
+            pending.append(name)
+    return invalidated
+
+
+def build_stage_execution_record(
+    plan: Sequence[Mapping[str, Any]],
+    stage_name: str,
+    *,
+    executed: Mapping[str, Mapping[str, Any]],
+    output_fingerprint: str,
+    status: str = "SUCCEEDED",
+) -> dict[str, Any]:
+    """Freeze one runtime stage record from actual dependency artifacts.
+
+    Planning fingerprints are intentionally not reused here.  Every dependency
+    must already have an executed output fingerprint, and the current output
+    fingerprint must identify the artifact actually produced by the worker.
+    """
+
+    stage = next((item for item in plan if str(item.get("name") or "") == stage_name), None)
+    if stage is None:
+        raise ValueError(f"unknown stage: {stage_name}")
+    if status not in {"SUCCEEDED", "FAILED"}:
+        raise ValueError(f"unsupported stage execution status for {stage_name}")
+    output = str(output_fingerprint or "").lower()
+    if _SHA256_RE.fullmatch(output) is None:
+        raise ValueError(f"invalid output fingerprint for {stage_name}")
+    dependency_outputs: list[str] = []
+    for dependency in stage.get("depends_on") or ():
+        record = executed.get(str(dependency))
+        if not isinstance(record, Mapping) or record.get("status") != "SUCCEEDED":
+            raise ValueError(f"missing successful dependency execution for {stage_name}")
+        dependency_output = str(record.get("output_fingerprint") or "").lower()
+        if _SHA256_RE.fullmatch(dependency_output) is None:
+            raise ValueError(f"invalid dependency output fingerprint for {stage_name}")
+        dependency_outputs.append(dependency_output)
+    return {
+        "stage": stage_name,
+        "input_fingerprint": _v2_stage_input_fingerprint(stage, dependency_outputs),
+        "output_fingerprint": output,
+        "contract_version": str(stage.get("contract_version") or ""),
+        "status": status,
+    }
+
+
+def validate_stage_artifact_fingerprints(
+    plan: Sequence[Mapping[str, Any]],
+    executed: Mapping[str, Mapping[str, Any]],
+) -> None:
+    """Reject stale execution records using actual dependency artifact SHAs."""
+
+    stage_by_name = {str(stage.get("name") or ""): stage for stage in plan}
+    if set(stage_by_name) != set(executed):
+        raise ValueError("stage fingerprint records do not cover the v2 plan")
+    for name, stage in stage_by_name.items():
+        record = executed.get(name)
+        if not isinstance(record, Mapping):
+            raise ValueError(f"missing fingerprint record for {name}")
+        input_fingerprint = str(record.get("input_fingerprint") or "").lower()
+        output_fingerprint = str(record.get("output_fingerprint") or "").lower()
+        if len(input_fingerprint) != 64 or len(output_fingerprint) != 64:
+            raise ValueError(f"invalid fingerprint for {name}")
+        if record.get("status") != "SUCCEEDED":
+            raise ValueError(f"stage {name} is not successfully executed")
+        if record.get("contract_version") != stage.get("contract_version"):
+            raise ValueError(f"contract version mismatch for {name}")
+        dependency_outputs: list[str] = []
+        for dependency in stage.get("depends_on") or ():
+            dependency_record = executed.get(str(dependency))
+            if not isinstance(dependency_record, Mapping):
+                raise ValueError(f"missing dependency fingerprint for {name}")
+            dependency_output = str(dependency_record.get("output_fingerprint") or "").lower()
+            if len(dependency_output) != 64:
+                raise ValueError(f"invalid dependency fingerprint for {name}")
+            dependency_outputs.append(dependency_output)
+        expected = _v2_stage_input_fingerprint(stage, dependency_outputs)
+        if input_fingerprint != expected:
+            raise ValueError(f"stale stage fingerprint for {name}")
+
+
 def build_stage_plan(
     manifest: Mapping[str, Any],
     *,
     workflow_version: str = "server-v1",
     timeline_regions: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
     review_route: str | None = None,
+    approval_state: Mapping[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
+    if dict(manifest.get("extensions") or {}).get("edit_contract") == "video-edit-v2":
+        return _build_v2_edit_stage_plan(
+            manifest,
+            workflow_version=workflow_version,
+            approval_state=approval_state,
+        )
     analysis_scope = build_analysis_scope(manifest)
     routes = dict(manifest.get("routes") or {})
     slots = dict(manifest.get("slots") or {})
@@ -818,53 +1430,11 @@ def build_stage_plan(
         stages.append({"name": "parse_app_store_evidence", "kind": "evidence", "provider": True})
     if generated_ui_required:
         stages.append({"name": "resolve_ui_evidence", "kind": "evidence", "provider": False})
-    language_only = bool(manifest.get("admission", {}).get("language_only"))
-    if language_only:
-        build_script = {"name": "build_script", "kind": "contract", "provider": False, "language_only": True}
-        compile_prompt = {"name": "compile_seedance20_prompt", "kind": "audit", "provider": False, "language_only": True}
-        audit_request = {"name": "audit_seedance_request", "kind": "audit", "provider": False, "language_only": True}
-        storyboard_stage: dict[str, Any] = {
-            "name": "generate_storyboards",
-            "kind": "image2",
-            "provider": True,
-            "language_only": True,
-        }
-        if profile_active:
-            build_script["internal_steps"] = [
-                "source_intent_graph",
-                "target_value_graph",
-                "claim_atoms",
-                "affordance_map",
-                "layer_ledger",
-                "seedance_invocation_a",
-                "exact_line_contract",
-            ]
-            compile_prompt["internal_steps"] = ["seedance_invocation_b", "seedance20_skill_snapshot_check"]
-            audit_request["internal_steps"] = ["exact_line_parity", "high_fidelity_factor_audit"]
-            build_script["artifact_contract"] = _artifact_contract("build_script")
-            compile_prompt["artifact_contract"] = _artifact_contract("compile_seedance20_prompt")
-            audit_request["artifact_contract"] = _artifact_contract("audit_seedance_request")
-            storyboard_stage["internal_steps"] = [
-                "duration_planner",
-                "segment_plan",
-                "segment_local_rebind",
-            ]
-            storyboard_stage["artifact_contract"] = _artifact_contract("generate_storyboards")
-        stages.extend(
-            [
-                build_script,
-                storyboard_stage,
-                compile_prompt,
-                audit_request,
-                {"name": "submit_provider_video", "kind": "provider_create", "provider": True, "language_only": True},
-                {"name": "wait_provider_video", "kind": "provider_poll", "provider": True, "language_only": True},
-                {"name": "splice_timeline", "kind": "assembly", "provider": False, "language_only": True,
-                 **({"internal_steps": ["hybrid_compositor", "timeline_splice"], "artifact_contract": _artifact_contract("splice_timeline")} if profile_active else {})},
-                {"name": "run_qc", "kind": "qc", "provider": False, "language_only": True,
-                 **({"internal_steps": ["technical_qc", "high_fidelity_qc_extension", "voiceover_alignment"], "artifact_contract": _artifact_contract("run_qc")} if profile_active else {})},
-            ]
-        )
-        return [dict(stage, workflow_version=workflow_version, review_route="local_only") for stage in stages]
+    # Language-only edits are no longer a separate TTS + non-song lip-sync
+    # lane.  Because output_language forces seedance_generation_required, a
+    # language-only task now falls through to the standard Seedance edit
+    # path below and Seedance 2.0 rewrites the spoken lines into the target
+    # language directly from the edit prompt.
     if not seedance_generation_required:
         stages.extend(
             [
@@ -949,6 +1519,8 @@ def build_stage_plan(
             {"name": "wait_provider_video", "kind": "provider_poll", "provider": True},
             {"name": "splice_timeline", "kind": "assembly", "provider": False,
              **({"internal_steps": ["hybrid_compositor", "timeline_splice"], "artifact_contract": _artifact_contract("splice_timeline")} if profile_active else {})},
+            {"name": "evaluate_voiceover_fallback", "kind": "qc", "provider": False},
+            {"name": "replace_voiceover_audio", "kind": "provider_create", "provider": True},
             {"name": "run_qc", "kind": "qc", "provider": False,
              **({"internal_steps": ["technical_qc", "high_fidelity_qc_extension", "voiceover_alignment"], "artifact_contract": _artifact_contract("run_qc")} if profile_active else {})},
         ]

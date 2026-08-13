@@ -1,0 +1,75 @@
+<h2>批量任务状态流</h2>
+<p class="subtitle">最多 20 行；第一行固定为样片；其余任务只有在最终样片被批准后才启动。</p>
+
+<div class="mockup">
+  <div class="mockup-header">阶段 A：创建并冻结批次</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>选择 Source Master</h3><p>仅复用当前员工拥有的原片与分析缓存。</p></div></div>
+      <div class="card"><div class="card-body"><h3>填写 1–20 行</h3><p>每行人物、音乐、输出语言均可留空；产品、UI、尾卡为批次共享。</p></div></div>
+      <div class="card"><div class="card-body"><h3>冻结 Manifest</h3><p>计算批次 SHA；相同完整组合去重，但相同人物搭配不同歌曲不去重。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:28px;margin:10px 0">↓ 第一行固定为 Pilot</div>
+
+<div class="mockup">
+  <div class="mockup-header">阶段 B：第一行样片审核</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>① 脚本确认</h3><p>下载并审批实际 Markdown；不接受聊天文本代替。</p></div></div>
+      <div class="card"><div class="card-body"><h3>② 故事板确认</h3><p>审批实际导演故事板 PNG 页面。</p></div></div>
+      <div class="card"><div class="card-body"><h3>生成第一条</h3><p>Provider、合成、歌曲口型和 QC 完整执行。</p></div></div>
+      <div class="card"><div class="card-body"><h3>③ 最终 MP4 确认</h3><p>只有用户明确批准最终样片，批次才能放行。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="cons">
+    <h4>样片被拒绝</h4>
+    <ul>
+      <li>批次继续暂停</li>
+      <li>填写修改意见</li>
+      <li>标记 batch_wide 或 pilot_only</li>
+      <li>只重跑第一行受影响阶段</li>
+      <li>最新 MP4 再次等待确认</li>
+    </ul>
+  </div>
+  <div class="pros">
+    <h4>样片被批准</h4>
+    <ul>
+      <li>签发不可变 Batch Authorization</li>
+      <li>绑定用户、Manifest SHA、Pilot SHA</li>
+      <li>后续只允许人物、音乐、语言变化</li>
+      <li>任何批次清单修改都会令授权失效</li>
+    </ul>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:28px;margin:10px 0">↓ 批次授权生效</div>
+
+<div class="mockup">
+  <div class="mockup-header">阶段 C：第 2–20 行自动执行</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>自动脚本</h3><p>生成并记录精确版本；不再等待用户。</p></div></div>
+      <div class="card"><div class="card-body"><h3>自动故事板</h3><p>生成独立 PNG 与版本记录；不再等待用户。</p></div></div>
+      <div class="card"><div class="card-body"><h3>受控并发</h3><p>默认同时运行 5 条，管理员可调整为 1–20。</p></div></div>
+      <div class="card"><div class="card-body"><h3>独立交付</h3><p>每行独立 MP4、成本、状态、错误与 QC。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">阶段 D：部分成功与安全重试</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>成功行</h3><p>立即归档，永不因其他行失败而重新生成。</p></div></div>
+      <div class="card"><div class="card-body"><h3>明确失败行</h3><p>允许稍后只重试失败行，并继续遵守额度。</p></div></div>
+      <div class="card"><div class="card-body"><h3>Provider 状态不明</h3><p>先对账，禁止盲目重提，避免重复扣费。</p></div></div>
+      <div class="card"><div class="card-body"><h3>批次完成</h3><p>显示成功、失败、待对账、总成本与可下载成片。</p></div></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,13 @@
+{
+  "contract": "provider-only-multi-object-binding/v1",
+  "compiler_version": "provider-only-multi-object-binding/v1",
+  "binding_mode": "provider_only_multi_object_binding",
+  "binding_contract_sha256": "74e1460ede407b92897e9458fcf8a39df60535b0668c51f0455f3a338c29f3f7",
+  "prompt_sha256": "1e68cc89a0c1790145325eb622fa8c4fb8e17ad7430d7eaa64128ae25445b150",
+  "image_tags": [
+    "@Image1"
+  ],
+  "source_object_ids": [
+    "SRC_LAPTOP_FAMILY"
+  ]
+}

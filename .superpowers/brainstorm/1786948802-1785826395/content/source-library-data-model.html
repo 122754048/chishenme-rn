@@ -1,0 +1,62 @@
+<h2>原片库、分析缓存与产物归属</h2>
+<p class="subtitle">核心原则：按员工隔离；同一员工、同一原片、同一分析版本只分析一次。</p>
+
+<div class="mockup">
+  <div class="mockup-header">员工账号 A</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>Source Master</h3><p>owner_user_id=A<br>source_sha256<br>原片 OSS Object ID<br>创建时间与状态</p></div></div>
+      <div class="card"><div class="card-body"><h3>Analysis Cache</h3><p>source_sha256<br>analysis_profile<br>模型与规则 SHA<br>Cuts / 动作 / 音频 / Overlay</p></div></div>
+      <div class="card"><div class="card-body"><h3>Reusable Assets</h3><p>关键帧、接触表、时间线、Source Fidelity 基础合同。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:28px;margin:10px 0">↓ 一个 Source Master 可派生多个任务</div>
+
+<div class="cards">
+  <div class="card"><div class="card-body"><h3>单任务</h3><p>普通八槽位输入；脚本和故事板按原流程审批。</p></div></div>
+  <div class="card"><div class="card-body"><h3>批量换人</h3><p>复用同一分析；每个人物产生独立最终 MP4。</p></div></div>
+  <div class="card"><div class="card-body"><h3>批量换歌</h3><p>复用源音乐窗口；每首歌独立分类、口型和 QC。</p></div></div>
+  <div class="card"><div class="card-body"><h3>批量换语言</h3><p>复用源画面和说话窗口；每种语言独立生成。</p></div></div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>永久或持续保存</h4>
+    <ul>
+      <li>原片，直到员工或管理员主动删除</li>
+      <li>分析拆解与不可逆文件指纹</li>
+      <li>文字脚本</li>
+      <li>导演故事板</li>
+      <li>最终 MP4</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>临时保存</h4>
+    <ul>
+      <li>Provider 下载文件</li>
+      <li>FFmpeg 临时切片</li>
+      <li>控制图与内部 QC 中间件</li>
+      <li>临时签名 URL</li>
+      <li>失败任务的工作目录</li>
+    </ul>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">隔离与转移规则</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>员工 B 上传相同原片</h3><p>不能命中员工 A 的缓存；不会泄露该原片是否已存在。</p></div></div>
+      <div class="card"><div class="card-body"><h3>管理员转移所有权</h3><p>Source、分析、脚本、故事板、成片和任务整体转移，不复制。</p></div></div>
+      <div class="card"><div class="card-body"><h3>删除原片</h3><p>停止后续免上传复刻；默认保留分析、脚本、故事板和最终成片。</p></div></div>
+      <div class="card"><div class="card-body"><h3>分析版本升级</h3><p>旧缓存不覆盖；按新版本生成另一份缓存，可由任务选择复用或重析。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div style="padding:16px;border:1px solid var(--border);border-radius:12px;margin-top:18px">
+  <strong>缓存命中条件：</strong>
+  owner_user_id + source_sha256 + analysis_profile + analyzer_model_sha256 + contract_version 完全一致。
+</div>

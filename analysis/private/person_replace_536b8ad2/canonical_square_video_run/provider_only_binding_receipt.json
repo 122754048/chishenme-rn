@@ -1,0 +1,15 @@
+{
+  "contract": "provider-only-multi-object-binding/v1",
+  "compiler_version": "provider-only-multi-object-binding/v1",
+  "binding_mode": "provider_only_multi_object_binding",
+  "binding_contract_sha256": "6e48415a4b12fbffc53bf5af26b4177314c3a50b1adb4f56ca2d472b65b8ac6f",
+  "prompt_sha256": "d4cb1bfeb9d4b6ec316415e2551de10e34597d9efaf70f0c9d8218d0cfd3bbae",
+  "image_tags": [
+    "@Image1",
+    "@Image2"
+  ],
+  "source_object_ids": [
+    "SRC_WOMAN",
+    "SRC_MAN"
+  ]
+}

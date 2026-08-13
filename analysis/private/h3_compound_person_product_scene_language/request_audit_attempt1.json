@@ -1,0 +1,80 @@
+{
+  "contract": "runninghub-hailuo-h3-compound-person-product-scene-language/v1",
+  "attempt": 1,
+  "changed_variable": "first compound capability measurement",
+  "task_id": "2087529546488176642",
+  "status": "SUCCESS",
+  "endpoint": "https://www.runninghub.ai/openapi/v2/minimax/hailuo-h3/multimodal-to-video",
+  "prompt": "将视频1中的人物替换为图片1中的人物。将原商品替换为图片2中的橙汁瓶，按原动作依次展示瓶身、开盖并近距离展示标签。将背景替换为图片3中的开放办公室。人物用德语说：Schauen wir uns diese Sunquick Orange an. Die leuchtend orange Flasche fällt sofort auf. Der Deckel lässt sich einfach aufdrehen. Hier seht ihr das Etikett aus der Nähe. Wenn ihr einen vollständigen Gießtest sehen wollt, sagt Bescheid. 人物口型与德语同步。保持视频1的镜头、手部动作和剪辑节奏。",
+  "index_contract": {
+    "imageUrls[0]": "图片1/person",
+    "imageUrls[1]": "图片2/product",
+    "imageUrls[2]": "图片3/scene",
+    "videoUrls[0]": "视频1/source video"
+  },
+  "payload_without_temporary_urls": {
+    "prompt": "将视频1中的人物替换为图片1中的人物。将原商品替换为图片2中的橙汁瓶，按原动作依次展示瓶身、开盖并近距离展示标签。将背景替换为图片3中的开放办公室。人物用德语说：Schauen wir uns diese Sunquick Orange an. Die leuchtend orange Flasche fällt sofort auf. Der Deckel lässt sich einfach aufdrehen. Hier seht ihr das Etikett aus der Nähe. Wenn ihr einen vollständigen Gießtest sehen wollt, sagt Bescheid. 人物口型与德语同步。保持视频1的镜头、手部动作和剪辑节奏。",
+    "imageUrls": [
+      "uploaded-person-asset",
+      "uploaded-product-asset",
+      "uploaded-scene-asset"
+    ],
+    "videoUrls": [
+      "uploaded-source-video"
+    ],
+    "audioUrls": [],
+    "resolution": "768P",
+    "duration": "15",
+    "ratio": "adaptive"
+  },
+  "input_sha256": {
+    "source_video": "166E4E8531609764C27D627419CEB1D8FF6B222047E9935D7AD8807FBAEB2E54",
+    "person": "EF4FD0EE050949C9C25CA2D7E2607A43DAF68B316CDC6C2B16DE2ED27E13C1D1",
+    "product": "B3C05CE010EB1B1BCE4536ECCCBFEC70FB96B0AC1AB3C46AF98A219826288BE0",
+    "scene": "FAE25757E25D34A233BF4C5863F4E5D9ACE7EBC91E6A8CF9D77E3273C0EE79E0"
+  },
+  "provider_response": {
+    "taskId": "2087529546488176642",
+    "status": "SUCCESS",
+    "errorCode": "",
+    "errorMessage": "",
+    "results": [
+      {
+        "url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/b1c58f0c-2f98-443e-afd9-369d715a61ae.mp4",
+        "outputType": "mp4",
+        "text": null
+      }
+    ],
+    "clientId": "",
+    "promptTips": "",
+    "failedReason": {},
+    "usage": {
+      "consumeMoney": null,
+      "consumeCoins": null,
+      "total_seconds": "30",
+      "input_image_count": "3",
+      "taskCostTime": "0",
+      "thirdPartyConsumeMoney": "2.31",
+      "output_seconds": "15",
+      "input_seconds": "15"
+    },
+    "parentTaskId": null,
+    "taskUsageList": [
+      {
+        "taskId": "2087529546488176642",
+        "parentTaskId": null,
+        "taskStatus": "SUCCESS",
+        "usage": {
+          "consumeMoney": null,
+          "consumeCoins": null,
+          "total_seconds": "30",
+          "input_image_count": "3",
+          "taskCostTime": "0",
+          "thirdPartyConsumeMoney": "2.31",
+          "output_seconds": "15",
+          "input_seconds": "15"
+        }
+      }
+    ]
+  }
+}

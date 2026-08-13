@@ -1,0 +1,23 @@
+{
+  "contract": "usfr-local-multi-track-face-completion-receipt/v1",
+  "backend": "facefusion-hyperswap-1a-256",
+  "input_video": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\reinbow_person_replace\\four_person_once\\result_e9182b194e8471c14d34e35cc775ba268ffbce27c58f58457f2344bafb65c254.mp4",
+  "output_video": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\reinbow_person_replace\\four_person_once\\final_four_person_skill.mp4",
+  "frames_processed": 265,
+  "swap_counts": {
+    "SRC_BLONDE": 224,
+    "SRC_DARK": 75
+  },
+  "unassigned_frames": {
+    "SRC_BLONDE": 41,
+    "SRC_MAN": 55,
+    "SRC_DARK": 190
+  },
+  "runtime_assignment": "embedding_plus_motion_unique_assignment",
+  "protected_source_object_ids": [
+    "SRC_MAN"
+  ],
+  "audio_policy": "packet_copy_without_shortest_truncation",
+  "pixel_boost": "512x512",
+  "face_swapper_weight": 0.65
+}

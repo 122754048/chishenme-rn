@@ -1,0 +1,30 @@
+{
+  "contract": "usfr-local-multi-track-face-completion/v1",
+  "tracks": [
+    {
+      "source_object_id": "SRC_BLONDE",
+      "object_type": "person",
+      "replacement_scope": "face_identity_only",
+      "calibration_order": 0,
+      "action": "replace",
+      "target_image": "identity_v3/02_TARGET_BLONDE.png",
+      "target_asset_sha256": "6aee4b6638f11414d3637ee3bbdef7fa6c5ed8d01dc04533a96eb9ffeaad0ddc"
+    },
+    {
+      "source_object_id": "SRC_MAN",
+      "object_type": "person",
+      "replacement_scope": "face_identity_only",
+      "calibration_order": 1,
+      "action": "protect"
+    },
+    {
+      "source_object_id": "SRC_DARK",
+      "object_type": "person",
+      "replacement_scope": "face_identity_only",
+      "calibration_order": 2,
+      "action": "replace",
+      "target_image": "identity_v3/03_TARGET_DARK.png",
+      "target_asset_sha256": "60a34560a2941cbd46ff7608c34bcd4b18d9f53dfc9c13ef3f74403beadafb40"
+    }
+  ]
+}

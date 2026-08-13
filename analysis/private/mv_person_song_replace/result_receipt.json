@@ -1,0 +1,11 @@
+{
+  "schema_version": "usfr-mv-person-song-result/v1",
+  "result_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\mv_person_song_replace\\result.mp4",
+  "result_sha256": "c5817bfce0927f4fffcc0c91a64694afe24a9e0d999961b4c1605d35f552064c",
+  "provider_result_sha256": "472b682ea5670060214a3525baa5249a857d68261b01df3351021ecdb54852ea",
+  "song_window_sha256": "e13db1878c95cc430682055f4fc2653c2404c67a033631caa7e8350899f88505",
+  "lip_sync_segment_sha256s": {
+    "SING-01": "a634e839d0dc8990b75f56d0581ad9a410bb62c5525f74531ba192a744b9c31e",
+    "SING-02": "b886d6e4b752fd79815572ff4eb09466101383a4c6881e131f9a6f6376ac4893"
+  }
+}

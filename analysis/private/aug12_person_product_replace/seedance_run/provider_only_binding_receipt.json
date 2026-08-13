@@ -1,0 +1,15 @@
+{
+  "contract": "provider-only-multi-object-binding/v1",
+  "compiler_version": "provider-only-multi-object-binding/v1",
+  "binding_mode": "provider_only_multi_object_binding",
+  "binding_contract_sha256": "baba222c0ca7e018f1b1c385d6766b6628fcb40ea5db91ff854677396e41473d",
+  "prompt_sha256": "9cf464e58418091b06092885fb6ff17d3954045102264df8f61a2b4482050827",
+  "image_tags": [
+    "@Image1",
+    "@Image2"
+  ],
+  "source_object_ids": [
+    "SRC_SEASIDE_WOMAN",
+    "SRC_LIPSTICK_FAMILY"
+  ]
+}

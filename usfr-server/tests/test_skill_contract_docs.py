@@ -7,108 +7,78 @@ BUNDLED = ROOT / "bundled-skills" / "seedance-storyboard-replication"
 
 
 class SourceFidelityDocumentationContractTest(unittest.TestCase):
-    SOURCE_FIDELITY_REQUEST_DOCS = {
-        "root skill": ROOT / "SKILL.md",
-        "fixed-slot contract": ROOT / "references" / "fixed-input-slot-contract.md",
-        "deployment guide": ROOT / "references" / "server-deployment-step-by-step.md",
-        "storyboard skill": BUNDLED / "SKILL.md",
-        "integrity gate": BUNDLED / "references" / "seedance-20-integrity-gate.md",
-        "provider reference": BUNDLED / "references" / "runninghub-standard-seedance-api.md",
-        "prompt reference": BUNDLED / "references" / "seedance-prompt.md",
-        "source-fidelity contract": ROOT / "references" / "universal-source-fidelity-contract.md",
-    }
+    def test_document_ownership_is_layered(self):
+        main = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        fixed = (ROOT / "references" / "fixed-input-slot-contract.md").read_text(encoding="utf-8")
+        v2 = (ROOT / "references" / "video-edit-v2-contract.md").read_text(encoding="utf-8")
+        storyboard = (BUNDLED / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Canonical runtime contract", main)
+        self.assertIn("fixed-input-slots/v2", fixed)
+        self.assertIn("uploaded_tags == binding_tags == prompt_tags", v2)
+        self.assertIn("legacy quarantine", storyboard.casefold())
+        self.assertIn("not a v2 workflow owner", storyboard)
 
-    def test_root_skill_mandates_the_visual_provenance_chain(self):
-        skill = " ".join((ROOT / "SKILL.md").read_text(encoding="utf-8").split())
-        self.assertIn(
-            "source Cut frames → replacement-control sheet → approved director board",
-            skill,
-        )
-        self.assertIn("Scene-surface text must be present in the replacement-control Image2 output", skill)
-        self.assertIn("## 角色、场景与连续性锁定", skill)
-        self.assertIn("## 逐镜反解", skill)
-
-    def test_control_sheet_route_is_single_sheet_image2_only(self):
-        documents = {
-            "root skill": ROOT / "SKILL.md",
-            "storyboard skill": BUNDLED / "SKILL.md",
-            "director-board prompt template": BUNDLED / "references" / "daohuo_storyboard_prompt.md",
-        }
-        required = (
-            "one complete source Cut contact sheet → one RunningHub Image2 call → one complete replacement-control sheet",
-            "Per-Cut replacement generation and per-Cut source-frame validation are forbidden",
-            "Local face swap, ComfyUI, InsightFace, desktop image editors, and any non-Image2 generator are forbidden",
-            "A fixed-slot target image is target truth only and must never be accepted as the replacement-control sheet",
-            "The director-board Image2 request must use the replacement-control sheet as reference image 1",
-        )
-        for name, path in documents.items():
-            text = " ".join(path.read_text(encoding="utf-8").split())
-            for phrase in required:
-                with self.subTest(document=name, phrase=phrase):
-                    self.assertIn(phrase, text)
-
-    def test_director_board_template_locks_control_sheet_priority(self):
-        template = " ".join(
-            (BUNDLED / "references" / "daohuo_storyboard_prompt.md")
-            .read_text(encoding="utf-8")
-            .split()
-        )
+    def test_main_documents_one_script_gate_ui_routes_and_audio_lane_semantics(self):
+        text = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         for required in (
-            "Reference image 1 is the replacement-control sheet",
-            "later target references for all non-authorized source attributes",
-            "every other visual attribute from the replacement-control sheet must remain unchanged",
-            "Do not alter the source pose, action, gesture, expression, gaze, mouth state",
+            "one user file", "one script approval", "plan_segments",
+            "source UI keep",
+            "deterministic FFmpeg splice", "App asset board + Seedance edit",
+            "music-only", "voice/dialogue", "H3 MV edit", "UI monologue",
         ):
-            with self.subTest(required=required):
-                self.assertIn(required, template)
+            self.assertIn(required, text)
+        self.assertNotIn("storyboard approval", text.casefold())
 
-    def test_final_seedance_references_are_fixed_for_source_fidelity_generation(self):
-        for name, path in self.SOURCE_FIDELITY_REQUEST_DOCS.items():
+    def test_active_contracts_document_frame_midpoint_fallback_and_seam_qc(self):
+        paths = (ROOT / "SKILL.md", ROOT / "references" / "video-edit-v2-contract.md")
+        for path in paths:
             text = " ".join(path.read_text(encoding="utf-8").split())
-            with self.subTest(document=name):
-                self.assertIn("`videoUrls[0]`", text)
-                self.assertIn("usfr-multimodal-reference-binding/v2", text)
-                self.assertIn("continuous-present-role-order/v1", text)
-                self.assertIn("must never be sent to Seedance", text)
-                self.assertIn("2-15 second", text)
-                self.assertIn("full source video must never be uploaded", text)
+            for required in (
+                "natural Cut priority",
+                "frame_midpoint_fallback",
+                "fixed 24 fps grid",
+                "forced-continuity-boundary/v1",
+                "30 seconds",
+                "identity",
+                "object",
+                "contact",
+                "camera",
+                "audio",
+                "black frames",
+                "duplicate frames",
+                "missing frames",
+            ):
+                self.assertIn(required, text, msg=f"{path.name} is missing {required!r}")
 
-    def test_source_fidelity_docs_do_not_offer_an_empty_video_reference_escape_hatch(self):
-        forbidden = (
-            "`videoUrls=[]`",
-            "video-reference run may carry",
-            "When `videoUrls[0]` is present",
-            "upstream analysis input only",
-            "may carry exactly one matching source slice",
-        )
-        for name, path in self.SOURCE_FIDELITY_REQUEST_DOCS.items():
-            text = " ".join(path.read_text(encoding="utf-8").split())
-            for phrase in forbidden:
-                with self.subTest(document=name, phrase=phrase):
-                    self.assertNotIn(phrase, text)
-
-    def test_visible_text_is_routed_by_its_physical_carrier(self):
-        documents = {
-            "root skill": ROOT / "SKILL.md",
-            "storyboard skill": BUNDLED / "SKILL.md",
-            "prompt reference": BUNDLED / "references" / "seedance-prompt.md",
-        }
-        for name, path in documents.items():
-            text = " ".join(path.read_text(encoding="utf-8").split())
-            with self.subTest(document=name):
-                self.assertIn("scene-surface text", text)
-                self.assertIn("deterministic overlay text", text)
-                self.assertIn("moves, bends, folds, rotates, occludes, and tears with its carrier", text)
-                self.assertIn("must be written explicitly into the Seedance Cut prompt", text)
-
-    def test_audio_song_contract_is_preserved(self):
-        skill = " ".join((ROOT / "SKILL.md").read_text(encoding="utf-8").split())
+    def test_canonical_contract_routes_physical_and_deterministic_text(self):
+        text = " ".join((ROOT / "references" / "video-edit-v2-contract.md").read_text(encoding="utf-8").split())
         for required in (
-            "Without an uploaded audio extension, keep the original source audio.",
-            "timestamped lyrics in the editable script",
-            "explicitly confirmed on-camera performer",
-            "Multi-person/multi-vocalist ambiguity blocks",
-            "cut-in/cut-out matches the source video exactly",
+            "generation_surface", "physical text", "deterministic_overlay",
+            "deterministic_ui", "approved time window", "approved region",
         ):
-            with self.subTest(required=required):
-                self.assertIn(required, skill)
+            self.assertIn(required, text)
+
+    def test_active_documents_do_not_restore_control_or_invocation_workflows(self):
+        paths = (ROOT / "SKILL.md", BUNDLED / "SKILL.md", ROOT / "references" / "video-edit-v2-contract.md")
+        combined = "\n".join(path.read_text(encoding="utf-8") for path in paths)
+        for forbidden in ("replacement-control", "Invocation A", "Invocation B"):
+            self.assertNotIn(forbidden, combined)
+
+    def test_dependency_map_is_v2_authority_chain_with_legacy_quarantine(self):
+        text = (ROOT / "references" / "dependency-map.md").read_text(encoding="utf-8")
+        self.assertIn("intake → analysis/script approval → asset boards → plan_segments → compile/audit", text)
+        self.assertIn("provider pass(es) → deterministic assembly/audio → QC", text)
+        self.assertIn("server/audio_lane_router.py", text)
+        self.assertIn("Legacy quarantine", text)
+        self.assertIn("not a fallback", text)
+
+    def test_active_v2_state_and_api_docs_do_not_restore_storyboard_gate(self):
+        state = (ROOT / "references" / "run-state-machine.md").read_text(encoding="utf-8")
+        api = (ROOT / "references" / "server-api-contract.md").read_text(encoding="utf-8")
+        for text in (state, api):
+            self.assertIn("one script approval", text)
+            self.assertIn("Legacy quarantine", text)
+        self.assertIn("plan_segments", state)
+        for forbidden in ("await_storyboard_approval", "generate_storyboards", "storyboard approval"):
+            self.assertNotIn(forbidden, state.casefold())
+        self.assertNotIn("Equivalent storyboard list/revise/approve endpoints.", api)

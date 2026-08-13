@@ -1,0 +1,120 @@
+{
+  "schema_version": "fixed-input-slots/v2",
+  "slot_order": [
+    "source_video",
+    "new_product_image",
+    "new_model_image",
+    "ui_screenshot",
+    "app_store_url",
+    "ui_operation_video",
+    "tail_video"
+  ],
+  "admission": {
+    "source_required": true,
+    "source_present": true,
+    "minimum_optional_slots": 1,
+    "optional_present_count": 1,
+    "can_proceed": true,
+    "language_only": false,
+    "change_input_present": true,
+    "enabled_extension_present": false,
+    "blocker_code": null
+  },
+  "slots": {
+    "source_video": {
+      "slot_id": "source_video",
+      "role": "edit_object",
+      "kind": "video",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Downloads\\尝试复刻的真人视频类型（有一定难度）\\来自行业 TikTok 热门广告的It pays to be social! Download the new Reinbow app and earn rewards for being social! #reinbowapp #social #rewards.mp4"
+      ],
+      "sha256": [
+        "fb02cf54bbbb0ceff602dcca114680ba6bf8882521602f3ff64d7da0f281b2aa"
+      ]
+    },
+    "new_product_image": {
+      "slot_id": "new_product_image",
+      "role": "visual_asset_input",
+      "kind": "image",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "new_model_image": {
+      "slot_id": "new_model_image",
+      "role": "visual_asset_input",
+      "kind": "image",
+      "present": true,
+      "valid": true,
+      "source": "supplied",
+      "values": [
+        "C:\\Users\\zhaocx04\\Downloads\\ComfyUI_00001_bitce_1754378835.png",
+        "C:\\Users\\zhaocx04\\Downloads\\未命名项目-图层 4.png",
+        "C:\\Users\\zhaocx04\\Downloads\\b844d4a9-7eba-4828-a612-271437623587.jpeg",
+        "C:\\Users\\zhaocx04\\Downloads\\jimeng-2025-08-12-5640-布偶猫蜷在藤编篮中，肉垫轻搭篮边，自然光透过百叶窗形成条纹光影，浅景深背景虚化，....png"
+      ],
+      "sha256": [
+        "c09ecf452078013cb558b836556fd6910049c0885e55c87f04b38f310aa62bc6",
+        "46104956376975f96668d1c7d8dc7c9d1805f1254d77799029a1a6e561764427",
+        "eb8ae09d7e925c6ecb1d9d796793e6713763b2aa6ce617a8ff2570c07e5c60e2",
+        "8bc3f7b65f72b18c6d8284fbffd7b9783515d5e149261d8c24a03bb02e25e529"
+      ]
+    },
+    "ui_screenshot": {
+      "slot_id": "ui_screenshot",
+      "role": "app_visual_asset_input",
+      "kind": "image",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "app_store_url": {
+      "slot_id": "app_store_url",
+      "role": "app_store_evidence",
+      "kind": "url",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "ui_operation_video": {
+      "slot_id": "ui_operation_video",
+      "role": "deterministic_ui_splice_input",
+      "kind": "video",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    },
+    "tail_video": {
+      "slot_id": "tail_video",
+      "role": "deterministic_tail_splice_input",
+      "kind": "video",
+      "present": false,
+      "valid": true,
+      "source": "absent",
+      "values": [],
+      "sha256": []
+    }
+  },
+  "routes": {
+    "product": "preserve_source_product",
+    "character": "replace_from_asset_board",
+    "ui": "preserve_source_ui",
+    "tail": "remove_source_tail_card",
+    "background_music": "none"
+  },
+  "extensions": {
+    "edit_contract": "video-edit-v2",
+    "edit_mode": "v2"
+  }
+}

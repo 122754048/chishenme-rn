@@ -5,143 +5,57 @@ from pathlib import Path
 import pytest
 
 
-def test_song_lip_sync_runs_two_generated_person_segments_and_returns_sha_bound_downloads(tmp_path: Path) -> None:
-    from server.runninghub_workflows import RunningHubWorkflowClient
-
-    audio = tmp_path / "song.mp3"
-    first = tmp_path / "S01.mp4"
-    second = tmp_path / "S02.mp4"
-    audio.write_bytes(b"song-bytes")
-    first.write_bytes(b"first-video")
-    second.write_bytes(b"second-video")
-    submitted: list[dict[str, object]] = []
-
-    def request_json(**kwargs):
-        payload = kwargs["payload"]
-        if "/run/ai-app/" in str(kwargs["url"]):
-            submitted.append(dict(payload))
-            video = next(item["fieldValue"] for item in payload["nodeInfoList"] if item["nodeId"] == "228")
-            return {"code": 0, "data": {"taskId": "task-01" if video.endswith("S01.mp4") else "task-02"}, "status": "RUNNING"}
-        task_id = payload["taskId"]
-        return {"taskId": task_id, "status": "SUCCESS", "results": [{"outputType": "mp4", "url": f"https://result.example/{task_id}.mp4"}]}
-
-    client = RunningHubWorkflowClient(
-        api_key="runninghub-test-key",
-        base_url="https://runninghub.example.test",
-        request_json=request_json,
-        upload_file=lambda path: f"https://media.example/{path.name}",
-        download_file=lambda url: b"\x00\x00\x00\x18ftypmp42" + url.encode("ascii"),
-        sleep=lambda _seconds: None,
-        clock=lambda: 0.0,
-    )
-
-    result = client.run_song_lip_sync_segments(
-        uploaded_audio_kind="song",
-        audio_path=audio,
-        segments=[
-            {"segment_id": "S01", "segment_type": "generated_person", "video_path": first, "song_start": "1:30", "song_end": "1:35"},
-            {"segment_id": "S02", "segment_type": "generated_person", "video_path": second, "song_start": "1:35", "song_end": "1:40"},
-        ],
-    )
-
-    assert len(submitted) == 2
-    assert all(payload["instanceType"] == "plus" for payload in submitted)
-    assert {row["segment_id"] for row in result["segments"]} == {"S01", "S02"}
-    assert all(row["video_bytes"].startswith(b"\x00\x00\x00\x18ftyp") for row in result["segments"])
-    assert all(row["receipt"]["workflow_id"] == "2082759080288296961" for row in result["segments"])
-
-
-def test_song_lip_sync_rejects_an_opaque_ui_segment_before_uploading_any_media(tmp_path: Path) -> None:
-    from server.runninghub_workflows import RunningHubWorkflowClient, RunningHubWorkflowError
-
-    audio = tmp_path / "song.mp3"
-    ui = tmp_path / "ui.mp4"
-    audio.write_bytes(b"song-bytes")
-    ui.write_bytes(b"ui-video")
-    uploads: list[Path] = []
-    client = RunningHubWorkflowClient(
-        api_key="runninghub-test-key",
-        base_url="https://runninghub.example.test",
-        upload_file=lambda path: uploads.append(Path(path)) or "https://media.example/file",
-    )
-
-    with pytest.raises(RunningHubWorkflowError, match="SEGMENT_INELIGIBLE"):
-        client.run_song_lip_sync_segments(
-            uploaded_audio_kind="song",
-            audio_path=audio,
-            segments=[{"segment_id": "UI01", "segment_type": "opaque_ui_demo", "video_path": ui, "song_start": "1:30", "song_end": "1:35"}],
-        )
-
-    assert uploads == []
-
-
-def test_whisper_workflow_uploads_the_current_audio_to_the_configured_node_and_parses_timestamped_txt(tmp_path: Path) -> None:
+def test_speech_whisper_uploads_the_source_video_to_the_ai_app_video_node(tmp_path: Path) -> None:
     from server.runninghub_workflows import RunningHubWorkflowClient
 
     requests: list[dict[str, object]] = []
 
     def request_json(**kwargs):
         requests.append(kwargs)
-        if "/run/workflow/" in str(kwargs["url"]):
-            return {"taskId": "whisper-task", "status": "RUNNING"}
+        if "/run/ai-app/" in str(kwargs["url"]):
+            return {"taskId": "speech-task", "status": "RUNNING"}
         return {
-            "taskId": "whisper-task",
+            "taskId": "speech-task",
             "status": "SUCCESS",
-            "results": [
-                {
-                    "outputType": "txt",
-                    "text": """00:00:00,000 --> 00:00:01,250
-Hello world
-
-00:00:01,250 --> 00:00:02,000
-Second line""",
-                }
-            ],
+            "results": [{
+                "outputType": "txt",
+                "text": "00:00:00,000 --> 00:00:01,250\nHello world",
+            }],
         }
 
-    audio = tmp_path / "source.wav"
-    audio.write_bytes(b"RIFF-test")
+    video = tmp_path / "source.mp4"
+    video.write_bytes(b"\x00\x00\x00\x18ftypmp42source")
     client = RunningHubWorkflowClient(
         api_key="runninghub-test-key",
         base_url="https://runninghub.example.test",
         request_json=request_json,
-        upload_file=lambda path: "https://media.example.test/current-source.wav",
+        upload_file=lambda path: "https://media.example.test/current-source.mp4",
         sleep=lambda _seconds: None,
         clock=lambda: 0.0,
     )
 
-    result = client.run_whisper(
-        audio_path=audio,
-        workflow_id="2081636941417758721",
-        input_node_id="12",
-        input_field="audio",
+    result = client.run_speech_whisper(
+        video_path=video,
+        workflow_id="2080170949061038081",
+        input_node_id="1",
+        input_field="video",
     )
 
-    assert result["task_id"] == "whisper-task"
-    assert result["uploaded_audio_url"] == "https://media.example.test/current-source.wav"
-    assert result["segments"] == [
-        {"start": 0.0, "end": 1.25, "text": "Hello world"},
-        {"start": 1.25, "end": 2.0, "text": "Second line"},
-    ]
-    submit = requests[0]
-    assert submit["url"] == "https://runninghub.example.test/openapi/v2/run/workflow/2081636941417758721"
-    assert submit["payload"] == {
-        "addMetadata": True,
-        "nodeInfoList": [
-            {"nodeId": "12", "fieldName": "audio", "fieldValue": "https://media.example.test/current-source.wav"}
-        ],
-        "instanceType": "default",
-        "usePersonalQueue": "false",
-    }
+    assert result["segments"] == [{"start": 0.0, "end": 1.25, "text": "Hello world"}]
+    assert result["uploaded_video_url"] == "https://media.example.test/current-source.mp4"
+    assert requests[0]["url"] == "https://runninghub.example.test/openapi/v2/run/ai-app/2080170949061038081"
+    assert requests[0]["payload"]["nodeInfoList"] == [{
+        "nodeId": "1",
+        "fieldName": "video",
+        "fieldValue": "https://media.example.test/current-source.mp4",
+    }]
 
 
 def test_whisper_workflow_rejects_a_success_response_without_a_txt_result(tmp_path: Path) -> None:
-    import pytest
-
     from server.runninghub_workflows import RunningHubWorkflowClient, RunningHubWorkflowError
 
-    audio = tmp_path / "source.wav"
-    audio.write_bytes(b"RIFF-test")
+    video = tmp_path / "source.mp4"
+    video.write_bytes(b"\x00\x00\x00\x18ftypmp42source")
     replies = iter((
         {"taskId": "whisper-task", "status": "RUNNING"},
         {"taskId": "whisper-task", "status": "SUCCESS", "results": [{"outputType": "json", "url": "https://example.test/x"}]},
@@ -150,10 +64,218 @@ def test_whisper_workflow_rejects_a_success_response_without_a_txt_result(tmp_pa
         api_key="runninghub-test-key",
         base_url="https://runninghub.example.test",
         request_json=lambda **_kwargs: next(replies),
-        upload_file=lambda _path: "https://media.example.test/current-source.wav",
+        upload_file=lambda _path: "https://media.example.test/current-source.mp4",
         sleep=lambda _seconds: None,
         clock=lambda: 0.0,
     )
 
     with pytest.raises(RunningHubWorkflowError, match="TXT"):
-        client.run_whisper(audio_path=audio, workflow_id="workflow-1", input_node_id="12", input_field="audio")
+        client.run_speech_whisper(video_path=video, workflow_id="workflow-1", input_node_id="1", input_field="video")
+
+
+def test_whisper_workflow_downloads_txt_when_result_text_is_returned_as_a_url(tmp_path: Path) -> None:
+    from server.runninghub_workflows import RunningHubWorkflowClient
+
+    video = tmp_path / "source.mp4"
+    video.write_bytes(b"\x00\x00\x00\x18ftypmp42source")
+    replies = iter((
+        {"taskId": "whisper-task", "status": "RUNNING"},
+        {"taskId": "whisper-task", "status": "SUCCESS", "results": [{
+            "outputType": "txt", "text": None, "url": "https://media.example.test/lyrics.txt",
+        }]},
+    ))
+    downloads: list[str] = []
+
+    def download_file(*, url: str, **_kwargs) -> bytes:
+        downloads.append(url)
+        return "00:00:00,000 --> 00:00:01,000\n歌词内容".encode("utf-8")
+
+    client = RunningHubWorkflowClient(
+        api_key="runninghub-test-key",
+        base_url="https://runninghub.example.test",
+        request_json=lambda **_kwargs: next(replies),
+        upload_file=lambda _path: "https://media.example.test/source.mp4",
+        download_file=download_file,
+        sleep=lambda _seconds: None,
+        clock=lambda: 0.0,
+    )
+
+    result = client.run_speech_whisper(
+        video_path=video, workflow_id="workflow-1", input_node_id="1", input_field="video"
+    )
+
+    assert downloads == ["https://media.example.test/lyrics.txt"]
+    assert result["segments"] == [{"start": 0.0, "end": 1.0, "text": "歌词内容"}]
+
+
+def test_whisper_workflow_accepts_plain_txt_when_extracting_uploaded_song_lyrics(tmp_path: Path) -> None:
+    from server.runninghub_workflows import RunningHubWorkflowClient
+
+    audio = tmp_path / "song.wav"
+    audio.write_bytes(b"RIFF-test")
+    replies = iter((
+        {"taskId": "whisper-task", "status": "RUNNING"},
+        {"taskId": "whisper-task", "status": "SUCCESS", "results": [{
+            "outputType": "txt",
+            "text": "几年后的原谅\n为一张脸去养一身伤\n别讲想念我",
+        }]},
+    ))
+    client = RunningHubWorkflowClient(
+        api_key="runninghub-test-key",
+        base_url="https://runninghub.example.test",
+        request_json=lambda **_kwargs: next(replies),
+        upload_file=lambda _path: "https://media.example.test/song.wav",
+        sleep=lambda _seconds: None,
+        clock=lambda: 0.0,
+    )
+
+    result = client.run_whisper(
+        audio_path=audio,
+        workflow_id="workflow-1",
+        input_node_id="12",
+        input_field="audio",
+        require_timestamps=False,
+    )
+
+    assert result["segments"] == [
+        {"text": "几年后的原谅"},
+        {"text": "为一张脸去养一身伤"},
+        {"text": "别讲想念我"},
+    ]
+
+
+
+def test_tts_binds_the_original_voiceover_reference_audio_when_provided() -> None:
+    from server.runninghub_workflows import RunningHubWorkflowClient
+
+    requests: list[dict[str, object]] = []
+
+    def request_json(**kwargs):
+        requests.append(kwargs)
+        if "/run/workflow/" in str(kwargs["url"]):
+            return {"taskId": "tts-task", "status": "RUNNING"}
+        return {
+            "taskId": "tts-task",
+            "status": "SUCCESS",
+            "results": [{"outputType": "wav", "url": "https://media.example.test/voiceover.wav"}],
+        }
+
+    client = RunningHubWorkflowClient(
+        api_key="runninghub-test-key",
+        base_url="https://runninghub.example.test",
+        request_json=request_json,
+        download_file=lambda **_kwargs: b"RIFF-voiceover",
+        sleep=lambda _seconds: None,
+        clock=lambda: 0.0,
+        tts_config={
+            "workflow_id": "tts-workflow",
+            "text_node_id": "1",
+            "text_field": "text",
+            "language_node_id": "2",
+            "language_field": "language",
+            "speaker_node_id": "3",
+            "speaker_field": "speaker",
+            "timing_node_id": "4",
+            "timing_field": "timing",
+            "reference_audio_node_id": "5",
+            "reference_audio_field": "audio",
+        },
+    )
+
+    client.run_tts(
+        "新しいナレーション",
+        "ja",
+        {"start_ms": 0, "end_ms": 1000},
+        speaker="VOICEOVER",
+        voice_reference_url="https://media.example.test/source-voiceover.wav",
+    )
+
+    node_values = {
+        (item["nodeId"], item["fieldName"]): item["fieldValue"]
+        for item in requests[0]["payload"]["nodeInfoList"]
+    }
+    assert node_values[("5", "audio")] == "https://media.example.test/source-voiceover.wav"
+
+
+def test_voice_clone_two_input_tts_submits_reference_audio_and_approved_plain_text_only() -> None:
+    from server.runninghub_workflows import RunningHubWorkflowClient
+
+    requests: list[dict[str, object]] = []
+
+    def request_json(**kwargs):
+        requests.append(kwargs)
+        if "/run/ai-app/" in str(kwargs["url"]):
+            return {"taskId": "tts-task", "status": "RUNNING"}
+        return {
+            "taskId": "tts-task",
+            "status": "SUCCESS",
+            "results": [{"outputType": "wav", "url": "https://media.example.test/voiceover.wav"}],
+        }
+
+    client = RunningHubWorkflowClient(
+        api_key="runninghub-test-key",
+        base_url="https://runninghub.example.test",
+        request_json=request_json,
+        download_file=lambda **_kwargs: b"RIFF-voiceover",
+        sleep=lambda _seconds: None,
+        clock=lambda: 0.0,
+        tts_config={
+            "mode": "voice_clone_two_input",
+            "workflow_id": "2080177717619118082",
+            "reference_audio_node_id": "4",
+            "reference_audio_field": "audio",
+            "text_node_id": "11",
+            "text_field": "prompt",
+        },
+    )
+
+    client.run_tts(
+        "Approved voiceover line.",
+        "en-US",
+        {"start_ms": 1000, "end_ms": 2800},
+        speaker="NARRATOR_A",
+        voice_reference_url="https://media.example.test/reference.wav",
+    )
+
+    submit = next(item for item in requests if "/run/ai-app/" in str(item["url"]))
+    assert str(submit["url"]).endswith("/openapi/v2/run/ai-app/2080177717619118082")
+    assert submit["payload"]["nodeInfoList"] == [
+        {
+            "nodeId": "4",
+            "fieldName": "audio",
+            "fieldValue": "https://media.example.test/reference.wav",
+        },
+        {
+            "nodeId": "11",
+            "fieldName": "prompt",
+            "fieldValue": "Approved voiceover line.",
+        },
+    ]
+
+def test_tts_rejects_voice_reference_without_a_configured_reference_node() -> None:
+    from server.runninghub_workflows import RunningHubWorkflowClient, RunningHubWorkflowError
+
+    client = RunningHubWorkflowClient(
+        api_key="runninghub-test-key",
+        base_url="https://runninghub.example.test",
+        tts_config={
+            "workflow_id": "tts-workflow",
+            "text_node_id": "1",
+            "text_field": "text",
+            "language_node_id": "2",
+            "language_field": "language",
+            "speaker_node_id": "3",
+            "speaker_field": "speaker",
+            "timing_node_id": "4",
+            "timing_field": "timing",
+        },
+    )
+
+    with pytest.raises(RunningHubWorkflowError, match="reference audio configuration missing"):
+        client.run_tts(
+            "旁白",
+            "zh-CN",
+            {"start_ms": 0, "end_ms": 1000},
+            speaker="VOICEOVER",
+            voice_reference_url="https://media.example.test/source-voiceover.wav",
+        )

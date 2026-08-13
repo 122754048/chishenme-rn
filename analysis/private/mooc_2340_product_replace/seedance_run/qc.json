@@ -1,0 +1,20 @@
+﻿{
+  "contract": "usfr-object-qc/v1",
+  "accepted": false,
+  "task_id": "2087457598344667138",
+  "checks": {
+    "handoff_products_replaced": true,
+    "final_stack_is_smartphones": true,
+    "all_stack_units_exact_pale_pink": false,
+    "source_macbook_text_removed": false,
+    "target_text_clean": false,
+    "source_silence_preserved": false,
+    "complete_decode": true
+  },
+  "failure_factors": [
+    "source MacBook Neo text remains visible",
+    "one final stack layer becomes gray instead of the mapped pale-pink phone",
+    "provider generated an audio stream although the source has no audio"
+  ],
+  "recovery": "one materially changed QC retry: exact four-unit pale-pink stack, exact three-line text state, silent output"
+}

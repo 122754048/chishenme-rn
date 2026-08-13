@@ -1,0 +1,112 @@
+<h2>USFR 远程 MCP：MVP 总体架构</h2>
+<p class="subtitle">单台 Linux 云服务器起步；原始 Skill 不改动，新 MCP 工程独立运行。</p>
+
+<div class="section">
+  <div class="label">员工入口</div>
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h3>Codex / ChatGPT</h3>
+        <p>员工安装远程 MCP，创建单任务或最多 20 行的批量任务。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>管理后台</h3>
+        <p>账号、每日 50 条、月预算 ¥10,000、并发 1–20、资产转移。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:28px;margin:8px 0">↓ HTTPS</div>
+
+<div class="section">
+  <div class="label">新建的 MCP 工程</div>
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h3>MCP Gateway</h3>
+        <p>工具接口、基础账号、任务归属、额度检查、Key 隔离。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>Batch Orchestrator</h3>
+        <p>第一行样片、最终 MP4 放行、其余行自动执行、默认并发 5。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>Source Library</h3>
+        <p>原片按员工隔离；同一员工按 SHA 复用一次分析结果。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:28px;margin:8px 0">↓ 内部 Jobs API</div>
+
+<div class="section">
+  <div class="label">复制后的 USFR 执行工程</div>
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h3>FastAPI + Redis</h3>
+        <p>任务状态、审批版本、幂等、Provider 对账和队列。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>Worker + FFmpeg</h3>
+        <p>原片分析、故事板、生成、合成与 QC。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>Provider Adapters</h3>
+        <p>OpenAI、RunningHub、Seedance、歌曲分类与口型流程。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:28px;margin:8px 0">↓ 私有素材与永久归档</div>
+
+<div class="section">
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h3>MinIO 临时区</h3>
+        <p>处理中间文件，不向公网开放。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>阿里云 OSS</h3>
+        <p>原片、分析缓存、脚本、导演故事板、最终 MP4。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>本方案保留</h4>
+    <ul>
+      <li>普通单任务的原审批流程</li>
+      <li>歌曲分类和对口型规则</li>
+      <li>Provider 幂等与失败对账</li>
+      <li>本地原始 Skill 完全不修改</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>MVP 暂不包含</h4>
+    <ul>
+      <li>企业 SSO、MFA、设备限制</li>
+      <li>多服务器自动扩缩容</li>
+      <li>公开注册与外部客户计费</li>
+      <li>复杂账号防扩散风控</li>
+    </ul>
+  </div>
+</div>

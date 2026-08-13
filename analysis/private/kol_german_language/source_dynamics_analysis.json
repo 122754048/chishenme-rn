@@ -1,0 +1,121 @@
+{
+  "contract": "reference-video-dynamics",
+  "contract_version": 1,
+  "reference_duration_us": 11566667,
+  "source_width": 576,
+  "source_height": 1024,
+  "fps_num": 30,
+  "fps_den": 1,
+  "source_cut_count": 4,
+  "source_cuts": [
+    {
+      "cut": 1,
+      "start_us": 0,
+      "end_us": 2000000,
+      "subject_presence": "identifiable",
+      "content_roles": ["two-person selfie hook", "opening question"],
+      "scene": "Two seated women face a low-positioned phone camera in an indoor public venue.",
+      "action": "Both remain close to camera while the opening line is delivered with small facial and head reactions.",
+      "camera": "Continuous low-angle vertical selfie framing with slight handheld motion.",
+      "transition": "Continuous take; spoken phrase boundary.",
+      "end_state": "Both women remain in their opening physical tracks facing the camera.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 2,
+      "start_us": 2000000,
+      "end_us": 6000000,
+      "subject_presence": "identifiable",
+      "content_roles": ["feature explanation", "alternating facial reactions"],
+      "scene": "Same two-person indoor selfie composition.",
+      "action": "The women continue the on-camera delivery with restrained mouth, gaze and head movements.",
+      "camera": "Continuous handheld selfie framing.",
+      "transition": "Continuous take; spoken phrase boundary.",
+      "end_state": "Both identities remain fully visible without track crossing.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 3,
+      "start_us": 6000000,
+      "end_us": 9000000,
+      "subject_presence": "identifiable",
+      "content_roles": ["messaging feature explanation", "joint performance"],
+      "scene": "Same venue and close two-person framing.",
+      "action": "Both continue compact facial reactions and mouth movements while staying on their original tracks.",
+      "camera": "Continuous low-angle phone shot.",
+      "transition": "Continuous take; spoken phrase boundary.",
+      "end_state": "Opening-right woman begins preparing to lean closer while opening-left remains steady.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 4,
+      "start_us": 9000000,
+      "end_us": 11566667,
+      "subject_presence": "identifiable",
+      "content_roles": ["download call-to-action", "closing reaction"],
+      "scene": "Same indoor selfie composition.",
+      "action": "The final call-to-action is delivered; the opening-right woman leans toward the lens and moves partially out through frame-right while opening-left remains visible.",
+      "camera": "Continuous handheld phone framing.",
+      "transition": "Natural end of recording.",
+      "end_state": "Opening-left woman remains visible and opening-right is partially cropped at frame-right.",
+      "certainty": "certain"
+    }
+  ],
+  "source_events": [
+    {
+      "event": 1,
+      "kind": "dialogue",
+      "start_us": 0,
+      "end_us": 2000000,
+      "source_cut_start": 1,
+      "source_cut_end": 1,
+      "text": "Sen de bizim gibi yeni arkadaşlıklar kurmak ister misin?",
+      "certainty": "certain"
+    },
+    {
+      "event": 2,
+      "kind": "dialogue",
+      "start_us": 2000000,
+      "end_us": 6000000,
+      "source_cut_start": 2,
+      "source_cut_end": 2,
+      "text": "Sohbet odalarına katılabilir, tamamen yeni arkadaşlıklar edinebilirsin.",
+      "certainty": "uncertain"
+    },
+    {
+      "event": 3,
+      "kind": "dialogue",
+      "start_us": 6000000,
+      "end_us": 9000000,
+      "source_cut_start": 3,
+      "source_cut_end": 3,
+      "text": "Mesajlaşabilir, çevrendeki insanlarla sohbet edebilirsin.",
+      "certainty": "uncertain"
+    },
+    {
+      "event": 4,
+      "kind": "dialogue",
+      "start_us": 9000000,
+      "end_us": 11000000,
+      "source_cut_start": 4,
+      "source_cut_end": 4,
+      "text": "Hadi sen de SUGO'yu indir.",
+      "certainty": "uncertain"
+    },
+    {
+      "event": 5,
+      "kind": "ambience",
+      "start_us": 0,
+      "end_us": 11566667,
+      "source_cut_start": 1,
+      "source_cut_end": 4,
+      "text": "Low indoor ambience beneath the on-camera speech.",
+      "certainty": "certain"
+    }
+  ],
+  "notes": [
+    "The source language is Turkish, not English.",
+    "Only spoken language and matching subtitles are approved for replacement; all visual content remains source-preserved.",
+    "The final App name sounds like SUGO, but the exact source pronunciation is slightly uncertain."
+  ]
+}

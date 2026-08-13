@@ -1,0 +1,170 @@
+{
+  "contract": "reference-video-dynamics",
+  "contract_version": 1,
+  "reference_duration_us": 15041667,
+  "source_width": 560,
+  "source_height": 752,
+  "fps_num": 24,
+  "fps_den": 1,
+  "source_cut_count": 7,
+  "source_cuts": [
+    {
+      "cut": 1,
+      "start_us": 0,
+      "end_us": 2450000,
+      "subject_presence": "identifiable",
+      "content_roles": ["opening hook", "sealed-product introduction"],
+      "scene": "One seated presenter faces the camera behind a white table, with a large rectangular product package centered in front and a microphone between presenter and package.",
+      "action": "The presenter speaks directly to camera, raises both hands beside the microphone, then brings them toward the package.",
+      "camera": "Locked vertical medium shot with strong directional daylight from frame-right.",
+      "transition": "Continuous shot; action phase changes when both hands contact the package.",
+      "end_state": "Both hands are positioned at the package sides, ready to lift it.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 2,
+      "start_us": 2450000,
+      "end_us": 5050000,
+      "subject_presence": "identifiable",
+      "content_roles": ["package lift", "front-face display"],
+      "scene": "Same seated tabletop composition.",
+      "action": "The presenter lifts the closed package upright toward the lens, holds its front face centered, then lowers it back to the table.",
+      "camera": "Locked camera; the product moves forward and upward within frame.",
+      "transition": "Continuous shot; phase changes when the package returns to the table and the lid is grasped.",
+      "end_state": "The package lies flat on the table with both hands positioned to open it.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 3,
+      "start_us": 5050000,
+      "end_us": 6750000,
+      "subject_presence": "identifiable",
+      "content_roles": ["opening proof", "interior reveal"],
+      "scene": "Same table and presenter framing.",
+      "action": "The presenter lifts the top lid completely away toward frame-right, revealing the fitted interior and the main object inside.",
+      "camera": "Locked shot; lid motion creates a brief foreground occlusion on frame-right.",
+      "transition": "Continuous shot; phase changes when the open interior is fully visible.",
+      "end_state": "The open package remains on the table with the main object exposed.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 4,
+      "start_us": 6750000,
+      "end_us": 8650000,
+      "subject_presence": "identifiable",
+      "content_roles": ["object removal", "first handheld reveal"],
+      "scene": "Same tabletop setup with open packaging.",
+      "action": "The presenter reaches into the insert, grips the main object with both hands, lifts it clear, rotates it upright and brings its front toward camera.",
+      "camera": "Locked medium shot with the object advancing toward the lens.",
+      "transition": "Continuous shot; phase changes when a loose protective layer is grasped.",
+      "end_state": "The object is held upright at chest level with its front surface visible.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 5,
+      "start_us": 8650000,
+      "end_us": 10350000,
+      "subject_presence": "identifiable",
+      "content_roles": ["protective-layer removal", "surface reveal"],
+      "scene": "Same composition with the open packaging below the held object.",
+      "action": "The presenter pulls a white protective sheet away with the left hand while supporting the object in the right, exposing the front surface.",
+      "camera": "Locked shot; the protective sheet moves leftward out of frame.",
+      "transition": "Continuous shot; phase changes after the sheet clears the object.",
+      "end_state": "The uncovered object is held front-facing in both hands.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 6,
+      "start_us": 10350000,
+      "end_us": 12800000,
+      "subject_presence": "identifiable",
+      "content_roles": ["close product demonstration", "control interaction"],
+      "scene": "Same presenter and tabletop scene.",
+      "action": "The presenter holds the object close and centered, adjusts grip, looks down briefly, and presses or tests controls with both thumbs.",
+      "camera": "Locked medium shot; the object occupies the central foreground.",
+      "transition": "Continuous shot; phase changes when the presenter stops looking down and readdresses the viewer.",
+      "end_state": "The object remains centered and front-facing in both hands.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 7,
+      "start_us": 12800000,
+      "end_us": 15041667,
+      "subject_presence": "identifiable",
+      "content_roles": ["closing call-to-action", "final product hold"],
+      "scene": "Same locked tabletop composition.",
+      "action": "The presenter continues holding the object toward camera, speaks with a small smile and maintains the final centered display pose.",
+      "camera": "Locked shot with no reframing.",
+      "transition": "Natural end of clip.",
+      "end_state": "The object is held steady at chest height while the presenter faces the viewer.",
+      "certainty": "certain"
+    }
+  ],
+  "source_events": [
+    {
+      "event": 1,
+      "kind": "dialogue",
+      "start_us": 0,
+      "end_us": 2450000,
+      "source_cut_start": 1,
+      "source_cut_end": 1,
+      "text": "All right, let's open the product.",
+      "certainty": "uncertain"
+    },
+    {
+      "event": 2,
+      "kind": "dialogue",
+      "start_us": 2450000,
+      "end_us": 7840000,
+      "source_cut_start": 2,
+      "source_cut_end": 4,
+      "text": "Okay, listen, the box lid comes straight off, and there it is.",
+      "certainty": "certain"
+    },
+    {
+      "event": 3,
+      "kind": "dialogue",
+      "start_us": 8720000,
+      "end_us": 12800000,
+      "source_cut_start": 5,
+      "source_cut_end": 6,
+      "text": "The front surface looks amazing. Listen to these clicks.",
+      "certainty": "uncertain"
+    },
+    {
+      "event": 4,
+      "kind": "dialogue",
+      "start_us": 12800000,
+      "end_us": 15041667,
+      "source_cut_start": 7,
+      "source_cut_end": 7,
+      "text": "If you want a full gameplay test, tell me.",
+      "certainty": "certain"
+    },
+    {
+      "event": 5,
+      "kind": "ambience",
+      "start_us": 0,
+      "end_us": 15041667,
+      "source_cut_start": 1,
+      "source_cut_end": 7,
+      "text": "Quiet indoor room tone under the close-recorded presenter voice and handling sounds.",
+      "certainty": "certain"
+    },
+    {
+      "event": 6,
+      "kind": "sfx",
+      "start_us": 2450000,
+      "end_us": 12800000,
+      "source_cut_start": 2,
+      "source_cut_end": 6,
+      "text": "Package lifting, lid removal, insert contact, protective-sheet movement and small control-click sounds occur in sync with the hands.",
+      "certainty": "certain"
+    }
+  ],
+  "notes": [
+    "One continuous identifiable presenter track and one continuous product-family track are present.",
+    "There are no hard scene cuts and no confirmed terminal logo/download tail.",
+    "The source product workflow is incompatible with a beverage bottle and requires approved action adaptation rather than literal inheritance."
+  ]
+}

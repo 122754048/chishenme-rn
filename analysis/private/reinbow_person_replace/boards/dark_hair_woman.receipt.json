@@ -1,0 +1,14 @@
+{
+  "role": "dark_hair_woman",
+  "reference_path": "C:\\Users\\zhaocx04\\Downloads\\未命名项目-图层 4.png",
+  "result_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/3df65a51-6417-4af0-84ec-0aec328cba21.png",
+  "task_id": "2086796065004314626",
+  "receipt": {
+    "schema_version": "runninghub-image2-asset-board/v2",
+    "request_sha256": "0b655c37acc36258244ec19f31e62a9755b921e13a184b7a66233ba3dce32826",
+    "response_sha256": "37af89ff3d86caf347d0e9cfb74f0ab949cd4bb75d8f68ad4c734da3474a4343",
+    "task_id": "2086796065004314626",
+    "template": "model",
+    "template_version": "model-v2"
+  }
+}

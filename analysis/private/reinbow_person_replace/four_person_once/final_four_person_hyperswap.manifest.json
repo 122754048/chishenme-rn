@@ -1,0 +1,25 @@
+{
+  "schema_version": "usfr-local-multi-track-completion/v1",
+  "backend": "facefusion-hyperswap-1a-256",
+  "provider_result": "four_person_once\\result_e9182b194e8471c14d34e35cc775ba268ffbce27c58f58457f2344bafb65c254.mp4",
+  "output_video": "four_person_once\\final_four_person_hyperswap.mp4",
+  "fps": 24.0,
+  "width": 720,
+  "height": 1280,
+  "frames_processed": 265,
+  "swap_counts": {
+    "SRC_BLONDE": 224,
+    "SRC_DARK": 75
+  },
+  "unassigned_frames": {
+    "SRC_BLONDE": 41,
+    "SRC_MAN": 55,
+    "SRC_DARK": 190
+  },
+  "protected_tracks": [
+    "SRC_MAN",
+    "SRC_ALIEN"
+  ],
+  "pixel_boost": "512x512",
+  "face_swapper_weight": 0.65
+}

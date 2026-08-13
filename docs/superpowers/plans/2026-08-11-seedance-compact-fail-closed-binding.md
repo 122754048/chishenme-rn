@@ -14,7 +14,7 @@
 - One request supports one through nine continuous image references; `imageUrls[N-1] == @ImageN`.
 - Every visual replacement selects `provider_only_multi_object_binding` before a paid call.
 - Provider prompts use short positive state declarations and the successful Reinbow semantic shape.
-- Person modes are mutually exclusive: `identity_and_wardrobe_from_reference` or `head_identity_preserve_source_wardrobe`.
+- Person modes are mutually exclusive: `identity_and_wardrobe_from_reference` or `identity_from_reference_preserve_source_wardrobe`.
 - Missing descriptor, scope, confidence, target evidence, clean UTF-8, continuous indices, or canonical receipt fails before CreateVideo.
 - No local face swap, inpainting, frame replacement, compositing, re-encoding, audio replacement, or per-person paid generation.
 - Product, App, scene, garment, jewelry, accessory, UI, audio, tail, assembly, QC, and recovery behavior remains intact.
@@ -32,7 +32,7 @@
 **Interfaces:**
 - Consumes: approved visual bindings passed to `build_approved_edit_script()`.
 - Produces: canonical model bindings containing `wardrobe_policy`, `target_identity_descriptor`, and conditionally `source_wardrobe_descriptor`.
-- Accepted policies: `identity_and_wardrobe_from_reference`, `head_identity_preserve_source_wardrobe`.
+- Accepted policies: `identity_and_wardrobe_from_reference`, `identity_from_reference_preserve_source_wardrobe`.
 
 - [ ] **Step 1: Add failing tests for the two mutually exclusive person modes**
 
@@ -52,7 +52,7 @@ def test_model_binding_requires_explicit_reference_wardrobe_policy() -> None:
 def test_model_binding_requires_named_source_wardrobe_for_head_only_mode() -> None:
     binding = _approved_model_binding()
     binding.update({
-        "wardrobe_policy": "head_identity_preserve_source_wardrobe",
+        "wardrobe_policy": "identity_from_reference_preserve_source_wardrobe",
         "source_wardrobe_descriptor": "black hoodie",
         "replacement_scope": "head identity",
     })
@@ -80,7 +80,7 @@ def test_model_binding_fails_when_required_binding_evidence_is_missing(missing: 
 def test_complete_target_appearance_cannot_preserve_source_wardrobe() -> None:
     binding = _approved_model_binding()
     binding.update({
-        "wardrobe_policy": "head_identity_preserve_source_wardrobe",
+        "wardrobe_policy": "identity_from_reference_preserve_source_wardrobe",
         "source_wardrobe_descriptor": "black hoodie",
         "replacement_scope": "identity, appearance, and wardrobe",
     })
@@ -105,7 +105,7 @@ In `server/approved_edit_contract.py`:
 ```python
 _PERSON_WARDROBE_POLICIES = {
     "identity_and_wardrobe_from_reference",
-    "head_identity_preserve_source_wardrobe",
+    "identity_from_reference_preserve_source_wardrobe",
 }
 ```
 
@@ -189,7 +189,7 @@ def test_compatibility_compiler_rejects_weak_binding_defaults(missing: str) -> N
 
 def test_compatibility_compiler_rejects_appearance_source_wardrobe_conflict() -> None:
     bindings = _bindings()
-    bindings[0]["wardrobe_policy"] = "head_identity_preserve_source_wardrobe"
+    bindings[0]["wardrobe_policy"] = "identity_from_reference_preserve_source_wardrobe"
     bindings[0]["replacement_scope"] = "complete identity, appearance, and wardrobe"
     bindings[0]["source_wardrobe_descriptor"] = "black hoodie"
     with pytest.raises(ValueError, match="PERSON_WARDROBE_SCOPE_CONFLICT"):
@@ -491,7 +491,7 @@ Require the Skill/reference to contain:
 ```python
 required = {
     "identity_and_wardrobe_from_reference",
-    "head_identity_preserve_source_wardrobe",
+    "identity_from_reference_preserve_source_wardrobe",
     "provider-only-multi-object-binding/v1",
     "SOURCE_OBJECT_BINDING_REQUIRED",
     "imageUrls[N-1] == @ImageN",

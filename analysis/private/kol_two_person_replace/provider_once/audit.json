@@ -1,0 +1,35 @@
+{
+  "schema_version": "kol-two-person-provider-once/v1",
+  "request_sha256": "afb5019fafdaf42913a82135829b21728fe5bf8799133ff9334360af17592f97",
+  "source_video_sha256": "26ffe6b9c3ab665e15f96acc5804d3246cdb6005e05ed4a07e48588581f94685",
+  "approved_script_sha256": "6f4066799879654001479b6f76ba56c794f4a0ad4c7ef1710928db5aff41e210",
+  "prompt_sha256": "2bb0f9af927fe4ef7f0e8a9725922f0bc0e1544eaa5ef099a1e1e161565bbda9",
+  "binding_contract_sha256": "83e9b4005f5e376849e4c4ca9ab354df873205f084022b6addbe08bea9eb2709",
+  "provider_only_binding_receipt": {
+    "contract": "provider-only-multi-object-binding/v1",
+    "compiler_version": "provider-only-multi-object-binding/v1",
+    "binding_mode": "provider_only_multi_object_binding",
+    "binding_contract_sha256": "83e9b4005f5e376849e4c4ca9ab354df873205f084022b6addbe08bea9eb2709",
+    "prompt_sha256": "2bb0f9af927fe4ef7f0e8a9725922f0bc0e1544eaa5ef099a1e1e161565bbda9",
+    "image_tags": [
+      "@Image1",
+      "@Image2"
+    ],
+    "source_object_ids": [
+      "SRC_OPENING_LEFT",
+      "SRC_OPENING_RIGHT"
+    ]
+  },
+  "image_sha256_order": [
+    "53e2bdf71e7008e297aa3545441ac625c5f1bad388f35a67b39c471649d0cb5d",
+    "4ad9ba90e3ae7667c7202e4f6cdf497ccf6ec4e6b1215fdb1f2c890b92adeaec"
+  ],
+  "subject_order": [
+    "TARGET_MAN",
+    "TARGET_WOMAN"
+  ],
+  "source_object_order": [
+    "SRC_OPENING_LEFT",
+    "SRC_OPENING_RIGHT"
+  ]
+}

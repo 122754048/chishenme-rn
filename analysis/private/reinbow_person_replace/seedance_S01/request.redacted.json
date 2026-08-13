@@ -1,0 +1,23 @@
+{
+  "prompt": "最高优先级编辑边界：严格编辑 @Video1。这是一次角色替换编辑，不是重新生成。除本提示词显式指定替换的人物身份外，@Video1 的其余一切逐帧保持完全一致：面部表情与微表情、视线方向、头部朝向、情绪节奏、身体动作与手部动作、口型开合时序、走位、镜头运动与构图、景别切换、灯光与色调、背景环境与场景中的所有物体、以及画面中其他未被指定替换的人物。被替换的人物必须逐帧匹配原对应人物的表演时机与能量强度。仅生成本提示词及其关联图像和音频参考中明确指定的可见文字、配音、旁白与对话；不要保留 @Video1 中的可见文字、原声、旁白或原对话。 Strictly edit @Video1. This is a character replacement edit, not a new generation. Except for the person identities this prompt explicitly replaces, keep everything in @Video1 frame-for-frame identical: facial expressions and micro-expressions, gaze direction, head orientation, emotional beats, body and hand motion, mouth-open timing, blocking, camera movement and framing, shot changes, lighting and color, the background environment and every object in the scene, and every other person who is not designated for replacement. Each replaced person must match the original counterpart's performance timing and energy frame for frame. Generate only the exact visible text, voices, narration, and dialogue specified by this prompt and its bound image and audio references; do not carry over visible text, original voice, narration, or dialogue from @Video1. 编辑视频：严格编辑 @Video1，不要重新设计镜头。@Image1 是 MODEL_MAIN_MALE，@Image2 是 MODEL_BLONDE_WOMAN，@Image3 是 MODEL_DARK_HAIR_WOMAN，@Image4 是 MODEL_CAT_HUMANOID。\n\n在整个片段内，把原始居中并随后移动到右侧的男性完整替换为 @Image1 的同一身份；保留原黑色彩虹圆环连帽衫、身高、身体动作、手势、表情节奏、视线、口型时序以及深色手机和红色手机的持握与交接。把原金发女性完整替换为 @Image2，并保留原薄荷绿色服装、站位、手势和反应。把原深发女性完整替换为 @Image3，并保留原灰色上衣、站位、笑容和反应。\n\n约在本地时间 00:03.150，原外星人头套角色从画面左侧进入。只把该角色的外星人头部替换为 @Image4 的写实布偶猫头部：蓝眼睛、粉色鼻子、白色鼻口和额头区域、深色耳朵与眼周重点色毛纹。必须保留该角色原有的人形身高、黑色连帽衫、人类颈肩、双臂、双手、双腿和直立动作。它必须继续用人类手掌检查、持握并递交手机。禁止变成四足猫、宠物猫、巨大猫头、玩偶服、猫爪手或改变身体尺度。\n\n除上述四个身份变化外，逐帧保持 @Video1 的公园背景、树木、光线、色彩、所有服装、手机颜色和数量、遮挡层级、人物走位、手部接触、构图、手持相机运动、动作速度和喜剧节奏。生成的英文对白必须依次且仅为：“Hey! Say what's up! Say what's up!”、“Let me see that. You're still running the same old app.”、“You've got to get the new one. Get the Reinbow app and get some money.”、“Reinbow app, get some money.”、“Okay.”，保持源口型节奏。不增加字幕、文字、Logo、道具、人物或镜头，不删除任何源物体。片段必须在男性完成“Okay”之后、深发女性开始进入前景之前结束。",
+  "resolution": "720p",
+  "duration": "11",
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/34234f25ea14ccbecf4df8a1e0c94095b897e780d1f1cecf444ebf1179d10c56.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/05c04d0e4a266f98ec46443ea657a94325bf066a356d6ecd5a5439c64340cdb0.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/8daa460e739a8f8a6385927d0b0b4e9a8729d64ac955d430574b7bfbf7266d81.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/48e6bc2bef128c18749289287c750a668d9eb5c91fda634bb59cea8c9951f8d3.png"
+  ],
+  "videoUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/bb1998e0e33d0207b93e0393a49369cc0d82b1365ae096abd296b2dde7113a8b.mp4"
+  ],
+  "audioUrls": [],
+  "generateAudio": true,
+  "ratio": "9:16",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": "usfr-person-asset-manifest/v1",
+  "assets": [
+    {
+      "slot": 1,
+      "reference": "@Image1",
+      "asset_tag": "TARGET_WOMAN",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\033119203223580624 (1).webp",
+      "source_sha256": "5d02be49f656eed4c209d9f1c48552544970987a4d4236a083db589269a7c8a7",
+      "identity_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\person_product_replace_17dd9ae4\\assets\\person\\01_TARGET_WOMAN.png",
+      "sha256": "2a3d8a0a011d3079b50c927ccf527bdb136d74eb1e3abc46fc9b6660789584b5",
+      "person_asset_profile": "model-identity-v3-local-crop",
+      "asset_mime_type": "image/png",
+      "asset_width": 1024,
+      "asset_height": 1024,
+      "identity_subject_count": 1,
+      "asset_layout": "identity_dominant",
+      "asset_composition": "upper_body_square"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "role": "cat_humanoid",
+  "reference_path": "C:\\Users\\zhaocx04\\Downloads\\jimeng-2025-08-12-5640-布偶猫蜷在藤编篮中，肉垫轻搭篮边，自然光透过百叶窗形成条纹光影，浅景深背景虚化，....png",
+  "result_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/573bdde8-0a45-449d-aede-599ac8df91ca.png",
+  "task_id": "2086796065407758337",
+  "receipt": {
+    "schema_version": "runninghub-image2-asset-board/v2",
+    "request_sha256": "22362a9433021b8ef6c0d28e76c94bd52cba42b7046fd08e5fde1bfd1a4e7ce0",
+    "response_sha256": "dc9f0b1a5a2ffc9c2c45e9d0b7b3c8a34b11214e1da2dfa6d727b25363eb9bc7",
+    "task_id": "2086796065407758337",
+    "template": "model",
+    "template_version": "model-v2"
+  }
+}

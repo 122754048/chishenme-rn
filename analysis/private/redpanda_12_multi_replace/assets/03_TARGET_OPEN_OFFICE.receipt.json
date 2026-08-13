@@ -1,0 +1,19 @@
+{
+  "schema_version": "runninghub-asset-board/v2",
+  "asset_type": "scene",
+  "template_version": "scene-v2",
+  "source_asset_sha256": "323202245579d5704bbcbcffa57708cf9f08829297ea31e2461632aa55a9663f",
+  "request_sha256": "9c433000f9b248cc9581dfe83b2b76092b76f20a4dc5d228fcad3823fb8432d6",
+  "response_sha256": "d12124696750f2efedc587b863abbd6810210c3ff0428dc8d61a06710c2143cd",
+  "task_id": "2087407208735309826",
+  "board_sha256": "fae25757e25d34a233bf4c5863f4e5d9ace7ebc91e6a8cf9d77e3273c0ee79e0",
+  "provider_asset_board_contract_sha256": "e517a99a6309febfbb5e9002899fa99169a70703a4d7b5b50bc9e412ae3871cf",
+  "provider_receipt": {
+    "schema_version": "runninghub-image2-asset-board/v2",
+    "request_sha256": "9c433000f9b248cc9581dfe83b2b76092b76f20a4dc5d228fcad3823fb8432d6",
+    "response_sha256": "d12124696750f2efedc587b863abbd6810210c3ff0428dc8d61a06710c2143cd",
+    "task_id": "2087407208735309826",
+    "template": "scene",
+    "template_version": "scene-v2"
+  }
+}

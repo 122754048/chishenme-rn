@@ -1,0 +1,16 @@
+{
+  "task_id": "2087529546488176642",
+  "submitted": {
+    "taskId": "2087529546488176642",
+    "status": "QUEUED",
+    "errorCode": "",
+    "errorMessage": "",
+    "results": null,
+    "clientId": "",
+    "promptTips": "",
+    "failedReason": {},
+    "usage": null,
+    "parentTaskId": null,
+    "taskUsageList": null
+  }
+}

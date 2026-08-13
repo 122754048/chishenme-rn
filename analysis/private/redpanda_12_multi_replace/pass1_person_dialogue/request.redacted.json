@@ -1,0 +1,22 @@
+{
+  "prompt": "编辑视频： Multi-subject replacement based on @Video1. @Video1 supplies the full motion, camera, blocking, timing, occlusion, lighting, background, props, contacts, and audio. Subject 1: the only opening-center seated male presenter with wavy dark hair, blue striped overshirt and white sleeves becomes @Image1 with exact @Image1 identity and wardrobe: adult woman with long dark hair in a low ponytail and the visible pink ribbed mock-neck long-sleeve top from @Image1. Object 2 (product): the opening black rectangular package and the handheld gaming-device product track on the center table becomes @Image2 with the target geometry, color, markings, and packaging from @Image2; preserve source timing, hand contact purpose, camera, perspective, scale, shadows and occlusion; 00:00.000-00:02.450 bottle front stands centered, 00:02.450-00:05.050 lift front label close then return, 00:05.050-00:06.750 twist cap open, 00:06.750-00:08.650 lift front label, 00:08.650-00:10.350 rotate side then front, 00:10.350-00:15.042 stable chest-height front-label display. Object 3 (scene): the full room environment behind and around the presenter from the opening frame becomes @Image3 with the target environment from @Image3; preserve presenter, foreground table, microphone, product interactions, camera framing, depth, lighting direction and timing. Each mapped Subject or Object remains the same continuing physical track through movement, occlusion, interaction, and crossing. All mapped tracks follow their source motion, contact, perspective, lighting, and timing. 00:00.000-00:02.450 TARGET_WOMAN 台词精确改为：All right, let's check out this Sunquick Orange.。 00:02.450-00:05.050 TARGET_WOMAN 台词精确改为：That bright orange bottle really stands out.。 00:05.050-00:06.750 TARGET_WOMAN 台词精确改为：The cap twists right open, and there it is.。 00:06.750-00:08.650 TARGET_WOMAN 台词精确改为：Here is the front label up close.。 00:08.650-00:10.350 TARGET_WOMAN 台词精确改为：You can see the bottle from every side.。 00:10.350-00:12.800 TARGET_WOMAN 台词精确改为：The orange color looks so vivid.。 00:12.800-00:15.042 TARGET_WOMAN 台词精确改为：If you want a full pour test, tell me.。 All unlisted content remains unchanged and frame-aligned. sync_to_approved_dialogue_windows Render matching English subtitles for each approved dialogue window using the exact quoted dialogue.",
+  "resolution": "720p",
+  "duration": "15",
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/ef4fd0ee050949c9c25ca2d7e2607a43daf68b316cdc6c2b16de2ed27e13c1d1.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/b3c05ce010eb1b1bce4536ecccbfec70fb96b0ac1ab3c46af98a219826288be0.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/fae25757e25d34a233bf4c5863f4e5d9ace7ebc91e6a8cf9d77e3273c0ee79e0.png"
+  ],
+  "videoUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/166e4e8531609764c27d627419ceb1d8ff6b222047e9935d7ad8807fbaeb2e54.mp4"
+  ],
+  "audioUrls": [],
+  "generateAudio": true,
+  "ratio": "3:4",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

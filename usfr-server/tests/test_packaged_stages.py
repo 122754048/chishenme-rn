@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import dataclass
 from hashlib import sha256
+import io
 from pathlib import Path
 import sys
 from types import SimpleNamespace
@@ -17,11 +18,63 @@ import server.runninghub_standard_contract as standard_contract
 
 
 def _source_video_prompt(text: str) -> str:
-    return f"{text} {standard_contract.SOURCE_VIDEO_PROMPT_CONTRACT}"
+    return (
+        f"{standard_contract.SOURCE_VIDEO_PRIORITY_PREFIX} "
+        f"{standard_contract.SOURCE_VIDEO_PROMPT_CONTRACT} {text}"
+    )
 
 
 def _digest(value: bytes) -> str:
     return sha256(value).hexdigest()
+
+
+def _png_bytes(*, width: int = 720, height: int = 1280, color: tuple[int, int, int] = (96, 96, 96)) -> bytes:
+    from PIL import Image
+
+    output = io.BytesIO()
+    Image.new("RGB", (width, height), color).save(output, format="PNG")
+    return output.getvalue()
+
+
+def test_control_sheet_sharpness_ratio_rejects_a_blurred_copy() -> None:
+    """A control sheet must retain enough source detail to rule out censor-style blur."""
+
+    from PIL import Image, ImageFilter
+    from server.packaged_stages import _sharpness_ratio
+
+    source = Image.effect_noise((512, 512), 96).convert("RGB")
+    blurred = source.filter(ImageFilter.GaussianBlur(radius=12))
+
+    assert _sharpness_ratio(source, source.copy()) > 0.95
+    assert _sharpness_ratio(source, blurred) < 0.60
+
+
+def test_control_sheet_sharpness_ratio_rejects_localized_detail_loss() -> None:
+    """Panel borders must not hide a censored interior region from the quality gate."""
+
+    from PIL import Image, ImageFilter
+    from server.packaged_stages import _sharpness_ratio
+
+    source = Image.effect_noise((512, 512), 96).convert("RGB")
+    partially_blurred = source.copy()
+    blurred_center = source.crop((128, 128, 384, 384)).filter(ImageFilter.GaussianBlur(radius=12))
+    partially_blurred.paste(blurred_center, (128, 128))
+
+    assert _sharpness_ratio(source, partially_blurred) < 0.60
+
+
+def test_control_sheet_sharpness_ratio_rejects_a_single_blurred_detail_tile() -> None:
+    """One censored high-detail face, label or text tile is already unacceptable."""
+
+    from PIL import Image, ImageFilter
+    from server.packaged_stages import _sharpness_ratio
+
+    source = Image.effect_noise((512, 512), 96).convert("RGB")
+    partially_blurred = source.copy()
+    blurred_tile = source.crop((128, 128, 256, 256)).filter(ImageFilter.GaussianBlur(radius=12))
+    partially_blurred.paste(blurred_tile, (128, 128))
+
+    assert _sharpness_ratio(source, partially_blurred) < 0.60
 
 
 def _canonical_digest(value: object) -> str:
@@ -116,9 +169,17 @@ def test_seedance_audit_requires_real_control_artifacts_in_a_durable_context(tmp
         )
 
 
-def test_bind_inputs_publishes_the_sha_bound_uploaded_audio_classification(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("classification_kind", "must_fail"),
+    [("song", False), ("background_music", False), ("voiceover", False), ("non_song", True)],
+    ids=["song", "background_music", "voiceover", "ambiguous_non_song"],
+)
+def test_bind_inputs_publishes_the_sha_bound_uploaded_audio_classification(
+    tmp_path: Path, classification_kind: str, must_fail: bool
+) -> None:
     """The immutable upload classification must exist before script drafting."""
 
+    from server.errors import ReplicationError
     from server.packaged_stages import BindInputsStage
 
     upload = tmp_path / "replacement.wav"
@@ -149,7 +210,7 @@ def test_bind_inputs_publishes_the_sha_bound_uploaded_audio_classification(tmp_p
             return {
                 "contract": "uploaded-audio-classification/v1",
                 "audio_sha256": audio_sha256,
-                "kind": "non_song",
+                "kind": classification_kind,
                 "confidence": 0.99,
                 "classification_evidence_sha256": "b" * 64,
                 "lyrics": [],
@@ -162,6 +223,7 @@ def test_bind_inputs_publishes_the_sha_bound_uploaded_audio_classification(tmp_p
                     "slots": slots,
                     "admission": {"can_proceed": True},
                     "extensions": {
+                        "edit_contract": "video-edit-v2",
                         "background_music": {
                             "extension_id": "input_contract_v2.background_music",
                             "values": ["uploads/job/replacement.wav"],
@@ -192,16 +254,20 @@ def test_bind_inputs_publishes_the_sha_bound_uploaded_audio_classification(tmp_p
 
     classifier = Classifier()
     context = Context()
+    if must_fail:
+        with pytest.raises(ReplicationError) as exc_info:
+            BindInputsStage(uploaded_audio_classifier=classifier).run(context=context, input_artifacts=[])
+        assert exc_info.value.code == "UPLOADED_AUDIO_CLASSIFICATION_REQUIRED"
+        assert context.published == []
+        return
+
     result = BindInputsStage(uploaded_audio_classifier=classifier).run(context=context, input_artifacts=[])
 
     assert classifier.calls == [(upload, upload_sha)]
-    assert result["uploaded_audio_classification"]["kind"] == "non_song"
+    assert result["uploaded_audio_classification"]["kind"] == classification_kind
     assert result["published_artifacts"][0]["kind"] == "uploaded_audio_classification"
-    assert context.published[0]["data"] == (
-        b'{"audio_sha256":"' + upload_sha.encode("ascii") +
-        b'","classification_evidence_sha256":"' + b"b" * 64 +
-        b'","confidence":0.99,"contract":"uploaded-audio-classification/v1","kind":"non_song","lyrics":[]}'
-    )
+    assert b'"audio_sha256":"' + upload_sha.encode("ascii") in context.published[0]["data"]
+    assert b'"kind":"' + classification_kind.encode("ascii") + b'"' in context.published[0]["data"]
 
 
 class _StoryboardContext:
@@ -273,14 +339,7 @@ class _Image2:
         self.calls.append(kwargs)
         return {
             "task_id": "image2-task",
-            "image_bytes": (
-                b"\x89PNG\r\n\x1a\n"
-                b"\x00\x00\x00\rIHDR\x00\x00\x02\xd0\x00\x00\x05\x00\x08\x02\x00\x00\x00"
-                # Each provider invocation is a distinct generated artifact.
-                # In particular, a replacement-control sheet cannot reuse the
-                # bytes of a source sheet or fixed-slot target reference.
-                + f"image2-output-{len(self.calls)}".encode("ascii")
-            ),
+            "image_bytes": _png_bytes(color=(96 + len(self.calls) * 8, 96, 96)),
             "receipt": {"request_sha256": "c" * 64, "response_sha256": "d" * 64, "task_id": "image2-task"},
         }
 
@@ -346,6 +405,10 @@ class _VideoAuditContext(_AuditContext):
                 "replacement_target_sha256s": [_digest(model.read_bytes())],
                 "approved_visible_text_locks_sha256": _EMPTY_VISIBLE_TEXT_LOCKS_SHA,
                 "visible_text_lock_ids": [],
+                "segment_ids": ["S01"],
+                "page_cut_ids": ["C01"],
+                "storyboard_page": 1,
+                "storyboard_page_count": 1,
             }
         )
         absent = {"present": False, "values": [], "metadata": [], "sha256": []}
@@ -518,10 +581,7 @@ def test_storyboard_stage_publishes_a_real_image2_board_and_binds_it_to_the_revi
     )
 
     source_sheet = tmp_path / "source-keyframes.png"
-    source_sheet.write_bytes(
-        b"\x89PNG\r\n\x1a\n"
-        b"\x00\x00\x00\rIHDR\x00\x00\x02\xd0\x00\x00\x05\x00\x08\x02\x00\x00\x00"
-    )
+    source_sheet.write_bytes(_png_bytes())
     stage._source_keyframe_sheet = lambda *_args, **_kwargs: {
         "path": source_sheet,
         "source_video_sha256": "a" * 64,
@@ -531,21 +591,30 @@ def test_storyboard_stage_publishes_a_real_image2_board_and_binds_it_to_the_revi
 
     result = stage.run(context=context, input_artifacts=[])
 
-    assert len(image2.calls) == 2
-    control_call, board_call = image2.calls
-    assert control_call["aspect_ratio"] == "16:9"
+    assert len(image2.calls) == 3
+    normalize_call, control_call, board_call = image2.calls
+    assert normalize_call["aspect_ratio"] == "1:1"
+    assert normalize_call["reference_images"] == [reference]
+    assert control_call["aspect_ratio"] == "9:16"
     assert control_call["resolution"] == "2k"
     assert control_call["quality"] == "medium"
-    assert control_call["reference_images"] == [source_sheet, reference]
+    assert control_call["reference_images"][0] == source_sheet
+    assert control_call["reference_images"][1].name == "new_model_image-00-sheet.png"
     assert "replacement control keyframe sheet" in control_call["prompt"]
     assert "Reference image 1 is the complete source Cut contact sheet" in control_call["prompt"]
     assert "one complete replacement-control sheet" in control_call["prompt"]
     assert "replace only the authorized model identity layer" in control_call["prompt"]
     assert "must remain unchanged" in control_call["prompt"]
-    assert board_call["reference_images"][1:] == [reference]
+    assert "All existing physical text, printed graphics, garment prints, logos, signs and shop boards" in control_call["prompt"]
+    assert "Never blur, pixelate, mosaic, smudge, gray out, black out, censor, redact, soften" in control_call["prompt"]
+    assert "add unapproved text" not in control_call["prompt"]
+    assert "not inside an authorized replacement layer or an approved scene-surface text lock" in control_call["prompt"]
+    assert "Do not recreate screen-space subtitle, caption, CTA, lower-third, sticker or wordmark glyphs" in control_call["prompt"]
+    assert board_call["aspect_ratio"] == "9:16"
+    assert board_call["reference_images"][1:] == []
     assert board_call["reference_images"][0].name == "replacement-control-keyframes.png"
     assert "Reference image 1 is the replacement-control sheet" in board_call["prompt"]
-    assert "Later target references cannot override" in board_call["prompt"]
+    assert "authorized character identity is already resolved inside Reference image 1" in board_call["prompt"]
     # The production request must be the filled packaged director-board
     # template, not a short hand-written prompt that merely says "layout".
     for required_layout_section in (
@@ -590,6 +659,9 @@ def test_storyboard_stage_publishes_a_real_image2_board_and_binds_it_to_the_revi
     assert control["metadata"]["generator_kind"] == "runninghub_image2"
     assert control["metadata"]["generation_mode"] == "single_sheet_image_to_image"
     assert control["metadata"]["image2_call_count"] == 1
+    normalized = next(item for item in context.published if item["kind"] == "normalized_target_asset_sheet")
+    assert normalized["metadata"]["slot_id"] == "new_model_image"
+    assert normalized["metadata"]["source_asset_sha256"] == _digest(reference.read_bytes())
 
 
 def test_storyboard_stage_keeps_the_source_control_chain_when_no_visual_target_is_supplied(
@@ -641,10 +713,7 @@ def test_storyboard_stage_keeps_the_source_control_chain_when_no_visual_target_i
         }
     )
     source_sheet = tmp_path / "source-keyframes.png"
-    source_sheet.write_bytes(
-        b"\x89PNG\r\n\x1a\n"
-        b"\x00\x00\x00\rIHDR\x00\x00\x02\xd0\x00\x00\x05\x00\x08\x02\x00\x00\x00"
-    )
+    source_sheet.write_bytes(_png_bytes())
     stage._source_keyframe_sheet = lambda *_args, **_kwargs: {
         "path": source_sheet,
         "source_video_sha256": "a" * 64,
@@ -657,7 +726,133 @@ def test_storyboard_stage_keeps_the_source_control_chain_when_no_visual_target_i
     assert len(image2.calls) == 2
     control_call, board_call = image2.calls
     assert control_call["reference_images"] == [source_sheet]
+    assert control_call["aspect_ratio"] == "9:16"
     assert board_call["reference_images"][0].name == "replacement-control-keyframes.png"
+
+
+def test_replacement_control_sheet_blocks_localized_blur_before_publication(tmp_path: Path) -> None:
+    """A locally censored control panel cannot reach storyboard publication."""
+
+    from PIL import Image, ImageFilter
+    from server.errors import ReplicationError
+    from server.packaged_stages import StoryboardStage
+
+    source = Image.effect_noise((512, 512), 96).convert("RGB")
+    source_path = tmp_path / "source-keyframes.png"
+    source.save(source_path, format="PNG")
+    blurred = source.copy()
+    blurred.paste(source.crop((128, 128, 256, 256)).filter(ImageFilter.GaussianBlur(radius=12)), (128, 128))
+    rendered = io.BytesIO()
+    blurred.save(rendered, format="PNG")
+
+    class BlurImage2:
+        def run_image2(self, **_kwargs):
+            return {
+                "task_id": "image2-task",
+                "image_bytes": rendered.getvalue(),
+                "receipt": {"request_sha256": "c" * 64, "response_sha256": "d" * 64, "task_id": "image2-task"},
+            }
+
+    reference = tmp_path / "model.png"
+    reference.write_bytes(b"target-model-image")
+    context = _StoryboardContext(reference=reference)
+    stage = StoryboardStage.__new__(StoryboardStage)
+    stage._image_client = BlurImage2()
+
+    with pytest.raises(ReplicationError, match="blurred or censored"):
+        stage._replacement_control_sheet(
+            context=context,
+            source_dynamics={},
+            source_sheet={
+                "path": source_path,
+                "source_keyframes": [{"cut_id": "C01"}],
+            },
+            target_references=[],
+            visible_text_locks=[],
+        )
+    assert context.published == []
+
+
+def test_replacement_control_prompt_uses_surface_locks_and_excludes_overlay_glyphs(tmp_path: Path) -> None:
+    """Physical copy is prompt-bound; approved screen overlays stay in the deterministic lane."""
+
+    from server.errors import ReplicationError
+    from server.packaged_stages import StoryboardStage
+
+    source_path = tmp_path / "source-keyframes.png"
+    source_path.write_bytes(_png_bytes())
+    reference = tmp_path / "model.png"
+    reference.write_bytes(b"target-model-image")
+
+    class CapturingImage2:
+        def __init__(self) -> None:
+            self.prompt = ""
+
+        def run_image2(self, **kwargs):
+            self.prompt = str(kwargs["prompt"])
+            raise RuntimeError("stop after prompt capture")
+
+    image2 = CapturingImage2()
+    context = _StoryboardContext(reference=reference)
+    stage = StoryboardStage.__new__(StoryboardStage)
+    stage._image_client = image2
+    surface_placement = {
+        "carrier_id": "shop-sign-1",
+        "surface_relation": "painted on the wall",
+        "motion_behavior": "moves with the camera pan",
+    }
+    locks = [
+        {
+            "text_id": "surface-replace",
+            "cut_ids": ["C01"],
+            "start_ms": 0,
+            "end_ms": 1000,
+            "kind": "physical_sign_text",
+            "source_evidence_sha256": "a" * 64,
+            "approved_text": "NEW OFFER",
+            "disposition": "replace",
+            "placement": surface_placement,
+        },
+        {
+            "text_id": "surface-remove",
+            "cut_ids": ["C01"],
+            "start_ms": 0,
+            "end_ms": 1000,
+            "kind": "wardrobe_text",
+            "source_evidence_sha256": "b" * 64,
+            "approved_text": "",
+            "disposition": "remove",
+            "placement": {
+                "carrier_id": "shirt-1",
+                "surface_relation": "printed on the shirt",
+                "motion_behavior": "folds with the shirt",
+            },
+        },
+        {
+            "text_id": "overlay-keep",
+            "cut_ids": ["C01"],
+            "start_ms": 0,
+            "end_ms": 1000,
+            "kind": "subtitle",
+            "source_evidence_sha256": "c" * 64,
+            "approved_text": "Tap to buy",
+            "disposition": "keep",
+            "placement": {},
+        },
+    ]
+
+    with pytest.raises(ReplicationError, match="replacement control generation failed"):
+        stage._replacement_control_sheet(
+            context=context,
+            source_dynamics={},
+            source_sheet={"path": source_path, "source_keyframes": [{"cut_id": "C01"}]},
+            target_references=[],
+            visible_text_locks=locks,
+        )
+
+    assert 'render the exact approved text "NEW OFFER"' in image2.prompt
+    assert 'remove the source text from physical carrier "shirt-1"' in image2.prompt
+    assert "Tap to buy" not in image2.prompt
 
 
 def test_source_keyframe_sheet_extracts_one_real_frame_for_each_source_cut(monkeypatch, tmp_path: Path) -> None:
@@ -716,6 +911,203 @@ def test_source_keyframe_sheet_extracts_one_real_frame_for_each_source_cut(monke
     assert "select=" in calls[0][calls[0].index("-vf") + 1]
     assert calls[0][calls[0].index("-vsync") + 1] == "0"
     assert result["path"].is_file()
+
+
+def test_person_region_box_detects_a_static_right_side_ui_panel(tmp_path: Path) -> None:
+    from PIL import Image
+    import server.packaged_stages as stages
+
+    paths: list[Path] = []
+    for index, tone in enumerate((0, 255, 64), start=1):
+        image = Image.new("L", (100, 160), 128)
+        image.paste(tone, (0, 0, 40, 160))
+        path = tmp_path / f"source-{index:02d}.png"
+        image.save(path, format="PNG")
+        paths.append(path)
+
+    assert stages._person_region_box(paths) == (0, 40)
+
+
+def test_person_region_box_keeps_full_frame_when_no_decisive_static_panel_exists(tmp_path: Path) -> None:
+    from PIL import Image
+    import server.packaged_stages as stages
+
+    paths: list[Path] = []
+    for index, tone in enumerate((0, 255, 64), start=1):
+        image = Image.new("L", (100, 160), tone)
+        path = tmp_path / f"source-{index:02d}.png"
+        image.save(path, format="PNG")
+        paths.append(path)
+
+    assert stages._person_region_box(paths) is None
+
+
+def test_source_keyframe_sheet_crops_detected_static_ui_panel_before_assembly(monkeypatch, tmp_path: Path) -> None:
+    from PIL import Image
+    from server.packaged_stages import StoryboardStage
+    import server.packaged_stages as stages
+
+    source = tmp_path / "source.mp4"
+    source.write_bytes(b"source-video")
+    source_sha = _digest(source.read_bytes())
+
+    class Context:
+        work_dir = tmp_path
+
+        @contextmanager
+        def materialize_slot(self, slot_id: str, *, index: int = 0):
+            assert (slot_id, index) == ("source_video", 0)
+            yield _Materialized(source, source_sha)
+
+        def publish_bytes(self, *, kind: str, data: bytes, content_type: str, expected_sha256: str, metadata=None):
+            return {"kind": kind, "sha256": expected_sha256, "metadata": dict(metadata or {})}
+
+    def fake_ffmpeg(command, **_kwargs):
+        output_pattern = str(command[-1])
+        for index, tone in enumerate((0, 255, 64), start=1):
+            image = Image.new("L", (100, 160), 128)
+            image.paste(tone, (0, 0, 40, 160))
+            output = Path(output_pattern.replace("%03d", f"{index:03d}"))
+            output.parent.mkdir(parents=True, exist_ok=True)
+            image.save(output, format="PNG")
+
+    monkeypatch.setattr(stages.subprocess, "run", fake_ffmpeg)
+    result = StoryboardStage._source_keyframe_sheet(
+        Context(),
+        {
+            "fps_num": 30,
+            "fps_den": 1,
+            "source_cuts": [
+                {"cut_id": "C01", "start_us": 0, "end_us": 1_000_000, "subject_presence": "identifiable"},
+                {"cut_id": "C02", "start_us": 1_000_000, "end_us": 2_000_000, "subject_presence": "identifiable"},
+                {"cut_id": "C03", "start_us": 2_000_000, "end_us": 3_000_000, "subject_presence": "identifiable"},
+            ],
+        },
+    )
+
+    with Image.open(tmp_path / "reference_frames" / "source-C01.png") as frame:
+        assert frame.size == (40, 160)
+    assert result["person_region_crop"] == [0, 40]
+    assert all(item["person_region_crop"] == [0, 40] for item in result["source_keyframes"])
+
+
+def test_director_storyboard_prompt_forbids_asset_showcase_panels() -> None:
+    from server.packaged_stages import StoryboardStage
+
+    prompt = StoryboardStage._segment_prompt(
+        segment={"segment_id": "S01", "cut_ids": ["C01"], "duration_ms": 4_000},
+        cuts={"C01": {"cut_id": "C01", "start_ms": 0, "end_ms": 4_000, "scene": "creator", "action": "shows product", "camera": "close-up"}},
+        visible_text_locks=[],
+    )
+
+    for forbidden in ("asset showcase panel", "character sheet", "product sheet", "reference gallery", "split-screen comparison"):
+        assert forbidden in prompt
+
+
+def test_source_keyframe_sheet_filters_ui_only_cuts_without_creating_empty_slots(monkeypatch, tmp_path: Path) -> None:
+    from PIL import Image
+    from server.packaged_stages import StoryboardStage
+    import server.packaged_stages as stages
+
+    source = tmp_path / "source.mp4"
+    source.write_bytes(b"source-video")
+    source_sha = _digest(source.read_bytes())
+
+    class Context:
+        work_dir = tmp_path
+
+        def __init__(self) -> None:
+            self.published: list[dict[str, object]] = []
+
+        @contextmanager
+        def materialize_slot(self, slot_id: str, *, index: int = 0):
+            assert (slot_id, index) == ("source_video", 0)
+            yield _Materialized(source, source_sha)
+
+        def publish_bytes(self, *, kind: str, data: bytes, content_type: str, expected_sha256: str, metadata=None):
+            artifact = {"kind": kind, "sha256": expected_sha256, "metadata": dict(metadata or {})}
+            self.published.append(artifact)
+            return artifact
+
+    def fake_ffmpeg(command, **_kwargs):
+        output_pattern = str(command[-1])
+        output = Path(output_pattern.replace("%03d", "001"))
+        output.parent.mkdir(parents=True, exist_ok=True)
+        Image.new("RGB", (16, 9), "black").save(output, format="PNG")
+
+    monkeypatch.setattr(stages.subprocess, "run", fake_ffmpeg)
+    result = StoryboardStage._source_keyframe_sheet(
+        Context(),
+        {
+            "fps_num": 30,
+            "fps_den": 1,
+            "source_cuts": [
+                {"cut_id": "C01", "start_us": 0, "end_us": 1_000_000, "subject_presence": "screen_pixels_only"},
+                {"cut_id": "C02", "start_us": 1_000_000, "end_us": 2_000_000, "subject_presence": "identifiable"},
+            ],
+        },
+    )
+
+    assert [item["cut_id"] for item in result["source_keyframes"]] == ["C02"]
+    assert result["person_filter_applied"] is True
+    published = result["published_artifacts"][0]
+    assert published["metadata"]["source_cut_count"] == 2
+    assert published["metadata"]["selected_cut_count"] == 1
+
+
+def test_source_keyframe_sheet_falls_back_to_all_cuts_when_no_person_cut_is_known(monkeypatch, tmp_path: Path) -> None:
+    from PIL import Image
+    from server.packaged_stages import StoryboardStage
+    import server.packaged_stages as stages
+
+    source = tmp_path / "source.mp4"
+    source.write_bytes(b"source-video")
+    source_sha = _digest(source.read_bytes())
+
+    class Context:
+        work_dir = tmp_path
+
+        @contextmanager
+        def materialize_slot(self, slot_id: str, *, index: int = 0):
+            yield _Materialized(source, source_sha)
+
+        def publish_bytes(self, *, kind: str, data: bytes, content_type: str, expected_sha256: str, metadata=None):
+            return {"kind": kind, "sha256": expected_sha256, "metadata": dict(metadata or {})}
+
+    def fake_ffmpeg(command, **_kwargs):
+        output_pattern = str(command[-1])
+        for index in range(1, 3):
+            output = Path(output_pattern.replace("%03d", f"{index:03d}"))
+            output.parent.mkdir(parents=True, exist_ok=True)
+            Image.new("RGB", (16, 9), "black").save(output, format="PNG")
+
+    monkeypatch.setattr(stages.subprocess, "run", fake_ffmpeg)
+    result = StoryboardStage._source_keyframe_sheet(
+        Context(),
+        {
+            "fps_num": 30,
+            "fps_den": 1,
+            "source_cuts": [
+                {"cut_id": "C01", "start_us": 0, "end_us": 1_000_000, "subject_presence": "screen_pixels_only"},
+                {"cut_id": "C02", "start_us": 1_000_000, "end_us": 2_000_000, "subject_presence": "none"},
+            ],
+        },
+    )
+
+    assert [item["cut_id"] for item in result["source_keyframes"]] == ["C01", "C02"]
+    assert result["person_filter_applied"] is False
+
+
+def test_storyboard_pagination_supports_twelve_cuts_and_rejects_thirteen() -> None:
+    from server.packaged_stages import StoryboardStage
+    from server.errors import ReplicationError
+
+    pages = StoryboardStage._partition_storyboard_cuts([f"C{i:02d}" for i in range(1, 13)])
+    assert [len(page) for page in pages] == [6, 6]
+    assert pages[0] == tuple(f"C{i:02d}" for i in range(1, 7))
+    assert pages[1] == tuple(f"C{i:02d}" for i in range(7, 13))
+    with pytest.raises(ReplicationError, match="one to 12"):
+        StoryboardStage._partition_storyboard_cuts([f"C{i:02d}" for i in range(1, 14)])
 
 
 def test_seedance_audit_uploads_only_the_approved_storyboard_artifact(monkeypatch, tmp_path: Path) -> None:
@@ -797,6 +1189,10 @@ def test_seedance_prompt_reference_roles_follow_the_fixed_image_order() -> None:
 
     absent = {"present": False, "sha256": []}
     context = SimpleNamespace(
+        artifacts=({
+            "kind": "storyboard_image",
+            "metadata": {"segment_id": "S01", "segment_ids": ["S01"], "storyboard_page": 1},
+        },),
         snapshot=SimpleNamespace(
             slots_manifest={
                 "slots": {
@@ -812,10 +1208,17 @@ def test_seedance_prompt_reference_roles_follow_the_fixed_image_order() -> None:
         )
     )
 
-    assert SeedancePromptStage._reference_roles(context) == [
-        {"slot": 1, "tag": "@Image1", "role": "fixed new_model_image target truth"},
+    assert SeedancePromptStage._reference_roles(context, segment_id="S01") == [
+        {
+            "slot": 1,
+            "tag": "@Image1",
+            "kind": "new_model_identity",
+            "subject_label": "Subject 1",
+            "replaces_source_person": "",
+            "role": "fixed new_model_image target truth",
+        },
         {"slot": 2, "tag": "@Image2", "role": "fixed new_product_image target truth"},
-        {"slot": 3, "tag": "@Image3", "role": "approved storyboard visual control page 1"},
+        {"slot": 3, "tag": "@Image3", "role": "approved storyboard visual control page 1/1"},
         {"slot": 4, "tag": "@Image4", "role": "additional verified new_product_image detail"},
     ]
 
@@ -1298,6 +1701,8 @@ def _verified_uploaded_song_prompt_context(tmp_path: Path):
             {"kind": "source_content_timeline", "artifact_id": "timeline", "sha256": timeline_sha},
             {"kind": "performance_line_contract", "artifact_id": "performance", "sha256": "c" * 64},
             {"kind": "uploaded_audio_classification", "artifact_id": "uploaded-audio", "sha256": "f" * 64},
+            {"kind": "storyboard_image", "artifact_id": "storyboard", "sha256": "d" * 64,
+             "metadata": {"segment_id": "S01", "segment_ids": ["S01"], "storyboard_page": 1}},
         )
 
         def __init__(self) -> None:
@@ -1350,7 +1755,7 @@ def _verified_uploaded_song_prompt_context(tmp_path: Path):
     return Context(), values, performance_line
 
 
-def test_seedance_prompt_passes_verified_uploaded_song_lyrics_and_confirmed_performer_to_compiler(monkeypatch, tmp_path: Path) -> None:
+def test_seedance_prompt_uses_uploaded_song_audio_without_transcribing_lyrics(monkeypatch, tmp_path: Path) -> None:
     from server.packaged_stages import SeedancePromptStage
     import server.packaged_stages as stages
 
@@ -1361,8 +1766,7 @@ def test_seedance_prompt_passes_verified_uploaded_song_lyrics_and_confirmed_perf
         @staticmethod
         def compile_prompt(**kwargs):
             captured.update(kwargs)
-            line = kwargs["performance_lines"][0]
-            return {"prompt": f'Use @Audio1. {line["speaker_assignment"]["speaker_id"]} sings exactly, "{line["exact_sung_text"]}".'}
+            return {"prompt": kwargs["segment"]["shots"][0]["audio"]}
 
     monkeypatch.setattr(stages, "_read_json_artifact", lambda _context, *, kind, **_kwargs: artifacts[kind])
     monkeypatch.setattr(stages, "_load_module", lambda *_args, **_kwargs: Compiler)
@@ -1379,11 +1783,11 @@ def test_seedance_prompt_passes_verified_uploaded_song_lyrics_and_confirmed_perf
     ).run(context=context, input_artifacts=[])
 
     assert transcriptions == []
-    assert captured["performance_lines"] == [performance_line]
+    assert captured["performance_lines"] == []
     prompt = result["seedance_input_contract"]["segments"][0]["compiled_prompt"]["prompt"]
     assert "@Audio1" in prompt
-    assert "CHARACTER_A sings exactly" in prompt
-    assert '"I will meet you by the lake"' in prompt
+    assert "audio-driven song performance" in prompt
+    assert "Do not transcribe, quote, invent, or display lyrics" in prompt
     assert "0-4000ms" in captured["segment"]["shots"][0]["audio"]
     assert "silent outside" in captured["segment"]["shots"][0]["audio"]
 
@@ -1417,7 +1821,7 @@ def test_seedance_prompt_uses_confirmed_source_lyrics_without_an_uploaded_song(m
     assert '"I will meet you by the lake"' in prompt
 
 
-def test_seedance_prompt_binds_approved_replacement_song_lyrics_to_the_confirmed_source_singer(monkeypatch, tmp_path: Path) -> None:
+def test_seedance_prompt_does_not_compile_uploaded_song_lyrics_into_performance_lines(monkeypatch, tmp_path: Path) -> None:
     from server.packaged_stages import SeedancePromptStage
     import server.packaged_stages as stages
 
@@ -1427,9 +1831,7 @@ def test_seedance_prompt_binds_approved_replacement_song_lyrics_to_the_confirmed
     approval = context.job_store.get_script_approval(context.job_id, 1)
     approval["line_contracts"][0]["text"]["exact"] = replacement_lyric
     approval["line_contracts"][0]["text"]["normalized"] = replacement_lyric.casefold()
-    artifacts["uploaded_audio_classification"]["lyrics"] = [
-        {"start_ms": 0, "end_ms": 4000, "text": replacement_lyric}
-    ]
+    artifacts["uploaded_audio_classification"]["lyrics"] = [{"text": replacement_lyric}]
     captured: dict[str, object] = {}
 
     class Compiler:
@@ -1449,8 +1851,8 @@ def test_seedance_prompt_binds_approved_replacement_song_lyrics_to_the_confirmed
         ],
     ).run(context=context, input_artifacts=[])
 
-    assert captured["performance_lines"][0]["speaker_assignment"]["speaker_id"] == "CHARACTER_A"
-    assert captured["performance_lines"][0]["exact_sung_text"] == replacement_lyric
+    assert captured["performance_lines"] == []
+    assert "audio-driven song performance" in captured["segment"]["shots"][0]["audio"]
 
 
 def test_seedance_prompt_uses_an_uploaded_non_song_as_window_bound_replacement_without_singing(monkeypatch, tmp_path: Path) -> None:
@@ -1510,7 +1912,7 @@ def test_seedance_prompt_blocks_an_mv_song_when_performer_assignment_is_not_conf
     monkeypatch.setattr(stages, "_load_module", lambda *_args, **_kwargs: Compiler)
     adapter = SimpleNamespace(prompt_skill_files={"seedance-20": tmp_path / "seedance.md"})
 
-    with pytest.raises(ReplicationError, match="source-verified lyric and performer contract"):
+    with pytest.raises(ReplicationError, match="source-verified performer and timing contract"):
         SeedancePromptStage(
             invocation_adapter=adapter,
             uploaded_song_transcriber=lambda *_args, **_kwargs: [
@@ -1521,7 +1923,7 @@ def test_seedance_prompt_blocks_an_mv_song_when_performer_assignment_is_not_conf
     assert compiler_calls == []
 
 
-def test_seedance_prompt_blocks_an_mv_song_when_confirmed_lyrics_or_timing_do_not_match(monkeypatch, tmp_path: Path) -> None:
+def test_seedance_prompt_ignores_uploaded_song_lyric_text_and_keeps_audio_driven_routing(monkeypatch, tmp_path: Path) -> None:
     from server.packaged_stages import SeedancePromptStage
     from server.errors import ReplicationError
     import server.packaged_stages as stages
@@ -1542,13 +1944,10 @@ def test_seedance_prompt_blocks_an_mv_song_when_confirmed_lyrics_or_timing_do_no
     ]
 
     adapter = SimpleNamespace(prompt_skill_files={"seedance-20": tmp_path / "seedance.md"})
-    with pytest.raises(ReplicationError, match="source-verified lyric and performer contract"):
-        SeedancePromptStage(invocation_adapter=adapter).run(
-            context=context, input_artifacts=[]
-        )
+    SeedancePromptStage(invocation_adapter=adapter).run(context=context, input_artifacts=[])
 
-    assert compiler_calls == []
-    assert compiler_calls == []
+    assert len(compiler_calls) == 1
+    assert compiler_calls[0]["performance_lines"] == []
 
 
 def test_seedance_prompt_blocks_an_uploaded_song_when_no_generated_segment_intersects_the_confirmed_singing_window(monkeypatch, tmp_path: Path) -> None:
@@ -1571,7 +1970,7 @@ def test_seedance_prompt_blocks_an_uploaded_song_when_no_generated_segment_inter
     monkeypatch.setattr(stages, "_read_json_artifact", lambda _context, *, kind, **_kwargs: artifacts[kind])
     monkeypatch.setattr(stages, "_load_module", lambda *_args, **_kwargs: Compiler)
     adapter = SimpleNamespace(prompt_skill_files={"seedance-20": tmp_path / "seedance.md"})
-    with pytest.raises(ReplicationError, match="source-verified lyric and performer contract"):
+    with pytest.raises(ReplicationError, match="source-verified performer and timing contract"):
         SeedancePromptStage(
             invocation_adapter=adapter,
             uploaded_song_transcriber=lambda *_args, **_kwargs: (_ for _ in ()).throw(
@@ -1596,3 +1995,256 @@ def test_segment_plan_publication_keeps_the_exact_canonical_json_in_artifact_met
     _publish_json(Context(), kind="segment_plan", value=plan, metadata={"canonical_json": _canonical(plan).decode("utf-8")})
 
     assert observed["metadata"] == {"canonical_json": _canonical(plan).decode("utf-8")}
+
+
+@pytest.mark.parametrize(
+    ("audio_kind", "audio_plan_overrides", "output_language", "dialogue_change", "prompt_markers"),
+    [
+        (
+            "background_music",
+            {"background_music_strategy": "replace_uploaded_background_music", "mv_lip_sync_route": "none"},
+            None,
+            None,
+            ("@Audio1",),
+        ),
+        (
+            "voiceover",
+            {"background_music_strategy": "replace_uploaded_voiceover", "mv_lip_sync_route": "none", "voiceover_route": "seedance_audio_reference"},
+            None,
+            {"change_id": "D01", "kind": "dialogue", "start_ms": 1000, "end_ms": 2000, "speaker": "PersonA", "text": "Approved voiceover line."},
+            ("Approved voiceover line.",),
+        ),
+    ],
+    ids=["background-music", "voiceover"],
+)
+def test_v2_non_song_audio_routes_use_explicit_seedance_audio_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    audio_kind: str,
+    audio_plan_overrides: dict[str, str],
+    output_language: str | None,
+    dialogue_change: dict[str, object] | None,
+    prompt_markers: tuple[str, ...],
+) -> None:
+    """RED: BGM and uploaded voiceover need distinct v2 Prompt/Audit contracts."""
+
+    from server.errors import ReplicationError
+    from test_v2_packaged_stage_ports import _make_v2_song_mv_case
+
+    case = _make_v2_song_mv_case(
+        monkeypatch,
+        tmp_path,
+        protection_windows=[],
+        audio_kind=audio_kind,
+        audio_plan_overrides=audio_plan_overrides,
+        output_language=output_language,
+        dialogue_change=dialogue_change,
+    )
+    names = {str(item["name"]) for item in case.plan}
+    forbidden = {"run_song_lip_sync", "run_tts", "run_final_lip_sync", "replace_voiceover_audio"}
+    failures = [f"forbidden audio stage scheduled: {name}" for name in sorted(names & forbidden)]
+
+    prompt_result = case.ports["stage_ports"]["compile_seedance20_prompt"].run(
+        context=case.context, input_artifacts=[]
+    )
+    prompt = prompt_result["seedance_input_contract"]["segments"][0]["compiled_prompt"]["prompt"]
+    failures.extend(f"prompt missing {marker!r}" for marker in prompt_markers if marker not in prompt)
+
+    try:
+        audit_result = case.ports["stage_ports"]["audit_seedance_request"].run(
+            context=case.context, input_artifacts=[]
+        )
+    except ReplicationError as exc:
+        failures.append(f"AuditStage rejected the explicit {audio_kind} route before provider payload: {exc.code}")
+    else:
+        payload = audit_result["seedance_request_audit"]["segments"][0]["payload_template"]
+        if len(payload.get("audioUrls") or []) != 1:
+            failures.append("Seedance payload must carry exactly the current BGM/voiceover audio reference")
+        reference = audit_result["seedance_request_audit"]["segments"][0].get("audio_reference_binding") or {}
+        if reference.get("source_audio_sha256") != case.song_sha:
+            failures.append("audio reference is not bound to the current upload SHA")
+        if reference.get("audio_kind") != audio_kind:
+            failures.append("audio reference does not preserve the explicit uploaded classification")
+        preservation = audit_result["seedance_request_audit"]["segments"][0].get("audio_preservation") or {}
+        if preservation != {"source_speech": "preserve", "source_ambience": "preserve"}:
+            failures.append("audit receipt is missing source speech/ambience preservation")
+
+    assert not failures, "\n".join(failures)
+
+
+def test_v2_voiceover_without_role_and_dialogue_window_fails_before_provider(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """RED: a custom voiceover cannot fall through to an unbound audio route."""
+
+    from server.errors import ReplicationError
+    from test_v2_packaged_stage_ports import _make_v2_song_mv_case
+
+    case = _make_v2_song_mv_case(
+        monkeypatch,
+        tmp_path,
+        protection_windows=[],
+        audio_kind="voiceover",
+        audio_plan_overrides={
+            "background_music_strategy": "replace_uploaded_voiceover",
+            "mv_lip_sync_route": "none",
+            "voiceover_route": "seedance_audio_reference",
+        },
+    )
+    forbidden = {"run_song_lip_sync", "run_tts", "run_final_lip_sync", "replace_voiceover_audio"}
+    assert not forbidden.intersection(str(item["name"]) for item in case.plan)
+    with pytest.raises(ReplicationError) as exc_info:
+        case.ports["stage_ports"]["compile_seedance20_prompt"].run(
+            context=case.context, input_artifacts=[]
+        )
+    assert exc_info.value.code == "CONTRACT_INVALID"
+    assert not any(provider.requests for provider in case.ports["stage_ports"].values() if hasattr(provider, "requests"))
+
+
+def test_v2_voiceover_upload_stays_materialized_until_seedance_upload(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """RED: a voiceover upload path must remain live through media upload."""
+
+    import shutil
+
+    from test_v2_packaged_stage_ports import _make_v2_song_mv_case
+
+    case = _make_v2_song_mv_case(
+        monkeypatch,
+        tmp_path,
+        protection_windows=[],
+        audio_kind="voiceover",
+        audio_plan_overrides={
+            "background_music_strategy": "replace_uploaded_voiceover",
+            "mv_lip_sync_route": "none",
+            "voiceover_route": "seedance_audio_reference",
+        },
+        dialogue_change={
+            "change_id": "D01",
+            "kind": "dialogue",
+            "start_ms": 1000,
+            "end_ms": 2000,
+            "speaker": "PersonA",
+            "text": "Approved voiceover line.",
+        },
+    )
+
+    @contextmanager
+    def ephemeral_materializer(extension_id: str, *, index: int = 0):
+        assert (extension_id, index) == ("background_music", 0)
+        materialized = tmp_path / "ephemeral-voiceover.wav"
+        shutil.copyfile(case.song, materialized)
+        try:
+            yield SimpleNamespace(path=materialized, sha256=case.song_sha)
+        finally:
+            materialized.unlink(missing_ok=True)
+
+    case.context.materialize_extension = ephemeral_materializer
+
+    def upload_requires_live_path(self, path: Path) -> str:
+        assert Path(path).is_file()
+        self.uploaded.append(Path(path))
+        return f"https://media.example.test/{Path(path).name}"
+
+    monkeypatch.setattr(case.uploader, "upload_media", upload_requires_live_path)
+    case.ports["stage_ports"]["compile_seedance20_prompt"].run(
+        context=case.context, input_artifacts=[]
+    )
+    case.ports["stage_ports"]["audit_seedance_request"].run(
+        context=case.context, input_artifacts=[]
+    )
+
+
+def test_v2_voiceover_audio_reference_is_segment_local(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """RED: only segments containing approved voiceover changes may reference @Audio1."""
+
+    from test_v2_packaged_stage_ports import _make_v2_song_mv_case
+
+    case = _make_v2_song_mv_case(
+        monkeypatch,
+        tmp_path,
+        protection_windows=[],
+        audio_kind="voiceover",
+        audio_plan_overrides={
+            "background_music_strategy": "replace_uploaded_voiceover",
+            "mv_lip_sync_route": "none",
+            "voiceover_route": "seedance_audio_reference",
+        },
+        dialogue_change={
+            "change_id": "D01",
+            "kind": "dialogue",
+            "start_ms": 1000,
+            "end_ms": 2000,
+            "speaker": "PersonA",
+            "text": "First segment only.",
+        },
+        segment_specs=[
+            {"segment_id": "S01", "cut_ids": ["C01"], "start_ms": 0, "end_ms": 8000},
+            {"segment_id": "S02", "cut_ids": ["C02"], "start_ms": 8000, "end_ms": 16000},
+        ],
+    )
+    prompt = case.ports["stage_ports"]["compile_seedance20_prompt"].run(
+        context=case.context, input_artifacts=[]
+    )
+    prompt_segments = prompt["seedance_input_contract"]["segments"]
+    assert len(prompt_segments) == 2
+    assert "@Audio1" in prompt_segments[0]["compiled_prompt"]["prompt"]
+    assert "PersonA" in prompt_segments[0]["compiled_prompt"]["prompt"]
+    assert "@Audio1" not in prompt_segments[1]["compiled_prompt"]["prompt"]
+    audit = case.ports["stage_ports"]["audit_seedance_request"].run(
+        context=case.context, input_artifacts=[]
+    )
+    payloads = [row["payload_template"] for row in audit["seedance_request_audit"]["segments"]]
+    assert [len(payload.get("audioUrls") or []) for payload in payloads] == [1, 0]
+
+
+@pytest.mark.parametrize(
+    ("audio_kind", "audio_plan_overrides"),
+    [
+        ("background_music", {"background_music_strategy": "replace_uploaded_voiceover", "mv_lip_sync_route": "none"}),
+        ("voiceover", {"background_music_strategy": "replace_uploaded_background_music", "mv_lip_sync_route": "none", "voiceover_route": "seedance_audio_reference"}),
+        ("voiceover", {"background_music_strategy": "replace_uploaded_voiceover", "mv_lip_sync_route": "none", "voiceover_route": "legacy_tts"}),
+        ("song", {"background_music_strategy": "replace_uploaded_background_music", "mv_lip_sync_route": "song_lipsync"}),
+    ],
+    ids=["bgm-poison-voiceover", "voiceover-poison-bgm", "voiceover-poison-legacy-route", "song-poison-bgm"],
+)
+def test_v2_audio_kind_and_approved_plan_must_match_before_provider(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    audio_kind: str,
+    audio_plan_overrides: dict[str, str],
+) -> None:
+    """RED: explicit classification cannot silently accept a contradictory approved route."""
+
+    from server.errors import ReplicationError
+    from test_v2_packaged_stage_ports import _make_v2_song_mv_case
+
+    case = _make_v2_song_mv_case(
+        monkeypatch,
+        tmp_path,
+        protection_windows=[],
+        audio_kind=audio_kind,
+        audio_plan_overrides=audio_plan_overrides,
+        dialogue_change=(
+            {
+                "change_id": "D01",
+                "kind": "dialogue",
+                "start_ms": 1000,
+                "end_ms": 2000,
+                "speaker": "PersonA",
+                "text": "Approved voiceover line.",
+            }
+            if audio_kind == "voiceover"
+            else None
+        ),
+    )
+    with pytest.raises(ReplicationError) as exc_info:
+        case.ports["stage_ports"]["compile_seedance20_prompt"].run(
+            context=case.context, input_artifacts=[]
+        )
+    assert exc_info.value.code == "CONTRACT_INVALID"
+    assert exc_info.value.category == "audio"
+

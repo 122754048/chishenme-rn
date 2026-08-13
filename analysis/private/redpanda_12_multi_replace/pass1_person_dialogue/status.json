@@ -1,0 +1,57 @@
+{
+  "taskId": "2087411791696384002",
+  "status": "SUCCESS",
+  "errorCode": "",
+  "errorMessage": "",
+  "results": [
+    {
+      "url": "https://rh-images-1252422369.cos.ap-beijing.myqcloud.com/16dbde1a8d66572ec10871c4d9f4cc94/output/784f84cf-7022-44ba-a48a-8a3c61b37cbf.mp4",
+      "outputType": "mp4",
+      "text": null,
+      "name": "videoUrl"
+    },
+    {
+      "url": null,
+      "outputType": "text",
+      "text": "90028",
+      "name": "seed"
+    }
+  ],
+  "clientId": "",
+  "promptTips": "",
+  "failedReason": {},
+  "usage": {
+    "consumeMoney": null,
+    "consumeCoins": null,
+    "taskCostTime": "0",
+    "thirdPartyConsumeMoney": "16.09",
+    "tokenUsage": {
+      "usage": {
+        "completion_tokens": "652989",
+        "total_tokens": "652989"
+      }
+    },
+    "billingSeconds": "15"
+  },
+  "parentTaskId": null,
+  "taskUsageList": [
+    {
+      "taskId": "2087411791696384002",
+      "parentTaskId": null,
+      "taskStatus": "SUCCESS",
+      "usage": {
+        "consumeMoney": null,
+        "consumeCoins": null,
+        "taskCostTime": "0",
+        "thirdPartyConsumeMoney": "16.09",
+        "tokenUsage": {
+          "usage": {
+            "completion_tokens": "652989",
+            "total_tokens": "652989"
+          }
+        },
+        "billingSeconds": "15"
+      }
+    }
+  ]
+}

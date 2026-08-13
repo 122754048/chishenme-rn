@@ -1,0 +1,22 @@
+﻿{
+  "contract": "usfr-object-qc/v1",
+  "accepted": false,
+  "task_id": "2087459294353444866",
+  "result_sha256": "0d34bda43e30296509d7f0815e86297de8db85713c4da84f0d019160aafec937",
+  "checks": {
+    "all_laptops_replaced_by_phone_geometry": true,
+    "target_pale_pink_identity_consistent": true,
+    "source_macbook_text_removed": true,
+    "target_text_clean": true,
+    "source_silence_preserved": true,
+    "source_handoff_hand_tracks_preserved": false,
+    "source_contact_mechanics_preserved": false,
+    "complete_decode": true
+  },
+  "failure_factors": [
+    "both source handoff actions were changed into unsupported floating-phone motion",
+    "source hand contacts and receiving gestures disappeared"
+  ],
+  "decision": "manual_review_required",
+  "reason": "the single allowed materially changed QC retry was used; another paid create is not authorized by the bounded USFR recovery contract"
+}

@@ -1,0 +1,46 @@
+{
+  "schema_version": "usfr-multi-asset-manifest/v1",
+  "assets": [
+    {
+      "reference": "@Image1",
+      "tag": "TARGET_WOMAN",
+      "asset_type": "model",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\ComfyUI_00002_edckv_1754980342.png",
+      "asset_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\redpanda_12_multi_replace\\assets\\01_TARGET_WOMAN_V2_SAFE.png",
+      "source_sha256": "a3b1d2f82c18d6f3b012bee744e6685282945e25aae07d438adea039c8bef329",
+      "asset_sha256": "ef4fd0ee050949c9c25ca2d7e2607a43daf68b316cdc6c2b16de2ed27e13c1d1",
+      "person_asset_profile": "model-identity-v3-local-crop",
+      "asset_mime_type": "image/png",
+      "asset_width": 1024,
+      "asset_height": 1024,
+      "identity_subject_count": 1,
+      "asset_layout": "identity_dominant",
+      "asset_composition": "upper_body_square",
+      "generated_from_source_sha256": "a3b1d2f82c18d6f3b012bee744e6685282945e25aae07d438adea039c8bef329",
+      "image2_task_id": "2087411184153669633",
+      "receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\redpanda_12_multi_replace\\assets\\01_TARGET_WOMAN_V2_IMAGE2.receipt.json"
+    },
+    {
+      "reference": "@Image2",
+      "tag": "TARGET_SUNQUICK_ORANGE",
+      "asset_type": "product",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\DC001.webp",
+      "asset_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\redpanda_12_multi_replace\\assets\\02_TARGET_SUNQUICK_ORANGE.png",
+      "source_sha256": "8d3638f0bcb1265e303ff4fc93733189ed4e47f66da8588d408c3493e6895ae2",
+      "asset_sha256": "b3c05ce010eb1b1bce4536ecccbfec70fb96b0ac1ab3c46af98a219826288be0",
+      "task_id": "2087406982205145089",
+      "receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\redpanda_12_multi_replace\\assets\\02_TARGET_SUNQUICK_ORANGE.receipt.json"
+    },
+    {
+      "reference": "@Image3",
+      "tag": "TARGET_OPEN_OFFICE",
+      "asset_type": "scene",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\3f687f6c48339d1ec17db21e4d9a3af2.jpg",
+      "asset_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\redpanda_12_multi_replace\\assets\\03_TARGET_OPEN_OFFICE.png",
+      "source_sha256": "323202245579d5704bbcbcffa57708cf9f08829297ea31e2461632aa55a9663f",
+      "asset_sha256": "fae25757e25d34a233bf4c5863f4e5d9ace7ebc91e6a8cf9d77e3273c0ee79e0",
+      "task_id": "2087407208735309826",
+      "receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\redpanda_12_multi_replace\\assets\\03_TARGET_OPEN_OFFICE.receipt.json"
+    }
+  ]
+}

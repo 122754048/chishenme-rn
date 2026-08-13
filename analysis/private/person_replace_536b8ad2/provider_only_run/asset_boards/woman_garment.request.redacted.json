@@ -1,0 +1,9 @@
+{
+  "prompt": "Create a four-view garment reference board: front construction, back construction, material close detail, and worn silhouette. Preserve the exact white long-sleeve ribbed cropped top, gray high-waisted fitted leggings, seams, color, fit, and proportions from the reference. Use one neutral mannequin or anonymous worn silhouette, a neutral studio background, and no additional garments or accessories.",
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510.png"
+  ],
+  "aspectRatio": "16:9",
+  "resolution": "2k",
+  "quality": "medium"
+}

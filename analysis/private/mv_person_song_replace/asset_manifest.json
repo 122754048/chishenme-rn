@@ -1,0 +1,20 @@
+{
+  "schema_version": "usfr-mv-person-song-assets/v1",
+  "source_video_sha256": "df7984360c0ddd62fa6b1232bda8eecb546b89f3afb3cb7a1fc58e607b4d7441",
+  "source_edit_sha256": "a5f21aee1f0740accd061d9742433ccc51f4380360b013f07d46df8cc281c6ef",
+  "song_source_sha256": "527f644aaa4b83801cca440aa43d54ea40799d3c2beebb352cf727a6b249e3f5",
+  "song_window_sha256": "e13db1878c95cc430682055f4fc2653c2404c67a033631caa7e8350899f88505",
+  "song_start_seconds": 90.0,
+  "song_end_seconds": 107.033333,
+  "person_source_sha256": "18665518f1702abccae878c111da2fffc7e8d0effb6701ae93dfaf122c17f581",
+  "person_asset_sha256": "ecb9af7d5cbbb9c20062abf89dacf2c99a1ec792c1489c0ec18c37f60bf028eb",
+  "person_asset_profile": "model-identity-v3-local-crop",
+  "asset_mime_type": "image/png",
+  "asset_width": 1024,
+  "asset_height": 1024,
+  "identity_subject_count": 1,
+  "asset_layout": "identity_dominant",
+  "asset_composition": "full_body_square",
+  "wardrobe_policy": "identity_and_wardrobe_from_reference",
+  "target_wardrobe_evidence": "visible"
+}

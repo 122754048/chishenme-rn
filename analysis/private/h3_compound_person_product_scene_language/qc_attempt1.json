@@ -1,0 +1,41 @@
+{
+  "schema_version": "h3-compound-capability-qc/v1",
+  "task_id": "2087529546488176642",
+  "provider_status": "SUCCESS",
+  "result_sha256": "7298118CF84652EA61516ABDD2CC7D74603D86154A43691C4CFF67ACA6AE38CC",
+  "provider_cost": {
+    "thirdPartyConsumeMoney": "2.31",
+    "input_seconds": "15",
+    "output_seconds": "15",
+    "input_image_count": "3"
+  },
+  "capabilities": {
+    "person_replacement": {
+      "status": "pass",
+      "evidence": "The source male presenter is replaced throughout by the single woman from imageUrls[0], with matching dark hair, facial appearance, and pink ribbed top."
+    },
+    "product_replacement_and_adapted_use": {
+      "status": "pass",
+      "evidence": "The source boxed handheld game device is replaced throughout by the Sunquick orange bottle from imageUrls[1]. The action is adapted to bottle presentation, cap opening, and close label display instead of copying game-control clicks."
+    },
+    "scene_replacement": {
+      "status": "pass",
+      "evidence": "The source residential room is replaced throughout by the open-office environment from imageUrls[2], including open desks, exposed ceiling services, pendant lights, and concrete-floor office structure."
+    },
+    "target_language": {
+      "status": "pass",
+      "evidence": "Whisper German transcription recovered all four approved semantic blocks from 00:00 to 00:15 with no English source dialogue remaining."
+    },
+    "lip_sync": {
+      "status": "sampled_visual_pass",
+      "evidence": "The presenter visibly speaks across the German dialogue windows and mouth motion is temporally continuous with the speech. Exact phoneme-level error was not independently measured."
+    },
+    "source_structure": {
+      "status": "pass_with_adaptation",
+      "evidence": "Locked vertical framing, tabletop interaction purpose, progressive product reveal, hand contact, and final close display are retained while the incompatible game-device manipulation is adapted to the bottle."
+    }
+  },
+  "decision": "validated_case_not_universal_guarantee",
+  "production_scope": "H3 is empirically capable of one 15-second single-request edit combining one person replacement, one product replacement with action adaptation, one scene replacement, and German dialogue generation for this source structure. This single result does not prove all asset combinations, multiple people, Apps, occlusion-heavy shots, or all eleven dialogue languages.",
+  "second_paid_attempt": "not_run_because_attempt1_met_all_requested_capabilities"
+}

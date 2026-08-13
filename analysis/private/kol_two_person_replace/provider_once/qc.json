@@ -1,0 +1,43 @@
+{
+  "schema_version": "usfr-final-object-qc/v1",
+  "task_id": "2087381955506491393",
+  "provider_status": "SUCCESS",
+  "visual_manual_qc": {
+    "sample_rate_fps": 2,
+    "mapped_subjects": 2,
+    "accepted_subjects": 2,
+    "result": "2/2",
+    "subjects": [
+      {
+        "source_object_id": "SRC_OPENING_LEFT",
+        "target": "TARGET_MAN",
+        "identity": "accepted",
+        "wardrobe": "accepted: black short-sleeve shirt",
+        "track_continuity": "accepted"
+      },
+      {
+        "source_object_id": "SRC_OPENING_RIGHT",
+        "target": "TARGET_WOMAN",
+        "identity": "accepted",
+        "wardrobe": "accepted: light fitted top and dark high-waisted skirt",
+        "track_continuity": "accepted, including closing movement toward frame-right"
+      }
+    ]
+  },
+  "technical_qc": {
+    "video_decode": "pass",
+    "audio_decode": "pass",
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "width": 720,
+    "height": 1280,
+    "duration_seconds": 12.097,
+    "size_bytes": 3667617,
+    "sha256": "C9FB1B40C4E0E5E66E8726C9CDE1A3657D0415AF91DFBFBC7653831F9E0989E5"
+  },
+  "notes": [
+    "One Seedance request handled both mapped people simultaneously.",
+    "No local face swap, compositing, frame replacement, re-encoding, or audio replacement was applied.",
+    "Speech is present and synchronized; automatic transcription is low-confidence because the source vocal performance is not clearly intelligible English."
+  ]
+}

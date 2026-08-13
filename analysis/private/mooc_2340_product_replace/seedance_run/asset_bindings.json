@@ -1,0 +1,13 @@
+[
+  {
+    "tag": "TARGET_PINK_PHONE",
+    "reference": "@Image1",
+    "role": "product",
+    "asset_type": "product",
+    "replaces_tag": "SRC_LAPTOP_FAMILY",
+    "source_object_descriptor": "all closed laptop product tracks: the first left-to-right handoff, the second right-to-left handoff, and the final four-product stack",
+    "replacement_scope": "the complete product-family geometry, pale-pink color, front black screen, rear diagonal dual-camera layout, markings, and thin smartphone proportions",
+    "preserve_scope": "the source white background, locked camera, exact timing, hand tracks, entry and exit directions, contact, perspective, lighting, shadows, and occlusion",
+    "binding_confidence": 0.99
+  }
+]

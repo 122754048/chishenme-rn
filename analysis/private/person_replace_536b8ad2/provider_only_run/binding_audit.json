@@ -1,0 +1,29 @@
+{
+  "schema_version": "usfr-provider-only-request-audit/v1",
+  "edit_contract": "video-edit-v2",
+  "approved_script_sha256": "af05f154e4e5822f758e9cba794858b7fbe9d5ee66b5ea27464210182fea7954",
+  "prompt_sha256": "d9072993fbf03aa9d285f6e2fd7979c1e335cfe6247b8f67329653f83bcbf9cd",
+  "provider_only_binding_receipt": "provider_only_binding_receipt.json",
+  "provider_create_call_limit": 1,
+  "image_order": [
+    {
+      "array_index": 0,
+      "prompt_tag": "@Image1",
+      "source_object_id": "SRC_WOMAN",
+      "wardrobe_policy": "identity_and_wardrobe_from_reference",
+      "sha256": "8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510"
+    },
+    {
+      "array_index": 1,
+      "prompt_tag": "@Image2",
+      "source_object_id": "SRC_MAN",
+      "wardrobe_policy": "identity_and_wardrobe_from_reference",
+      "sha256": "feaa0b922da12e8462fa17277d59978fc3e433cf08a954666b4da4223f5a738d"
+    }
+  ],
+  "source_video_sha256": "5d0f3c7f4dcdc76e6fa8f37cef6bbc4302411e6fe213d0dd587962e6b8bcd4fb",
+  "segment_id": "SEG01",
+  "segment_start_ms": 0,
+  "segment_end_ms": 15000,
+  "local_final_video_processing": false
+}

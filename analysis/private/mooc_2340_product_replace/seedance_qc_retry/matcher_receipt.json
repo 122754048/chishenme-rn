@@ -1,0 +1,7 @@
+{
+  "contract": "replication-matcher/v1",
+  "classification": "adapt_fit",
+  "source_video_sha256": "1007e36cdeb2ea1d83657e3cb8166501fbc0e40661574deb151069240d0a9fe5",
+  "approved_script_sha256": "dd38f6ab234f656d086c30d75d7c6de631e1b366eb3a6226d77f9568bf0847b7",
+  "reason": "laptop handoff and stacking are adapted to realistic smartphone edge support and thin-product stacking"
+}

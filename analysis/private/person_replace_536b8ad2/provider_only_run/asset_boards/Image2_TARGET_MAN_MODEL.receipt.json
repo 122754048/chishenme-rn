@@ -1,0 +1,19 @@
+{
+  "schema_version": "runninghub-asset-board/v2",
+  "asset_type": "model",
+  "template_version": "model-identity-v3",
+  "source_asset_sha256": "feaa0b922da12e8462fa17277d59978fc3e433cf08a954666b4da4223f5a738d",
+  "request_sha256": "86cf67b46bc174f2c9e2d09d46c3b5b77965ce497fb35d75ca20e96e993ca808",
+  "response_sha256": "1bee432eea97e6d5fc665534771c3cf08a7acfe978a25c348c9277f8f7892b60",
+  "task_id": "2087122867730305025",
+  "board_sha256": "0fad51533bf0d7e9a255da7deede67c7aaf084e96cca6ecb34b407d9dbf1619e",
+  "provider_asset_board_contract_sha256": "032b5917f060ee762b897c0cac0d81b096f7ddfcfe7c5596f25d2054a39ab8d3",
+  "provider_receipt": {
+    "schema_version": "runninghub-image2-asset-board/v2",
+    "request_sha256": "86cf67b46bc174f2c9e2d09d46c3b5b77965ce497fb35d75ca20e96e993ca808",
+    "response_sha256": "1bee432eea97e6d5fc665534771c3cf08a7acfe978a25c348c9277f8f7892b60",
+    "task_id": "2087122867730305025",
+    "template": "model",
+    "template_version": "model-identity-v3"
+  }
+}

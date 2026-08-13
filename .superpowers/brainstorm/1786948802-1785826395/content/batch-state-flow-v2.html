@@ -1,0 +1,74 @@
+<h2>批量任务流程 V2：用户意图是唯一组合权威</h2>
+<p class="subtitle">系统只执行用户明确要求的批量路线；永远不自行排列组合。</p>
+
+<div class="mockup">
+  <div class="mockup-header">阶段 1：用户提交明确批量需求</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>同一个原视频</h3><p>选择员工本人拥有的 Source Master，或首次上传并分析。</p></div></div>
+      <div class="card"><div class="card-body"><h3>批量上传素材</h3><p>根据需求上传多人、多首歌曲或选择多个语言；最多产生 20 条。</p></div></div>
+      <div class="card"><div class="card-body"><h3>明确 Batch Intent</h3><p>换人、换歌、换语言或用户明确声明的一一对应组合。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>允许</h4>
+    <ul>
+      <li>1 个原视频 + 20 首歌曲 = 20 条换歌任务</li>
+      <li>1 个原视频 + 10 个人物 = 10 条换人任务</li>
+      <li>10 个人物 + 10 首对应歌曲，经用户明确要求 = 10 条</li>
+      <li>同一固定素材应用到全部任务，但必须由用户明确说明</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>禁止</h4>
+    <ul>
+      <li>把 10 人 × 10 首歌自动扩展成 100 条</li>
+      <li>素材数量不一致时自行循环、截断或猜测</li>
+      <li>用户未说明对应关系时自动按文件名配对</li>
+      <li>系统为了凑满 20 条而创造额外组合</li>
+    </ul>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:28px;margin:10px 0">↓ 生成确定性预检摘要</div>
+
+<div class="mockup">
+  <div class="mockup-header">阶段 2：员工确认批次执行摘要</div>
+  <div class="mockup-body">
+    <div style="padding:18px;border:1px solid var(--border);border-radius:12px;background:var(--surface)">
+      <p><strong>示例：</strong>本批次使用同一个原视频，将上传的 20 首歌曲分别替换到 20 个任务中，共生成 20 条视频；不更换人物、不更改语言、不做排列组合。</p>
+    </div>
+    <p style="margin-top:14px">员工未确认前：不创建正式批次、不分析新素材、不生成故事板、不调用付费 Provider。</p>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:28px;margin:10px 0">↓ 摘要确认后冻结 Batch Manifest SHA</div>
+
+<div class="mockup">
+  <div class="mockup-header">阶段 3：第一条固定样片</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>① 脚本确认</h3><p>审批第一条实际 Markdown。</p></div></div>
+      <div class="card"><div class="card-body"><h3>② 故事板确认</h3><p>审批第一条实际导演故事板 PNG。</p></div></div>
+      <div class="card"><div class="card-body"><h3>生成并 QC</h3><p>完整执行 Provider、口型、合成与质量检查。</p></div></div>
+      <div class="card"><div class="card-body"><h3>③ 最终 MP4 确认</h3><p>确认后才签发整个批次的自动执行授权。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:28px;margin:10px 0">↓ 批次授权生效</div>
+
+<div class="mockup">
+  <div class="mockup-header">阶段 4：剩余任务自动执行</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>无人审批</h3><p>其余行自动生成脚本、故事板、MP4 和 QC。</p></div></div>
+      <div class="card"><div class="card-body"><h3>默认并发 5</h3><p>管理员可调 1–20；完成一条补充下一条。</p></div></div>
+      <div class="card"><div class="card-body"><h3>部分成功</h3><p>单条失败不阻塞其他任务，只重试失败项。</p></div></div>
+      <div class="card"><div class="card-body"><h3>禁止越权变化</h3><p>任何超出已确认 Batch Intent 的变化都会使授权失效。</p></div></div>
+    </div>
+  </div>
+</div>

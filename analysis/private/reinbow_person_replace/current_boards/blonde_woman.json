@@ -1,0 +1,14 @@
+{
+  "role": "blonde_woman",
+  "reference_path": "C:\\Users\\zhaocx04\\Downloads\\ComfyUI_00001_pxnui_1754378591.png",
+  "result_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/dbfe9972-8cb7-45b5-b3bf-96df93080e56.png",
+  "task_id": "2087057679276298241",
+  "receipt": {
+    "schema_version": "runninghub-image2-asset-board/v2",
+    "request_sha256": "3bd60524103717b8cc3c33263093e95a3da30581ad41e803c87a2f4f0e63dd31",
+    "response_sha256": "77f20d3f282de0ccf3f47fd837eb56ea8ca3c04c5f9993099ceb3c32a0e65e50",
+    "task_id": "2087057679276298241",
+    "template": "model",
+    "template_version": "model-identity-v3"
+  }
+}

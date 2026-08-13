@@ -1,0 +1,18 @@
+{
+  "prompt": "@Video1 将这个视频改为德语。",
+  "resolution": "720p",
+  "duration": "12",
+  "imageUrls": [],
+  "videoUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/26ffe6b9c3ab665e15f96acc5804d3246cdb6005e05ed4a07e48588581f94685.mp4"
+  ],
+  "audioUrls": [],
+  "generateAudio": true,
+  "ratio": "9:16",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

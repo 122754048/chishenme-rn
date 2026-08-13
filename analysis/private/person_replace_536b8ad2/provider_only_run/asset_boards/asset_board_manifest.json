@@ -1,0 +1,42 @@
+{
+  "contract": "asset-board-manifest/v1",
+  "approved_script_sha256": "af05f154e4e5822f758e9cba794858b7fbe9d5ee66b5ea27464210182fea7954",
+  "uploaded_tags": [
+    "@Image1",
+    "@Image2"
+  ],
+  "binding_tags": [
+    "@Image1",
+    "@Image2"
+  ],
+  "prompt_tags": [
+    "@Image1",
+    "@Image2"
+  ],
+  "assets": [
+    {
+      "image_index": 1,
+      "image_tag": "@Image1",
+      "target_tag": "TARGET_WOMAN_MODEL",
+      "asset_type": "model",
+      "source_asset_sha256": "8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510",
+      "board_sha256": "437547d67d1f1f9c9efa2c609efc04d0a796bf34ac30f41977d47ba563e3eb51",
+      "board_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/7bb18f3c-ceb5-4a0f-b55f-87ab13771bec.png",
+      "task_id": "2087122636420403201",
+      "local_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\person_replace_536b8ad2\\provider_only_run\\asset_boards\\Image1_TARGET_WOMAN_MODEL.png",
+      "receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\person_replace_536b8ad2\\provider_only_run\\asset_boards\\Image1_TARGET_WOMAN_MODEL.receipt.json"
+    },
+    {
+      "image_index": 2,
+      "image_tag": "@Image2",
+      "target_tag": "TARGET_MAN_MODEL",
+      "asset_type": "model",
+      "source_asset_sha256": "feaa0b922da12e8462fa17277d59978fc3e433cf08a954666b4da4223f5a738d",
+      "board_sha256": "0fad51533bf0d7e9a255da7deede67c7aaf084e96cca6ecb34b407d9dbf1619e",
+      "board_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/ea3604d4-f519-4018-b4d6-4d6427b1abe4.png",
+      "task_id": "2087122867730305025",
+      "local_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\person_replace_536b8ad2\\provider_only_run\\asset_boards\\Image2_TARGET_MAN_MODEL.png",
+      "receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\person_replace_536b8ad2\\provider_only_run\\asset_boards\\Image2_TARGET_MAN_MODEL.receipt.json"
+    }
+  ]
+}

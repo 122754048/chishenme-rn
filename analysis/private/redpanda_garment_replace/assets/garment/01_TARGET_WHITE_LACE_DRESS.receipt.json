@@ -1,0 +1,19 @@
+{
+  "schema_version": "runninghub-asset-board/v2",
+  "asset_type": "garment",
+  "template_version": "garment-v2",
+  "source_asset_sha256": "f94d8a7ccead6523aaedd5f9f893f35fb613a65a7e1170d1a7d1afb6a57a0004",
+  "request_sha256": "049f6a3641435e5bcbbd762011a62283cfc4f7a0699c43e9b33b6c4170ad5208",
+  "response_sha256": "7377bacf0304e701b6af99dbd55a2dbde09291e4a8fbb3a11938d786ae8b793c",
+  "task_id": "2087393701298921473",
+  "board_sha256": "c628d81267e2f3bac2829d656eed2e9426d30813423862d18112f8b0e58e4df3",
+  "provider_asset_board_contract_sha256": "741aa7481e7bb5f1906b35a6dc9e5067511bc823084dc9c7e3a06c26df10f455",
+  "provider_receipt": {
+    "schema_version": "runninghub-image2-asset-board/v2",
+    "request_sha256": "049f6a3641435e5bcbbd762011a62283cfc4f7a0699c43e9b33b6c4170ad5208",
+    "response_sha256": "7377bacf0304e701b6af99dbd55a2dbde09291e4a8fbb3a11938d786ae8b793c",
+    "task_id": "2087393701298921473",
+    "template": "garment",
+    "template_version": "garment-v2"
+  }
+}

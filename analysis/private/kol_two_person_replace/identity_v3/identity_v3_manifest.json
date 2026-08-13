@@ -1,0 +1,35 @@
+{
+  "schema_version": "usfr-model-identity-v3/v1",
+  "assets": [
+    {
+      "slot": 1,
+      "reference": "@Image1",
+      "asset_tag": "TARGET_MAN",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\generation-c333f816-8e22-47d7-a52e-7398f9dd183d.png",
+      "identity_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\kol_two_person_replace\\identity_v3\\01_TARGET_MAN.png",
+      "sha256": "53e2bdf71e7008e297aa3545441ac625c5f1bad388f35a67b39c471649d0cb5d",
+      "width": 1024,
+      "height": 1024,
+      "mime_type": "image/png",
+      "person_asset_profile": "model-identity-v3-local-crop",
+      "identity_subject_count": 1,
+      "asset_layout": "identity_dominant",
+      "asset_composition": "upper_body_square"
+    },
+    {
+      "slot": 2,
+      "reference": "@Image2",
+      "asset_tag": "TARGET_WOMAN",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\generation-699a9d18-cc64-4c6c-ab2b-882697ad8c5d.png",
+      "identity_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\kol_two_person_replace\\identity_v3\\02_TARGET_WOMAN.png",
+      "sha256": "4ad9ba90e3ae7667c7202e4f6cdf497ccf6ec4e6b1215fdb1f2c890b92adeaec",
+      "width": 1024,
+      "height": 1024,
+      "mime_type": "image/png",
+      "person_asset_profile": "model-identity-v3-local-crop",
+      "identity_subject_count": 1,
+      "asset_layout": "identity_dominant",
+      "asset_composition": "upper_body_square"
+    }
+  ]
+}

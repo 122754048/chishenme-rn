@@ -1,0 +1,146 @@
+{
+  "contract": "reference-video-dynamics",
+  "contract_version": 1,
+  "reference_duration_us": 5000000,
+  "source_width": 1080,
+  "source_height": 2340,
+  "fps_num": 25,
+  "fps_den": 1,
+  "source_cut_count": 9,
+  "source_cuts": [
+    {
+      "cut": 1,
+      "start_us": 0,
+      "end_us": 200000,
+      "subject_presence": "none",
+      "content_roles": ["headline", "product_name", "price_line"],
+      "scene": "clean white vertical advertising canvas with centered upper typography",
+      "action": "headline begins its color-animation cycle while the lower product area remains empty",
+      "camera": "locked camera",
+      "transition": "direct opening",
+      "end_state": "left edge is ready for the first product entrance",
+      "certainty": "certain"
+    },
+    {
+      "cut": 2,
+      "start_us": 200000,
+      "end_us": 1000000,
+      "subject_presence": "partial_or_hands",
+      "content_roles": ["hands", "primary_product", "headline"],
+      "scene": "same white advertising canvas",
+      "action": "a bright yellow closed laptop enters from frame-left, is supported by dark-skinned hands, is briefly received by pale hands from frame-right, then exits right",
+      "camera": "locked camera",
+      "transition": "continuous handoff",
+      "end_state": "first product and hands have cleared the frame",
+      "certainty": "certain"
+    },
+    {
+      "cut": 3,
+      "start_us": 1000000,
+      "end_us": 1400000,
+      "subject_presence": "none",
+      "content_roles": ["headline", "product_name", "price_line"],
+      "scene": "white canvas with typography only",
+      "action": "headline color continues shifting during a short empty beat",
+      "camera": "locked camera",
+      "transition": "product clears frame",
+      "end_state": "right edge is ready for the second product entrance",
+      "certainty": "certain"
+    },
+    {
+      "cut": 4,
+      "start_us": 1400000,
+      "end_us": 2400000,
+      "subject_presence": "partial_or_hands",
+      "content_roles": ["hands", "primary_product", "headline"],
+      "scene": "same white advertising canvas",
+      "action": "a dark blue closed laptop enters from frame-right, transfers between hands across the lower frame, then exits toward frame-left",
+      "camera": "locked camera",
+      "transition": "continuous reverse-direction handoff",
+      "end_state": "second product and hands have cleared the frame",
+      "certainty": "certain"
+    },
+    {
+      "cut": 5,
+      "start_us": 2400000,
+      "end_us": 2800000,
+      "subject_presence": "none",
+      "content_roles": ["headline", "product_name", "price_line"],
+      "scene": "white canvas with typography only",
+      "action": "brief empty hold before the product lineup appears",
+      "camera": "locked camera",
+      "transition": "product clears frame",
+      "end_state": "lower center is empty and ready for stacked product display",
+      "certainty": "certain"
+    },
+    {
+      "cut": 6,
+      "start_us": 2800000,
+      "end_us": 3400000,
+      "subject_presence": "none",
+      "content_roles": ["stacked_products", "headline"],
+      "scene": "white product display canvas",
+      "action": "a closed pink laptop appears at lower center, followed by a silver laptop settling above it",
+      "camera": "locked camera",
+      "transition": "sequential product appearance",
+      "end_state": "two products form a neat centered stack",
+      "certainty": "certain"
+    },
+    {
+      "cut": 7,
+      "start_us": 3400000,
+      "end_us": 3800000,
+      "subject_presence": "none",
+      "content_roles": ["stacked_products", "headline"],
+      "scene": "same white product display canvas",
+      "action": "a dark blue laptop settles on top of the two-product stack",
+      "camera": "locked camera",
+      "transition": "sequential product appearance",
+      "end_state": "three products form a centered stack",
+      "certainty": "certain"
+    },
+    {
+      "cut": 8,
+      "start_us": 3800000,
+      "end_us": 4200000,
+      "subject_presence": "none",
+      "content_roles": ["stacked_products", "headline"],
+      "scene": "same white product display canvas",
+      "action": "a yellow laptop settles on top and completes the four-product color stack",
+      "camera": "locked camera",
+      "transition": "sequential product appearance",
+      "end_state": "four products are evenly aligned in one stack",
+      "certainty": "certain"
+    },
+    {
+      "cut": 9,
+      "start_us": 4200000,
+      "end_us": 5000000,
+      "subject_presence": "none",
+      "content_roles": ["stacked_products", "headline", "product_name", "price_line"],
+      "scene": "final clean white product-card composition",
+      "action": "completed four-product stack holds still beneath the typography",
+      "camera": "locked camera",
+      "transition": "final hold",
+      "end_state": "stable product lineup remains visible through the exact end frame",
+      "certainty": "certain"
+    }
+  ],
+  "source_events": [
+    {
+      "event": 1,
+      "kind": "silence",
+      "start_us": 0,
+      "end_us": 5000000,
+      "source_cut_start": 1,
+      "source_cut_end": 9,
+      "text": "no audio stream is present",
+      "certainty": "certain"
+    }
+  ],
+  "notes": [
+    "The source is one continuous locked-camera shot with no detected hard cuts and no audio stream.",
+    "Semantic Cuts mark product-entry, handoff, empty-hold, stack-addition, and final-hold phase changes.",
+    "Source product identity and price are observations only and do not authorize target claims."
+  ]
+}

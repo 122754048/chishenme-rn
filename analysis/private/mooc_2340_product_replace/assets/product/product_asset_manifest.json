@@ -1,0 +1,13 @@
+{
+  "contract": "asset-board-manifest/v1",
+  "image_index": 1,
+  "image_tag": "@Image1",
+  "target_tag": "TARGET_PINK_PHONE",
+  "asset_type": "product",
+  "source_asset_sha256": "1a973268624ca4bccc4b941811e64f178aa5e96c0009759f620833b48c27c080",
+  "board_sha256": "190a021d5b63b9dfd1c09423b0c9f36cccffec945fc8a14fed75557960e8c097",
+  "board_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/9b5b631f-3f4a-4489-a796-3965f63ba34e.png",
+  "task_id": "2087456395286294529",
+  "local_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\mooc_2340_product_replace\\assets\\product\\01_TARGET_PINK_PHONE.png",
+  "receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\mooc_2340_product_replace\\assets\\product\\01_TARGET_PINK_PHONE.receipt.json"
+}

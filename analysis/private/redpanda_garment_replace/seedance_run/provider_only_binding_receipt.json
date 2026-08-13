@@ -1,0 +1,13 @@
+{
+  "contract": "provider-only-multi-object-binding/v1",
+  "compiler_version": "provider-only-multi-object-binding/v1",
+  "binding_mode": "provider_only_multi_object_binding",
+  "binding_contract_sha256": "f66bda6d2d48d91a5ea46b038fbabff07588cf771307c02704ffb962347e115a",
+  "prompt_sha256": "bbde86fab6a91ea5d3109d2a76d1817552c9e7e1c4c263a52d6a49d858700226",
+  "image_tags": [
+    "@Image1"
+  ],
+  "source_object_ids": [
+    "SRC_WHITE_CORSET_MINI_DRESS"
+  ]
+}

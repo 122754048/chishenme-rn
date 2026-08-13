@@ -1,0 +1,31 @@
+{
+  "contract": "reference-video-probe",
+  "contract_version": 1,
+  "file_name": "redpandacompress_Download - 2026-01-18T022759587.mp4",
+  "duration_us": 14900000,
+  "source_width": 704,
+  "source_height": 1280,
+  "encoded_width": 704,
+  "encoded_height": 1280,
+  "rotation_deg": 0,
+  "fps_num": 30,
+  "fps_den": 1,
+  "frame_count": 447,
+  "video_codec": "h264",
+  "audio_streams": [
+    {
+      "codec": "aac",
+      "sample_rate": 44100,
+      "channels": 2
+    }
+  ],
+  "warnings": [],
+  "scene_cut_candidates_us": [
+    2000000,
+    3966667,
+    5166667,
+    7333333,
+    9700000
+  ],
+  "candidate_policy": "hints_only; inspect complete video and split on action/camera/audio/overlay phase changes"
+}

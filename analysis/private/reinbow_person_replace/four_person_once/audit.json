@@ -1,0 +1,29 @@
+{
+  "schema_version": "reinbow-four-person-once/v1",
+  "request_sha256": "ddef7e6bdbe06e80216fbce873a27787fd6d7d483698d77c596287bf8268a1f2",
+  "prompt_chars": 2396,
+  "subject_order": [
+    "TARGET_MAN",
+    "TARGET_BLONDE",
+    "TARGET_DARK",
+    "TARGET_CAT"
+  ],
+  "source_object_order": [
+    "SRC_MAN",
+    "SRC_BLONDE",
+    "SRC_DARK",
+    "SRC_ALIEN"
+  ],
+  "identity_image_sha256_order": [
+    "d071ff8dbcb1c7048bcfc898a6e4c40673f0cdfa7075ffebcab587920d766627",
+    "6aee4b6638f11414d3637ee3bbdef7fa6c5ed8d01dc04533a96eb9ffeaad0ddc",
+    "60a34560a2941cbd46ff7608c34bcd4b18d9f53dfc9c13ef3f74403beadafb40",
+    "fa3f6c252c8d37260790d1ad2b7ee94b4fab214587b2aa24cff8624d70f27066"
+  ],
+  "binding_board_sha256": "05e666a80cb2082101a8a1c703ef2514ca92ad2b7e9a635e69ae814f481da3fc",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "audio_policy": "preserve_unmodified_audio"
+}

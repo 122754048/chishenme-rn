@@ -1,0 +1,23 @@
+{
+  "schema_version": "usfr-person-product-provider-only/v1",
+  "request_sha256": "d832bc68fd3c482e868157b33e73e11ff33e904442c07b02adffcdb05e688292",
+  "source_video_sha256": "b520b8a32ced296ecb2b4e3066350e1ee75150a991073fbe7092063345d4ea3d",
+  "approved_script_sha256": "3718ae1793e08667ec6243a3688a6d0b58f28332631e335003529f39859c3b92",
+  "source_dynamics_sha256": "4b2e2a9004476155f47d3eb990e6d7686ce4f6f3f6f8717831928dc4b1c04d84",
+  "matcher_receipt_sha256": "9360cc9b80dcccb4687de98e9374b3f520dc60f5537c88bea35cb99ce998dc6c",
+  "segment_plan_sha256": "0db2739f8ab959963a5cf8750f6f7050e459637b18d9bededc7ade3c83629849",
+  "binding_contract_sha256": "db014a0d7b4e0620a6a5af28bad60ddd320efbec54f1aa4d792401fb4580b477",
+  "prompt_sha256": "f6a3aa0319d13d72fb48b30bdfbefbbf8d25f4f5e8782c0e20c95b45d35c0d91",
+  "image_tag_order": [
+    "@Image1",
+    "@Image2"
+  ],
+  "source_object_order": [
+    "SRC_SEASIDE_WOMAN",
+    "SRC_LIPSTICK_FAMILY"
+  ],
+  "provider_create_calls_allowed": 1,
+  "provider_only": true,
+  "local_final_video_processing": false,
+  "prompt_chars": 1763
+}

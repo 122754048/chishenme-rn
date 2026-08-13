@@ -1,0 +1,21 @@
+{
+  "prompt": "编辑视频： Multi-subject replacement based on @Video1. @Video1 supplies the full motion, camera, blocking, timing, occlusion, lighting, background, props, contacts, and audio. Subject 1: opening-center seated presenter in the pale sweater and green bandana, handling the green candy becomes @Image1 with exact @Image1 identity and wardrobe: curly red-brown hair, exact female face, colorful patterned blouse, dangling silver earrings, layered silver necklaces. Object 2 (product): opening green candy product track: handheld unwrapped piece, wrapped close-up, and table units becomes @Image2 with the target geometry, color, markings, and packaging from @Image2; preserve source timing, camera, track, perspective, shadows, and occlusion; use one realistic 300ml bottle on the main hand track, natural cap opening and one sip, label rotation, close display, matching table bottles, and warm-orange bottle visibility in the dark-reveal phase. Each mapped Subject or Object remains the same continuing physical track through movement, occlusion, interaction, and crossing. All mapped tracks follow their source motion, contact, perspective, lighting, and timing. 00:00.000-00:01.680 TARGET_WOMAN 台词精确改为：Sunny Pop, fresh orange juice.。 00:03.900-00:05.740 TARGET_WOMAN 台词精确改为：Cold pressed, no added sugar.。 00:07.320-00:09.220 TARGET_WOMAN 台词精确改为：Fresh sunshine in every sip.。 00:09.800-00:10.860 TARGET_WOMAN 台词精确改为：Try Sunny Pop.。 All unlisted content remains unchanged and frame-aligned. sync_to_approved_dialogue_windows",
+  "resolution": "720p",
+  "duration": "11",
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/2a3d8a0a011d3079b50c927ccf527bdb136d74eb1e3abc46fc9b6660789584b5.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/1313e2a8af00b435b1736ab806c18c109f750c30c9298bd3fd370df45ea5ad04.png"
+  ],
+  "videoUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/11e0ebcd31a00379030223bfe63b462779237ff541d6a0dfc6c6fed4b99aff97.mp4"
+  ],
+  "audioUrls": [],
+  "generateAudio": true,
+  "ratio": "3:4",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

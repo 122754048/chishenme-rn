@@ -1,0 +1,125 @@
+{
+  "contract": "runninghub-hailuo-h3-silent-video-mixed-audio-experiment/v1",
+  "task_id": "2087520453100371969",
+  "status": "SUCCESS",
+  "endpoint": "https://www.runninghub.ai/openapi/v2/minimax/hailuo-h3/multimodal-to-video",
+  "prompt": "将视频1中的人物替换为图片1中的人物。使用音频1作为完整声音：0至4秒和10至15秒演唱音频1中的歌曲，4至10秒按音频1中的口播展示UI操作。人物口型与音频1同步，保持视频1的镜头、动作、背景和剪辑节奏。",
+  "audio_windows": [
+    {
+      "start_ms": 0,
+      "end_ms": 4000,
+      "kind": "target_song",
+      "source": "song 01:30-01:34"
+    },
+    {
+      "start_ms": 4000,
+      "end_ms": 10000,
+      "kind": "source_ui_speech",
+      "source": "source 00:04-00:10"
+    },
+    {
+      "start_ms": 10000,
+      "end_ms": 15000,
+      "kind": "target_song",
+      "source": "song 01:40-01:45"
+    }
+  ],
+  "payload_without_temporary_urls": {
+    "prompt": "将视频1中的人物替换为图片1中的人物。使用音频1作为完整声音：0至4秒和10至15秒演唱音频1中的歌曲，4至10秒按音频1中的口播展示UI操作。人物口型与音频1同步，保持视频1的镜头、动作、背景和剪辑节奏。",
+    "imageUrls": [
+      "uploaded-person-asset"
+    ],
+    "videoUrls": [
+      "uploaded-silent-source-video"
+    ],
+    "audioUrls": [
+      "uploaded-mixed-audio"
+    ],
+    "resolution": "768P",
+    "duration": "15",
+    "ratio": "adaptive"
+  },
+  "inputs": {
+    "person_asset_sha256": "38D57C53E5C6CBB06ED9659E20795AE4C6700AC83FB8DC2D3269BBB90489946C",
+    "silent_source_video_sha256": "A5F21AEE1F0740ACCD061D9742433CCC51F4380360B013F07D46DF8CC281C6EF",
+    "mixed_audio_sha256": "4FF7E642EAFA15F492F1C979EAA7C5BABD4E8279D2EB781A7CA211463112D03C",
+    "silent_source_video_probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "h264",
+          "codec_type": "video"
+        },
+        {
+          "index": 1,
+          "codec_type": "data"
+        }
+      ],
+      "format": {
+        "duration": "15.033333"
+      }
+    },
+    "mixed_audio_probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "pcm_s16le",
+          "codec_type": "audio",
+          "sample_rate": "48000",
+          "channels": 2
+        }
+      ],
+      "format": {
+        "duration": "15.000000"
+      }
+    }
+  },
+  "provider_response": {
+    "taskId": "2087520453100371969",
+    "status": "SUCCESS",
+    "errorCode": "",
+    "errorMessage": "",
+    "results": [
+      {
+        "url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/591b7cdc-e93e-42a5-b039-8f3b050d9447.mp4",
+        "outputType": "mp4",
+        "text": null
+      }
+    ],
+    "clientId": "",
+    "promptTips": "",
+    "failedReason": {},
+    "usage": {
+      "consumeMoney": null,
+      "consumeCoins": null,
+      "total_seconds": "30",
+      "input_image_count": "1",
+      "taskCostTime": "0",
+      "thirdPartyConsumeMoney": "2.31",
+      "output_seconds": "15",
+      "input_seconds": "15"
+    },
+    "parentTaskId": null,
+    "taskUsageList": [
+      {
+        "taskId": "2087520453100371969",
+        "parentTaskId": null,
+        "taskStatus": "SUCCESS",
+        "usage": {
+          "consumeMoney": null,
+          "consumeCoins": null,
+          "total_seconds": "30",
+          "input_image_count": "1",
+          "taskCostTime": "0",
+          "thirdPartyConsumeMoney": "2.31",
+          "output_seconds": "15",
+          "input_seconds": "15"
+        }
+      }
+    ]
+  }
+}

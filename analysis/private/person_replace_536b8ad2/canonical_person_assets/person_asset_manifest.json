@@ -1,0 +1,37 @@
+{
+  "schema_version": "usfr-person-asset-manifest/v1",
+  "assets": [
+    {
+      "slot": 1,
+      "reference": "@Image1",
+      "asset_tag": "TARGET_WOMAN",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510.png",
+      "source_sha256": "8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510",
+      "identity_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\person_replace_536b8ad2\\canonical_person_assets\\01_TARGET_WOMAN.png",
+      "sha256": "13d88ba0f8116e4123e265f4c540fc0e12c70d853358a0f9f74ce1f3d7a748e1",
+      "person_asset_profile": "model-identity-v3-local-crop",
+      "asset_mime_type": "image/png",
+      "asset_width": 1024,
+      "asset_height": 1024,
+      "identity_subject_count": 1,
+      "asset_layout": "identity_dominant",
+      "asset_composition": "upper_body_square"
+    },
+    {
+      "slot": 2,
+      "reference": "@Image2",
+      "asset_tag": "TARGET_MAN",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\Batch_00004_myhhx_1768465153.png",
+      "source_sha256": "feaa0b922da12e8462fa17277d59978fc3e433cf08a954666b4da4223f5a738d",
+      "identity_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\person_replace_536b8ad2\\canonical_person_assets\\02_TARGET_MAN.png",
+      "sha256": "32dfb799fbd42ceb5954dafb47c7a2a58e40434c3203233c59fc4bcc7a933819",
+      "person_asset_profile": "model-identity-v3-local-crop",
+      "asset_mime_type": "image/png",
+      "asset_width": 1024,
+      "asset_height": 1024,
+      "identity_subject_count": 1,
+      "asset_layout": "identity_dominant",
+      "asset_composition": "upper_body_square"
+    }
+  ]
+}

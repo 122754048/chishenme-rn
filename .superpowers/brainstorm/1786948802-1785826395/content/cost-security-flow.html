@@ -1,0 +1,65 @@
+<h2>费用控制与 API Key 隔离</h2>
+<p class="subtitle">员工只调用你的 MCP；所有 Provider Key 永远留在服务器端。</p>
+
+<div class="mockup">
+  <div class="mockup-header">每次准备产生付费调用前</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>1. 身份与所有权</h3><p>账号有效；任务和 Source Master 属于当前员工。</p></div></div>
+      <div class="card"><div class="card-body"><h3>2. 每日条数</h3><p>默认每人每日最多 50 条；后台可随时修改。</p></div></div>
+      <div class="card"><div class="card-body"><h3>3. 月预算</h3><p>公司默认每月最多 ¥10,000；按已结算 + 已冻结额度计算。</p></div></div>
+      <div class="card"><div class="card-body"><h3>4. 幂等与授权</h3><p>绑定请求 SHA、批次授权和 Segment；防止重复扣费。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;font-size:28px;margin:10px 0">↓ 通过预检后冻结预计成本</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>允许执行</h4>
+    <ul>
+      <li>余额与条数充足</li>
+      <li>请求 SHA 尚未付费提交</li>
+      <li>批次摘要和样片授权有效</li>
+      <li>Provider 请求由 Worker 服务端发出</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>阻止执行</h4>
+    <ul>
+      <li>超过个人每日条数</li>
+      <li>公司月预算已用尽</li>
+      <li>批次清单被修改</li>
+      <li>Provider 状态不明却尝试重复提交</li>
+    </ul>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">预算分级策略（全部后台可配置）</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>0–69%</h3><p>正常运行。</p></div></div>
+      <div class="card"><div class="card-body"><h3>70%</h3><p>向管理员发出预算提醒。</p></div></div>
+      <div class="card"><div class="card-body"><h3>90%</h3><p>提醒升级；后台可选择降低并发或限制新批次。</p></div></div>
+      <div class="card"><div class="card-body"><h3>100%</h3><p>停止新的付费调用；不重复取消已经成功提交的 Provider 任务。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">Key 安全边界</div>
+  <div class="mockup-body">
+    <div class="cards">
+      <div class="card"><div class="card-body"><h3>员工能看到</h3><p>job_handle、状态、脚本、故事板、成片和公开错误。</p></div></div>
+      <div class="card"><div class="card-body"><h3>员工不能看到</h3><p>OpenAI、RunningHub、OSS Key，Job capability，内部 Prompt 和 Provider payload。</p></div></div>
+      <div class="card"><div class="card-body"><h3>服务器保存</h3><p>部署 Secret / 环境变量；日志自动脱敏；开发与生产 Key 分离。</p></div></div>
+      <div class="card"><div class="card-body"><h3>ZIP 安全处理</h3><p>现有 ZIP 的非空密钥不得复制到新工程；部署前创建或轮换生产密钥。</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div style="padding:16px;border:1px solid var(--border);border-radius:12px;margin-top:18px">
+  <strong>MVP 账号边界：</strong>管理员创建/停用账号、密码安全哈希、登录失败限流、操作审计；暂不做 SSO、MFA、设备/IP 和单会话限制。
+</div>

@@ -1,0 +1,54 @@
+{
+  "contract": "reinbow-four-person-provider-only-qc/v1",
+  "provider": "RunningHub Seedance 2.0",
+  "task_id": "2087016604268650497",
+  "request_sha256": "d889b0e1c161bb9688d52bc9dd7e9af95caa387237ada11a963034a8852b38a7",
+  "output_sha256": "d097f7bc4d3135323c9ec6c41b4a400f33b22b10127b3c90f09623b52992cf42",
+  "direct_provider_mp4": true,
+  "local_video_processing": false,
+  "video": {
+    "width": 720,
+    "height": 1280,
+    "fps": 24,
+    "frames": 265,
+    "duration_seconds": 11.051995,
+    "video_codec": "h264",
+    "audio_codec": "aac"
+  },
+  "review_frames_seconds": [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 6.5, 7.0, 7.5, 8.0, 9.0, 10.0],
+  "objects": [
+    {
+      "source_object_id": "SRC_MAN",
+      "target_reference": "@Image1",
+      "identity_replaced": true,
+      "wardrobe_replaced": true,
+      "evidence": "target shaved-hair male identity, red mesh sleeveless top, bright green crossbody strap, and silver chain remain consistent across opening, action, occlusion, and ending frames"
+    },
+    {
+      "source_object_id": "SRC_BLONDE",
+      "target_reference": "@Image2",
+      "identity_replaced": true,
+      "wardrobe_replaced": true,
+      "evidence": "target blonde identity and black thin-strap outfit remain attached to the original blonde source trajectory"
+    },
+    {
+      "source_object_id": "SRC_DARK",
+      "target_reference": "@Image3",
+      "identity_replaced": true,
+      "wardrobe_replaced": true,
+      "evidence": "target short dark curls, freckles, pearl studs, and light thin-strap outfit remain attached to the original dark-haired source trajectory"
+    },
+    {
+      "source_object_id": "SRC_ALIEN",
+      "target_reference": "@Image4",
+      "identity_replaced": true,
+      "wardrobe_replaced": false,
+      "wardrobe_policy": "preserve_source",
+      "evidence": "ragdoll-cat head replaces the alien head while the black rainbow hoodie remains",
+      "noted_deviation": "the model also renders exposed hands as white feline paws; this is consistent with the requested alien-to-cat appearance but extends beyond a head-only change"
+    }
+  ],
+  "replacement_count": 4,
+  "replacement_total": 4,
+  "verdict": "accepted_4_of_4"
+}

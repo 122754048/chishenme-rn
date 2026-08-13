@@ -1,0 +1,32 @@
+{
+  "schema_version": "usfr-multi-asset-manifest/v1",
+  "assets": [
+    {
+      "reference": "@Image1",
+      "tag": "TARGET_WOMAN",
+      "asset_type": "model",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510.png",
+      "asset_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\aug12_person_product_replace\\assets\\01_TARGET_WOMAN.png",
+      "source_sha256": "8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510",
+      "asset_sha256": "a957d1c36deffbe6d6c3cba5942d51b0b5a19cb56c54b282450e174cf9c71bf5",
+      "person_asset_profile": "model-identity-v3-local-crop",
+      "asset_mime_type": "image/png",
+      "asset_width": 1024,
+      "asset_height": 1024,
+      "identity_subject_count": 1,
+      "asset_layout": "identity_dominant",
+      "asset_composition": "full_body_square"
+    },
+    {
+      "reference": "@Image2",
+      "tag": "TARGET_SUNQUICK_ORANGE",
+      "asset_type": "product",
+      "source_path": "C:\\Users\\zhaocx04\\Downloads\\DC001.webp",
+      "asset_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\aug12_person_product_replace\\assets\\02_TARGET_SUNQUICK_ORANGE.png",
+      "source_sha256": "8d3638f0bcb1265e303ff4fc93733189ed4e47f66da8588d408c3493e6895ae2",
+      "asset_sha256": "519267cf2f892890a25ff287b35bc313a71b2390d099f6baae3c52ebf4606bbb",
+      "task_id": "2087463311987191809",
+      "receipt_path": "C:\\Users\\zhaocx04\\Documents\\New project\\analysis\\private\\aug12_person_product_replace\\assets\\02_TARGET_SUNQUICK_ORANGE.receipt.json"
+    }
+  ]
+}

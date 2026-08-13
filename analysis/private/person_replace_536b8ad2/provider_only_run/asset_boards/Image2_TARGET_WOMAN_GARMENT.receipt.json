@@ -1,0 +1,10 @@
+{
+  "schema_version": "runninghub-asset-board/v2",
+  "asset_type": "garment",
+  "template_version": "garment-v2",
+  "source_asset_sha256": "8648a9162d0cc6c75565505e4a1d56a5961ae5ecc976aef3ea088e5a2b246510",
+  "request_sha256": "2d704d130885a1c74711f0f59ca3f66d1dfb9c7783b249dddba2a3cd62b5e756",
+  "task_id": "2087124932474834946",
+  "board_sha256": "f6a9e871bd6a7e0295112d9ae631858f30cde713e157300db6204a4f83efe6e0",
+  "board_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/d9996f4f-8014-438d-a0a2-611e641f413a.png"
+}

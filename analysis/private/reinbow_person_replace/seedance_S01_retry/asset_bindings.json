@@ -1,0 +1,191 @@
+{
+  "schema_version": "runninghub-standard-seedance-asset-bindings/v1",
+  "image_file_bindings": [
+    {
+      "sha256": "34234f25ea14ccbecf4df8a1e0c94095b897e780d1f1cecf444ebf1179d10c56",
+      "url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/34234f25ea14ccbecf4df8a1e0c94095b897e780d1f1cecf444ebf1179d10c56.png"
+    },
+    {
+      "sha256": "05c04d0e4a266f98ec46443ea657a94325bf066a356d6ecd5a5439c64340cdb0",
+      "url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/05c04d0e4a266f98ec46443ea657a94325bf066a356d6ecd5a5439c64340cdb0.png"
+    },
+    {
+      "sha256": "8daa460e739a8f8a6385927d0b0b4e9a8729d64ac955d430574b7bfbf7266d81",
+      "url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/8daa460e739a8f8a6385927d0b0b4e9a8729d64ac955d430574b7bfbf7266d81.png"
+    },
+    {
+      "sha256": "48e6bc2bef128c18749289287c750a668d9eb5c91fda634bb59cea8c9951f8d3",
+      "url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/48e6bc2bef128c18749289287c750a668d9eb5c91fda634bb59cea8c9951f8d3.png"
+    }
+  ],
+  "image_reference_binding": {
+    "schema_version": "usfr-multimodal-reference-binding/v2",
+    "ordered_image_urls": [
+      "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/34234f25ea14ccbecf4df8a1e0c94095b897e780d1f1cecf444ebf1179d10c56.png",
+      "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/05c04d0e4a266f98ec46443ea657a94325bf066a356d6ecd5a5439c64340cdb0.png",
+      "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/8daa460e739a8f8a6385927d0b0b4e9a8729d64ac955d430574b7bfbf7266d81.png",
+      "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/48e6bc2bef128c18749289287c750a668d9eb5c91fda634bb59cea8c9951f8d3.png"
+    ],
+    "approval_set_sha256": null,
+    "image_bindings": [
+      {
+        "role": "new_model_identity",
+        "artifact_name": "main_male.png",
+        "sha256": "34234f25ea14ccbecf4df8a1e0c94095b897e780d1f1cecf444ebf1179d10c56",
+        "cut_ids": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12",
+          "C13",
+          "C14",
+          "C15",
+          "C16",
+          "C17"
+        ],
+        "page": 1,
+        "approval_set_sha256": null,
+        "purpose": "Replace the original central male with MODEL_MAIN_MALE",
+        "image_index": 1,
+        "tag": "@Image1",
+        "url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/34234f25ea14ccbecf4df8a1e0c94095b897e780d1f1cecf444ebf1179d10c56.png"
+      },
+      {
+        "role": "new_model_identity",
+        "artifact_name": "blonde_woman.png",
+        "sha256": "05c04d0e4a266f98ec46443ea657a94325bf066a356d6ecd5a5439c64340cdb0",
+        "cut_ids": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12",
+          "C13",
+          "C14",
+          "C15",
+          "C16",
+          "C17"
+        ],
+        "page": 1,
+        "approval_set_sha256": null,
+        "purpose": "Replace the original blonde woman with MODEL_BLONDE_WOMAN",
+        "image_index": 2,
+        "tag": "@Image2",
+        "url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/05c04d0e4a266f98ec46443ea657a94325bf066a356d6ecd5a5439c64340cdb0.png"
+      },
+      {
+        "role": "new_model_identity",
+        "artifact_name": "dark_hair_woman.png",
+        "sha256": "8daa460e739a8f8a6385927d0b0b4e9a8729d64ac955d430574b7bfbf7266d81",
+        "cut_ids": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12",
+          "C13",
+          "C14",
+          "C15",
+          "C16",
+          "C17"
+        ],
+        "page": 1,
+        "approval_set_sha256": null,
+        "purpose": "Replace the original dark-haired woman with MODEL_DARK_HAIR_WOMAN",
+        "image_index": 3,
+        "tag": "@Image3",
+        "url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/8daa460e739a8f8a6385927d0b0b4e9a8729d64ac955d430574b7bfbf7266d81.png"
+      },
+      {
+        "role": "new_model_identity",
+        "artifact_name": "cat_humanoid.png",
+        "sha256": "48e6bc2bef128c18749289287c750a668d9eb5c91fda634bb59cea8c9951f8d3",
+        "cut_ids": [
+          "C04",
+          "C05",
+          "C06",
+          "C07",
+          "C08",
+          "C09",
+          "C10",
+          "C11",
+          "C12",
+          "C13",
+          "C14",
+          "C15",
+          "C16",
+          "C17"
+        ],
+        "page": 1,
+        "approval_set_sha256": null,
+        "purpose": "Replace only the alien head with MODEL_CAT_HUMANOID while preserving the source human body",
+        "image_index": 4,
+        "tag": "@Image4",
+        "url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/48e6bc2bef128c18749289287c750a668d9eb5c91fda634bb59cea8c9951f8d3.png"
+      }
+    ],
+    "slot_policy": "continuous-present-role-order/v1",
+    "forbidden_artifact_names": [
+      "seedance_execution_carrier.png"
+    ]
+  },
+  "audio_file_bindings": [],
+  "video_file_bindings": [
+    {
+      "sha256": "bb1998e0e33d0207b93e0393a49369cc0d82b1365ae096abd296b2dde7113a8b",
+      "url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/bb1998e0e33d0207b93e0393a49369cc0d82b1365ae096abd296b2dde7113a8b.mp4"
+    }
+  ],
+  "video_reference": {
+    "schema_version": "usfr-video-reference/v1",
+    "url": "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/bb1998e0e33d0207b93e0393a49369cc0d82b1365ae096abd296b2dde7113a8b.mp4",
+    "source_video_sha256": "fb02cf54bbbb0ceff602dcca114680ba6bf8882521602f3ff64d7da0f281b2aa",
+    "source_slice_sha256": "bb1998e0e33d0207b93e0393a49369cc0d82b1365ae096abd296b2dde7113a8b",
+    "segment_id": "S01",
+    "segment_plan_sha256": "9d648b7a34bfa14dd32799daca75f46fbaab0a829f882d842cedde6763693259",
+    "source_video_reference_artifact_id": "source-reference:bb1998e0e33d0207b93e0393a49369cc0d82b1365ae096abd296b2dde7113a8b",
+    "start_ms": 0,
+    "end_ms": 10480,
+    "image_reference_binding_sha256": "f9c06e52f01ec05c122515ff43c09f8028325020faccc4c4a01f1cd93c8b0525",
+    "target_changes": [
+      {
+        "kind": "model",
+        "sha256": "34234f25ea14ccbecf4df8a1e0c94095b897e780d1f1cecf444ebf1179d10c56"
+      },
+      {
+        "kind": "model",
+        "sha256": "05c04d0e4a266f98ec46443ea657a94325bf066a356d6ecd5a5439c64340cdb0"
+      },
+      {
+        "kind": "model",
+        "sha256": "8daa460e739a8f8a6385927d0b0b4e9a8729d64ac955d430574b7bfbf7266d81"
+      },
+      {
+        "kind": "model",
+        "sha256": "48e6bc2bef128c18749289287c750a668d9eb5c91fda634bb59cea8c9951f8d3"
+      }
+    ]
+  }
+}

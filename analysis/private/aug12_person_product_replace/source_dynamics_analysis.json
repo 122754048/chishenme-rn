@@ -1,0 +1,94 @@
+{
+  "contract": "reference-video-dynamics",
+  "contract_version": 1,
+  "reference_duration_us": 4566667,
+  "source_width": 480,
+  "source_height": 1040,
+  "fps_num": 30,
+  "fps_den": 1,
+  "source_cut_count": 5,
+  "source_cuts": [
+    {
+      "cut": 1,
+      "start_us": 0,
+      "end_us": 900000,
+      "subject_presence": "identifiable",
+      "content_roles": ["presenter", "headline", "brand_overlay", "mobile_ui_overlay"],
+      "scene": "vertical luxury advertisement in a seaside convertible with flowers and bright coastal daylight",
+      "action": "the seated woman holds a relaxed side profile and begins turning her face forward with a slight smile",
+      "camera": "stable medium close shot",
+      "transition": "direct opening",
+      "end_state": "the woman's face is nearly front-facing",
+      "certainty": "certain"
+    },
+    {
+      "cut": 2,
+      "start_us": 900000,
+      "end_us": 1700000,
+      "subject_presence": "identifiable",
+      "content_roles": ["presenter", "headline", "brand_overlay", "mobile_ui_overlay"],
+      "scene": "same seaside convertible and flower setting",
+      "action": "the woman completes the turn and holds a calm forward-facing smile",
+      "camera": "stable medium close shot",
+      "transition": "continuous performance",
+      "end_state": "smiling portrait holds before the product macro cut",
+      "certainty": "certain"
+    },
+    {
+      "cut": 3,
+      "start_us": 1700000,
+      "end_us": 2600000,
+      "subject_presence": "partial_or_hands",
+      "content_roles": ["mouth_closeup", "source_product", "headline", "brand_overlay", "mobile_ui_overlay"],
+      "scene": "warm pink beauty macro composition",
+      "action": "a lipstick approaches the lips and makes contact for a cosmetic application demonstration",
+      "camera": "extreme close-up with shallow depth of field",
+      "transition": "hard cut to macro product use",
+      "end_state": "product remains close to the lips",
+      "certainty": "certain"
+    },
+    {
+      "cut": 4,
+      "start_us": 2600000,
+      "end_us": 3450000,
+      "subject_presence": "partial_or_hands",
+      "content_roles": ["mouth_closeup", "source_product", "headline", "brand_overlay", "mobile_ui_overlay"],
+      "scene": "same warm pink beauty macro composition",
+      "action": "the lipstick glides across the lower lip and finishes the application gesture",
+      "camera": "extreme close-up with a subtle product-following move",
+      "transition": "continuous cosmetic application",
+      "end_state": "application ends and prepares for the product packshot",
+      "certainty": "certain"
+    },
+    {
+      "cut": 5,
+      "start_us": 3450000,
+      "end_us": 4566667,
+      "subject_presence": "none",
+      "content_roles": ["source_product_packshot", "headline", "brand_overlay", "mobile_ui_overlay"],
+      "scene": "minimal warm beige product stage with soft luxury lighting",
+      "action": "two lipstick components stand upright in a clean final product display and hold through the end",
+      "camera": "locked close product shot",
+      "transition": "hard cut to final packshot",
+      "end_state": "static product display remains visible through the exact end",
+      "certainty": "certain"
+    }
+  ],
+  "source_events": [
+    {
+      "event": 1,
+      "kind": "silence",
+      "start_us": 0,
+      "end_us": 4566667,
+      "source_cut_start": 1,
+      "source_cut_end": 5,
+      "text": "AAC stream is present but measured at digital silence near -91 dB",
+      "certainty": "certain"
+    }
+  ],
+  "notes": [
+    "The source contains one identifiable presenter only in the opening seaside portrait.",
+    "The lipstick-to-lips operation is incompatible with the target bottle and requires an approved product action adaptation.",
+    "Visible source brand and product overlays require replacement with the approved target text."
+  ]
+}

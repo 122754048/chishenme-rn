@@ -1,0 +1,24 @@
+{
+  "prompt": "编辑视频：Subject 1@Image1 replaces SRC_MAN with target identity TARGET_MAN; source locator: SRC_MAN: first frame center; black rainbow-circle hoodie; holds dark phone; later screen-right with red phone; target appearance: young Black man; very short shaved buzz cut; dark-brown skin; long oval face; strong brows; narrow dark eyes; broad lips; faint moustache; change only face_hair_skin; preserve source hoodie, body, performance, hands, phones and motion. Subject 2@Image2 replaces SRC_BLONDE with target identity TARGET_BLONDE; source locator: SRC_BLONDE: first frame left; long blonde hair; mint-green ruffle top; target appearance: young fair-skinned woman; long voluminous warm-blonde hair; high side-swept crown; hazel-green eyes; arched brows; defined pink-red lips; change only face_hair_skin; preserve source mint-green clothes, body, position, gestures and motion. Subject 3@Image3 replaces SRC_DARK with target identity TARGET_DARK; source locator: SRC_DARK: first frame right; long dark hair; sunglasses on head; gray halter top; target appearance: young fair-skinned woman; chin-length dark-brown curls; brown eyes; freckles across forehead, nose and cheeks; pearl stud earrings; change only face_hair_skin; preserve source gray clothes, body, position, gestures and motion. Subject 4@Image4 replaces SRC_ALIEN with target identity TARGET_CAT; source locator: SRC_ALIEN: enters from frame left at 3.15s; gray large-eye alien head; black rainbow-circle hoodie; target appearance: realistic ragdoll cat head; blue eyes; pink nose; white muzzle and forehead blaze; dark seal-point ears and eye mask; change only head_identity_only; preserve source human-scale body, hoodie, hands, phone contact and motion. 严格编辑 @Video1；它是唯一编辑对象，不是风格参考。只执行下列显式替换，未修改内容逐帧保持。 保留源视频的服装、身体、表情、视线、动作、口型时序、人物走位、遮挡、接触关系、镜头、构图、光线、背景、物体与所有未指定元素。 保留所有未声明的源视频内容，不添加未声明内容，不模糊、不打码、不留白。 preserve_unmodified_lip_sync Apply all four Subject-to-source replacements for the full source window. TARGET_CAT changes only the alien head to the realistic ragdoll-cat head from @Image4; keep human neck, limbs, hands and upright scale. @Image5 is the spatial binding map only: left TARGET_BLONDE maps to SRC_BLONDE; center TARGET_MAN maps to SRC_MAN; right TARGET_DARK maps to SRC_DARK; later-left TARGET_CAT maps to SRC_ALIEN. @Image5 supplies mapping only, no independent identity, wardrobe, motion, camera, background or style.",
+  "resolution": "720p",
+  "duration": "11",
+  "imageUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/d071ff8dbcb1c7048bcfc898a6e4c40673f0cdfa7075ffebcab587920d766627.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/6aee4b6638f11414d3637ee3bbdef7fa6c5ed8d01dc04533a96eb9ffeaad0ddc.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/60a34560a2941cbd46ff7608c34bcd4b18d9f53dfc9c13ef3f74403beadafb40.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/fa3f6c252c8d37260790d1ad2b7ee94b4fab214587b2aa24cff8624d70f27066.png",
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/05e666a80cb2082101a8a1c703ef2514ca92ad2b7e9a635e69ae814f481da3fc.png"
+  ],
+  "videoUrls": [
+    "https://rh-hk-images-switch.xiaoyaoyou.com/input/openapi/bb1998e0e33d0207b93e0393a49369cc0d82b1365ae096abd296b2dde7113a8b.mp4"
+  ],
+  "audioUrls": [],
+  "generateAudio": true,
+  "ratio": "9:16",
+  "realPersonMode": true,
+  "conversionSlots": [
+    "all"
+  ],
+  "returnLastFrame": false,
+  "seed": -1
+}

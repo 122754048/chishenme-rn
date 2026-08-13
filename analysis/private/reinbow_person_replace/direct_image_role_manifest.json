@@ -1,0 +1,42 @@
+{
+  "schema_version": "usfr-image-role-manifest/v1",
+  "approval_set_sha256": null,
+  "images": [
+    {
+      "role": "new_model_identity",
+      "artifact_name": "main_male.png",
+      "sha256": "34234f25ea14ccbecf4df8a1e0c94095b897e780d1f1cecf444ebf1179d10c56",
+      "cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08", "C09", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17"],
+      "page": 1,
+      "approval_set_sha256": null,
+      "purpose": "Replace the original central male with MODEL_MAIN_MALE"
+    },
+    {
+      "role": "new_model_identity",
+      "artifact_name": "blonde_woman.png",
+      "sha256": "05c04d0e4a266f98ec46443ea657a94325bf066a356d6ecd5a5439c64340cdb0",
+      "cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08", "C09", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17"],
+      "page": 1,
+      "approval_set_sha256": null,
+      "purpose": "Replace the original blonde woman with MODEL_BLONDE_WOMAN"
+    },
+    {
+      "role": "new_model_identity",
+      "artifact_name": "dark_hair_woman.png",
+      "sha256": "8daa460e739a8f8a6385927d0b0b4e9a8729d64ac955d430574b7bfbf7266d81",
+      "cut_ids": ["C01", "C02", "C03", "C04", "C05", "C06", "C07", "C08", "C09", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17"],
+      "page": 1,
+      "approval_set_sha256": null,
+      "purpose": "Replace the original dark-haired woman with MODEL_DARK_HAIR_WOMAN"
+    },
+    {
+      "role": "new_model_identity",
+      "artifact_name": "cat_humanoid.png",
+      "sha256": "48e6bc2bef128c18749289287c750a668d9eb5c91fda634bb59cea8c9951f8d3",
+      "cut_ids": ["C04", "C05", "C06", "C07", "C08", "C09", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17"],
+      "page": 1,
+      "approval_set_sha256": null,
+      "purpose": "Replace only the alien head with MODEL_CAT_HUMANOID while preserving the source human body"
+    }
+  ]
+}

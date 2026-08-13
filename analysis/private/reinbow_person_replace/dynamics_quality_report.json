@@ -1,0 +1,35 @@
+{
+  "contract": "reference-video-dynamics-quality-report",
+  "contract_version": 1,
+  "status": "VALID",
+  "candidate_metrics": {
+    "duration_s": 18.366667,
+    "cut_count": 17,
+    "cuts_per_10s": 9.255898198622537,
+    "event_count": 11,
+    "events_per_10s": 5.989110599108701,
+    "event_kinds": [
+      "ambience",
+      "dialogue",
+      "silence"
+    ],
+    "generic_end_state_count": 0,
+    "field_average_chars": {
+      "scene": 40.05882352941177,
+      "action": 133.47058823529412,
+      "camera": 65.29411764705883,
+      "transition": 60.23529411764706,
+      "end_state": 83.05882352941177
+    },
+    "field_unique_ratio": {
+      "scene": 1.0,
+      "action": 1.0,
+      "camera": 1.0,
+      "transition": 1.0,
+      "end_state": 1.0
+    }
+  },
+  "baseline_metrics": null,
+  "failures": [],
+  "warnings": []
+}

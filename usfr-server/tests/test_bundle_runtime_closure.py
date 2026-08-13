@@ -45,10 +45,8 @@ class BundleRuntimeClosureTest(unittest.TestCase):
         self.assertIn("server/runninghub_standard_contract.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/audio_mixer.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/performance_audio_contracts.py", REQUIRED_SERVER_FILES)
-        self.assertIn("server/runninghub_final_lip_sync.py", REQUIRED_SERVER_FILES)
-        self.assertIn("server/runninghub_song_lip_sync.py", REQUIRED_SERVER_FILES)
-        self.assertIn("server/storyboard_layout_contract.py", REQUIRED_SERVER_FILES)
-        self.assertIn("server/visible_text_contract.py", REQUIRED_SERVER_FILES)
+        self.assertIn("server/h3_edit_contract.py", REQUIRED_SERVER_FILES)
+        self.assertIn("server/runninghub_h3.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/singing_audio_router.py", REQUIRED_SERVER_FILES)
         self.assertIn("server/uploaded_audio_contract.py", REQUIRED_SERVER_FILES)
         for relative in (
@@ -79,10 +77,8 @@ class BundleRuntimeClosureTest(unittest.TestCase):
             "server/runninghub_standard_contract.py",
             "server/audio_mixer.py",
             "server/performance_audio_contracts.py",
-            "server/runninghub_final_lip_sync.py",
-            "server/runninghub_song_lip_sync.py",
-            "server/storyboard_layout_contract.py",
-            "server/visible_text_contract.py",
+            "server/h3_edit_contract.py",
+            "server/runninghub_h3.py",
             "server/singing_audio_router.py",
             "server/uploaded_audio_contract.py",
             "bundled-skills/seedance-storyboard-replication/scripts/config.py",
@@ -104,6 +100,31 @@ class BundleRuntimeClosureTest(unittest.TestCase):
             "schemas/stage_capabilities.schema.json",
         ):
             self.assertIn(relative, runtime_paths)
+
+    def test_manifest_distinguishes_v2_authority_from_quarantined_compatibility(self):
+        manifest = json.loads((ROOT / "references" / "bundle_manifest.json").read_text(encoding="utf-8"))
+        roles = {item["path"]: item["role"] for item in manifest["runtime_files"]}
+        self.assertIn("video-edit-v2", roles["scripts/bind_input_slots.py"])
+        self.assertIn("audio lane", roles["server/audio_lane_router.py"])
+        self.assertIn("active video-edit-v2", roles["scripts/seedance_prompt_compiler.py"])
+        for path in (
+            "scripts/seedance_prescript.py",
+            "server/seedance_invocations.py",
+        ):
+            self.assertIn("legacy compatibility / quarantined", roles[path])
+        modules = {item["name"]: item for item in manifest["modules"]}
+        self.assertIn("legacy compatibility / quarantined", modules["seedance-storyboard-replication"]["role"])
+
+    def test_audio_lane_identity_is_runtime_owned_and_main_skill_is_semantic(self):
+        text = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        normalized = " ".join(text.casefold().split())
+        self.assertIn("voice/dialogue", normalized)
+        self.assertIn("h3 mv edit", normalized)
+        self.assertIn("ui monologue", normalized)
+        self.assertNotIn("2082759080288296961", text)
+        router = (ROOT / "server" / "audio_lane_router.py").read_text(encoding="utf-8")
+        self.assertIn("ROUTE_GENERATED_DIALOGUE", router)
+        self.assertIn("ROUTE_SONG_LIP_SYNC", router)
 
     def test_declared_dependency_files_exist(self):
         self.assertEqual(verify_bundle(ROOT), [])

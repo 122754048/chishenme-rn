@@ -1,0 +1,7 @@
+{
+  "contract": "replication-matcher/v1",
+  "classification": "adapt_fit",
+  "reason": "the source lipstick application is adapted to evidence-supported bottle opening, controlled tilt and front-label packshot",
+  "source_video_sha256": "b520b8a32ced296ecb2b4e3066350e1ee75150a991073fbe7092063345d4ea3d",
+  "approved_script_sha256": "3718ae1793e08667ec6243a3688a6d0b58f28332631e335003529f39859c3b92"
+}

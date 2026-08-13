@@ -1,0 +1,13 @@
+{
+  "schema_version": "runninghub-asset-board/v2",
+  "asset_type": "model",
+  "template_version": "model-fullbody-identity-wardrobe-v2",
+  "upstream_board_sha256": [
+    "437547d67d1f1f9c9efa2c609efc04d0a796bf34ac30f41977d47ba563e3eb51",
+    "f6a9e871bd6a7e0295112d9ae631858f30cde713e157300db6204a4f83efe6e0"
+  ],
+  "request_sha256": "e4f306c3e9b0d69c977380639d2a2051e2f91e64ade37de685e2c7e26bf90533",
+  "task_id": "2087130512056782849",
+  "board_sha256": "11d17710fc583ed350eff92e39ba370cae76b54886089e58d20bd886c5840af5",
+  "board_url": "https://rh-hk-images-1252422369.cos.ap-hongkong.myqcloud.com/3089a1eade4b6ac1030e8f9a8e476490/output/f1395127-2f37-48f7-862a-14155a9bab87.png"
+}

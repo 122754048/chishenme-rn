@@ -1,0 +1,4 @@
+编辑视频：Multi-subject replacement based on @Video1.
+- Source woman (opening center-right, long dark hair, gray sleeveless top): Replace with exact identity from @Image1, wearing the exact white long-sleeve cropped top and gray fitted leggings from @Image2.
+- Source man (opening frame-left, black hoodie, white shorts, holding the microphone): Replace with exact identity, white T-shirt, thick silver chain, white sunglasses, and spiked hair from @Image3; source shorts remain.
+Each mapped subject stays on its own continuing physical track through movement and occlusion, inheriting its source motion, expression, gaze, interaction, and timing. @Video1 supplies camera, framing, lighting, background, props, subtitles, SUGO overlays, dialogue, ambience, and audio.

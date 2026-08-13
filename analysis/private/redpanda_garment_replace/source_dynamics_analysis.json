@@ -1,0 +1,177 @@
+{
+  "contract": "reference-video-dynamics",
+  "contract_version": 1,
+  "reference_duration_us": 14900000,
+  "source_width": 704,
+  "source_height": 1280,
+  "fps_num": 30,
+  "fps_den": 1,
+  "source_cut_count": 6,
+  "source_cuts": [
+    {
+      "cut": 1,
+      "start_us": 0,
+      "end_us": 2000000,
+      "subject_presence": "identifiable",
+      "content_roles": ["opening hook", "upper-body garment reveal"],
+      "scene": "One woman records herself indoors beside a decorated tree, framed from head to upper thighs.",
+      "action": "She faces the phone camera, smiles, speaks, and lightly shifts her torso to introduce the outfit.",
+      "camera": "Vertical handheld selfie framing with slight natural movement.",
+      "transition": "Hard cut to a mirror-view full-body angle.",
+      "end_state": "The garment front remains visible and the subject is smiling toward the phone.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 2,
+      "start_us": 2000000,
+      "end_us": 3966667,
+      "subject_presence": "identifiable",
+      "content_roles": ["full-body fit display", "silhouette proof"],
+      "scene": "Mirror selfie in the same decorated room with the subject visible from head to upper legs.",
+      "action": "She holds the phone up, shifts her hip and stance, and displays the garment silhouette while continuing to speak.",
+      "camera": "Stable mirror framing with small hand-driven drift.",
+      "transition": "Hard cut to an extreme garment close-up.",
+      "end_state": "The subject holds a full-body display pose with one hand lowered beside her body.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 3,
+      "start_us": 3966667,
+      "end_us": 5166667,
+      "subject_presence": "partial_or_hands",
+      "content_roles": ["fabric close-up", "construction detail"],
+      "scene": "Extreme close framing of the torso garment surface.",
+      "action": "The camera holds close on seams and fabric texture while the torso makes a small side-to-side shift.",
+      "camera": "Handheld close-up with minor lateral drift.",
+      "transition": "Hard cut back to a medium selfie view.",
+      "end_state": "Garment construction fills most of the frame.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 4,
+      "start_us": 5166667,
+      "end_us": 7333333,
+      "subject_presence": "identifiable",
+      "content_roles": ["fit commentary", "medium garment display"],
+      "scene": "The subject returns to a medium selfie view beside the decorated tree.",
+      "action": "She speaks directly to camera, smiles, and makes small shoulder and torso movements that keep the garment front visible.",
+      "camera": "Vertical handheld selfie framing.",
+      "transition": "Hard cut to a closer face-and-neckline view.",
+      "end_state": "Her face and upper garment are centered near the lens.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 5,
+      "start_us": 7333333,
+      "end_us": 9700000,
+      "subject_presence": "identifiable",
+      "content_roles": ["close personal endorsement", "neckline display"],
+      "scene": "Close selfie crop showing the face, neckline, shoulders, and upper torso.",
+      "action": "She leans close, smiles broadly, speaks, and briefly raises a hand near her hair and neckline.",
+      "camera": "Close handheld phone view with mild forward-back movement.",
+      "transition": "Hard cut back to a medium-to-full outfit view.",
+      "end_state": "Her face and neckline remain close and clearly visible.",
+      "certainty": "certain"
+    },
+    {
+      "cut": 6,
+      "start_us": 9700000,
+      "end_us": 14900000,
+      "subject_presence": "identifiable",
+      "content_roles": ["closing outfit display", "occasion recommendation"],
+      "scene": "Medium selfie framing in the same decorated room, intermittently showing more of the garment length.",
+      "action": "She continues speaking, smiles and subtly changes posture while keeping the outfit visible through the closing beat.",
+      "camera": "Continuous handheld selfie framing with small vertical and lateral movement.",
+      "transition": "Natural end of clip.",
+      "end_state": "The subject finishes smiling toward the phone with the garment front visible.",
+      "certainty": "certain"
+    }
+  ],
+  "source_events": [
+    {
+      "event": 1,
+      "kind": "dialogue",
+      "start_us": 0,
+      "end_us": 2000000,
+      "source_cut_start": 1,
+      "source_cut_end": 1,
+      "text": "You guys, look what just came in.",
+      "certainty": "certain"
+    },
+    {
+      "event": 2,
+      "kind": "dialogue",
+      "start_us": 2000000,
+      "end_us": 4240000,
+      "source_cut_start": 2,
+      "source_cut_end": 3,
+      "text": "I cannot get over how good this fits.",
+      "certainty": "certain"
+    },
+    {
+      "event": 3,
+      "kind": "dialogue",
+      "start_us": 4240000,
+      "end_us": 7240000,
+      "source_cut_start": 3,
+      "source_cut_end": 4,
+      "text": "It's that structured corset top with the little drape at the hip.",
+      "certainty": "uncertain"
+    },
+    {
+      "event": 4,
+      "kind": "dialogue",
+      "start_us": 7240000,
+      "end_us": 9640000,
+      "source_cut_start": 4,
+      "source_cut_end": 5,
+      "text": "So flattering and the fabric feels so luxe.",
+      "certainty": "certain"
+    },
+    {
+      "event": 5,
+      "kind": "dialogue",
+      "start_us": 9640000,
+      "end_us": 12560000,
+      "source_cut_start": 5,
+      "source_cut_end": 6,
+      "text": "It hugs in all the right places, but it's still super comfortable.",
+      "certainty": "certain"
+    },
+    {
+      "event": 6,
+      "kind": "dialogue",
+      "start_us": 12560000,
+      "end_us": 14900000,
+      "source_cut_start": 6,
+      "source_cut_end": 6,
+      "text": "I'm obsessed with it for holiday parties or honestly any...",
+      "certainty": "uncertain"
+    },
+    {
+      "event": 7,
+      "kind": "music",
+      "start_us": 0,
+      "end_us": 14900000,
+      "source_cut_start": 1,
+      "source_cut_end": 6,
+      "text": "Low background music under the on-camera speech.",
+      "certainty": "certain"
+    },
+    {
+      "event": 8,
+      "kind": "subtitle",
+      "start_us": 0,
+      "end_us": 14900000,
+      "source_cut_start": 1,
+      "source_cut_end": 6,
+      "text": "A small multi-line text overlay remains visible near the upper-left/center-left region; exact wording is not treated as replacement truth.",
+      "certainty": "certain"
+    }
+  ],
+  "notes": [
+    "One continuous identifiable person track is present across all Cuts.",
+    "No confirmed terminal logo/download tail is present; platform watermarks remain source evidence.",
+    "The source dialogue describes garment properties that do not fully match the supplied lace dress, creating a scope decision for the user approval script."
+  ]
+}
